@@ -1,0 +1,28 @@
+путь: _devdoc/_audit/07_visuo.txt
+назначение
+Подраздел описывает слой визуализации SimplCMS: базовые классы visuo, теги и элементы, используемые алгоритмами для построения дерева отображения и рендера.
+
+контракт (методы)
+visuo_base.php
+Базовый класс visuo_base. Методы: __construct(main), set(name, value): void, get(name): mixed, render(): string, __toString(): string.
+
+visuotag.php
+Класс visuotag, наследник visuo_base. Свойства: tag, class, id, children, attrs. Методы: __construct(main, tag, class, id), add(child): void, attr(name, value): void, render(): string.
+
+visuoel.php
+Класс visuoel, наследник visuotag. Методы: __construct(main, el, class, id), load_template(): void, render(): string.
+
+зависимости
+visuo_base зависит от main (render, getdata).
+visuotag зависит от visuo_base.
+visuoel зависит от visuotag, шаблонов в директории visuo/el/{el}.tpl.php.
+
+edge-cases
+visuo_base.php: render по умолчанию возвращает пустую строку.
+visuotag.php: add игнорирует null.
+visuoel.php: если шаблон не найден, render возвращает пустой тег.
+
+скрытая логика
+visuoel::render подключает шаблон через include и захватывает вывод буфером ob_start/ob_get_clean. Дочерние элементы рендерятся рекурсивно и подставляются в шаблон через переменную children.
+
+UNKNOWN: точный список классов visuoel_* и их шаблонов в репозитории по просмотренным путям не подтвержден; перечень элементов неполный.

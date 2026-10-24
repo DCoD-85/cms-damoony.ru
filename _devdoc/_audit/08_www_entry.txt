@@ -1,0 +1,24 @@
+путь: _devdoc/_audit/08_www_entry.txt
+назначение
+Подраздел описывает точку входа публичной части сайта и правила веб-сервера для маршрутизации запросов.
+
+контракт (методы)
+www/index.php
+Скрипт верхнего уровня. Подключает engine/included.php, engine/autoload.php, engine/constants.php. Создает объект main. Вызывает tree->run().
+
+www/.htaccess
+Правила mod_rewrite: RewriteEngine On, условие на существующий файл/директорию, переписывание всех прочих запросов на index.php.
+
+зависимости
+www/index.php зависит от engine/included.php, engine/autoload.php, engine/constants.php, config/engine.config (через автозагрузку), классов main и tree.
+.htaccess зависит от mod_rewrite.
+
+edge-cases
+www/index.php: если tree->run() вернул false, дальнейшие действия не выполняются, ответ формируется внутри tree::error.
+.htaccess: если запрошенный файл или директория существует, переписывание не выполняется.
+
+скрытая логика
+.htaccess: при отсутствии файла запрос передается в index.php, который через tree обходит дерево правил .rules.json и вызывает целевой алгоритм.
+www/index.php не содержит собственной логики роутинга; вся маршрутизация делегируется tree.
+
+UNKNOWN: полное содержимое .htaccess (дополнительные заголовки, кеширование) по просмотренному фрагменту не подтверждено.

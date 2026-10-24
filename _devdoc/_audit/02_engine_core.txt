@@ -1,0 +1,27 @@
+путь: _devdoc/_audit/02_engine_core.txt
+назначение
+Подраздел описывает автозагрузку классов, функции подключения файлов и константы движка.
+
+контракт (методы)
+autoload.php
+spl_autoload_register с анонимной функцией, принимающей имя класса. Функция разбирает имя класса по разделителю \, извлекает domain_ns, allias, handler. Формирует путь к файлу в app/{logic}/domain/{domain_real}/allias/{allias}/algoritm/ и подключает его через require.
+
+included.php
+Функции: include_bad(array fo, string message, string details), include_my(array fo, string file), include_array(array fo, array files, array classes = [], string release_path = '').
+
+constants.php
+Файл пуст.
+
+зависимости
+autoload.php зависит от config/site.config (domains_namespace, logic), структуры app/{logic}/domain/{domain}/allias/{alias}/algoritm/.
+included.php зависит от include_once и class_exists.
+
+edge-cases
+autoload.php: если файл не найден, require не выполняется, ошибка не генерируется.
+included.php:21-22 если include_once возвращает false -> include_bad.
+included.php:23-27 если массив files пуст -> bad с сообщением об отсутствии файлов.
+included.php:28-33 если после подключения классы из массива classes не существуют -> bad с перечислением отсутствующих классов.
+
+скрытая логика
+autoload.php: имя класса преобразуется: из handler удаляется префикс algoritm_, затем _ заменяется на /. Для algoritm_auth и algoritm_error путь остается в корне. Реальное имя домена ищется через array_search(domain_ns, domains_namespace). Логика версии берется из config['logic'].
+included.php: include_array сначала подключает все файлы, затем проверяет наличие классов. При ошибке вызывается bad(), который выводит HTML и завершает выполнение (die).

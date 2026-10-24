@@ -1,0 +1,31 @@
+путь: _devdoc/_audit/03_config.txt
+назначение
+Подраздел описывает конфигурационные файлы, определяющие логику, домены и параметры подключения.
+
+контракт (методы)
+engine.config
+JSON-объект с полями: logic (строка, версия логики), logic_type (строка, тип цепочки), ui_ajax_forms (целое, флаг), trusted_proxies (массив), connect_type (строка, схема).
+
+site.config
+UNKNOWN: файл не найден по прямым путям config/site.config и config/site.config.json в ветке master.
+
+admin.config
+UNKNOWN: файл не найден по прямому пути config/admin.config в ветке master.
+
+lang.config
+UNKNOWN: файл не найден по прямому пути config/lang.config в ветке master.
+
+render.config
+UNKNOWN: файл не найден по прямому пути config/render.config в ветке master.
+
+secure/db.config
+UNKNOWN: файл не найден по прямому пути secure/db.config в ветке master.
+
+зависимости
+engine.config читается автозагрузчиком (autoload.php) для получения logic и domains_namespace через site.config. Прямых зависимостей от других конфигов в просмотренных файлах не обнаружено.
+
+edge-cases
+engine.config: если logic отсутствует, autoload.php использует значение по умолчанию alpha.0.0.
+
+скрытая логика
+engine.config: connect_type задает схему подключения (https). trusted_proxies предназначен для проверки доверенных прокси, но в просмотренном коде использование не обнаружено.

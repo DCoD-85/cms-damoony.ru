@@ -1,0 +1,28 @@
+путь: _devdoc/_audit/09_database.txt
+назначение
+Подраздел описывает схему БД SimplCMS, доступ к данным и синхронизацию таблиц ресурсов.
+
+контракт (методы)
+Таблицы БД
+UNKNOWN: SQL-дампы и миграции в просмотренных директориях репозитория не обнаружены; фактическая схема не подтверждена.
+
+DataGateway
+Методы: connect, query, execute, insert, find, update (описаны в 06_logic_resources).
+
+ResourceManager
+Методы: load, getSqlType, generateCreateTableSQL, sync (описаны в 06_logic_resources).
+
+зависимости
+DataGateway зависит от параметров подключения к БД (secure/db.config), которые в просмотренных путях не найдены.
+ResourceManager зависит от файлов *.resource.php и DataGateway.
+
+edge-cases
+DataGateway: при ошибке SQL выбрасывается PDOException (ERRMODE_EXCEPTION).
+ResourceManager: при ошибке ALTER TABLE возвращается ok => false.
+
+скрытая логика
+Схема БД генерируется из описаний ресурсов *.resource.php через ResourceManager::generateCreateTableSQL и синхронизируется через DESCRIBE и ALTER TABLE ADD COLUMN. Первичные ключи id типа INT AUTO_INCREMENT PRIMARY KEY. Связи relation хранятся как INT без внешних ключей на уровне SQL в просмотренном коде.
+
+UNKNOWN: имена таблиц, полей, индексов и внешних ключей не подтверждены из-за отсутствия SQL-дампов и файлов *.resource.php в просмотренных путях.
+
+git add _devdoc/_audit/ && git commit -m "docs(audit): analyzer spec package" && git push
