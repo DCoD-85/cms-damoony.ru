@@ -1,0 +1,21 @@
+1. Назначение
+Группа кнопок. visuoel_button — прозрачная multi-группа (singleton=false). Элементы: visuoel_button_submit, visuoel_button_reset, visuoel_button_button. Каждый переопределяет button_type() и создаёт свой __data. Рендер кнопки — в базовом visuoel_button__element (вне списка), типизируется через type="submit|reset|button".
+
+2. Контракт (Методы)
+visuoel_button: make_default_data() → visuoel_button__data, build(), submit(?visuoel__data): visuoel_button_submit, reset(?visuoel__data): visuoel_button_reset, button(?visuoel__data): visuoel_button_button
+visuoel_button__data extends visuoel_group__data (пустой)
+visuoel_button_submit extends visuoel_button__element: button_type(): 'submit', make_default_data() → visuoel_button_submit__data
+visuoel_button_reset extends visuoel_button__element: button_type(): 'reset', make_default_data() → visuoel_button_reset__data
+visuoel_button_button extends visuoel_button__element: button_type(): 'button', make_default_data() → visuoel_button_button__data
+
+3. Зависимости
+visuoel_group, visuoel_button__element (вне списка), visuoel__data, visuotag.
+
+4. Edge-cases
+- submit/reset/button: переданный $__data не совпадает по типу — создаётся дефолт.
+- visuoel_button build: vt_start===vt_end===новый visuotag, обёртка прозрачная.
+- Каждый вызов submit/reset/button добавляет элемент в elements (multi-группа, счётчик растёт).
+- data() базового visuoel_button__element содержит поля name, value, css_class, disabled, text и т.д. (по контракту visuoel_button__element__data, вне списка).
+
+5. Скрытая логика
+visuoel_button — группа, которая не рисует собственную обёртку: тег <button> и type выводятся каждым дочерним элементом через button_type(). Порядок дочерних кнопок сохраняется (elements[] по порядку вызова). Тип кнопки управляет HTML-атрибутом type — это единственное различие submit/reset/button; name/value/css_class выставляются через data(). Проверка instanceof не позволяет подсунуть чужой data-класс.

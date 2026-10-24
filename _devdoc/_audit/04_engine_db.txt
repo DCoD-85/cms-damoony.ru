@@ -1,0 +1,57 @@
+1. Назначение
+Слой доступа к базе данных. db — точка сборки, читает secure/db.secure (db_type) и secure/db.config (список баз), загружает интерфейсы driver, query, exception, config, реализацию под db_type. db_config — реестр подключений (localname, dbname, dbhost, username, password, comment, default). db_driver_interface — контракт драйвера. db_query_interface — контракт построителя запросов. db_exception — расширение Exception с SQL и values. db_schema — построитель DDL (create, drop, truncate, rename, introspection). db_mysqli реализует driver. db_mysqli_query реализует query с ленивым execute, конвертацией %s/%d в ?, prepared statements, авто-LIMIT для SELECT.
+
+2. Контракт (Методы)
+db::__construct(main), init(): void, read_db_type(): void, load_files(): void, create_driver(): void, db(): db_driver_interface, open(string localname='', bool reconnect=false): db_driver_interface, get(string localname=''): ?db_config_row, config(): db_config, affected(): int, last_id(): int, escape(string): string, schema(): db_schema, query(string, array, array): db_query_interface, select(string, array, array): db_query_interface, insert(string, array, array): db_query_interface, update(string, array, array, array): db_query_interface, delete(string, array, array): db_query_interface
+db_config::__construct(db), init(): void, row(string): ?db_config_row, default(): ?db_config_row, all(): array, has(string): bool
+db_config_row::__construct(db_config), is_valid(): bool
+db_driver_interface::open(string, bool), close(), link(): mixed, status(): string, error(): string, affected(): int, last_id(): int, escape(string): string
+db_query_interface::query(string, array, array), one(), page(int, ?int), limit(int), no_limit(), result(bool=true): array, row(bool=true): ?array, scalar(): mixed, count_rows(): int, affected(): int, insert_id(): int, show(): string
+db_exception::__construct(string, string sql='', array values=[])
+db_schema::create(...), drop(string, bool=true), truncate(string), rename(string, string), tables(), exists(string), columns_of(string), sql(): string, run(): self, log(): string, sql_create(), sql_drop(), col_to_sql(array), reset()
+db_mysqli::__construct(db), open(string, bool), close(), link(): mixed, status(): string, error(): string, affected(): int, last_id(): int, escape(string): string, query(): db_mysqli_query
+db_mysqli_query::query(string, array, array): self, one(): self, page(int, ?int): self, limit(int): self, no_limit(): self, execute(): void, result(bool=true): array, row(bool=true): ?array, scalar(): mixed, count_rows(): int, affected(): int, insert_id(): int, error(): string, show(): string, select(...), insert_legacy(...), insert(...), parse_sql(string): array, detect_type(string): string, validate_types(): void, coerce_value(int, string): void, build_bind_string(): string, apply_limit(string&): void, is_dev(): bool, raise(string): void, log(string): void, build_log(string): string
+col(string, string, int, bool, bool, bool, mixed, array): array
+
+3. Зависимости
+secure/db.secure, secure/db.config, engine/db/{driver,query,exception,config}.php, engine/db/{db_type}/driver.php, engine/db/{db_type}/query.php, error(), error_file(), DB_LIMIT_PAGE, DB_LIMIT_MAX, GL_DEBUG, $_GET['p'], $_GET['p_max'].
+
+4. Edge-cases
+- engine/db.php read_db_type: secure/db.secure отсутствует — return, db_type остаётся 'mysqli'.
+- engine/db.php read_db_type: json_decode вернул не array — return.
+- engine/db.php create_driver: class_exists($class) false — error('DB error', 'Driver class not found: '.$class) и return, driver не установлен.
+- engine/db/config.php init: path не файл — error_file() и return, rows пуст.
+- engine/db/config.php init: json_decode не array или нет ключа bases — error('DB config error') и return.
+- engine/db/config.php init: base с disabled=1 — continue, строка не регистрируется.
+- engine/db/config.php init: localname пустой — continue.
+- engine/db/config.php init: default не найден и rows не пуст — default = reset(rows).
+- engine/db/mysqli/driver.php open: row === null — error('DB error') и return.
+- engine/db/mysqli/driver.php open: !reconnect и link и current.localname === row.localname — return без переподключения.
+- engine/db/mysqli/driver.php open: new mysqli бросил Throwable — last_error = 'Connection failed: ...', link=null, error() и return.
+- engine/db/mysqli/driver.php open: connect_errno !== 0 — last_error, link=null, error() и return.
+- engine/db/mysqli/query.php execute: link === null — last_error='Not connected', return.
+- engine/db/mysqli/query.php execute: пустые values — прямой query, при ошибке last_error и return; иначе mysqli_result в result.
+- engine/db/mysqli/query.php execute: prepare вернул false — last_error и return.
+- engine/db/mysqli/query.php execute: execute() вернул false — last_error и return со закрытием stmt.
+- engine/db/mysqli/query.php execute: get_result() вернул false — result остаётся null.
+- engine/db/mysqli/query.php result/row/scalar: last_error не пуст или result null — возвращают []/null.
+- engine/db/mysqli/query.php validate_types: count(values) != count(types) — raise('Placeholder count mismatch').
+- engine/db/mysqli/query.php validate_types: explicit_types заданы и count не совпадает — raise('Explicit types count mismatch').
+- engine/db/mysqli/query.php validate_types: explicit тип после ltrim('%') != sql_type — raise('Type mismatch').
+- engine/db/mysqli/query.php coerce_value: SQL хочет %d, PHP string, is_dev=true — raise('SQL wants %d, got string').
+- engine/db/mysqli/query.php coerce_value: SQL хочет %d, PHP string, prod — приведение к int + log('cast string -> int').
+- engine/db/mysqli/query.php coerce_value: SQL хочет %d, PHP не int/double/string — raise.
+- engine/db/mysqli/query.php coerce_value: SQL хочет %s, PHP int/double — приведение к строке; иначе raise.
+- engine/db/mysqli/query.php raise: is_dev() истина — throw db_exception, иначе error_log.
+- engine/db/mysqli/query.php apply_limit: no_limit — return.
+- apply_limit: query_type !== 'SELECT' — return.
+- apply_limit: stripos(' LIMIT ') найден — return.
+- apply_limit: page задан, $_GET['p'] задан — переопределяет страницу; $_GET['p_max'] задан — переопределяет размер; size<=0 — берётся DB_LIMIT_PAGE; size>DB_LIMIT_MAX — обрезка до DB_LIMIT_MAX.
+- apply_limit: SELECT без one/limit/page — жёсткий LIMIT DB_LIMIT_MAX (по умолчанию 1000).
+- engine/db/schema.php run: q->error() !== '' — throw db_exception.
+- engine/db/schema.php exists: COUNT(*)>0.
+- engine/db/schema.php sql_create: primary содержит запятую — составной ключ.
+- engine/db/schema.php col_to_sql: default = boolean — DEFAULT 1/0; int/float — как есть; строка CURRENT_TIMESTAMP — без кавычек; иначе с addslashes в кавычках.
+
+5. Скрытая логика
+db::get() при отсутствии совпадения возвращает config->default(), то есть не null при непустом конфиге. db_mysqli::query() не принимает SQL — это фабрика объектов query без параметров. db_mysqli_query::select() — legacy, при limitpage===0 и limitstep===1 вызывает one(), иначе page(limitpage+1, limitstep). db::insert() строит типы %d/%s по is_int() автоматически. db::update() merge data и where в один массив values, порядок: сначала значения SET, потом WHERE. db_schema::create() приоритет: если columns[k] — строка, k трактуется как имя колонки; если массив — имя берётся из элемента col(...)['name']. db_mysqli_query::apply_limit() модифицирует $sql по ссылке и добавляет ?/values/types, поэтому placeholder count растёт после parse_sql и validate_types срабатывает на итоговом наборе. mysqli_report(MYSQLI_REPORT_OFF) отключает бросание исключений mysqli, ошибки читаются вручную через $link->error.

@@ -1,0 +1,21 @@
+1. Назначение
+Контроллер блоков админки. new — форма и BlockNew. edit — редактор block/<name>.php и .data.php через Fs::writeAtomic. remove — BlockRemove. list — Scan::blocksDetailsFor, layoutsFor, список алиасов домена.
+
+2. Контракт (Методы)
+BlockController: new(), edit(), remove(), list()
+
+3. Зависимости
+CS_CMD/{BlockNew,BlockRemove}.php, ADMIN_ROOT/_lib/Scan.php, Config, Paths, Fs.
+
+4. Edge-cases
+- new: domain из GET или POST.
+- new POST: BlockNew::run(name, domain), render result.
+- edit: php_file не файл — redirect blocks:list.
+- edit POST: Fs::writeAtomic для php и data, redirect block:edit&saved=1.
+- edit: data_file не существует — дефолт "<?PHP\nreturn [\n\t\n];\n".
+- remove: BlockRemove::run напрямую, без подтверждения и без requirePost (метод не проверяет HTTP-метод).
+- list: domain пуст — redirect dashboard.
+- list: blocksDetailsFor, layoutsFor, alliases_real[real].
+
+5. Скрытая логика
+BlockController::remove исполняет BlockRemove::run без check CSRF здесь — глобальный CSRF в bootstrap ловит только POST, но remove доступен и через GET: отсутствует requirePost, удаление возможно по GET-ссылке, если глобальный CSRF не срабатывает на GET (в bootstrap проверка CSRF только для POST). new и list не проверяют домен через Config. edit не проверяет путь — считается, что пользователь вводит валидные domain/name, что позволяет Paths::block сформировать путь за пределами alliasglobal при невалидных значениях.

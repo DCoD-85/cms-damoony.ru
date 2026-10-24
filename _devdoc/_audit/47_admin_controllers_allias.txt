@@ -1,0 +1,28 @@
+1. Назначение
+Контроллер алиасов админки. new — форма и выполнение AlliasNew с AuditLog. edit — форма настроек и сохранение available/stub. list — список алиасов домена с avail, fs, fillers. toggle — переключение available. remove — двухстадийное подтверждение и AlliasRemove. fillers — список филлеров алиаса.
+
+2. Контракт (Методы)
+AlliasController: new(), edit(), list(), toggle(), remove(), fillers()
+
+3. Зависимости
+Config, Paths, Validate, CS_CMD/{AlliasNew,AlliasToggle,AlliasRemove}.php, ADMIN_ROOT/_lib/Scan.php, AuditLog, Result.
+
+4. Edge-cases
+- new: real_domains по d===real, prefill_domain из GET.
+- new POST: AlliasNew::run(name, domain, register), AuditLog::action_ok, render result.
+- edit: пустые domain или allias — redirect dashboard.
+- edit POST: Config::mutate setKeys available/stub, AuditLog::action_ok, redirect edit&saved=1.
+- list: domain пуст — render result 'Домен не указан'.
+- list: getKeys(['domains_real',domain]) null — render result 'Домен не найден'.
+- list: aliases пуст — rows пуст.
+- list: alias==='' — continue.
+- toggle: requirePost, domain/name пуст — redirect dashboard.
+- remove: domain/name пуст или невалиден — redirect.
+- remove: getKeys(['domains_real',domain]) null или alliases_real[real][name] null — redirect list.
+- remove POST: !confirm_checked или confirm_name!==name — errors, render allias_remove.
+- remove POST: без ошибок — AlliasRemove::run(name, real, force=true), AuditLog::action_ok, render result.
+- fillers: domain пуст — redirect dashboard; allias пуст — redirect allias:list.
+- fillers: Scan::fillersFor.
+
+5. Скрытая логика
+AlliasController передаёт в AlliasRemove уже real-домен (не входной), чтобы команда не проверяла real(real) — но AlliasRemove::run вызывается с name, domain, force и внутри делает Paths::real(domain) повторно. new-список доменов берётся только real (d===real), алиасы не предлагаются. fillers не проверяет существование домена и алиаса — Scan::fillersFor вернёт [] для несуществующих путей. Все успешные мутации пишут AuditLog::action_ok вне зависимости от result->ok.

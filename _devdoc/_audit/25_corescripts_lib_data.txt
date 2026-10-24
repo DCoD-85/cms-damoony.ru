@@ -1,0 +1,30 @@
+1. Назначение
+DataGateway — тонкий PDO-слой для corescripts. Ленивое подключение по secure/db.config, выбор коннекта по localname, если localname не найден — первая база из bases. query/execute/insert/find/update. Validate — набор статических валидаторов: allias_name, domain, namespace, ns_from_domain, page_path, skin.
+
+2. Контракт (Методы)
+DataGateway: static query(string, array=[], ?string=null): array, execute(string, array=[], ?string=null): bool, insert(string, array, ?string=null): int, find(string, int, ?string=null): ?array, update(string, array, int, ?string=null): bool, private connect(?string): PDO
+Validate: static allias_name(string): ?string, domain(string): ?string, namespace(string): ?string, ns_from_domain(string): string, page_path(string): ?string, skin(string): ?string
+
+3. Зависимости
+PROJECT_ROOT/secure/db.config, PDO, RuntimeException.
+
+4. Edge-cases
+- DataGateway::connect: self::$pdo уже есть — возврат кэша, смена localname игнорируется.
+- connect: файл db.config отсутствует или json_decode null — bases=[].
+- connect: localname задан, но базы с таким именем нет — берётся bases[0] если есть.
+- connect: dbname пуст — throw RuntimeException('Database config not found or invalid').
+- connect: DSN mysql:host=...;dbname=...;charset=utf8mb4.
+- connect: PDO::ATTR_ERRMODE=EXCEPTION, ATTR_DEFAULT_FETCH_MODE=ASSOC.
+- query: prepare+execute, fetchAll.
+- insert: keys → поля, placeholders ?, lastInsertId.
+- find: query SELECT * WHERE id = ?, возвращает res[0] или null.
+- update: SET по ключам data + WHERE id = ?, params = values + id.
+- Validate::allias_name: regex /^[a-z][a-z0-9_]*$/, max 32, иначе строка ошибки.
+- Validate::domain: regex /^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/, иначе строка.
+- Validate::namespace: regex /^[a-z][a-z0-9_]*$/, иначе строка.
+- Validate::ns_from_domain: замена точек и дефисов на '_'.
+- Validate::page_path: '' — null; длина > 128; содержит '..'; начинается/заканчивается '/' ; содержит '//'; regex '#^[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*$#i' — иначе строка ошибки.
+- Validate::skin: '' — ошибка; длина > 32 — ошибка; regex /^[a-z][a-z0-9_-]*$/; basename(skin) !== skin — ошибка.
+
+5. Скрытая логика
+DataGateway::connect кэширует соединение на процесс, повторный вызов с другим localname не пересоздаёт PDO. query/execute/insert/update параметры передают в prepare+execute, без ручной типизации. insert использует self::connect дважды — отдельно prepare и lastInsertId, второй вызов берёт уже закэшированный PDO. find — «безопасный» возврат одной записи, комментирует известный баг: возвращалось массив массивов, теперь res[0] или null. Validate::page_path разрешает сегменты только [a-z][a-z0-9_]* с разделителем '/', регистронезависимо. Validate::skin дополнительно режет basename($skin)!==$skin как защиту от вложенных путей.

@@ -1,0 +1,21 @@
+1. Назначение
+Аутентификация по cookies. user хранит user_profile. user_profile::init() читает cookies login, password, hash, при непустых login/password делает SELECT из toolsusers, при совпадении заполняет id, login, password, status, data, guest=false; иначе guest=true, data['login']='Гость'.
+
+2. Контракт (Методы)
+user::__construct(main), is_guest(): bool, authorized(): void
+user_profile::__construct(user), init(): void, set(string, mixed): void, get(string): mixed, data(string): mixed
+
+3. Зависимости
+main, main->db->select(), $_COOKIE['login'], $_COOKIE['password'], $_COOKIE['hash'].
+
+4. Edge-cases
+- user_profile::init: login, password, hash все пусты — return, guest остаётся true.
+- init: SELECT вернул пустой row — guest=true, data['login']='Гость'.
+- init: SELECT нашёл строку — guest=false, id/login/password/status/data заполнены.
+- init: hash читается из cookies, но в SQL не используется.
+- set: любое имя свойства ставится без проверки property_exists.
+- get: несуществующее свойство — Warning undefined property.
+- data: ключ отсутствует — null.
+
+5. Скрытая логика
+SQL-запрос SELECT * FROM toolsusers WHERE login=%s AND password=%s — сравнение с паролем из cookie напрямую, без хэширования на этом уровне. Поле hash из cookies не применяется. user::is_guest() инвертирует profile->get('guest'): если guest=true, возвращает true. user_profile не кэширует результат; повторный init() перечитывает БД.

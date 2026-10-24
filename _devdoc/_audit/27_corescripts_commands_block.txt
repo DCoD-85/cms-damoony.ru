@@ -1,0 +1,40 @@
+1. Назначение
+CLI-команды управления блоками alliasglobal. BlockNew — создание папки блока из CS_TPL/block, патч alliasglobal.php (property, include, new), создание заглушек filler'ов для всех алиасов, обновление fillers в site.config, lint. BlockRemove — удаление папки блока, очистка fillers, удаление property/include/new из alliasglobal.php через preg_replace.
+
+2. Контракт (Методы)
+BlockNew: static plan(array): array, static run(array, ?Context=null): Result, private static render(string, array): string, private static get_domain_ns(string): ?string, private static patch_alliasglobal(string content, string name, string ns): ?string
+BlockRemove: static run(array, ?Context=null): Result
+
+3. Зависимости
+Validate, Paths, Fs, Config, Template, CS_TPL, PROJECT_ROOT, Blocks (не используется), site.config.
+
+4. Edge-cases
+- BlockNew: Validate::allias_name вернул строку — r->step(false), return.
+- BlockNew: Validate::domain вернул строку — r->step(false), return.
+- BlockNew: Paths::domain не dir — r->error('Домен не найден'), return.
+- BlockNew: get_domain_ns null — r->error('Не найден domains_namespace'), return.
+- BlockNew: Paths::block уже существует — r->error('Блок уже существует'), return.
+- BlockNew: CS_TPL/block не dir — r->error('Шаблон блока не найден'), return.
+- BlockNew: file_get_contents шаблона false — continue.
+- BlockNew: alliasglobal.php не существует — r->error('Не найден alliasglobal.php'), return.
+- BlockNew: patch_alliasglobal вернул null (уже есть $name) — r->warn('alliasglobal.php не удалось пропатчить'), без записи.
+- BlockNew: patch_alliasglobal вернул строку — file_put_contents напрямую (не через Fs::write), r->file(ag_file).
+- BlockNew: получение alliases из Config, пустые отфильтрованы.
+- BlockNew: шаблоны filler не найдены — блок filler'ов пропущен.
+- BlockNew: filler_php существует — не перезаписывается; иначе Fs::write php и data.
+- BlockNew: Config::mutate бросил Throwable — r->warn('Не удалось создать заглушки filler').
+- BlockNew: lint ошибка — r->warn.
+- BlockNew::get_domain_ns: Config бросил Throwable — null; ns пуст — null.
+- BlockNew::patch_alliasglobal: strpos($content,'$'.$name)!==false — null (уже есть).
+- patch_alliasglobal: regex property не нашёл — шаг пропущен, патч всё равно возвращает изменённый content.
+- patch_alliasglobal: regex include не нашёл — шаг пропущен.
+- patch_alliasglobal: regex new не нашёл — шаг пропущен.
+- BlockRemove: Validate domain или allias_name — r->error, return.
+- BlockRemove: Paths::block не dir — r->error('Блок не найден'), return.
+- BlockRemove: Fs::rmrf(block_path) — каскадное удаление.
+- BlockRemove: Config::mutate бросил — r->warn('Не удалось почистить fillers').
+- BlockRemove: alliasglobal.php есть — три preg_replace, file_put_contents напрямую.
+- BlockRemove: alliasglobal.php нет — шаг очистки пропускается молча.
+
+5. Скрытая логика
+BlockNew::patch_alliasglobal работает без парсера: три независимых regex ищут последнее вхождение в виде property public alliasglobal_<x> $<x>;, include_once ... 'alliasglobal' . DS . '<x>' . DS . '<x>.php' ... error_file(...), и присваивания $this-><x> = new alliasglobal_<x>( $this ); — вставка новой строки происходит сразу после последнего совпадения. При отсутствии совпадений соответствующий шаг тихо пропускается, patch возвращает content без этих блоков, без предупреждения. BlockRemove использует другой regex: include-шаблон ищется с __DIR__ . DS . 'alliasglobal' ..., а шаблон в BlockNew без __DIR__, поэтому после BlockNew шаблон BlockRemove может не найти созданную строку. BlockNew::run после создания заглушек вызывает Config::mutate даже если ранее были предупреждения — финальный ok зависит от Result::step/error, не от warn. fillers обновляются через hasKeys с проверкой — существующие значения не перезаписываются.

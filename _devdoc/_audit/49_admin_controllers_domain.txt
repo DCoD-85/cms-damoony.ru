@@ -1,0 +1,29 @@
+1. Назначение
+Контроллер доменов админки. new — DomainNew с регистрацией. edit — настройки title, available, stub (current, until). toggle — DomainToggle. remove — двухстадийное подтверждение, DomainRemove::run(name=real, force=true).
+
+2. Контракт (Методы)
+DomainController: new(), edit(), toggle(), remove()
+
+3. Зависимости
+Config, Paths, Validate, CS_CMD/{DomainNew,DomainToggle,DomainRemove}.php, AuditLog, PROJECT_ROOT/config/site.stubs.config.
+
+4. Edge-cases
+- new POST: DomainNew::run(name=domain, register), AuditLog::action_ok, render result.
+- edit: Validate::domain вернул строку — redirect dashboard.
+- edit: getKeys(['domains_real',domain]) null — redirect dashboard.
+- edit: stubs_cfg отсутствует или stubs пуст — $stubs=[].
+- edit POST: title пуст — errors 'Title не может быть пустым'.
+- edit POST: stub_until_date непустой — strtotime; иначе 0.
+- edit POST: Config::mutate setKeys domains_titles, domains_available, domains_stub[real][current/until], AuditLog::action_ok, redirect edit&saved=1.
+- edit POST: Config::mutate бросил — errors 'Ошибка сохранения', рендер domain_edit без redirect.
+- edit GET: title из domains_titles или cfg->get('title') или ''; avail, stub default 'maintenance', until default 0.
+- toggle: requirePost, domain пуст — redirect dashboard.
+- toggle: DomainToggle::run, AuditLog::action_ok, redirect dashboard.
+- remove: domain пуст или Validate провал — redirect dashboard.
+- remove: getKeys(['domains_real',domain]) null — redirect dashboard.
+- remove: alliases_real[real] собирается без пустого ключа.
+- remove POST: !confirm_checked — errors; confirm_name!==real — errors.
+- remove POST без ошибок: DomainRemove::run(name=real, force=true), AuditLog::action_ok, render result.
+
+5. Скрытая логика
+edit пишет и в domains_titles[real], и в domains_stub[real][current/until], но не меняет domains_stub[real][enabled] — Dashboard читает enabled, а edit показывает current/until. main_settings::domain_accepted использует until по time() для авто-доступности — соответствие через until, enabled в настройках не влияет напрямую. remove требует confirm_name === real, а не вводный domain. При ошибке config форма рендерится заново с errors и без redirect, чтобы пользователь видел ошибку.

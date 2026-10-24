@@ -1,0 +1,43 @@
+1. Назначение
+Базовые библиотеки CLI. Cli — вывод и интерактив. Config — JSON-конфиг с точечными путями и array-key API, атомарная запись через Json, mutate под lock-файлом. Context — передача callback шагов. Paths — единая точка путей проекта и конфигов. Result — состояние выполнения (ok, steps, created, errors, warnings, summary). Fs — файловые операции с атомарной записью, rmrf, рекурсивный скан и копирование. Json — encode/decode/read/writeAtomic с табами вместо 4 пробелов.
+
+2. Контракт (Методы)
+Cli: out(string), ok(string), warn(string), err(string), info(string), ask(string, string=''): string, confirm(string, bool=true): bool, help(array): void
+Config: __construct(string path), data(): array, get(string, mixed=null): mixed, has(string): bool, hasKeys(array): bool, getKeys(array, mixed=null): mixed, setKeys(array, mixed): void, set(string, mixed): void, remove(string): void, removeKeys(array): void, save(): void, static mutate(string, callable): void
+Context: __construct(?callable), step(string, bool=true, string=''): void
+Paths: static reset(), project(): string, config(): string, engine(): string, logic(): string, real(string): string, ns(string): ?string, logicPath(): string, domain(string): string, allias(string, string): string, algoritm(string, string): string, blocks(string): string, block(string, string): string, media(string): string, mediaRoot(): string, mediaShared(): string, skins(string): string
+Result: step(string, bool=true, string=''): void, file(string): void, error(string): void, warn(string): void
+Fs: static mkdir(string), write(string, string), writeAtomic(string, string), exists(string): bool, rel(string): string, rmrf(string), scan_recursive(string): array, copy_recursive(string, string)
+Json: static encode(mixed): string, decode(string, mixed=null): mixed, writeAtomic(string, mixed): void, read(string, mixed=null): mixed
+
+3. Зависимости
+PROJECT_ROOT, config/site.config, config/engine.config, config/cms.config (fallback), RuntimeException, flock, json_encode, json_decode.
+
+4. Edge-cases
+- Config::__construct: файл не найден — throw RuntimeException.
+- Config::__construct: JSON не array — throw RuntimeException.
+- Config::get/set/remove: точечная нотация, при отсутствии промежуточного ключа get возвращает default, set создаёт массив.
+- Config::save: @copy в .bak, затем Json::writeAtomic.
+- Config::mutate: fopen lock false — throw RuntimeException.
+- Config::mutate: flock LOCK_EX false — throw RuntimeException.
+- Config::mutate: fn бросил Throwable — flock LOCK_UN + fclose в finally, проброс.
+- Fs::mkdir: mkdir false — throw RuntimeException.
+- Fs::write: file_put_contents false — throw RuntimeException.
+- Fs::writeAtomic: fopen false, flock false, короткая запись, rename false — throw RuntimeException с очисткой tmp.
+- Fs::rmrf: путь не dir — @unlink файла или тихий выход.
+- Fs::rel: путь не начинается с PROJECT_ROOT/' — возвращает путь без изменений.
+- Fs::scan_recursive: dir не существует — [].
+- Fs::copy_recursive: src не dir — mkdir dirname и @copy.
+- Json::encode: json_encode false — throw RuntimeException.
+- Json::decode: строка '' — default; json_decode null — default.
+- Json::read: файл не найден или file_get_contents false — default.
+- Json::writeAtomic: ошибки аналогичны Fs::writeAtomic.
+- Paths::cfg: файл не найден или file_get_contents false или json_decode не array — [] (пустой конфиг).
+- Paths::engineCfg: сначала engine.config, если нет — cms.config, иначе [].
+- Paths::logic: engineCfg['logic'] пуст — 'alpha.0.0'.
+- Paths::real: domains_real[domain] пуст — возвращает входной $domain.
+- Paths::ns: domains_namespace[real] пуст — null.
+- Paths::reset: сброс статических кэшей site_cfg и engine_cfg.
+
+5. Скрытая логика
+Json::encode применяет JSON_PRETTY_PRINT, затем preg_replace_callback по /^( +)/m переводит 4 пробела в табы через strlen/4. Json::writeAtomic и Fs::writeAtomic идентичны по схеме: tmp с random_bytes(4), fopen 'cb', flock LOCK_EX, fwrite, fflush, flock LOCK_UN, fclose, @rename, при любой ошибке @unlink(tmp) и throw. Config::mutate читает конфиг заново под lock, вызывает fn(cfg), сохраняет. Paths кэширует site_cfg и engine_cfg статически, сброс только через reset. Context хранит один callable и вызывает его из step. Result::error ставит ok=false и добавляет в errors, Result::step(false) тоже ставит ok=false. Paths::media строится по real(domain), а mediaRoot/shared — глобальные.

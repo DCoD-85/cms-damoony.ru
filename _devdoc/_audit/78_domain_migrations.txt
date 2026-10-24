@@ -1,0 +1,24 @@
+1. Назначение
+SQL-миграции для домена damoony.ru / алиас visuo. 001 создаёт news, 002 создаёт files, 003 создаёт file_downloads, 004 добавляет users.timezone и users.lang, 005 сеет files (template), 006 сеет 3 новости, 007 создаёт login_attempts. apply_all.sql — SOURCE всех по порядку.
+
+2. Контракт (Методы)
+SQL DDL/DML-скрипты, последовательно применяются MySQL CLI или аналогом.
+
+3. Зависимости
+users (FK author_id в news, user_id в file_downloads), files (FK file_id в file_downloads), пользователь admin для seed news.
+
+4. Edge-cases
+- 001 news: автор FK fk_news_author ON DELETE SET NULL, ON UPDATE CASCADE.
+- 001 news: UNIQUE(slug,lang), индексы (status,published_at), (lang,status,published_at), author_id.
+- 002 files: UNIQUE slug, idx_status; status ENUM active/hidden.
+- 003 file_downloads: FK на files (CASCADE) и users (SET NULL), idx_file/idx_user/idx_created.
+- 004 alter users: MySQL 8 не поддерживает ADD COLUMN IF NOT EXISTS — при повторном запуске ошибка, нужно проверять SHOW COLUMNS.
+- 004: добавляет users.lang с COMMENT 'ru-ru | en-en | ch-ch' и idx_lang.
+- 005 seed files: ON DUPLICATE KEY UPDATE по slug; filesize=0 — фактический размер обновляется вручную.
+- 006 seed news: SET @admin_id = SELECT id FROM users WHERE login='admin'; при отсутствии admin @admin_id=NULL, FK SET NULL допускает.
+- 006: 3 записи (visuo-start, visuo-docs, visuo-langs), все published ru-ru.
+- 007 login_attempts: BIGINT id, TINYINT(1) success, idx_login_time/idx_ip_time/idx_created.
+- apply_all.sql: SOURCE — только в MySQL CLI, в других клиентах не работает.
+
+5. Скрытая логика
+Все таблицы InnoDB/utf8mb4/utf8mb4_unicode_ci. Связи: news.author_id → users.id, file_downloads.file_id → files.id, file_downloads.user_id → users.id. users не создаётся в этих миграциях — таблица должна существовать до их применения (вне репозитория или в другой миграции). Seed news и files идемпотентны через ON DUPLICATE KEY UPDATE. Seed news зависит от admin — если admin ещё не создан, @admin_id=NULL, поле author_id nullable. login_attempts — отдельная таблица без FK на users, чтобы не блокировать удаление пользователей. files.filesize=0 в seed — фактический размер файла template-1.0.0.zip обновляется вручную. 004 не идемпотентна — второй запуск падает, нужен ручной контроль.

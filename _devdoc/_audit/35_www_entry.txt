@@ -1,0 +1,41 @@
+1. Назначение
+Точка входа веб-сайта и правила Apache. www/.htaccess — PHP-лимиты, rewrite, deny доступа к скрытым каталогам. www/index.php — глобальные константы, обработчики ошибок, роутинг /admin/, host-валидация, middleware security/rateLimit, старт сессии, подключение engine и запуск main. language/.htaccess — запрет доступа к языковым inc-файлам.
+
+2. Контракт (Методы)
+www/.htaccess: модульные директивы Apache. Нет PHP-контракта.
+www/index.php: функции error(string, string, string='', string=''), error_file(string, string, string), warning_file(string, string, string) — no-op, error_class(string, string, string); set_error_handler, set_exception_handler, register_shutdown_function.
+language/.htaccess: Require all denied (или Order deny,allow / Deny from all для старого mod_authz).
+
+3. Зависимости
+config/site.config, config/admin.config, engine/middleware.php, engine/constants.php, engine/included.php, engine/main.php, $_SERVER, $_COOKIE, $_SESSION.
+
+4. Edge-cases
+- .htaccess: php_value задаются всегда, при mod_php. В PHP-FPM игнорируются.
+- .htaccess: RewriteCond для tests — REQUEST_FILENAME содержит 'tests' — редирект на tests?QUERY_STRING.
+- .htaccess: набор RewriteCond для статики и fallback index.php — цепочка упрощена до RewriteRule расширений [L] и RewriteRule ^(.*)$ index.php [L]. Условия с !-f, !-d, !-l перекрываются положительными (всегда false для статики, всегда true для остальных из-за OR и последней -f), фактически статика отдаётся как файл, остальное уходит в index.php.
+- .htaccess: Options -Indexes запрещает листинги.
+- index.php: path отрезает языковой префикс ^[a-z]{2}-[a-z]{2}$ из первого сегмента.
+- index.php: cfg_path отсутствует или json_decode null — cfg=[], но далее идёт проверка domains_real → 500 Configuration error при непустом host.
+- index.php: admin_cfg отсутствует — [], ips не учитываются.
+- index.php: локальный IP и path не admin — 403 Access via IP is forbidden.
+- index.php: path admin и REMOTE_ADDR не приватный/не loopback — добавляется в allowed.
+- index.php: OSPanel в __DIR__ — ip добавляется в allowed всегда (обход).
+- index.php: REMOTE_ADDR в allowed и admin bootstrap есть — require_once, exit.
+- index.php: REMOTE_ADDR не в allowed — fallthrough на main, движок отдаст 404.
+- index.php: admin_bootstrap отсутствует — 500 Admin bootstrap not found.
+- index.php: domains_real пуст или не array — 500 Configuration error.
+- index.php: host точно равен known — valid; host оканчивается на .known и prefix есть в alliases_real[real][prefix] или alliases_available[real][prefix] — valid.
+- index.php: !host_valid и !is_local_ip — 400 Bad Host.
+- index.php: is_https через HTTPS=on, X-Forwarded-Proto только если REMOTE_ADDR в trusted_proxies.
+- index.php: middleware securityHeaders + rateLimit('site',120,60,900); StopMiddleware → 429 Too Many Requests и die.
+- index.php: cookie_domain = '.'+real_domain если host не IP.
+- index.php: session_set_cookie_params — httponly, samesite Lax, secure=is_https.
+- index.php: error() при GL_DEBUG=true отдаёт HTML и exit; иначе 500 Internal Server Error и exit.
+- index.php: set_error_handler превращает E_WARNING и выше в ErrorException (не E_DEPRECATED/E_NOTICE), если error_reporting его не исключает.
+- index.php: set_exception_handler вызывает error с классом исключения.
+- index.php: register_shutdown_function на E_ERROR|E_PARSE|E_CORE_ERROR|E_COMPILE_ERROR|E_USER_ERROR; при headers_sent — только error_log.
+- index.php: include_once constants/included/main, ошибка — error_file.
+- language/.htaccess: Require all denied, для старых — Order deny,allow + Deny from all.
+
+5. Скрытая логика
+index.php выставляет GDEF_SECURE_CONSTANT='TRUE', SIMPLECMS=true, DS, DSA, BR. main_settings создаётся до main, чтобы main_settings передавался в main::__construct. main->main() без аргумента берёт URL из $_SERVER. Middleware rateLimit по умолчанию 120 запросов в 60 секунд с баном 900 секунд — мягче, чем admin (10/60/1800). Директивы RewriteCond в .htaccess частично избыточны, но в сумме дают отдачу статики и fallback index.php. language/.htaccess блокирует скачивание .inc-файлов через HTTP.

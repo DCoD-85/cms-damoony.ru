@@ -1,0 +1,22 @@
+1. Назначение
+Группа сообщений. visuoel_message — прозрачная multi-группа (singleton=false). Элементы: info, success, warning, error. Каждый — наследник visuoel_message__element (вне списка) с message_type(), обёртка div с классом по типу. Используется в visuostruct_min_messages и visuoel_field_error-подобных сценариях.
+
+2. Контракт (Методы)
+visuoel_message: make_default_data() → visuoel_message__data, build() → пустой visuotag, info(?visuoel__data): visuoel_message_info, success(?visuoel__data): visuoel_message_success, warning(?visuoel__data): visuoel_message_warning, error(?visuoel__data): visuoel_message_error
+visuoel_message__data extends visuoel_group__data (пустой)
+visuoel_message_info: message_type(): 'info', make_default_data() → visuoel_message_info__data
+visuoel_message_success: message_type(): 'success', make_default_data() → visuoel_message_success__data
+visuoel_message_warning: message_type(): 'warning', make_default_data() → visuoel_message_warning__data
+visuoel_message_error: message_type(): 'error', make_default_data() → visuoel_message_error__data
+
+3. Зависимости
+visuoel_group, visuoel_message__element (вне списка), visuotag.
+
+4. Edge-cases
+- Каждый метод: проверка instanceof по data-классу, несовпадение — дефолт.
+- visuoel_message build: vt_start===vt_end===новый visuotag, обёртка прозрачная.
+- Multi-группа: несколько info/success/warning/error накапливаются в elements.
+- Рендер конкретного элемента — в visuoel_message__element (вне списка), обёртка div с css_class по типу (по контракту базового класса).
+
+5. Скрытая логика
+visuoel_message — простая мульти-группа без обёртки, единственная задача — позволить цепочкой info()->...->error() добавить несколько сообщений в один visuotag. message_type() определяет css_class и, вероятно, data-класс конкретного элемента (по аналогии с button). В visuostruct_min_messages сообщения упаковываются как строка через visuotag->root()->release(); visuoel_message здесь напрямую не участвует, но концептуально пересекается с messages.php (старый движок).

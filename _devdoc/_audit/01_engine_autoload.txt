@@ -1,0 +1,19 @@
+1. Назначение
+Регистрация spl_autoload_register. Обслуживает три пространства имён: router\ для engines/router, класс VisuoHost, доменные классы вида damoony_ru\<allias>\<handler>.
+
+2. Контракт (Методы)
+Замыкание spl_autoload_register(function ($class)). Внешних методов нет.
+
+3. Зависимости
+dirname(__DIR__)/engines/router/, dirname(__DIR__)/visuo/VisuoHost.php, dirname(__DIR__)/config/site.config, dirname(__DIR__)/app/{logic}/domain/{real}/allias/{allias}/algoritm/.
+
+4. Edge-cases
+- file_exists($file) false для router\ и VisuoHost — require не выполняется, return.
+- count($parts) < 3 — доменная ветка не выполняется.
+- config/site.config не существует — array_search не выполняется, автозагрузка домена не сработает.
+- array_search($domain_ns, $config['domains_namespace']) возвращает false — файл не подключается.
+- in_array($handler, ['algoritm_auth','algoritm_error']) — принудительный class_path='', файл ищется в корне algoritm/.
+- file_exists($file) false в конце — require не выполняется молча.
+
+5. Скрытая логика
+$class_path = str_replace('algoritm_', '', $handler); $class_path = str_replace('_', '/', $class_path). Для handler=algoritm_lang_index получается lang/index, файл lang/index/algoritm_lang_index.php. Для algoritm_auth и algoritm_error ветка сбрасывает class_path в пустую строку и файл ищется как algoritm_auth.php в корне allias/algoritm/.

@@ -1,0 +1,25 @@
+1. Назначение
+Тест-раннер старого проекта, веб-доступ. tests/index.php — сборка visuo-стека, подключение Stubs, discover через Runner, опционально single suite (?s=), рендер через visuoel tabs. tests/list.php — список suites и архивов. tests/CalculationManager.php — legacy-класс с прямым PDO и SQL-инъекцией, не связан с раннером.
+
+2. Контракт (Методы)
+index.php: stub error(), stub error_file(), VISUO_SRC, SOURCES, TEST_ROOT, Runner::discover, Runner::run, visuoel->tabs()->page()->data()->set()->add(), visuoel->init(), visuoel->release().
+list.php: файловый скан cases/*.php, require spec, count($spec['tests']); архив — cases archive/*.php (архив не создаётся).
+CalculationManager: process(): bool — $_POST['op'], a, b; PDO('mysql:host=localhost;dbname=test','root',''); switch op; INSERT INTO history.
+
+3. Зависимости
+visuo/sources/visuoattrs/*, visuotag.php, visuoel.php, visuoel_group.php, visuoel_group_element.php, visuoel_tabs/visuoel_tabs_page.php, visuoel_tabs.php, visuo/VisuoHost.php, lib/Stubs.php, lib/AssertException.php, Assert.php, CaseResult.php, Suite.php, Runner.php, View.php, cases/*.php.
+
+4. Edge-cases
+- index.php: single suite задан (?s=), не найден — http_response_code(404), exit('Suite not found: ...').
+- index.php: single suite найден — обрабатывается только он.
+- index.php: log rows_count=0 — visuoel рендерит пустые вкладки.
+- list.php: spec не array или нет 'tests' — tests=0.
+- list.php: cases пуст — 'Пока нет ни одного suite'.
+- list.php: archive пуст — 'Архив пуст'.
+- list.php: glob archive_dir — если каталога нет, glob вернёт [].
+- CalculationManager::process: op='div' и b==0 — echo 'Error: Division by zero', return false.
+- CalculationManager::process: op неизвестен — echo 'Unknown operation', return false.
+- CalculationManager: op, a, b подставляются в SQL без экранирования.
+
+5. Скрытая логика
+index.php определяет VISUO_SRC, SOURCES, TEST_ROOT до визуального стека. Stubs.php подключается дважды (require_once защищает). Runner::discover сортирует ksort по title. Runner::run выполняет setup один раз; при падении setup все кейсы получают fail('SETUP FAILED'). View::summary считает итог по всем suites. visuoel->tabs() создаёт группу вкладок, каждая page()->data()->set() устанавливает заголовок, add() добавляет содержимое. CalculationManager — демонстрационный класс с уязвимостью и не связан с системы тестов; в карте оставлен как есть, но в перенос не входит (в спецификации фиксируется факт наличия).

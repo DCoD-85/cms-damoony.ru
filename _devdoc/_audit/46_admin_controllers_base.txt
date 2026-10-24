@@ -1,0 +1,21 @@
+1. Назначение
+Базовый контроллер админки. BaseController абстрактный: конструктор (p, action), render/redirect/post/get/requirePost. DashboardController — обзор доменов.
+
+2. Контракт (Методы)
+BaseController: __construct(string p, string action), protected render(string, array=[]), redirect(string), post(string, mixed=''), get(string, mixed=''), requirePost()
+DashboardController::index(): void
+
+3. Зависимости
+View, Config, Paths, $_POST, $_GET, $_SERVER.
+
+4. Edge-cases
+- BaseController::redirect — header, exit.
+- BaseController::post/get — дефолт '', если ключ не задан.
+- BaseController::requirePost: метод не POST — 405 Method not allowed, exit.
+- DashboardController::index: Config бросил Throwable — не перехватывается, страница падает.
+- DashboardController: домены d===real — в real_domains; d!==real — в aliases[real].
+- DashboardController: alliases_real[real] — все непустые.
+- DashboardController: stub — !empty(domains_stub[real]['enabled']).
+
+5. Скрытая логика
+DashboardController строит rows по real-доменам: domain, ns (или '—'), avail (domains_available), fs (is_dir), stub (enabled), alliases, aliases. Actions-строка содержит ссылки на stubs:list и domain:new. BaseController не имеет DI-контейнера — статический View::render. post/get не проверяют наличие, возвращают default.

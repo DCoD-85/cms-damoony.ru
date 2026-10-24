@@ -1,0 +1,19 @@
+1. Назначение
+Обёртка над visuorelease для вывода. render хранит render__data и делегирует установку/получение render_ajax и min. release() вызывает visuorelease->final() или visuorelease->final_ajax() в зависимости от render_ajax.
+
+2. Контракт (Методы)
+render::__construct(?main, ?render__data), init(): void, data(): render__data, getdata(string): mixed, setdata(string, mixed): void, release(bool log=false, bool debug=false): void
+render__data::__construct(render), init(bool): void, set(string, mixed): void, get(string): mixed
+
+3. Зависимости
+main, main->visuorelease.
+
+4. Edge-cases
+- release: main === null — return.
+- release: main->visuorelease не установлен — return.
+- release: render_ajax=true — final_ajax(log,debug), иначе final(log,debug).
+- render__data::set: property_exists false — return, значение не ставится.
+- render__data::get: property_exists false — возвращает null.
+
+5. Скрытая логика
+render__data содержит публичные свойства render_ajax (bool, default false) и min (bool, default false, комментарий про использование в visuorelease::final/final_ajax). set/get работают только с уже объявленными свойствами — добавление новых ключей запрещено.

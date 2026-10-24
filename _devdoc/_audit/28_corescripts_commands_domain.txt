@@ -1,0 +1,43 @@
+1. Назначение
+CLI-команды управления доменами. DomainList — вывод списка доменов с namespace, avail, fs, alliases. DomainNew — создание папки домена из CS_TPL/domain, копия media из CS_TPL/media или пустая папка, lint, опциональная регистрация в site.config (domains_real, domains_available, domains_namespace, alliases_real, alliases_available, fillers). DomainRemove — карантин папки домена, очистка site.config по всем ветвям, откат при ошибке. DomainToggle — переключение domains_available[real].
+
+2. Контракт (Методы)
+DomainList: static plan(array): array, static run(array, ?Context=null): Result
+DomainNew: static plan(array): array, static run(array, ?Context=null): Result, private static register(Result, string domain, string ns, ?Context): void
+DomainRemove: static plan(array): array, static run(array, ?Context=null): Result
+DomainToggle: static plan(array): array, static run(array, ?Context=null): Result
+
+3. Зависимости
+Validate, Paths, Fs, Template, Config, Blocks, Cli, Result, Context, CS_TPL, site.config.
+
+4. Edge-cases
+- DomainList: Config бросил — r->error, return.
+- DomainList: domains_real пуст — r->step('Доменов нет'), return.
+- DomainList: domains_namespace[real] null — '(нет)'.
+- DomainList: alliases_real пуст — alliases=[(нет)].
+- DomainList: Paths::domain не dir — fs='✗'.
+- DomainList: domain===real — marker ' ', иначе '→real'.
+- DomainNew: Validate domain или namespace вернул строку — r->step(false), return.
+- DomainNew: CS_TPL/domain не dir — r->error('Шаблон не найден'), return.
+- DomainNew: Paths::domain уже существует — r->error('Папка уже существует'), return.
+- DomainNew: scan_recursive пуст — r->error('Шаблон пуст'), return.
+- DomainNew: file_get_contents шаблона false — r->error('Не прочитать: rel'), continue.
+- DomainNew: media_path не dir и CS_TPL/media есть — Fs::copy_recursive.
+- DomainNew: CS_TPL/media нет — Fs::mkdir(media_path), r->warn('Шаблон media не найден').
+- DomainNew: lint ошибки > 0 — r->warn('Файлов с ошибками синтаксиса'), без step true.
+- DomainNew: register только при params['register'].
+- DomainNew::register: setKeys для domains_real, domains_available(true), domains_namespace(ns), alliases_real([''=>'www','www'=>'www']), alliases_available(['www'=>true]), fillers(['www'=>{все false}]) — только если hasKeys false.
+- DomainNew::register: Throwable — r->error('Не сохранить site.config').
+- DomainRemove: Validate domain вернул строку — r->step(false), return.
+- DomainRemove: Paths::real(domain)!==domain — r->error('Только real-домен'), return.
+- DomainRemove: !force, первый confirm false или второй confirm false — r->step('Отменено пользователем'), return.
+- DomainRemove: rename в trash не удался — r->error('Не удалось переместить'), return.
+- DomainRemove: Config::mutate бросил и in_trash — rename обратно, r->error с пометкой «папка восстановлена».
+- DomainRemove: Config::mutate успешно и in_trash — Fs::rmrf(trash).
+- DomainRemove: удаляются domains_real, domains_available, domains_namespace, domains_titles, domains_skins, alliases_real, alliases_available, fillers по ключу $domain.
+- DomainToggle: Validate domain вернул строку — r->step(false), return.
+- DomainToggle: domains_real[domain] null — r->error('Домен не найден'), return.
+- DomainToggle: value==='0' — false, иначе true.
+
+5. Скрытая логика
+DomainNew::run копирует файлы из CS_TPL/domain с плейсхолдерами <domain> и <domain_ns>, удаляя суффикс .tpl в имени. DomainNew::register использует $domain как ключ верхнего уровня в site.config, а не Paths::real($domain); при этом остальные команды (DomainToggle, DomainRemove, Allias*) читают по $real. Ключ alliases_real содержит элемент '' => 'www' и 'www' => 'www' — пустая строка как «алиас по умолчанию». DomainRemove удаляет дерево по $domain и $real одновременно только если они совпадают (проверка real(domain)!==domain), иначе отказывается. DomainRemove в блоке Config::mutate удаляет ключи по $domain (а не $real), консистентно с DomainNew::register. Карантин реализован как rename, гарантирует откат при падении Config::mutate. DomainList читает домены через cfg->get('domains_real'), а namespace через getKeys(['domains_namespace', $real]).

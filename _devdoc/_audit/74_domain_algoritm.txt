@@ -1,0 +1,24 @@
+1. Назначение
+Базовый algoritm алиаса visuo и страницы auth/error. algoritm (visuo\algoritm) extends \algoritm_ и переопределяет __construct: сохраняет main/args/algoritmdata, затем boot_user(). boot_user подменяет $main->user на visuo\user, если ещё не подменён, и вызывает boot(). start() загружает схему visuo, выполняет logic+release, затем reload. default() — пустой. algoritm_auth: guest рендерит сообщение в center, logged редиректит на главную. algoritm_error: guest/logged рендерят 404 в center. algoritm.rules.json — available ['', '[a-z]{2}-[a-z]{2}|lang'], auth=false. algoritm_auth.rules.json, algoritm_error.rules.json — [].
+
+2. Контракт (Методы)
+algoritm: __construct(main, array args=[]), boot_user(): void, start(), default()
+algoritm_auth: guest(), logged(), render()
+algoritm_error: guest(), logged(), render()
+
+3. Зависимости
+\algoritm_, \algoritmdata_, visuo\user, main->alliasscheme, visuotag, header, exit.
+
+4. Edge-cases
+- algoritm::__construct: main->user instanceof visuo\user — boot() без пересоздания.
+- boot_user: создаёт visuo\user и вызывает boot().
+- start: scheme->load('visuo'), logic(), release(), scheme->reload() — порядок строгий.
+- algoritm_auth::guest: render() вставляет блок в center через section_add('auth', $vt).
+- algoritm_auth::logged: редирект по static_domain[0].'/'.static_base[0], exit.
+- algoritm_auth::render: перед вставкой center->visuotag()->clear().
+- algoritm_error::guest/logged: render(), clear center, section_add('error', $vt_center).
+- algoritm_error::render: vt_center — div.error с div.error_head '404' и div.error_title 'Page not found<hr />Страница не найдена'.
+- algoritm_auth.rules.json, algoritm_error.rules.json: пустой array — правила не описаны.
+
+5. Скрытая логика
+algoritm::__construct не вызывает parent::__construct и не вызывает load_data() — вместо этого boot_user(). Это значит, что .data.json для algoritm не загружается, все свойства задаются в коде класса. start() — отдельная точка входа, вызывается из старого движка (возможно через chain/router, вне видимого кода). algoritm_auth и algoritm_error напрямую управляют center->visuotag()->clear() — это сброс уже отрендеренного дефолтного контента из alliasglobal_center. Пустые .rules.json для auth/error фактически означают, что tree не должен на них роутить — они вызываются через \algoritm_ (использование пути errorpath/authpath), а не через файловые правила.

@@ -1,0 +1,16 @@
+1. Назначение
+Единая точка установки и удаления cookies с безопасными дефолтами: httponly=true, samesite=Lax, secure=auto по HTTPS, path='/'. cookie::set возвращает false при headers_sent. cookie::delete ставит expires на час в прошлое.
+
+2. Контракт (Методы)
+cookie::set(string name, string value, array opts=[]): bool, cookie::delete(string name, array opts=[]): bool
+
+3. Зависимости
+setcookie(), headers_sent(), $_SERVER['HTTPS'].
+
+4. Edge-cases
+- set: headers_sent() true — return false, cookie не ставится.
+- set: opts['secure']===null — устанавливается true если HTTPS=on, иначе false.
+- delete: expires=time()-3600 принудительно, остальные opts передаются в set.
+
+5. Скрытая логика
+DEFAULTS — константный массив класса, merge с opts через array_merge, приоритет opts. secure=null означает auto, а не false. Для SSO через opts можно передать domain.

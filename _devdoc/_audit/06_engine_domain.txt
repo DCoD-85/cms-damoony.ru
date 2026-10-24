@@ -1,0 +1,20 @@
+1. Назначение
+Инициализация доменного контекста для текущего запроса. domain — определяет принятый домен из main_settings, подключает allias.php, alliasglobal.php, alliasscheme.php, dataprovider.php домена. domaininfo — хранилище атрибутов домена (name, subname, history) и построитель visuotag для debug-вывода.
+
+2. Контракт (Методы)
+domain::__construct(main), init(): void
+domaininfo::__construct(domain), set(string, mixed, bool add_as_array=false): void, ashtml(): void, astag(): visuotag
+
+3. Зависимости
+main, main->main_settings->domain_accepted(), main_settings->get('logic'), main->library->link, main->library->url, visuotag, error(), error_file(), DS, dirname(__DIR__).
+
+4. Edge-cases
+- domain::init: domain_accepted() вернул null (пустая строка) — error('Domain not accepted').
+- domain::init: любой из 4 include_once вернул false — error_file().
+- domaininfo::astag: history пуст — цикл не выполняется, корневой vt возвращается пустым.
+- domaininfo::astag: значения массива history[$name1] обходятся как массивы; при не-array $value2 печатается '- - - $name1 = $value2'.
+- domaininfo::astag: type==='array' — печать каждого элемента в span; иначе div.
+- domaininfo::ashtml — пустая реализация.
+
+5. Скрытая логика
+domain::init читает $url_allias[0] как ключ для $main_settings->domain_accepted(); порядок include жёсткий: allias.php, alliasglobal.php, alliasscheme.php, dataprovider.php. domaininfo::set() с $add_as_array=true делает append, иначе перезапись; параллельно всегда пишет в history[var][]. domaininfo::astag() восстанавливает $vt = $vt_old на каждой итерации верхнего цикла, поэтому вложенные фрагменты history не добавляются в итоговый vt напрямую — итоговый vt определяется последним состоянием $vt после восстановлений.

@@ -1,0 +1,18 @@
+1. Назначение
+Секретный каталог secure. admin_fails.json — JSON-файл счётчиков неудачных попыток входа, читается и пишется Auth (см. 42). index.php — точка прямого веб-доступа, вызывает phpinfo(). blacklist/index.php — пустой файл; содержит только открытие/закрытие PHP-тега, никакой логики. secure/db.secure, secure/db.config, secure/admins.config, secure/logs/* — файлы данных вне списка, читаются другими подсистемами.
+
+2. Контракт (Методы)
+secure/index.php: phpinfo() — вывод системной информации PHP и exit через конец скрипта. Методов нет.
+secure/admin_fails.json: JSON [].
+secure/blacklist/index.php: пустой файл, ничего не выполняет.
+
+3. Зависимости
+phpinfo().
+
+4. Edge-cases
+- secure/index.php при прямом HTTP-запросе выдаёт phpinfo(). При отсутствии защиты на уровне .htaccess или ACL это раскрывает версии, конфиги, пути.
+- admin_fails.json: пустой массив при отсутствии записей. Auth читает через load_fails(), при file_get_contents false или json_decode null возвращает [].
+- blacklist/index.php: пустой.
+
+5. Скрытая логика
+secure используется как хранилище секретов (db.secure, db.config, admins.config, admin.config, admin_fails.json, logs/). Прямой доступ к secure/index.php раскрывает phpinfo() — если Apache не блокирует каталог, это дыра. secure/blacklist/index.php пустой — вероятно, ранее использовался как точка проверки, сейчас не работает. admin_fails.json — «карта» IP с счётчиками count/last_ts/banned_until; структура управляется Auth::record_fail/load_fails/save_fails.

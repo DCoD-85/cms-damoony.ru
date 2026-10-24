@@ -1,0 +1,21 @@
+1. Назначение
+Автозагрузчик модулей из engine/mod. mod сканирует директории первого уровня, для каждой ищет файл <name>/<name>.php, инстанцирует класс mod_<name>. init() вызывает init() на каждом модуле.
+
+2. Контракт (Методы)
+mod::__construct(?main, bool autoload=true), autoload(bool): void, init(): void, get(string): ?object, show_list(): string
+
+3. Зависимости
+main, main->library->dir->get(), DS, error_file(), engine/mod/index.php.
+
+4. Edge-cases
+- autoload: dir_scan пуст — модули не загружаются.
+- autoload: include_once файла вернул false — error_file.
+- autoload: класс mod_<name> не определён — new выбросит Error, не перехватывается.
+- init: modules пуст — цикл не выполняется, $init остаётся true.
+- init: любой модуль вернул false — $init=false, комментарий про $console закомментирован.
+- get: модуль не найден — возвращает null.
+- show_list: modules пуст — возвращает '<div>Empty modules list</div>'.
+- show_list: modules не пуст — конкатенирует $return без предварительной инициализации переменной.
+
+5. Скрытая логика
+mod_path задаётся как __DIR__ . DS . 'mod' . DS в объявлении свойства — вычисляется при объявлении класса (константное выражение, __DIR__ допустим). Регистрация модулей: modules[$value] = new $gmod_class($this), где $value — имя директории, $gmod_class = 'mod_'.$value. autoload вызывается из __construct по умолчанию true.

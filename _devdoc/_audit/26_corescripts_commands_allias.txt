@@ -1,0 +1,45 @@
+1. Назначение
+CLI-команды управления алиасами домена. AlliasList — вывод алиасов с отметками доступности, наличия папки и счётчиком включённых filler'ов. AlliasNew — создание структуры алиаса из CS_TPL/allias, генерация filler-файлов для всех блоков домена, lint, опциональная регистрация в site.config. AlliasRemove — карантин папки алиаса, очистка site.config под lock, удаление filler-файлов, откат при ошибке config. AlliasToggle — переключение alliases_available[real][name].
+
+2. Контракт (Методы)
+AlliasList: static plan(array): array, static run(array, ?Context=null): Result
+AlliasNew: static plan(array): array, static run(array, ?Context=null): Result, private static register(Result, string domain, string name, ?Context): void
+AlliasRemove: static plan(array): array, static run(array, ?Context=null): Result
+AlliasToggle: static plan(array): array, static run(array, ?Context=null): Result
+
+3. Зависимости
+Validate, Paths, Fs, Template, Config, Blocks, Cli, Result, Context, CS_TPL, PROJECT_ROOT, site.config.
+
+4. Edge-cases
+- AlliasList: Config бросил Throwable — r->error('Не открыть site.config'), return.
+- AlliasList: alliases пуст — r->step('Аллиасов нет для real'), return без списка.
+- AlliasList: alias==='' — пропуск.
+- AlliasNew: Validate::allias_name вернул строку — r->step(false, err), return.
+- AlliasNew: Validate::domain вернул строку — r->step(false, err), return.
+- AlliasNew: Paths::domain не dir — r->error('Домен не найден'), return.
+- AlliasNew: Paths::allias уже существует — r->error('Аллиас уже существует'), return.
+- AlliasNew: Paths::ns null — r->error('Не найден domains_namespace'), return.
+- AlliasNew: CS_TPL/allias не dir — r->error('Шаблон аллиаса не найден'), return.
+- AlliasNew: file_get_contents шаблона false — continue, файл не пишется.
+- AlliasNew: algorthm.data.json.tpl есть и target отсутствует — Fs::write.
+- AlliasNew: шаблоны filler не найдены — r->warn('Шаблоны filler не найдены'), fillers не создаются.
+- AlliasNew: blocks_dir сканируется, блок валиден если is_dir и is_file(<b>/<b>.php).
+- AlliasNew: блок не dir — r->warn('Блок не найден: name'), continue.
+- AlliasNew: lint вернул ошибку — r->warn('Lint: rel: err'), lint_errors++.
+- AlliasNew: register вызывается только при params['register'] truthy.
+- AlliasNew::register: hasKeys уже true — значение не меняется; fillers инициализируются из Blocks::LIST со false.
+- AlliasNew::register: Throwable — r->error('Не сохранить site.config'), без откатов (файлы уже записаны).
+- AlliasRemove: Validate allias или domain вернул строку — r->step(false, err), return.
+- AlliasRemove: Paths::domain не dir — r->error('Домен не найден'), return.
+- AlliasRemove: Paths::allias не dir — r->warn('Папка аллиаса не найдена — только из config').
+- AlliasRemove: !force, Cli::confirm(false) — r->step('Отменено пользователем'), return.
+- AlliasRemove: rename папки в <path>_trash_<time> не удался — r->error('Не удалось переместить'), return.
+- AlliasRemove: Config::mutate бросил Throwable и in_trash — rename обратно, r->error('Ошибка конфига ... папка восстановлена').
+- AlliasRemove: Config::mutate успешно и in_trash — Fs::rmrf(trash).
+- AlliasRemove: удаление filler-файлов через @unlink, счётчик removed.
+- AlliasToggle: domain или name невалиден — r->step(false), return.
+- AlliasToggle: domains_real[domain] === null — r->error('Домен не найден'), return.
+- AlliasToggle: value==='0' — false, иначе true.
+
+5. Скрытая логика
+AlliasNew::plan при обращении к Paths::logic() обращается к engine.config, если его нет — 'alpha.0.0'. Список блоков в AlliasNew не берётся из Blocks::LIST: он сканирует Paths::blocks(domain) и валидирует по is_dir+is_file(<b>.php), то есть блоки, созданные вне стандартного списка, тоже учитываются. AlliasRemove использует схему «карантин → обновление config → удаление»: при ошибке config папка возвращается из trash, filler-файлы при этом не удаляются, потому что удаление происходит только в success-ветке. Регистрация AlliasNew::register инициализирует fillers по Blocks::LIST, а не по фактическим папкам блоков — расхождение с AlliasNew::run. Toggle-команды используют value==='0' как единственный false-триггер, любое другое значение (включая пустое) — true.

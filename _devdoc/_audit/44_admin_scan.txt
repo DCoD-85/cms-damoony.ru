@@ -1,0 +1,25 @@
+1. Назначение
+Сканеры доступных значений для форм админки. Список тем домена, движков, connect_types. Дерево страниц аллиаса с метаданными из .rules.json. Блоки домена — по папкам alliasglobal/* + по схемам alliasscheme_*.data.php. Детали блоков, филлеры аллиаса.
+
+2. Контракт (Методы)
+Scan: static skinsFor(string): array, logics(): array, connectTypes(): array, pageTree(string base): array, private pageNode(string, string, string): array, private parseMeta(string): array, blocksFor(string): array, private blocksFromSchemes(string): array, layoutsFor(string): array, blocksDetailsFor(string): array, fillersFor(string, string): array, private listDirs(string): array
+
+3. Зависимости
+Paths, Blocks, Json, Config.
+
+4. Edge-cases
+- skinsFor: skins_dir не dir — [].
+- logics: app/<name>/domain не dir — пропуск.
+- pageTree: base не dir — [].
+- pageTree: algoritm.php не файл — [].
+- pageNode: <cls>.php отсутствует — has_file false, meta дефолт.
+- parseMeta: .rules.json не array — дефолт (available=[], auth=false, search=false, default=false).
+- blocksFor: dir не dir — [].
+- blocksFor: имя в Blocks::SKIP (script) — пропуск.
+- blocksFromSchemes: обход всех *.data.php в alliasscheme, поиск nodes с class начинающимся на dt_, кроме dt_script.
+- layoutsFor: type==='layout' — добавить class.
+- blocksDetailsFor: union blocksFor + blocksFromSchemes + Blocks::LIST, минус middle, sort, для каждого has_php и has_data.
+- fillersFor: fillers_cfg = getKeys(['fillers', real, allias]) → block=>bool. Для каждого блока has_base (block/block.php), has_filler (block/block_<allias>.php), enabled.
+
+5. Скрытая логика
+pageTree корневой узел — algoritm с meta из algoritm.php, дочерние — обход всех подпапок базового каталога. class строится как 'algoritm_<path>'. usort по name. parseMeta игнорирует search и default (всегда false), хотя в .rules.json они могут быть. blocksFor использует только фактическое содержимое alliasglobal; blocksFromSchemes дополняет по class dt_* из схем. В blocksDetailsFor явно исключается 'middle', в fillersFor — только блоки, не равные 'script' и не 'middle'. connectTypes — хардкод ['http://','https://'].

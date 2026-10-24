@@ -1,0 +1,30 @@
+1. Назначение
+CLI-команды управления filler'ами. FillerNew — создание файлов <block>_<allias>.php и <block>_<allias>.data.php из CS_TPL/filler/block.php.tpl и block.data.php.tpl, проверки домена, блока, namespace, существования файла, lint. FillerRemove — удаление php и data файлов, удаление ключа fillers[real][allias][block] из site.config. FillerToggle — запись fillers[real][allias][block] = bool.
+
+2. Контракт (Методы)
+FillerNew: static plan(array): array, static run(array, ?Context=null): Result
+FillerRemove: static run(array, ?Context=null): Result
+FillerToggle: static run(array, ?Context=null): Result
+
+3. Зависимости
+Validate, Paths, Fs, Template, Config, Blocks, CS_TPL, site.config.
+
+4. Edge-cases
+- FillerNew: Validate allias_name(block) вернул строку — r->step(false, err), return.
+- FillerNew: Validate allias_name(allias) вернул строку — r->step(false, '--allias обязателен') независимо от реального err.
+- FillerNew: Validate domain вернул строку — r->step(false, err), return.
+- FillerNew: Paths::domain не dir — r->error('Домен не найден'), return.
+- FillerNew: Paths::block не dir — r->error('Блок не найден'), return.
+- FillerNew: Paths::ns null — r->error('Не найден domains_namespace'), return.
+- FillerNew: Fs::exists(filler_php) — r->error('Filler уже существует'), return.
+- FillerNew: CS_TPL/filler/block.php.tpl или block.data.php.tpl не найдены — r->error('Шаблоны filler не найдены'), return.
+- FillerNew: lint ошибка — r->warn('Lint: rel: err'), ok не меняется.
+- FillerRemove: Validate domain/allias_name или Blocks::isBlock(block) — r->error, return.
+- FillerRemove: файлы не найдены — r->warn('Файлы филлера не найдены'), но config всё равно чистится.
+- FillerRemove: Config::mutate бросил — r->error('Ошибка конфига').
+- FillerToggle: Validate domain/allias_name или Blocks::isBlock — r->error, return.
+- FillerToggle: value==='0' — false, иначе true.
+- FillerToggle: Config::mutate бросил — r->error('Не сохранить').
+
+5. Скрытая логика
+FillerNew::plan возвращает defaults name='', block='', domain='damoony.ru', allias=''. Валидация allias: проверка Validate::allias_name($allias), но текст ошибки жёстко '--allias обязателен', что скрывает реальную причину (например, имя длиннее 32 символов). Путь filler: block_path.'/'.$block.'_'.$allias.'.php' и .data.php. namespace берётся через Paths::ns($domain), а не через validate. FillerRemove чистит config даже если файлы отсутствуют — предупреждение не отменяет мутацию. FillerToggle пишет bool, при отсутствии ключа setKeys создаёт вложенные структуры. Blocks::isBlock — строгое in_array по LIST (top,left,center,right,bottom,policy,debug); SKIP-папка script не считается блоком. После записи обоих файлов FillerNew прогоняет Template::lint по каждому, ошибки в warnings, а r->ok остаётся true.

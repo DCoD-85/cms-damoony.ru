@@ -1,0 +1,18 @@
+1. Назначение
+Накопитель пользовательских сообщений в памяти. messages хранит массив записей status, title, text. Допустимые статусы: success, warning, error, console. as_tag() рендерит visuotag по текущему skin. release() возвращает HTML-строку для AJAX.
+
+2. Контракт (Методы)
+messages::__construct(?main), count(): int, has(): bool, add(string, string, string): void, clear(): void, as_tag(): visuotag, release(): string
+
+3. Зависимости
+main, main->main_settings->skin('skin'), visuotag, DSA, date().
+
+4. Edge-cases
+- add: status не в whitelist [success, warning, error, console] — статус принудительно 'console'.
+- as_tag: messages пуст — возвращает пустой visuotag без вложений.
+- as_tag: main === null — skin='default', пути к иконкам строятся от DSA/media/release/default/.
+- release: has() false — возвращает ''.
+- release: has() true — возвращает строку visuotag->root()->release().
+
+5. Скрытая логика
+Пути к иконкам close и full формируются из DSA + media/release/ + skin + icons/min/. Время в сообщении берётся date('H:i d/m/Y', time()) в момент рендера, а не добавления. Класс элемента message_<status> new — двойной класс в атрибуте class. Цепочка visuotag заканчивается на div.button.full -> img src image_full, при этом img создаётся через tag('img', false).

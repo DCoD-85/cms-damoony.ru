@@ -1,0 +1,29 @@
+1. Назначение
+CLI-команды медиа. MediaDelete — удаление файла по basename в Paths::media(domain). MediaUpload — сохранение загруженного файла в dir, whitelist расширений, sanitize имени, защита от перезаписи суффиксом _<n>, для изображений (jpg/jpeg/png/gif/webp) ресайз до 1920px по ширине и принудительное сохранение в webp с качеством 80.
+
+2. Контракт (Методы)
+MediaDelete: static run(array, ?Context=null): Result
+MediaUpload: static run(array, ?Context=null): Result
+
+3. Зависимости
+Paths, Fs, getimagesize, imagecreatefrom{jpeg,png,gif,webp}, imagescale, imagedestroy, imagewebp, move_uploaded_file, pathinfo, preg_replace, basename, UPLOAD_ERR_OK.
+
+4. Edge-cases
+- MediaDelete: domain или file пуст — r->error('Неверные параметры'), return.
+- MediaDelete: basename применяется к file как защита от ../.
+- MediaDelete: файл не is_file — r->error('Файл не найден').
+- MediaDelete: файл удалён — r->step('Файл удален', true, file).
+- MediaUpload: dir пуст — r->error('Папка назначения не указана'), return.
+- MediaUpload: file null или file['error']!==UPLOAD_ERR_OK — r->error('Ошибка загрузки файла'), return.
+- MediaUpload: ext не в allowed [jpg,jpeg,png,gif,webp,svg,pdf,zip,css,js,ico,woff2,woff,ttf,mp4,mp3,doc,docx,xls,xlsx] — r->error('Недопустимое расширение' + список), return.
+- MediaUpload: имя sanitize preg_replace('[^a-zA-Z0-9_\-\.]','_', basename(name)).
+- MediaUpload: dest существует — цикл while is_file, dest = <base>_<i>.<ext>, i++ (без верхней границы).
+- MediaUpload: изображение, getimagesize вернул false — move_uploaded_file в dest (без webp).
+- MediaUpload: изображение, imagecreatefrom* вернул false — move_uploaded_file в dest (без webp).
+- MediaUpload: изображение, width>1920 — newHeight = floor(height*(1920/width)), imagescale(1920,newHeight).
+- MediaUpload: после ресайза dest меняется на <dirname>/<filename>.webp (принудительно, независимо от исходного ext).
+- MediaUpload: function_exists('imagewebp') false — move_uploaded_file в уже переименованный .webp-путь (фактическое расширение сохраняется от move).
+- MediaUpload: не-изображения и svg/pdf/zip/css/js/ico/woff/ttf/mp4/mp3/doc/xls — move_uploaded_file без изменений.
+
+5. Скрытая логика
+MediaDelete не проверяет наличие домена, путь строится как Paths::media(domain).'/'.basename(file), то есть у пользователя нет доступа выше media/<real>/, но через относительные сегменты в basename защита срабатывает: basename('../../a') = 'a'. MediaUpload whitelist не включает php, что исключает загрузку исполняемых файлов, но svg остаётся в списке (XSS-риск на отдаче без заголовков). При ресайзе width>1920 сначала imagescale, imagedestroy старого, затем принудительное переименование в .webp и imagewebp с качеством 80; фактическое имя файла на диске может быть <base>.webp или <base>_<n>.webp при коллизии. Fallback move_uploaded_file(file['tmp_name'], dest) с dest = ....webp копирует исходный jpeg/png с расширением .webp — на диске получится несоответствие mime и расширения. Fs::mkdir(dir) вызывается до sanitize, поэтому несуществующая папка создаётся до попыток записи.

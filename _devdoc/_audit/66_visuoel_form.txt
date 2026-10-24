@@ -1,0 +1,32 @@
+1. Назначение
+Группа form. visuoel_form — singleton-группа (singleton=true): один form_form на группу. Обёртка div.blockform. form() возвращает единственный form_form, повторный вызов возвращает тот же объект. visuoel_form_form — элемент form с action/name/method/enctype, data-form-jquery, data-load, опциональным div.form_title и div.form_body (vt_end — слот для детей). visuoel_form_fieldset — fieldset с legend внутри form_body.
+
+2. Контракт (Методы)
+visuoel_form: make_default_data() → visuoel_form__data, build() → div.blockform, form(?visuoel__data): visuoel_form_form, get_form_form__data(): ?visuoel_form_form__data
+visuoel_form__data extends visuoel_group__data (пустой)
+visuoel_form_form: make_default_data() → visuoel_form_form__data, data(), build(), fieldset(?visuoel__data): visuoel_form_fieldset
+visuoel_form_form__data: set(name, method='POST', action='', enctype='application/x-www-form-urlencoded', jquery=false, title='', class=''): static; поля form_name, form_method, form_action, form_enctype, form_jquery, form_data_jquery, title_text, form_class
+visuoel_form_fieldset: make_default_data() → visuoel_form_fieldset__data, data(), build() с legend
+visuoel_form_fieldset__data: set(string legend): static
+
+3. Зависимости
+visuoel_group, visuoel_group_element, visuoel__data, visuotag.
+
+4. Edge-cases
+- visuoel_form::form: singleton=true и visuoel_form_form уже установлен — возврат существующего, elements=[el] уже.
+- visuoel_form::form: первый вызов — создаётся, сохраняется в свойстве, elements=[el].
+- visuoel_form_form::build: action/name/method/enctype добавляются только при непустом значении ($v = ... проверка).
+- visuoel_form_form::build: form_jquery=true — data-form-jquery=true.
+- visuoel_form_form::build: form_data_jquery непуст — data-load=<значение>.
+- visuoel_form_form::build: title_text непуст — div.form_title с содержимым (esc).
+- visuoel_form_form::build: form_class непуст — attrs_class_add.
+- visuoel_form_form__data::set: method 'get' — enctype='get/html'.
+- set: method 'post' — enctype='application/x-www-form-urlencoded'.
+- set: method 'file' — form_method='POST' и enctype='multipart/form-data'.
+- set: method иной — form_enctype = переданный (или дефолт).
+- visuoel_form_fieldset::build: legend непуст — tag legend с esc содержимым и parent обратно.
+- visuoel_form_fieldset::build: legend пуст — legend не рисуется (тест 'legend пустой — не рисуется').
+- fieldset внутри form_form: добавляется через form->fieldset(), элементы в elements form_form, рендер вставляется в vt_end (form_body).
+
+5. Скрытая логика
+visuoel_form — singleton-группа: form() при повторном вызове возвращает тот же visuoel_form_form, но elements перезаписывается каждый раз ([$el]). Это значит, что после form() добавление fieldset идёт через form->fieldset() или form->add(), а не через visuoel_form->elements напрямую. visuoel_form_form__data::set — ключевая точка: 'file' превращается в POST+multipart (это то, что старые тесты проверяют как 'data->set(file) → POST + multipart'); 'get' — в 'get/html'; иначе enctype берётся как переданный. vt_start = <form>, vt_end = <div class=form_body> — дети form_form рендерятся внутри form_body. form_jquery и form_data_jquery — маркеры для клиентского AJAX-перехвата; form_data_jquery по умолчанию ['on'=>true,'layerto'=>'dt_center'].

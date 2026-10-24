@@ -1,0 +1,34 @@
+1. Назначение
+Вывод и шаблоны. Renderer::cli формирует финальный отчёт Result в консоль. Template — рендер через плейсхолдеры <key>, скан .tpl, lint через php -l, render_str без чтения файла. Blocks — единый список блоков alliasglobal. ResourceManager — загрузка *.resource.php, генерация CREATE TABLE, sync с DESCRIBE и ALTER TABLE через DataGateway.
+
+2. Контракт (Методы)
+Renderer::cli(Result): void
+Template: static render(string tpl, array vars): string, scan(string dir): array, lint(string file): ?string, render_str(string content, array vars): string
+Blocks: const LIST (top,left,center,right,bottom,policy,debug), const SKIP (script), static isBlock(string): bool, static forFiller(): array
+ResourceManager: static load(string path): array, static generateCreateTableSQL(array resource): string, static sync(string resources_dir): array, private getSqlType(string): string
+
+3. Зависимости
+Cli, Result, Fs, DataGateway, RuntimeException, filesystem, exec().
+
+4. Edge-cases
+- Renderer::cli: r->ok — Cli::ok('Готово'), иначе Cli::err('Ошибка').
+- Renderer::cli: r->created не пуст — список через Fs::rel.
+- Renderer::cli: warnings не пуст — каждый через Cli::warn.
+- Renderer::cli: errors не пуст — каждый через Cli::err; иначе при !ok и !empty(steps) — первый неудачный из реверса.
+- Template::render: файл не найден — throw RuntimeException.
+- Template::render: file_get_contents false — throw RuntimeException.
+- Template::scan: dir не существует — [].
+- Template::scan: только файлы с расширением .tpl.
+- Template::lint: exec('php -l <file> 2>&1'), код 0 — null, иначе склейка вывода.
+- Template::render_str: те же плейсхолдеры <key>, без проверки файла.
+- Blocks::isBlock: строгое in_array.
+- Blocks::forFiller: array_diff(LIST, SKIP).
+- ResourceManager::load: файл не существует — throw RuntimeException.
+- ResourceManager::getSqlType: неизвестный тип — VARCHAR(255).
+- ResourceManager::generateCreateTableSQL: id → INT AUTO_INCREMENT PRIMARY KEY, string → VARCHAR(255), text → TEXT, boolean → TINYINT(1) DEFAULT 0, datetime → DATETIME, integer → INT, relation → INT.
+- ResourceManager::sync: resources_dir не dir — [].
+- ResourceManager::sync: glob '*.resource.php', для каждого require, CREATE TABLE IF NOT EXISTS, DESCRIBE, ADD COLUMN для отсутствующих.
+- ResourceManager::sync: Throwable на любом шаге — result['table'] с ok=false и message.
+
+5. Скрытая логика
+Renderer::cli выводит в начале пустую строку, статус ok/err, затем блоки created, warnings, errors. Логика «последний неудачный шаг» включается только когда errors пуст, но ok=false — это случай $ctx->step(...,false,...), не $r->error. Template::render_str и Template::render используют одинаковый плейсхолдер <key> и str_replace без экранирования. Blocks::LIST — источник правды для валидации имён блоков и для инициализации fillers в site.config (используется в командах AlliasNew, DomainNew). ResourceManager::sync идемпотентен: CREATE TABLE IF NOT EXISTS + ADD COLUMN только для отсутствующих колонок, счётчик добавленных возвращается в msg.

@@ -1,0 +1,28 @@
+1. Назначение
+CLI-команды настроек. SettingsList — вывод текущих ключей title, skin, logic, connect_type, списка движков app/*, списка тем media/<real>/skin/*. SettingsSet — установка whitelisted-ключей в engine.config под lock с валидацией по типу.
+
+2. Контракт (Методы)
+SettingsList: static plan(array): array, static run(array, ?Context=null): Result
+SettingsSet: private const WHITELIST, static plan(array): array, static run(array, ?Context=null): Result, private static validate(string key, string value): ?string
+
+3. Зависимости
+Config, Paths, Cli, Result, Context, engine.config, site.config, filesystem.
+
+4. Edge-cases
+- SettingsList: Config бросил Throwable — r->error('Не открыть site.config'), return.
+- SettingsList: domains_real пуст — domains не выводятся.
+- SettingsList: skin_dir не dir — skins пуст.
+- SettingsList: ключ не найден — '(не задано)'.
+- SettingsSet: params содержит только name с '=' — пары собираются из name. Остальные позиционные и --key=value идут в pairs.
+- SettingsSet: pairs пуст — r->error('Не указаны параметры'), return.
+- SettingsSet: ключ не в WHITELIST — r->error('Ключ не разрешён' + список), return.
+- SettingsSet: validate вернул строку — r->step(false, "key: err"), return.
+- SettingsSet: string пусто — 'не может быть пустым'.
+- SettingsSet: string длиннее 100 — ошибка.
+- SettingsSet: connect_type не http:// или https:// — ошибка.
+- SettingsSet: skin — Paths::skins(def_domain).'/'.value должен быть dir, иначе ошибка.
+- SettingsSet: logic — Paths::project().'/app/'.value.'/domain' должен быть dir, иначе ошибка.
+- SettingsSet: Config::mutate бросил Throwable — r->error('Не сохранить').
+
+5. Скрытая логика
+SettingsSet пишет в engine.config (Paths::engine()), не в site.config. Дефолтный домен для проверки skin: первый ключ domains_real из site.config или damoony.ru. WHITELIST: logic_type, ui_ajax_forms, title, skin, logic, connect_type — все string, кроме skin/logic/connect_type со своей валидацией. position name с '=' парсится в key=value, иначе name попадает в pairs как name. Значение всегда приводится к string перед записью.

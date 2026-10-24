@@ -1,0 +1,23 @@
+1. Назначение
+Контроллер настроек. index — редактирование глобальных параметров logic, connect_type, ui_ajax_forms через SettingsSet, чтение текущих значений из engine.config, списки skin и logic через Scan. db — настройки БД, чтение secure/db.config и вызов DbSave (класс в CS_CMD/DbSave.php отсутствует в списке файлов).
+
+2. Контракт (Методы)
+SettingsController: index(), db()
+
+3. Зависимости
+Config, Paths, Scan, CS_CMD/SettingsSet.php, CS_CMD/DbSave.php, AuditLog, engine.config, site.config, secure/db.config.
+
+4. Edge-cases
+- index POST: params собираются только из POST с ключами в allowed [logic, connect_type, ui_ajax_forms].
+- index POST: SettingsSet::run(params), AuditLog::action_ok, при ok — redirect settings&saved=1.
+- index POST: !ok — render result 'Настройки — ошибка'.
+- index GET: engine_cfg и site_cfg инстанцируются всегда — Config бросит RuntimeException, если файлы отсутствуют.
+- index GET: skins = Scan::skinsFor(array_key_first(domains_real) ?? 'damoony.ru').
+- index GET: logics = Scan::logics(), connectTypes = Scan::connectTypes().
+- db GET: db.config отсутствует или json_decode не array — data=[], bases=[], db = дефолт ['localname'=>'visuo_damoony'].
+- db POST: require_once CS_CMD/DbSave.php — файла DbSave.php нет в списке репозитория (в карте отсутствует).
+- db POST: DbSave::run($_POST), ok — redirect db:settings&saved=1; иначе render result.
+- db POST: при Throwable require_once (файл отсутствует) страница падает, без catch.
+
+5. Скрытая логика
+SettingsSet пишет в engine.config, а index читает значения из engine.config, поэтому UI показывает актуальные сохранённые значения. Параметр ui_ajax_forms — checkbox, POST может содержать '1' или отсутствовать; SettingsSet валидирует как string (проверка непустоты), '1' проходит. Метод db ссылается на класс DbSave, который не входит в список файлов репозитория — фактическая реализация UNKNOWN: файл CS_CMD/DbSave.php в перечне отсутствует, поведение сохранения не проверено. Redirect при db POST идёт на '?p=db:settings', а не '?p=db' — карта AdminRouter содержит 'db' => SettingsController, action 'settings' должен существовать в SettingsController, но в файле объявлены только index и db — redirect приведёт к 404 dispatch (метод settings отсутствует).

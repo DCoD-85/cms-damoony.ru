@@ -1,0 +1,35 @@
+1. Назначение
+Контроллер страниц админки. tree — дерево страниц аллиаса через Scan::pageTree. visual — визуальный JSON-редактор algoritm_<ns>.json. code — редактор PHP-методов и .rules.json. edit — редактирование available и auth в .rules.json. new — создание страницы через PageNew. toggle — переключение флага страницы.
+
+2. Контракт (Методы)
+PageController: tree(), visual(), code(), edit(), new(), toggle()
+
+3. Зависимости
+Scan, Paths, Validate, Config, Fs::writeAtomic, Json, Result, CS_CMD/PageNew.php, CS_CMD/PageToggle.php, AuditLog, CS_TPL/page/*, config/lang.config.
+
+4. Edge-cases
+- tree: domain или allias пуст, или Validate провал — redirect dashboard.
+- tree: domains_real[domain] null — redirect dashboard.
+- tree: is_dir(base) false — tree=[], has_dir=false.
+- visual: POST, json_code непуст — Fs::writeAtomic, AuditLog, redirect saved=1; ошибка записи ловится пустым catch.
+- visual: json_file отсутствует — дефолт '{"tag":"div","class":"landing-container","children":[]}'.
+- visual: preview_url строится от HTTPS . HTTP_HOST, lang_default из lang.config, для path пустого используется lang_default.'/index', иначе str_replace('lang', lang_default, path).
+- code: php_file отсутствует — redirect pages:tree.
+- code: extract_methods — regex поиск функций, скобочный счётчик от '{', пока не вернёт уровень 0.
+- code POST save_json: json_code непуст — Fs::writeAtomic(json_file), redirect saved=1.
+- code POST save_method: methods[method_name] найден — замена подстроки на method_code, Fs::writeAtomic, redirect saved=1.
+- code POST add_method: имя в parent_methods и отсутствует в methods — вставка перед последней '}' в файле, Fs::writeAtomic, redirect.
+- code: current_method_code = '' если метод не выбран.
+- edit: Validate::page_path ошибка — render result 'Некорректный путь'.
+- edit: domain или allias пуст — redirect dashboard; domains_real null — redirect dashboard.
+- edit: php_file нет — render result 'Страница не найдена'.
+- edit POST: available парсится по строкам, trim, дедуп по $seen, хвост пустых удаляется, при пустом available → [''].
+- edit POST: Json::writeAtomic(rules_file), AuditLog, redirect saved=1; ошибка — render result.
+- new: domain пуст или Validate провал — redirect dashboard; domains_real null — redirect dashboard.
+- new POST: Validate::page_path(parent) ошибка — render page_new с error.
+- new POST: PageNew::run, AuditLog, render result.
+- toggle: requirePost, domain/allias пуст — redirect dashboard.
+- toggle: PageToggle::run, AuditLog, redirect pages:tree.
+
+5. Скрытая логика
+visual пишет в algoritm_<ns>.json, а не в .data.json — это отдельный файл визуальной структуры; формат {tag, class, children}. code оперирует .php и .rules.json (а не .data.json), при этом edit тот же .rules.json. extract_methods ищет вхождения function с любой видимостью, скобочный счётчик считает по литералам '{' и '}' внутри строк, что ломается на строках с фигурными скобками. add_method вставляет родительский шаблон через substr_replace перед последней '}'. toggle требует POST, но проверка существования php_file выполняется внутри PageToggle, а контроллер без проверки редиректит на tree. Все мутации пишут AuditLog вне зависимости от внутренних warning/error в Result.

@@ -1,0 +1,33 @@
+1. Назначение
+CLI-команды страниц. PageNew — создание algoritm_<ns>.php и algoritm_<ns>.data.json в дереве algoritm аллиаса, патч available в родительском .data.json, lint. PageToggle — переключение флага в дочернем .data.json (auth/search/default), чтение, merge с дефолтами, атомарная запись.
+
+2. Контракт (Методы)
+PageNew: static plan(array): array, static run(array, ?Context=null): Result, private static patch_available_json(string file, string name): bool
+PageToggle: static plan(array): array, static run(array, ?Context=null): Result
+
+3. Зависимости
+Validate, Paths, Fs, Template, Json, Result, Context, CS_TPL/page/page.php.tpl, CS_TPL/page/page.data.json.tpl.
+
+4. Edge-cases
+- PageNew: Validate allias_name(name) вернул строку — r->step(false), return.
+- PageNew: Validate domain или allias_name(allias) вернул строку — r->step(false), return.
+- PageNew: Paths::allias не dir — r->error('Аллиас не найден'), return.
+- PageNew: Validate::page_path(parent) вернул строку — r->error('Некорректный путь родителя'), return.
+- PageNew: Paths::ns null — r->error('Не найден domains_namespace'), return.
+- PageNew: !is_dir(parent_dir) — r->error('Родительский каталог не найден'), return (до записи).
+- PageNew: !is_file(parent_file) — r->error('Родительский алгоритм не найден'), return (до записи).
+- PageNew: Fs::exists(page_file) — r->error('Страница уже существует'), return.
+- PageNew: шаблоны php/json не найдены — r->error('Шаблоны не найдены'), return.
+- PageNew: parent_json существует и Json::read не array — r->error('Родительский .data.json битый'), return.
+- PageNew: parent_json не существует — r->warn('Родительский .data.json не найден'), available не патчится.
+- PageNew: patch_available_json вернул false — r->warn("'{name}' уже в $available") или тихо (нет ключа available — то же false, без предупреждения).
+- PageNew: lint вернул ошибку — r->warn('Lint: rel: err').
+- PageToggle: Validate domain/allias/page_path вернул строку — r->step(false), return.
+- PageToggle: key не в ['auth','search','default'] — r->step(false, 'недопустимый ключ'), return.
+- PageToggle: php_file не найден — r->error('Страница не найдена'), return.
+- PageToggle: json_file не array или default не array — merge не выполняется, дефолты сохраняются.
+- PageToggle: value==='0' — false, иначе true.
+- PageToggle: Json::writeAtomic бросил Throwable — r->error('Не сохранить').
+
+5. Скрытая логика
+PageNew собирает имя класса algoritm_<parent_ns>_<name> и путь parent_dir/name. Проверки родителя и шаблонов выполняются до первой записи, чтобы не оставить сироту (комментарий в коде). Json::writeAtomic используется для parent_json. PageToggle дефолт: available=[''], auth=false, search=true, default=false; merge с текущим — array_merge($default, $cur['default']), текущее перекрывает дефолт. patch_available_json требует наличия data['default']['available'] как array и отсутствия $name в нём; возвращает false без предупреждения при отсутствии ключа available.

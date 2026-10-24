@@ -1,0 +1,17 @@
+1. Назначение
+Определение глобальных констант движка до загрузки основных классов: DS, DSA, GL_LOG, GL_DEBUG, GL_DEBUGHARD, DB_LIMIT_ONE, DB_LIMIT_PAGE, DB_LIMIT_MAX, VISUOLINK_RAND_DEFAULT. Параллельно core/const.php определяет то же через core_const::init с проверкой defined.
+
+2. Контракт (Методы)
+core_const::__construct(core), init(), get(string): mixed.
+
+3. Зависимости
+engine/constants.php — только define. engine/core/const.php — core, main.
+
+4. Edge-cases
+- Повторный define защищён if (!defined(...)).
+- core_const::get() возвращает null, если константа не определена.
+- BR определяется только в core_const::init, в engine/constants.php отсутствует.
+- DB_LIMIT_* в engine/constants.php задаются, в core_const::init не переопределяются.
+
+5. Скрытая логика
+Два независимых источника констант. При подключении engine/constants.php до создания core значения DB_LIMIT_* уже установлены. core_const::init переопределяет только DS, DSA, BR, GL_* — DB_LIMIT_* остаются из constants.php или дефолтными из engine/constants.php.

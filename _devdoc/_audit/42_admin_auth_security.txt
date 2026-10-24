@@ -1,0 +1,38 @@
+1. Назначение
+Аутентификация и безопасность админки. Auth — login/logout/check, brute-force по IP через secure/admin_fails.json, задержки после 3 неудач и бан 900 секунд после 5. Csrf — токен в $_SESSION['csrf'], hidden-поле, проверка hash_equals. Security — fingerprint-устройства, приглашения, привязка устройств, whitelist IP, атомарная запись admins.config и security.log.
+
+2. Контракт (Методы)
+Auth: __construct(), check(): bool, login(string, string): bool, logout(): void, login_name(): string, private remote_ip(), fails_path(), load_fails(), save_fails(), is_banned(), fails_count(), record_fail(), reset_fails(), delay(int)
+Csrf: static token(): string, field(): string, check(): bool
+Security: private static cfg(), admins(), write_atomic(), get_data(): array, save_admins(array), get_config(): array, save_config(array), is_whitelisted(string): bool, requires_fingerprint(): bool, find_device(array): ?array, touch_device(string, string, string=''), add_device(string, array, string, string, string=''): string, reset_user_devices(string, ?string=null): bool, guess_label(string): string, create_invite(string='admin', ?int=null, ?string=null): string, validate_invite(string): ?array, revoke_invite(string), create_user_from_invite(string, string, string, string, array, string, string): bool, bind_device_from_invite(string, string, array, string, string): bool, log(string, array=[]): void
+
+3. Зависимости
+PROJECT_ROOT/config/admin.config, PROJECT_ROOT/secure/admin_fails.json, PROJECT_ROOT/secure/admins.config, PROJECT_ROOT/config/admin.security.config, PROJECT_ROOT/secure/logs/security.log, $_SESSION, $_SERVER, $_POST, Fs (опционально).
+
+4. Edge-cases
+- Auth::__construct: admin.config отсутствует или битый — login='admin', hash=''.
+- Auth::login: is_banned(ip) — delay(DELAY_USEC), return false.
+- Auth::login: hash==='' — record_fail, return false.
+- Auth::login: !ok и fails_count>=3 — дополнительный delay 500ms.
+- Auth::login: ok — reset_fails, session_regenerate_id, admin_ok=true, admin_login.
+- Auth::login: ok не устанавливает admin_role (в отличие от invite).
+- Auth::logout: setcookie с time()-42000 (похоже опечатка вместо -42000 при expires).
+- Auth::record_fail: count>=5 — banned_until=time()+900.
+- Auth::record_fail: чистка записей старше 7 дней.
+- Csrf::token: отсутствие в $_SESSION — генерирует 32 байта hex.
+- Csrf::check: POST['_csrf'] пуст или hash_equals false — false.
+- Security::cfg: admin.security.config отсутствует — дефолт whitelist + require_fingerprint.
+- Security::admins: admins.config отсутствует — users=[], invites=[].
+- Security::write_atomic: Fs загружен — Fs::writeAtomic, иначе вручную через tmp+flock+rename.
+- Security::is_whitelisted: mode blacklist — всегда true; whitelist — IP в ip_whitelist или loopback.
+- Security::find_device: canvas пуст — null. Совпадение: >=2 из 3 хэшей и canvas обязателен.
+- Security::touch_device: устройство уже видно <300 сек — return без записи; иначе обновление.
+- Security::add_device: пользователь не найден — throw RuntimeException.
+- Security::reset_user_devices: guard_login === login — log и false (нельзя сбросить свои).
+- Security::create_invite: role='bind_only' без target_user — throw RuntimeException; target_user не найден — throw.
+- Security::validate_invite: used или expires_at<time() — null; bind_only с отсутствующим target — null.
+- Security::create_user_from_invite: логин уже существует — false; в остальных случаях записывает password_hash и первое устройство, помечает invite used.
+- Security::bind_device_from_invite: не bind_only или password_verify false — false.
+
+5. Скрытая логика
+Auth использует отдельные настройки brute-force: MAX_FAILS=5, BAN_SECONDS=900, DELAY_AFTER=3, DELAY_USEC=500000. login сравнивает логин через hash_equals, а пароль через password_verify. Auth не сохраняет роль в $_SESSION при обычном login (только admin_role при autologin/invite). Security::log пишет JSON-строки в secure/logs/security.log через FILE_APPEND|LOCK_EX. Приглашение имеет ttl по умолчанию 86400 (сутки). Fingerprint сравнивает canvas/webgl/system; для успеха нужен canvas и хотя бы ещё один. Security::touch_device устанавливает unset($d) при попытке вернуть по ссылке — обходной приём для раннего выхода из foreach.

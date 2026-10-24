@@ -1,0 +1,44 @@
+1. Назначение
+Структура ответа visuo. visuostruct — контейнер трёх подтипов: html (visuostruct_html), min (visuostruct_min), ajax (visuostruct_ajax). Метод current() возвращает первый установленный в порядке min > ajax > html, иначе null (HTML по умолчанию). visuostruct_html — override блоков top/left/center/right/bottom и meta, off() устанавливает false. visuostruct_ajax — JSON с error, address и 6 layers (header, top, left, center, right, bottom). visuostruct_min — компактный JSON: error, messages, release, form, referer.
+
+2. Контракт (Методы)
+visuostruct: __construct(mixed main=null), html(): visuostruct_html, min(): visuostruct_min, ajax(): visuostruct_ajax, current(): null|object
+visuostruct_html: __construct(?visuostruct), return_type(): string, set(top, left, center, right, bottom), off(string): static
+visuostruct_ajax: __construct(?visuostruct), address(): visuostruct_ajax_address, header(), top(), left(), center(), right(), bottom(), return_type(): 'json', as_json(): string
+visuostruct_ajax_element (abstract): __construct(visuostruct_ajax), поля visuostruct, visuostruct_ajax
+visuostruct_ajax_address: set(?string), astag(): ?string, release(): ?string
+visuostruct_ajax_header: set(?visuotag), astag(): ?visuotag, release(): ?string
+visuostruct_ajax_layer (abstract): abstract layer(): string, set(?visuotag), astag(), release(): ?array{layer,html}
+visuostruct_ajax_{top,left,center,right,bottom}: layer() возвращает dt_<name>
+visuostruct_min: __construct(?visuostruct), error(), messages(), release(), form(), referer(), return_type(): 'json', as_json(): string
+visuostruct_min_error: set(bool=false): static, release(): bool
+visuostruct_min_messages: set(?visuotag=null): static, release(): string
+visuostruct_min_release: set(?visuotag=null, string='', bool=false, bool=false, bool=false): static, release(): array{html,layer,popup,popup_back,popup_navigate}
+visuostruct_min_form: set(bool=false, ?string=null, ?int=null): static, release(): array{reset,redirect,redirect_time}
+visuostruct_min_referer: set(?string=null): void, release(): ?string
+
+3. Зависимости
+visuotag, DS, include_once, json_encode(JSON_UNESCAPED_UNICODE), $_SERVER['HTTP_REFERER'].
+
+4. Edge-cases
+- visuostruct html/min/ajax: при первом вызове подключают файл include_once и создают объект.
+- visuostruct current: ничего не установлено — null.
+- visuostruct_html set: каждый параметр только при !== null, чтобы null не перезаписывал (тест 'html set(null) не перезаписывает').
+- visuostruct_html off: property_exists проверка, неизвестный блок — no-op.
+- visuostruct_ajax address/header/top/left/center/right/bottom: ??= — singleton.
+- visuostruct_ajax as_json: json_encode false — '{}'.
+- visuostruct_ajax as_json: layers[header] возвращает ?string (release header → visuotag root release), layers[top/left/center/right/bottom] возвращает ?array{layer,html}.
+- visuostruct_ajax_address release: null, если set не вызывался.
+- visuostruct_ajax_header release: visuotag null — null.
+- visuostruct_ajax_layer release: visuotag null — null; иначе ['layer'=>dt_x, 'html'=>release].
+- visuostruct_min as_json: error false, messages '', release null, form null, referer null при пустых подэлементах.
+- visuostruct_min_error set: bool; release — bool.
+- visuostruct_min_messages release: visuotag null — ''.
+- visuostruct_min_release release: html через prepare() и release(), пустой при null.
+- visuostruct_min_form release: reset, redirect, redirect_time как есть.
+- visuostruct_min_referer release: set не вызывался — берёт $_SERVER['HTTP_REFERER'] если строка, иначе null.
+- visuostruct_min_referer set(null): явно null — fallback на сервер (тест 'referer set null → server fallback').
+- visuostruct_min_referer set('0'): '0' сохраняется, не fallback (тест 'referer falsy "0"').
+
+5. Скрытая логика
+visuostruct::current приоритет min > ajax > html — это определяет, что visuorelease::final отдаст JSON (min/ajax) или HTML (html). HTML-режим — дефолт при отсутствии override. visuostruct_html set() умышленно не перезаписывает null, чтобы частичное обновление не сбрасывало уже установленные блоки. ajax-слои — singleton-фабрики, каждый хранит visuotag и возвращает массив {layer: dt_x, html: release}. address — просто строка, header — html без обёртки, layers — с меткой слоя. min — компактный формат для лёгкого AJAX: error как bool, messages как готовая строка, release со всеми popup-флагами, form с reset/redirect, referer с серверным fallback. referer отдельно различает явный null (fallback) и '0' (валидная строка).

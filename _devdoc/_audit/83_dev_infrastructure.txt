@@ -1,0 +1,44 @@
+1. Назначение
+Слой разработки (_dev). bootstrap.php — точка инициализации для PHPUnit и PHPStan: константы DS/DSA/PROJECT_ROOT/VISUO_SRC/SOURCES/TEST_ROOT, функции error/error_file (throw RuntimeException вместо die), VISUOLINK_RAND_DEFAULT=false для стабильности URL, пре-загрузка старых lib/Stubs.php до autoload (важно: класс main из Stubs объявляется раньше, чем autoloader подхватит engine/main.php с typed main::$visuorelease = ?visuorelease), composer autoload из _dev/vendor. composer.json: name damoony/simplcms, php>=8.1, dev phpunit ^10.5 и phpstan ^1.11, autoload classmap ../engine/, ../corescripts/_lib/, ../corescripts/commands/, files engine/constants.php и engine/included.php; autoload-dev classmap phpunit/ и psr-4 Damoony\\Tests\\ => tests/; scripts test/stan/check. stubs.php — заглушки констант и error* функций для PHPStan. phpunit/CasesTest — DataProvider, прогоняет старые cases/*.php через Runner::discover/Runner::run, каждый тест вызывает fn() и assertTrue(true). phpunit/SecurityTest — изолированные тесты Security: setUp/tearDown чистят config/admin.security.config и secure/admins.config, register_shutdown_function восстанавливает бэкапы при фаталах, resetStatics через ReflectionClass. phpunit/TreeTest — тесты приватного match через ReflectionMethod, Tree::class. scripts/test_admin.php — smoke-тест Scan/Config/Paths на реальных данных проекта (не изолирован).
+
+2. Контракт (Методы)
+bootstrap.php: define DS/DSA/PROJECT_ROOT/VISUO_SRC/SOURCES/TEST_ROOT, error/error_file при отсутствии, VISUOLINK_RAND_DEFAULT=false, require_once AssertException/Assert/CaseResult/Suite/Runner/Stubs, require_once _dev/vendor/autoload.php при наличии
+composer.json: composer install, composer test, composer stan, composer check
+stubs.php: define PROJECT_ROOT/CS_ROOT/CS_LIB/CS_CMD/CS_TPL/ADMIN_ROOT, error/error_file/warning_file/error_class
+CasesTest: testCase(string, string, Closure) с DataProvider casesProvider
+SecurityTest: setUpBeforeClass, setUp, tearDown, resetStatics, writeJson, seedUser, makeDevice, patchInvite + ряд тестов на is_whitelisted/requires_fingerprint/find_device/invites/create_user_from_invite/bind_device_from_invite/reset_user_devices/touch_device/add_device
+TreeTest: mockMain(), callMatch(string, array): array, тесты test_empty_pattern_matches_empty_segment/test_pipe_with_empty_regex/test_regex_with_param/test_no_match_returns_null
+scripts/test_admin.php: assertTrue(bool, string), прогон 5 групп тестов, exit по количеству fail
+
+3. Зависимости
+PHP >= 8.1, PHPUnit ^10.5, PHPStan ^1.11, engine/constants.php, engine/included.php, engine/*, corescripts/*, www/tests/lib/* (Assert, AssertException, CaseResult, Suite, Runner, Stubs), www/admin/_lib/Security.php, engine/tree.php, corescripts/_lib/{Fs,Json,Paths,Blocks,Config}, www/admin/_lib/Scan.php, config/site.config, secure/*, ReflectionClass, ReflectionMethod.
+
+4. Edge-cases
+- bootstrap.php: error/error_file уже определены (веб-окружение) — заглушки не переопределяются (if !function_exists).
+- bootstrap.php: _dev/vendor/autoload.php отсутствует — require не выполняется.
+- bootstrap.php: класс main из Stubs уже объявлен — autoloader не подтянет engine/main.php, typed property не конфликтует.
+- bootstrap.php: VISUOLINK_RAND_DEFAULT=false — apply_rand не добавляет cache-buster, URL стабильны в тестах.
+- composer autoload classmap: изменения в engine/ требуют composer dump-autoload.
+- composer autoload files: constants.php и included.php подключаются при каждом composer autoload.
+- composer autoload-dev psr-4 Damoony\Tests\ => tests/ — каталог tests/ в _dev не входит в список, вероятно отсутствует.
+- stubs.php error/error_file объявлены : never — при вызове ничего не делают, нужны только для PHPStan.
+- stubs.php ADMIN_ROOT указывает на __DIR__.'/../www/admin'.
+- CasesTest: Runner::discover по TEST_ROOT/cases, setup вызывается один раз на suite, при падении setup — все кейсы падают.
+- CasesTest: пустой cases — DataProvider пуст, PHPUnit сообщит «No tests» для метода.
+- CasesTest: fn() успешный — assertTrue(true); AssertException внутри fn() ловится PHPUnit как Error.
+- SecurityTest setUpBeforeClass: регистрирует shutdown-восстановление бэкапов — защита от фаталов посреди теста.
+- SecurityTest setUp: unlink реальных файлов, resetStatics.
+- SecurityTest tearDown: восстановление из backups (если файлов не было — удаляет).
+- SecurityTest: writeJson подменяет файлы, resetStatics сбрасывает Security::cfg/admins.
+- SecurityTest test_find_device_match_canvas_and_system: canvas совпал, webgl другой — совпадение всё равно есть, потому что >=2 из 3 + canvas обязателен.
+- SecurityTest test_find_device_requires_canvas_among_matches: webgl+system совпали, canvas другой — возврат null (canvas обязателен).
+- SecurityTest test_touch_device_skips_if_recent: последний визит <300 секунд назад — не пишет.
+- SecurityTest test_validate_invite_bind_only_after_target_deleted: инвайт существует, target_user удалён — validate_invite null.
+- TreeTest: uses `Tree::class` и `new Tree(...)`, но в engine/tree.php объявлен `class tree` (lowercase) — при запуске теста class Tree not found, ReflectionMethod упадёт.
+- TreeTest: class tree объявлен, а TreeTest ищет Tree — несоответствие регистра.
+- test_admin.php: не изолирован, читает реальные config/site.config и app/alpha.0.0/domain/damoony.ru/...; в CI без OSPanel/damoony.ru окружения будет падать на assertTrue.
+- test_admin.php: exit(0) при $fail===0, иначе exit(1).
+- test_admin.php: Paths::algoritm('damoony.ru','visuo') не dir — warning, но проходит без assert.
+
+5. Скрытая логика
+bootstrap.php — критическая точка совместимости со старым кодом. Порядок require_once Assert/Runner/Stubs ДО composer autoload гарантирует, что unt typed main из Stubs.php объявлен первым. Если бы composer autoload подхватил engine/main.php раньше, typed property main::$visuorelease = null|visuorelease не позволил бы присвоить fake_visuorelease в тестах. Это сознательная защита, отмеченная в комментарии. composer.json — не PSR-4 для основного кода, а classmap: engine/* без namespace. Это технический долг: имена классов глобальные (core, db, library, main, tree, render, user, vardump), не соответствуют PSR-4. composer autoload-dev psr-4 Damoony\Tests\ => tests/ — каталог не входит в список, но готов к появлению. Scripts: test/stan/check (check = stan + test). CasesTest оборачивает старый test framework (Runner/Assert/AssertException) в PHPUnit DataProvider — сохраняет старые cases/*.php без переписывания. SecurityTest — единственный файл, где используется ReflectionClass setStaticPropertyValue для сброса статических кэшей Security::cfg/admins между тестами. TreeTest несовместим с реальным engine/tree.php (Tree vs tree) — при реальном запуске class_exists('Tree') false, ReflectionMethod бросит ReflectionException. scripts/test_admin.php — smoke-тест без PHPUnit, завязан на реальные данные damoony.ru, не изолирован.
