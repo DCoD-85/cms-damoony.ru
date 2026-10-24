@@ -1,0 +1,26 @@
+{
+    "name": "dcod-85/cms-damoony-dev",
+    "description": "cms-damoony dev environment (isolated in _dev/)",
+    "type": "project",
+    "require": {
+        "php": ">=8.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Damoony\\": "../src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Damoony\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true,
+        "vendor-dir": "vendor"
+    }
+}

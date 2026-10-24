@@ -1,5 +1,6 @@
-/vendor/
-/www/vendor/
+/_dev/vendor/
+/_dev/.phpunit.cache/
+/_dev/composer.lock
 /.idea/
 /.vscode/
 *.log
