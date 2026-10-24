@@ -1,0 +1,30 @@
+php_value max_execution_time 300
+php_value upload_max_filesize 64M
+php_value post_max_size 64M
+php_value max_input_vars 5000
+php_value memory_limit 512M
+
+RewriteEngine On
+RewriteBase /
+
+AddDefaultCharset UTF-8
+AddCharset UTF-8 .php .html
+
+Options +FollowSymlinks
+DirectoryIndex index.php index.htm index.html
+
+Options -Indexes
+
+# --- dev: прямой доступ к /tests/ ---
+RewriteCond %{REQUEST_FILENAME} ^(.*)tests(.*)$
+RewriteRule ^(.*)$ tests?%{QUERY_STRING} [NC]
+
+RewriteCond %{REQUEST_FILENAME} !-f [OR]
+RewriteCond %{REQUEST_FILENAME} !-d [OR]
+RewriteCond %{REQUEST_FILENAME} !-l [OR]
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d [OR]
+RewriteCond %{REQUEST_FILENAME} -l [OR]
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule \.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|map)$ - [L]
+RewriteRule ^(.*)$ index.php?%{QUERY_STRING} [L]
