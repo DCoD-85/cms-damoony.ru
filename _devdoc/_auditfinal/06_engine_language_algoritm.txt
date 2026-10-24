@@ -1,0 +1,70 @@
+# 06_engine_language_algoritm
+
+## 1. Назначение
+
+### 08_engine_language
+Хранилище строк локализации. Определяет текущий язык из main_settings->get('language'), читает общий файл language/<lang>.inc и доменный language/domains/<domain>/<lang>.inc (доменный перекрывает общий). Пишет недостающие ключи в save.txt.inc при savedefaults().
+
+### 19_engine_algoritm
+Базовый класс страницы и хранилище правил роутинга страницы. algoritm_ — родитель всех доменных страниц, реализует маршрутизацию default() -> ajax()/role() -> ajax_guest()/ajax_logged()/guest()/logged(), загрузку .vars.php и .data.json, рендер JSON-узла в visuotag/visuoel. algoritmdata_ — контейнер available, auth, search, default и getter'ы.
+
+## 2. Контракт (Методы)
+
+### 08_engine_language
+- language::__construct(main), load(): self, set_language(string): self, init(): void, get(string, array params=[], string default=''): string, savedefaults(): void, current(): string, path(string, bool domain=false): string, parser(string): array
+
+### 19_engine_algoritm
+- algoritm_::__construct(main, array args=[]), args(array): void, load_vars(): void, load_data(): void, render_json_node(array): mixed, is_ajax(): bool, is_guest(): bool, is_post(): bool, default(), ajax(), role(), algoritm(), guest(): bool, logged(): bool, ajax_guest(): bool, ajax_logged(): bool, clear(), start(), debug()
+- algoritmdata_::__construct(), set(array available=[], bool auth=false, bool search=false, bool default=false): void, get_available(): array, get_auth(): bool, get_search(): bool, get_default(): bool
+
+## 3. Зависимости
+
+### 08_engine_language
+main, main->main_settings->get('language'), main->main_settings->domain_real_name, DS, dirname(__DIR__).
+
+### 19_engine_algoritm
+main, main->render->getdata('render_ajax'), main->is_guest(), $_POST, ReflectionClass, visuotag, visuoel_<el_type>, Throwable.
+
+## 4. Edge-cases
+
+### 08_engine_language
+- __construct: get('language') вернул null — значение ru-ru.
+- load(): main_settings->get('language') вернул null — ru-ru.
+- path: domain=true и domain_real_name пуст — общий путь (без доменного).
+- path: name='save' — save.txt.inc либо domains/<domain>/save.txt.inc.
+- parser: path не файл — [].
+- parser: file() вернул false — [].
+- parser: строка '' — пропуск.
+- parser: строка начинается с '#' — пропуск.
+- parser: строка начинается с "\t" и $key===null — пропуск, значение не копится.
+- get: ключ отсутствует или значение '' — текст = default, ключ добавляется в strings_tosave.
+- get: params не пуст — vsprintf, при несоответствии числа параметров поведение vsprintf (Warning, false).
+- savedefaults: strings_tosave пуст — return.
+- savedefaults: existing содержит ключ — пропуск, added не увеличивается.
+- savedefaults: added===0 — return без записи.
+- savedefaults: каталог не существует — @mkdir 0755 рекурсивно.
+
+### 19_engine_algoritm
+- __construct: всегда создаёт algoritmdata_ и вызывает load_data().
+- load_vars: файл <ShortName>.vars.php не найден — не подключается.
+- load_data: файл <ShortName>.data.json не найден — return.
+- load_data: file_get_contents false или json_decode не array — return.
+- load_data: значение $v === null — пропуск.
+- load_data: property_exists false — пропуск.
+- render_json_node: node['el'] не пуст — класс \visuoel_<el_type>; если класса нет — \visuoel.
+- render_json_node: new класса бросил Throwable — return null.
+- render_json_node: data не пуст и есть метод data() — вызывается $el->data()->set(...(array)node['data']).
+- render_json_node: children пуст — вложенные не добавляются.
+- render_json_node: child — visuotag добавляется через append, visuoel — через el.
+- default: is_ajax=true — ajax(); иначе role().
+- ajax: guest — ajax_guest(); иначе ajax_logged().
+- role: guest — guest(); иначе logged().
+- is_post: !empty($_POST).
+
+## 5. Скрытая логика
+
+### 08_engine_language
+load() перечитывает language заново, потому что main_settings::init() мог обновить его после конструктора. Общий и доменный файлы сливаются через array_merge, доменный перекрывает общий. savedefaults() пишет только недостающие ключи (strings_tosave минус существующие в existing), сортирует ksort, пишет шапку с датой, каждая строка значения с отступом \t. Формат inc: ключ строкой, значение с табуляцией в начале строки, многострочное значение склеивается через перевод строки, в parser() trim применяется к собранному значению.
+
+### 19_engine_algoritm
+Цепочка default -> ajax/role -> ajax_guest/ajax_logged/guest/logged. Базовые guest/logged/ajax_guest/ajax_logged возвращают false (сигнал не обработано роутеру). render_json_node для узла с el возвращает объект visuoel, а не visuotag; при рендере смешанных узлов в родителе вызываются разные методы append/el. ReflectionClass используется в load_vars и load_data, пути считаются от dirname(файла класса), а не от app_root. load_vars не вызывается из конструктора, его должен вызывать наследник при необходимости.

@@ -1,0 +1,85 @@
+# 28_visuoel_field_input
+
+## 1. Назначение
+
+### 65_visuoel_field
+Группа полей с обёрткой (label + input + hint + error). visuoel_field — прозрачная multi-группа (singleton=false). Элементы: text, password, email, file, textarea, select, checkbox, radio, checkbox_group, radio_group. Каждый тип рендерит собственный div.field.field_<type> с обёрткой box и/или field-label. visuoel_field_block — обёртка над текстом/HTML внутри div.field.field_block с label/content/hint/error. visuoel_field_button/submit/reset extends visuoel_field__button (кнопки с обёрткой поля).
+
+### 68_visuoel_input
+Группа полей ввода. visuoel_input — прозрачная группа, обёртка div.input. Методы-фабрики: text, hidden, password, email, file, textarea, select, checkbox, radio, checkbox_group, radio_group, submit, reset, button. Каждый элемент — наследник visuoel_input__element с input_type(). Специализированные элементы: select (переопределяет build — <select><option>), textarea (переопределяет build — <textarea>), checkbox_group/radio_group (рисуют div.options с N input внутри).
+
+## 2. Контракт (Методы)
+
+### 65_visuoel_field
+- visuoel_field: make_default_data(), build(), text/password/email/file/textarea/select/checkbox/radio/checkbox_group/radio_group(?visuoel__data)
+- visuoel_field__data extends visuoel_group__data (пустой)
+- visuoel_field_block: input_type(): 'block', make_default_data() -> visuoel_field_block__data, data(), build()
+- visuoel_field_block__data: text(string): static, html(string): static
+- visuoel_field_checkbox: input_type(): 'checkbox', make_input(): visuoel_input_checkbox, make_default_data(), data(), build() с полем value
+- visuoel_field_radio: input_type(): 'radio', make_input(): visuoel_input_radio, make_default_data(), data(), build() с полем value в id
+- visuoel_field_checkbox_group: input_type(): 'checkbox_group', make_default_data(), data(), build() с options-слотом
+- visuoel_field_radio_group: input_type(): 'radio_group', make_default_data(), data(), build() с options-слотом
+- visuoel_field_email/file/password/select/textarea/text: input_type(), make_input(), make_default_data()
+- visuoel_field_submit/reset/button extends visuoel_field__button: input_type() и make_button()
+
+### 68_visuoel_input
+- visuoel_input: make_default_data(), text/hidden/password/email/file/textarea/select/checkbox/radio/checkbox_group/radio_group/submit/reset/button(?visuoel__data), get_text__data, get_hidden__data, get_password__data, get_email__data, get_file__data, get_textarea__data, get_select__data, get_submit__data
+- visuoel_input__data extends visuoel_group__data (пустой)
+- visuoel_input_text/hidden/password/email/file/submit/reset/button/checkbox/radio: input_type(), data(), make_default_data()
+- visuoel_input_select: input_type(): 'select', build() с select/option
+- visuoel_input_textarea: input_type(): 'textarea', build() с textarea
+- visuoel_input_checkbox_group: input_type(): 'checkbox_group', build() с options
+- visuoel_input_radio_group: input_type(): 'radio_group', build() с options
+
+## 3. Зависимости
+
+### 65_visuoel_field
+visuoel_group, visuoel_field__element (вне списка), visuoel_field__button, visuoel_input_{text,password,email,file,textarea,select,checkbox,radio,checkbox_group,radio_group}, visuoel_button_{button,submit,reset}, visuotag.
+
+### 68_visuoel_input
+visuoel_group, visuoel_input__element (вне списка), visuotag.
+
+## 4. Edge-cases
+
+### 65_visuoel_field
+- text/password/email/file/textarea/select/checkbox/radio/checkbox_group/radio_group: передан несовпадающий $__data — создаётся дефолт.
+- visuoel_field_checkbox build: name оканчивается на '[]' — id='field_<name>_<value>'; иначе id='field_<name>'.
+- visuoel_field_checkbox build: value пуст — value='1'.
+- visuoel_field_checkbox build: label пуст — field-name не рисуется.
+- visuoel_field_checkbox build: hint непуст и show_hint — рисуется div.hint.
+- visuoel_field_checkbox build: error непуст — div.error.
+- visuoel_field_radio build: id всегда 'field_<name>_<value>'.
+- visuoel_field_checkbox_group build: label непуст и show_label — div.field-label, label_comment опционально.
+- visuoel_field_checkbox_group build: vt_end = div.options, туда пришиваются дочерние field_checkbox.
+- visuoel_field_radio_group аналогично.
+- visuoel_field_block build: label непуст и show_label — label.field-label (htmlspecialchars через esc).
+- visuoel_field_block build: content — is_html ? raw : htmlspecialchars.
+- visuoel_field_block build: hint/error — esc.
+- visuoel_field_block data: text() — is_html=false; html() — is_html=true.
+- visuoel_field_button/submit/reset: make_button() возвращает соответствующий visuoel_button__element (вне списка).
+
+### 68_visuoel_input
+- Каждый метод-фабрика: проверка instanceof $__data, при несовпадении — дефолт.
+- get_*_data: перебирает elements, возвращает data() первого совпавшего или null.
+- visuoel_input_select build: id/name/autocomplete/size/multiple/required/readonly/disabled добавляются при ненулевых значениях.
+- select build: placeholder_option непуст — первый option со value='' и выбранным placeholder.
+- select build: options массив value => label, каждая опция — <option value="...">label</option>, selected при совпадении с selected_list.
+- select build: selected — массив или одиночное значение (приводится к массиву); сравнение через (string) обеих сторон.
+- textarea build: id/name/placeholder/autocomplete/rows/cols/required/readonly/disabled при ненулевых.
+- textarea build: value непуст — content с esc.
+- checkbox_group build: name пуст или options пуст — пустой div.options.
+- checkbox_group build: name не заканчивается на '[]' — добавляется суффикс '[]'.
+- checkbox_group build: selected — array или одиночное значение, приводится к массиву строк.
+- checkbox_group build: id = 'field_<name без []>_<value>'.
+- checkbox_group build: required/disabled добавляются при true.
+- radio_group build: selected — array (первый элемент) или одиночное значение.
+- radio_group build: name не меняется (без []), id = 'field_<name>_<value>'.
+- radio_group build: name пуст или options пуст — пустой div.options.
+
+## 5. Скрытая логика
+
+### 65_visuoel_field
+visuoel_field сам не рисует обёртку — каждый дочерний элемент строит свой div.field.field_<type>, что даёт единый стиль через CSS без вложенного контейнера. Для checkbox id учитывает групповое имя (name[]) через суффикс value — это обеспечивает уникальность id для группы. field_block — универсальная обёртка для произвольного текста/HTML внутри field-стиля; используется в таблицах и inline-сообщениях. field_checkbox_group и field_radio_group отличаются от field_checkbox/field_radio тем, что сами не создают input, а дают div.options-слот для дочерних элементов. field_button/submit/reset — переходный слой: обёртка как у field, но рендер кнопки делегируется visuoel_button__element через make_button().
+
+### 68_visuoel_input
+visuoel_input — тонкая группа: обёртка div.input, реальная семантика в элементах. select и textarea полностью переопределяют build() — это не <input>, а <select>/<textarea>. checkbox_group и radio_group — единственные, кто рендерит N input в одном build(): они не полагаются на дочерние visuoel_input_checkbox/radio, а сразу генерят HTML по options. Для checkbox_group name приводится к '[]' форме — это стандартный HTML-паттерн для массива значений. get_*_data — legacy-хелперы для доступа к первому data-элементу, замена для старого кода, который мог обращаться к $group->text[0]->data. Все элементы data() приводят к своему __data, но make_default_data может быть переопределён наследником.

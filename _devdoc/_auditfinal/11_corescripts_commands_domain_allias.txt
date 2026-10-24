@@ -1,0 +1,101 @@
+# 11_corescripts_commands_domain_allias
+
+## 1. Назначение
+
+### 26_corescripts_commands_allias
+CLI-команды управления алиасами домена. AlliasList — вывод алиасов с отметками доступности, наличия папки и счётчиком включённых filler'ов. AlliasNew — создание структуры алиаса из CS_TPL/allias, генерация filler-файлов для всех блоков домена, lint, опциональная регистрация в site.config. AlliasRemove — карантин папки алиаса, очистка site.config под lock, удаление filler-файлов, откат при ошибке config. AlliasToggle — переключение alliases_available[real][name].
+
+### 28_corescripts_commands_domain
+CLI-команды управления доменами. DomainList — вывод списка доменов с namespace, avail, fs, alliases. DomainNew — создание папки домена из CS_TPL/domain, копия media из CS_TPL/media или пустая папка, lint, опциональная регистрация в site.config (domains_real, domains_available, domains_namespace, alliases_real, alliases_available, fillers). DomainRemove — карантин папки домена, очистка site.config по всем ветвям, откат при ошибке. DomainToggle — переключение domains_available[real].
+
+## 2. Контракт (Методы)
+
+### 26_corescripts_commands_allias
+- AlliasList: static plan(array): array, static run(array, ?Context=null): Result
+- AlliasNew: static plan(array): array, static run(array, ?Context=null): Result, private static register(Result, string domain, string name, ?Context): void
+- AlliasRemove: static plan(array): array, static run(array, ?Context=null): Result
+- AlliasToggle: static plan(array): array, static run(array, ?Context=null): Result
+
+### 28_corescripts_commands_domain
+- DomainList: static plan(array): array, static run(array, ?Context=null): Result
+- DomainNew: static plan(array): array, static run(array, ?Context=null): Result, private static register(Result, string domain, string ns, ?Context): void
+- DomainRemove: static plan(array): array, static run(array, ?Context=null): Result
+- DomainToggle: static plan(array): array, static run(array, ?Context=null): Result
+
+## 3. Зависимости
+
+### 26_corescripts_commands_allias
+Validate, Paths, Fs, Template, Config, Blocks, Cli, Result, Context, CS_TPL, PROJECT_ROOT, site.config.
+
+### 28_corescripts_commands_domain
+Validate, Paths, Fs, Template, Config, Blocks, Cli, Result, Context, CS_TPL, site.config.
+
+## 4. Edge-cases
+
+### 26_corescripts_commands_allias
+- AlliasList: Config бросил Throwable — r->error('Не открыть site.config'), return.
+- AlliasList: alliases пуст — r->step('Аллиасов нет для real'), return без списка.
+- AlliasList: alias==='' — пропуск.
+- AlliasNew: Validate::allias_name вернул строку — r->step(false, err), return.
+- AlliasNew: Validate::domain вернул строку — r->step(false, err), return.
+- AlliasNew: Paths::domain не dir — r->error('Домен не найден'), return.
+- AlliasNew: Paths::allias уже существует — r->error('Аллиас уже существует'), return.
+- AlliasNew: Paths::ns null — r->error('Не найден domains_namespace'), return.
+- AlliasNew: CS_TPL/allias не dir — r->error('Шаблон аллиаса не найден'), return.
+- AlliasNew: file_get_contents шаблона false — continue, файл не пишется.
+- AlliasNew: algorthm.data.json.tpl есть и target отсутствует — Fs::write.
+- AlliasNew: шаблоны filler не найдены — r->warn('Шаблоны filler не найдены'), fillers не создаются.
+- AlliasNew: blocks_dir сканируется, блок валиден если is_dir и is_file(<b>/<b>.php).
+- AlliasNew: блок не dir — r->warn('Блок не найден: name'), continue.
+- AlliasNew: lint вернул ошибку — r->warn('Lint: rel: err'), lint_errors++.
+- AlliasNew: register вызывается только при params['register'] truthy.
+- AlliasNew::register: hasKeys уже true — значение не меняется; fillers инициализируются из Blocks::LIST со false.
+- AlliasNew::register: Throwable — r->error('Не сохранить site.config'), без откатов (файлы уже записаны).
+- AlliasRemove: Validate allias или domain вернул строку — r->step(false, err), return.
+- AlliasRemove: Paths::domain не dir — r->error('Домен не найден'), return.
+- AlliasRemove: Paths::allias не dir — r->warn('Папка аллиаса не найдена — только из config').
+- AlliasRemove: !force, Cli::confirm(false) — r->step('Отменено пользователем'), return.
+- AlliasRemove: rename папки в <path>_trash_<time> не удался — r->error('Не удалось переместить'), return.
+- AlliasRemove: Config::mutate бросил Throwable и in_trash — rename обратно, r->error('Ошибка конфига ... папка восстановлена').
+- AlliasRemove: Config::mutate успешно и in_trash — Fs::rmrf(trash).
+- AlliasRemove: удаление filler-файлов через @unlink, счётчик removed.
+- AlliasToggle: domain или name невалиден — r->step(false), return.
+- AlliasToggle: domains_real[domain] === null — r->error('Домен не найден'), return.
+- AlliasToggle: value==='0' — false, иначе true.
+
+### 28_corescripts_commands_domain
+- DomainList: Config бросил — r->error, return.
+- DomainList: domains_real пуст — r->step('Доменов нет'), return.
+- DomainList: domains_namespace[real] null — '(нет)'.
+- DomainList: alliases_real пуст — alliases=[(нет)].
+- DomainList: Paths::domain не dir — fs='✗'.
+- DomainList: domain===real — marker ' ', иначе '->real'.
+- DomainNew: Validate domain или namespace вернул строку — r->step(false), return.
+- DomainNew: CS_TPL/domain не dir — r->error('Шаблон не найден'), return.
+- DomainNew: Paths::domain уже существует — r->error('Папка уже существует'), return.
+- DomainNew: scan_recursive пуст — r->error('Шаблон пуст'), return.
+- DomainNew: file_get_contents шаблона false — r->error('Не прочитать: rel'), continue.
+- DomainNew: media_path не dir и CS_TPL/media есть — Fs::copy_recursive.
+- DomainNew: CS_TPL/media нет — Fs::mkdir(media_path), r->warn('Шаблон media не найден').
+- DomainNew: lint ошибки > 0 — r->warn('Файлов с ошибками синтаксиса'), без step true.
+- DomainNew: register только при params['register'].
+- DomainNew::register: setKeys для domains_real, domains_available(true), domains_namespace(ns), alliases_real([''=>'www','www'=>'www']), alliases_available(['www'=>true]), fillers(['www'=>{все false}]) — только если hasKeys false.
+- DomainNew::register: Throwable — r->error('Не сохранить site.config').
+- DomainRemove: Validate domain вернул строку — r->step(false), return.
+- DomainRemove: Paths::real(domain)!==domain — r->error('Только real-домен'), return.
+- DomainRemove: !force, первый confirm false или второй confirm false — r->step('Отменено пользователем'), return.
+- DomainRemove: rename в trash не удался — r->error('Не удалось переместить'), return.
+- DomainRemove: Config::mutate бросил и in_trash — rename обратно, r->error с пометкой папка восстановлена.
+- DomainRemove: Config::mutate успешно и in_trash — Fs::rmrf(trash).
+- DomainRemove: удаляются domains_real, domains_available, domains_namespace, domains_titles, domains_skins, alliases_real, alliases_available, fillers по ключу $domain.
+- DomainToggle: Validate domain вернул строку — r->step(false), return.
+- DomainToggle: domains_real[domain] null — r->error('Домен не найден'), return.
+- DomainToggle: value==='0' — false, иначе true.
+
+## 5. Скрытая логика
+
+### 26_corescripts_commands_allias
+AlliasNew::plan при обращении к Paths::logic() обращается к engine.config, если его нет — 'alpha.0.0'. Список блоков в AlliasNew не берётся из Blocks::LIST: он сканирует Paths::blocks(domain) и валидирует по is_dir+is_file(<b>.php), то есть блоки, созданные вне стандартного списка, тоже учитываются. AlliasRemove использует схему карантин -> обновление config -> удаление: при ошибке config папка возвращается из trash, filler-файлы при этом не удаляются, потому что удаление происходит только в success-ветке. Регистрация AlliasNew::register инициализирует fillers по Blocks::LIST, а не по фактическим папкам блоков — расхождение с AlliasNew::run. Toggle-команды используют value==='0' как единственный false-триггер, любое другое значение (включая пустое) — true.
+
+### 28_corescripts_commands_domain
+DomainNew::run копирует файлы из CS_TPL/domain с плейсхолдерами <domain> и <domain_ns>, удаляя суффикс .tpl в имени. DomainNew::register использует $domain как ключ верхнего уровня в site.config, а не Paths::real($domain); при этом остальные команды (DomainToggle, DomainRemove, Allias*) читают по $real. Ключ alliases_real содержит элемент '' => 'www' и 'www' => 'www' — пустая строка как алиас по умолчанию. DomainRemove удаляет дерево по $domain и $real одновременно только если они совпадают (проверка real(domain)!==domain), иначе отказывается. DomainRemove в блоке Config::mutate удаляет ключи по $domain (а не $real), консистентно с DomainNew::register. Карантин реализован как rename, гарантирует откат при падении Config::mutate. DomainList читает домены через cfg->get('domains_real'), а namespace через getKeys(['domains_namespace', $real]).

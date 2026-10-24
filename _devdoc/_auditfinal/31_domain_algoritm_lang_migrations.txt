@@ -1,0 +1,95 @@
+# 31_domain_algoritm_lang_migrations
+
+## 1. Назначение
+
+### 75_domain_algoritm_lang
+Вся группа algoritm_lang страниц алиаса visuo: index, docs, downloads, download, login, logout, news, profile, registration. Каждый класс extends \algoritm_, в guest/logged вызывает render() или redirect, часть имеет ajax_guest/ajax_logged с логикой visuostruct_min. Роутинг — через .rules.json файлы: available массив паттернов, auth флаг.
+
+### 78_domain_migrations
+SQL-миграции для домена damoony.ru / алиас visuo. 001 создаёт news, 002 создаёт files, 003 создаёт file_downloads, 004 добавляет users.timezone и users.lang, 005 сеет files (template), 006 сеет 3 новости, 007 создаёт login_attempts. apply_all.sql — SOURCE всех по порядку.
+
+## 2. Контракт (Методы)
+
+### 75_domain_algoritm_lang
+- algoritm_lang::guest(), logged(), render() — 307 redirect на index
+- algoritm_lang_docs::guest/logged/render_list()
+- algoritm_lang_docs_page::guest/logged/render_page() — по slug из $url_base[2]
+- algoritm_lang_download::default() -> false
+- algoritm_lang_download_page::guest/logged/serve(), not_found() — readfile по VISUO_MEDIA_DOWNLOADS, защита path traversal
+- algoritm_lang_downloads::guest/logged/render_list(), default(), human_size()
+- algoritm_lang_index::guest/logged/render()
+- algoritm_lang_login::guest/logged/ajax_guest/ajax_logged/redirect_profile/render(bool)
+- algoritm_lang_logout::guest/logged/ajax_guest/ajax_logged/do_logout/redirect_home
+- algoritm_lang_news::guest/logged/render_list()
+- algoritm_lang_news_page::guest/logged/render_page() — fallback на ru-ru при отсутствии перевода
+- algoritm_lang_profile::guest/logged/render(), row_kv(), timezone_options()
+- algoritm_lang_registration::guest/logged/ajax_guest/ajax_logged/redirect_profile/render(bool)
+
+### 78_domain_migrations
+SQL DDL/DML-скрипты, последовательно применяются MySQL CLI или аналогом.
+
+## 3. Зависимости
+
+### 75_domain_algoritm_lang
+\algoritm_, visuotag, visuoel, visuoel_input_hidden, visuoel_field_submit, main->library->{link,url}, main->language, main->user, main->dataprovider->current, main->alliasglobal->head, main->alliasglobal->center, main->visuostruct->min/ajax, csrf_token/csrf_check, h, redirect, time_local, VISUO_MEDIA_DOWNLOADS, .rules.json.
+
+### 78_domain_migrations
+users (FK author_id в news, user_id в file_downloads), files (FK file_id в file_downloads), пользователь admin для seed news.
+
+## 4. Edge-cases
+
+### 75_domain_algoritm_lang
+- algoritm_lang: 307 redirect на [base0, 'index'].
+- algoritm_lang_docs: sections пуст — message info DOCS_EMPTY, return true.
+- algoritm_lang_docs: articles пуст для секции — p.visuo-doc-empty.
+- algoritm_lang_docs_page: a пуст — http_response_code(404), message error, back link.
+- algoritm_lang_download: default() -> false — промежуточный уровень всегда пропускает.
+- algoritm_lang_download_page: f пуст или status!='active' — not_found().
+- algoritm_lang_download_page: basename filename — защита от traversal.
+- algoritm_lang_download_page: realpath(VISUO_MEDIA_DOWNLOADS) или realpath(path) false, или path не начинается с base_dir — not_found().
+- algoritm_lang_download_page: increment_downloads до headers.
+- algoritm_lang_download_page: headers Content-Type/Disposition/Length/nosniff/no-store, readfile, exit.
+- algoritm_lang_downloads: (url_base[2] ?? '') !== '' — default() -> false (error route).
+- algoritm_lang_downloads: files пуст — message info.
+- algoritm_lang_downloads::human_size: B/KB/MB/GB с round.
+- algoritm_lang_index: просто строит div.visuo.visuo-index c h1/p/p из lang, section_add('test', vt) в center.
+- algoritm_lang_login::ajax_guest: csrf_check false — errors; пустой login/password — ERROR_LOGIN_FAILED; authorize ok — min->form()->set(false, '/ru-ru/profile'), return.
+- ajax_guest: authorize fail — ERROR_LOGIN_FAILED.
+- ajax_guest: errors — min->error(true), min->messages(vt), min->form(true, null) — reset.
+- ajax_guest: без ошибок — render(true) в AJAX.
+- render: title из lang, форма с csrf, поля login/password/remember, submit; is_ajax — ajax()->address()->set, ajax()->center()->set(ve->visuotag()); иначе center->visuotag()->el(ve).
+- algoritm_lang_logout: guest и ajax_guest — redirect_home; logged/ajax_logged — do_logout с user->logout() и redirect.
+- algoritm_lang_news: news пуст — message info.
+- algoritm_lang_news_page: n пуст и lang!='ru-ru' — fallback на ru-ru; fallback=true — message warning TRANSLATION_PENDING.
+- algoritm_lang_news_page: n пуст после fallback — message error NEWS_NOT_FOUND, back link.
+- algoritm_lang_profile: guest возвращает false, logged рендерит профиль. auth=true в правилах.
+- algoritm_lang_profile: POST без csrf — молча пропускает; иначе update_timezone/update_lang, ok=true при любом успехе.
+- algoritm_lang_profile::row_kv: 30/70 ширина ячеек.
+- algoritm_lang_profile::timezone_options: timezone_identifiers_list().
+- algoritm_lang_registration::ajax_guest: POST, csrf_check false — errors; user->register(data), error null — ok; иначе errors с lang->get(error).
+- ajax_guest: ok — min->messages(success), min->form(false, '/ru-ru/login').
+- ajax_guest: errors — min->error(true), min->messages(error vt), min->form(true, null).
+- registration render: форма с полями login/email/display_name/password/password_confirm, csrf, submit; is_ajax — ajax()->address()->set, ajax()->center()->set; иначе center->visuotag()->el.
+- auth=true в profile.rules.json? по факту в файле auth=false, guest вызывается и возвращает false, что трактуется как 404 tree.
+- languages хардкод: ru-ru/en-en/ch-ch.
+
+### 78_domain_migrations
+- 001 news: автор FK fk_news_author ON DELETE SET NULL, ON UPDATE CASCADE.
+- 001 news: UNIQUE(slug,lang), индексы (status,published_at), (lang,status,published_at), author_id.
+- 002 files: UNIQUE slug, idx_status; status ENUM active/hidden.
+- 003 file_downloads: FK на files (CASCADE) и users (SET NULL), idx_file/idx_user/idx_created.
+- 004 alter users: MySQL 8 не поддерживает ADD COLUMN IF NOT EXISTS — при повторном запуске ошибка, нужно проверять SHOW COLUMNS.
+- 004: добавляет users.lang с COMMENT 'ru-ru | en-en | ch-ch' и idx_lang.
+- 005 seed files: ON DUPLICATE KEY UPDATE по slug; filesize=0 — фактический размер обновляется вручную.
+- 006 seed news: SET @admin_id = SELECT id FROM users WHERE login='admin'; при отсутствии admin @admin_id=NULL, FK SET NULL допускает.
+- 006: 3 записи (visuo-start, visuo-docs, visuo-langs), все published ru-ru.
+- 007 login_attempts: BIGINT id, TINYINT(1) success, idx_login_time/idx_ip_time/idx_created.
+- apply_all.sql: SOURCE — только в MySQL CLI, в других клиентах не работает.
+
+## 5. Скрытая логика
+
+### 75_domain_algoritm_lang
+Все страницы используют единый паттерн: сначала title через head->title(), затем UI из visuoel или visuotag, затем вставка в center->visuotag() через el() (для visuoel) или section_add() (для vt). AJAX-вариант отличается тем, что вместо center->visuotag() устанавливается visuostruct_ajax->center()->set(ve->visuotag()) и, при необходимости, min-структура для управления формой. Логин/регистрация/логаут работают через visuostruct_min с полями error/messages/form/redirect. download_page — единственное место, где происходит readfile и отдаются headers: Content-Type, Content-Disposition, Content-Length, X-Content-Type-Options, Cache-Control. Защита от traversal: basename + realpath-prefix. download промежуточный уровень возвращает false — фактическая отдача происходит в page/ (slug остаётся в url_base[2]). rules.json: index/login/registration/downloads/news/docs/download — available список сегментов, download/downloads/page используют regex ([a-z0-9-]+)|page. login.rules.json — 'login' в available, но обрабатывается как отдельный класс algoritm_lang_login, что в tree-роутере не задействовано напрямую — страницы вызываются из algoritm.rules.json на уровне 'lang', а сами include_once загружаются через autoload по имени класса (см. 01_engine_autoload).
+
+### 78_domain_migrations
+Все таблицы InnoDB/utf8mb4/utf8mb4_unicode_ci. Связи: news.author_id -> users.id, file_downloads.file_id -> files.id, file_downloads.user_id -> users.id. users не создаётся в этих миграциях — таблица должна существовать до их применения (вне репозитория или в другой миграции). Seed news и files идемпотентны через ON DUPLICATE KEY UPDATE. Seed news зависит от admin — если admin ещё не создан, @admin_id=NULL, поле author_id nullable. login_attempts — отдельная таблица без FK на users, чтобы не блокировать удаление пользователей. files.filesize=0 в seed — фактический размер файла template-1.0.0.zip обновляется вручную. 004 не идемпотентна — второй запуск падает, нужен ручной контроль.

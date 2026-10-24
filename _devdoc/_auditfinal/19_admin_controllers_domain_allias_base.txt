@@ -1,0 +1,92 @@
+# 19_admin_controllers_domain_allias_base
+
+## 1. Назначение
+
+### 46_admin_controllers_base
+Базовый контроллер админки. BaseController абстрактный: конструктор (p, action), render/redirect/post/get/requirePost. DashboardController — обзор доменов.
+
+### 47_admin_controllers_allias
+Контроллер алиасов админки. new — форма и выполнение AlliasNew с AuditLog. edit — форма настроек и сохранение available/stub. list — список алиасов домена с avail, fs, fillers. toggle — переключение available. remove — двухстадийное подтверждение и AlliasRemove. fillers — список филлеров алиаса.
+
+### 49_admin_controllers_domain
+Контроллер доменов админки. new — DomainNew с регистрацией. edit — настройки title, available, stub (current, until). toggle — DomainToggle. remove — двухстадийное подтверждение, DomainRemove::run(name=real, force=true).
+
+## 2. Контракт (Методы)
+
+### 46_admin_controllers_base
+- BaseController: __construct(string p, string action), protected render(string, array=[]), redirect(string), post(string, mixed=''), get(string, mixed=''), requirePost()
+- DashboardController::index(): void
+
+### 47_admin_controllers_allias
+AlliasController: new(), edit(), list(), toggle(), remove(), fillers()
+
+### 49_admin_controllers_domain
+DomainController: new(), edit(), toggle(), remove()
+
+## 3. Зависимости
+
+### 46_admin_controllers_base
+View, Config, Paths, $_POST, $_GET, $_SERVER.
+
+### 47_admin_controllers_allias
+Config, Paths, Validate, CS_CMD/{AlliasNew,AlliasToggle,AlliasRemove}.php, ADMIN_ROOT/_lib/Scan.php, AuditLog, Result.
+
+### 49_admin_controllers_domain
+Config, Paths, Validate, CS_CMD/{DomainNew,DomainToggle,DomainRemove}.php, AuditLog, PROJECT_ROOT/config/site.stubs.config.
+
+## 4. Edge-cases
+
+### 46_admin_controllers_base
+- BaseController::redirect — header, exit.
+- BaseController::post/get — дефолт '', если ключ не задан.
+- BaseController::requirePost: метод не POST — 405 Method not allowed, exit.
+- DashboardController::index: Config бросил Throwable — не перехватывается, страница падает.
+- DashboardController: домены d===real — в real_domains; d!==real — в aliases[real].
+- DashboardController: alliases_real[real] — все непустые.
+- DashboardController: stub — !empty(domains_stub[real]['enabled']).
+
+### 47_admin_controllers_allias
+- new: real_domains по d===real, prefill_domain из GET.
+- new POST: AlliasNew::run(name, domain, register), AuditLog::action_ok, render result.
+- edit: пустые domain или allias — redirect dashboard.
+- edit POST: Config::mutate setKeys available/stub, AuditLog::action_ok, redirect edit&saved=1.
+- list: domain пуст — render result 'Домен не указан'.
+- list: getKeys(['domains_real',domain]) null — render result 'Домен не найден'.
+- list: aliases пуст — rows пуст.
+- list: alias==='' — continue.
+- toggle: requirePost, domain/name пуст — redirect dashboard.
+- remove: domain/name пуст или невалиден — redirect.
+- remove: getKeys(['domains_real',domain]) null или alliases_real[real][name] null — redirect list.
+- remove POST: !confirm_checked или confirm_name!==name — errors, render allias_remove.
+- remove POST: без ошибок — AlliasRemove::run(name, real, force=true), AuditLog::action_ok, render result.
+- fillers: domain пуст — redirect dashboard; allias пуст — redirect allias:list.
+- fillers: Scan::fillersFor.
+
+### 49_admin_controllers_domain
+- new POST: DomainNew::run(name=domain, register), AuditLog::action_ok, render result.
+- edit: Validate::domain вернул строку — redirect dashboard.
+- edit: getKeys(['domains_real',domain]) null — redirect dashboard.
+- edit: stubs_cfg отсутствует или stubs пуст — $stubs=[].
+- edit POST: title пуст — errors 'Title не может быть пустым'.
+- edit POST: stub_until_date непустой — strtotime; иначе 0.
+- edit POST: Config::mutate setKeys domains_titles, domains_available, domains_stub[real][current/until], AuditLog::action_ok, redirect edit&saved=1.
+- edit POST: Config::mutate бросил — errors 'Ошибка сохранения', рендер domain_edit без redirect.
+- edit GET: title из domains_titles или cfg->get('title') или ''; avail, stub default 'maintenance', until default 0.
+- toggle: requirePost, domain пуст — redirect dashboard.
+- toggle: DomainToggle::run, AuditLog::action_ok, redirect dashboard.
+- remove: domain пуст или Validate провал — redirect dashboard.
+- remove: getKeys(['domains_real',domain]) null — redirect dashboard.
+- remove: alliases_real[real] собирается без пустого ключа.
+- remove POST: !confirm_checked — errors; confirm_name!==real — errors.
+- remove POST без ошибок: DomainRemove::run(name=real, force=true), AuditLog::action_ok, render result.
+
+## 5. Скрытая логика
+
+### 46_admin_controllers_base
+DashboardController строит rows по real-доменам: domain, ns (или '—'), avail (domains_available), fs (is_dir), stub (enabled), alliases, aliases. Actions-строка содержит ссылки на stubs:list и domain:new. BaseController не имеет DI-контейнера — статический View::render. post/get не проверяют наличие, возвращают default.
+
+### 47_admin_controllers_allias
+AlliasController передаёт в AlliasRemove уже real-домен (не входной), чтобы команда не проверяла real(real) — но AlliasRemove::run вызывается с name, domain, force и внутри делает Paths::real(domain) повторно. new-список доменов берётся только real (d===real), алиасы не предлагаются. fillers не проверяет существование домена и алиаса — Scan::fillersFor вернёт [] для несуществующих путей. Все успешные мутации пишут AuditLog::action_ok вне зависимости от result->ok.
+
+### 49_admin_controllers_domain
+edit пишет и в domains_titles[real], и в domains_stub[real][current/until], но не меняет domains_stub[real][enabled] — Dashboard читает enabled, а edit показывает current/until. main_settings::domain_accepted использует until по time() для авто-доступности — соответствие через until, enabled в настройках не влияет напрямую. remove требует confirm_name === real, а не вводный domain. При ошибке config форма рендерится заново с errors и без redirect, чтобы пользователь видел ошибку.

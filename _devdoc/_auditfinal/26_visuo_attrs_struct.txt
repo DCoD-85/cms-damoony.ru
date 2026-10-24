@@ -1,0 +1,98 @@
+# 26_visuo_attrs_struct
+
+## 1. Назначение
+
+### 61_visuo_attrs
+Система атрибутов visuotag. visuoattrs — контейнер generic-атрибутов и владелец четырёх подконтейнеров: visuoattrsclass (множество class-имён), visuoattrsstyle (css-свойства), visuoattrsactions (on*-события), visuoattrsdata (data-* через JSON или как строку). release() собирает все атрибуты в строку в порядке class -> style -> actions -> generic -> data. attributes_release() возвращает только generic. whitelist для actions: /^on[a-z]+$/.
+
+### 62_visuo_struct
+Структура ответа visuo. visuostruct — контейнер трёх подтипов: html (visuostruct_html), min (visuostruct_min), ajax (visuostruct_ajax). Метод current() возвращает первый установленный в порядке min > ajax > html, иначе null (HTML по умолчанию). visuostruct_html — override блоков top/left/center/right/bottom и meta, off() устанавливает false. visuostruct_ajax — JSON с error, address и 6 layers (header, top, left, center, right, bottom). visuostruct_min — компактный JSON: error, messages, release, form, referer.
+
+## 2. Контракт (Методы)
+
+### 61_visuo_attrs
+- visuoattrs: __construct(?visuotag), visuotag(): ?visuotag, add(string, string, bool=false): visuoattrs, remove(string), get(string): mixed, has(string): bool, all(): array, clear(): visuoattrs, class(): visuoattrsclass, style(): visuoattrsstyle, actions(): visuoattrsactions, data(): visuoattrsdata, class_add/remove, style_add/remove, actions_add/remove, data_add(string, mixed, bool=true), data_remove, release(): string, attributes_release(): string
+- visuoattrsclass: __construct(visuoattrs), parent(): ?visuotag, add(string), remove(string), clear(), has(string): bool, get(string): string, all(): array, release(bool=true): string, private split(string)
+- visuoattrsstyle: __construct(visuoattrs), parent(), add(string, pair_separator=';', kv_separator=':'), remove(string), clear(), has(string), get(string), all(), release(bool=true), private split
+- visuoattrsactions: __construct(visuoattrs), parent(), tag(), add(string, string), remove(string), clear(), has(string), get(string), all(), shorthand onclick/ondblclick/onmousedown/onmouseup/onmouseover/onmouseout/onmousemove, release(bool=true), private is_event(string)
+- visuoattrsdata: __construct(?visuoattrs), add(string, mixed, bool=true), get(string): mixed, has(string): bool, remove(string), clear(), all(): array, owner(): ?visuoattrs, static encode(mixed): string, static decode(string): mixed, release(): string
+
+### 62_visuo_struct
+- visuostruct: __construct(mixed main=null), html(): visuostruct_html, min(): visuostruct_min, ajax(): visuostruct_ajax, current(): null|object
+- visuostruct_html: __construct(?visuostruct), return_type(): string, set(top, left, center, right, bottom), off(string): static
+- visuostruct_ajax: __construct(?visuostruct), address(): visuostruct_ajax_address, header(), top(), left(), center(), right(), bottom(), return_type(): 'json', as_json(): string
+- visuostruct_ajax_element (abstract): __construct(visuostruct_ajax), поля visuostruct, visuostruct_ajax
+- visuostruct_ajax_address: set(?string), astag(): ?string, release(): ?string
+- visuostruct_ajax_header: set(?visuotag), astag(): ?visuotag, release(): ?string
+- visuostruct_ajax_layer (abstract): abstract layer(): string, set(?visuotag), astag(), release(): ?array{layer,html}
+- visuostruct_ajax_{top,left,center,right,bottom}: layer() возвращает dt_<name>
+- visuostruct_min: __construct(?visuostruct), error(), messages(), release(), form(), referer(), return_type(): 'json', as_json(): string
+- visuostruct_min_error: set(bool=false): static, release(): bool
+- visuostruct_min_messages: set(?visuotag=null): static, release(): string
+- visuostruct_min_release: set(?visuotag=null, string='', bool=false, bool=false, bool=false): static, release(): array{html,layer,popup,popup_back,popup_navigate}
+- visuostruct_min_form: set(bool=false, ?string=null, ?int=null): static, release(): array{reset,redirect,redirect_time}
+- visuostruct_min_referer: set(?string=null): void, release(): ?string
+
+## 3. Зависимости
+
+### 61_visuo_attrs
+visuotag (обратная ссылка), htmlspecialchars, json_encode/decode, preg_match, preg_split, random.
+
+### 62_visuo_struct
+visuotag, DS, include_once, json_encode(JSON_UNESCAPED_UNICODE), $_SERVER['HTTP_REFERER'].
+
+## 4. Edge-cases
+
+### 61_visuo_attrs
+- visuoattrs::add: value==='' и add_empty=false — атрибут не добавляется.
+- visuoattrs::add: value==='' и add_empty=true — атрибут с пустым значением.
+- visuoattrs::get: несуществующий ключ — null (array_key_exists проверка, не isset).
+- visuoattrs::clear: очищает generic и все четыре подконтейнера.
+- visuoattrs::release: порядок class, style, actions, attributes, data — фиксирован.
+- attributes_release: elements пуст — ''.
+- visuoattrsclass::add: split по \s+, пустые — [].
+- visuoattrsclass::remove: удаление по каждому split-элементу.
+- visuoattrsclass::has: isset, не array_key_exists — удалённые ключи не считаются.
+- visuoattrsclass::release: full=false — без ' class="..."'.
+- visuoattrsstyle::add: pair без ':' — пропуск; пустой pair — пропуск; пустое имя — пропуск.
+- visuoattrsstyle::add: значение после ':' обрезается trim; внутренние ':' сохраняются (url(http://...)).
+- visuoattrsstyle::release: сборка 'name:value;' в порядке добавления, затем htmlspecialchars.
+- visuoattrsstyle::remove: split по \s+ — можно удалять несколько имён.
+- visuoattrsactions::add: action не matches /^on[a-z]+$/ — return без изменений; value==='' — return.
+- visuoattrsactions::add: action нормализуется strtolower(trim).
+- visuoattrsactions::has/get/remove: тоже strtolower(trim).
+- visuoattrsactions::release: full=false — trim от html; при пустом elements '' независимо от full.
+- visuoattrsactions::release: значения htmlspecialchars.
+- visuoattrsdata::add: value любой из null|bool|string|int|array; to_json=true — сериализуется JSON_UNESCAPED_UNICODE; false — (string).
+- visuoattrsdata::encode: json_encode false — ''.
+- visuoattrsdata::release: key всегда с префиксом 'data-'; значение htmlspecialchars.
+- visuoattrsdata::get: array_key_exists — null-значение возвращается, а не пустая строка.
+- visuoattrsdata::release: порядок = порядок добавления.
+
+### 62_visuo_struct
+- visuostruct html/min/ajax: при первом вызове подключают файл include_once и создают объект.
+- visuostruct current: ничего не установлено — null.
+- visuostruct_html set: каждый параметр только при !== null, чтобы null не перезаписывал (тест 'html set(null) не перезаписывает').
+- visuostruct_html off: property_exists проверка, неизвестный блок — no-op.
+- visuostruct_ajax address/header/top/left/center/right/bottom: ??= — singleton.
+- visuostruct_ajax as_json: json_encode false — '{}'.
+- visuostruct_ajax as_json: layers[header] возвращает ?string (release header -> visuotag root release), layers[top/left/center/right/bottom] возвращает ?array{layer,html}.
+- visuostruct_ajax_address release: null, если set не вызывался.
+- visuostruct_ajax_header release: visuotag null — null.
+- visuostruct_ajax_layer release: visuotag null — null; иначе ['layer'=>dt_x, 'html'=>release].
+- visuostruct_min as_json: error false, messages '', release null, form null, referer null при пустых подэлементах.
+- visuostruct_min_error set: bool; release — bool.
+- visuostruct_min_messages release: visuotag null — ''.
+- visuostruct_min_release release: html через prepare() и release(), пустой при null.
+- visuostruct_min_form release: reset, redirect, redirect_time как есть.
+- visuostruct_min_referer release: set не вызывался — берёт $_SERVER['HTTP_REFERER'] если строка, иначе null.
+- visuostruct_min_referer set(null): явно null — fallback на сервер (тест 'referer set null -> server fallback').
+- visuostruct_min_referer set('0'): '0' сохраняется, не fallback (тест 'referer falsy "0"').
+
+## 5. Скрытая логика
+
+### 61_visuo_attrs
+visuoattrs держит generic-атрибуты в elements и четыре подкласса в отдельных свойствах. release() фиксирует порядок сериализации: сначала class, затем style, затем actions, затем generic (id, name, href), затем data. Это соответствует тестам в старом проекте. Все подклассы делят visuotag через visuoattrs->visuotag(), чтобы parent() возвращал исходный узел. Дочерние контейнеры при clear() очищаются visuoattrs::clear(). is_event — единственная защита от инъекции не-on* атрибутов через actions_add (тест 'non-event rejected' ожидает, что href не попадёт). visuoattrsdata::encode по умолчанию json_encode, поэтому строка "admin" превращается в '"admin"', а int 5 — в '5', bool — 'true'/'false'; тест 'add string no json' обходит это через to_json=false.
+
+### 62_visuo_struct
+visuostruct::current приоритет min > ajax > html — это определяет, что visuorelease::final отдаст JSON (min/ajax) или HTML (html). HTML-режим — дефолт при отсутствии override. visuostruct_html set() умышленно не перезаписывает null, чтобы частичное обновление не сбрасывало уже установленные блоки. ajax-слои — singleton-фабрики, каждый хранит visuotag и возвращает массив {layer: dt_x, html: release}. address — просто строка, header — html без обёртки, layers — с меткой слоя. min — компактный формат для лёгкого AJAX: error как bool, messages как готовая строка, release со всеми popup-флагами, form с reset/redirect, referer с серверным fallback. referer отдельно различает явный null (fallback) и '0' (валидная строка).

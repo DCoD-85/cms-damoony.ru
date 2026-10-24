@@ -1,0 +1,95 @@
+# 01_engine_core
+
+## 1. Назначение
+
+### 01_engine_autoload
+Регистрация spl_autoload_register. Обслуживает три пространства имён: router\ для engines/router, класс VisuoHost, доменные классы вида damoony_ru\<allias>\<handler>.
+
+### 02_engine_constants
+Определение глобальных констант движка до загрузки основных классов: DS, DSA, GL_LOG, GL_DEBUG, GL_DEBUGHARD, DB_LIMIT_ONE, DB_LIMIT_PAGE, DB_LIMIT_MAX, VISUOLINK_RAND_DEFAULT. Параллельно core/const.php определяет то же через core_const::init с проверкой defined.
+
+### 03_engine_core
+Композиция четырёх подмодулей (const, env, path, time) через загрузчик. Точка сборки путей, окружения и таймеров запроса.
+
+### 07_engine_include
+Коммутатор подключений модулей движка. include.php — список из 13 модулей в фиксированном порядке. included.php — набор функций для обработки ошибок подключения (bad, include_bad, include_my, include_array) и два define DS, DSA при отсутствии.
+
+## 2. Контракт (Методы)
+
+### 01_engine_autoload
+Замыкание spl_autoload_register(function ($class)). Внешних методов нет.
+
+### 02_engine_constants
+core_const::__construct(core), init(), get(string): mixed.
+
+### 03_engine_core
+- core::__construct(main), init(): void, get(string): mixed, has(string): bool, is_ajax(): bool, is_cli(): bool, root(): string, elapsed_ms(): float
+- core_env::set_type(string): void, is_prod(): bool, is_dev(): bool, is_cli(): bool, is_ajax(): bool, php_version(): string, is_https(): bool, apply(): void
+- core_path::init(): void, get(string): string
+- core_time::__construct(core), elapsed_ms(): float, elapsed_hr_ms(): float, reset(): void
+- core_const::__construct(core), init(): void, get(string): mixed
+
+### 07_engine_include
+- include.php — файл верхнего уровня, определяет $sources_dir, $sources_modules, обходит include_once, чистит переменные unset(...). Методов класса нет.
+- included.php: fo(array, string, string): string; bad(array, string title='Ошибка', string message='Ошибка'): never; include_bad(array, string): never; include_my(array, string): void; include_array(array, array, array=[], string=''): void.
+
+## 3. Зависимости
+
+### 01_engine_autoload
+dirname(__DIR__)/engines/router/, dirname(__DIR__)/visuo/VisuoHost.php, dirname(__DIR__)/config/site.config, dirname(__DIR__)/app/{logic}/domain/{real}/allias/{allias}/algoritm/.
+
+### 02_engine_constants
+engine/constants.php — только define. engine/core/const.php — core, main.
+
+### 03_engine_core
+core_const, core_env, core_path, core_time, error_file(), DS.
+
+### 07_engine_include
+DS, DSA, error_file(), visuotag (в комментарии), die().
+
+## 4. Edge-cases
+
+### 01_engine_autoload
+- 01: file_exists($file) false для router\ и VisuoHost — require не выполняется, return.
+- 01: count($parts) < 3 — доменная ветка не выполняется.
+- 01: config/site.config не существует — array_search не выполняется, автозагрузка домена не сработает.
+- 01: array_search($domain_ns, $config['domains_namespace']) возвращает false — файл не подключается.
+- 01: in_array($handler, ['algoritm_auth','algoritm_error']) — принудительный class_path='', файл ищется в корне algoritm/.
+- 01: file_exists($file) false в конце — require не выполняется молча.
+
+### 02_engine_constants
+- 02: Повторный define защищён if (!defined(...)).
+- 02: core_const::get() возвращает null, если константа не определена.
+- 02: BR определяется только в core_const::init, в engine/constants.php отсутствует.
+- 02: DB_LIMIT_* в engine/constants.php задаются, в core_const::init не переопределяются.
+
+### 03_engine_core
+- 03: include_once возвращает false — вызывается error_file() с указанием файла и строки.
+- 03: core::get возвращает null, если модуль не инициализирован.
+- 03: core_env::is_ajax при отсутствии HTTP_X_REQUESTED_WITH возвращает false.
+- 03: core_env::is_https проверяет HTTPS=on или X-Forwarded-Proto=https, иначе false.
+- 03: core_env::apply в prod отключает E_NOTICE и E_DEPRECATED, display_errors=0.
+- 03: core_path::get возвращает пустую строку для неизвестного имени.
+- 03: core_time::elapsed_hr_ms использует hrtime(true), делит на 1000000.
+
+### 07_engine_include
+- 07: include.php: is_file($path) false — error_file() прерывает.
+- 07: include.php: include_once false — error_file() прерывает.
+- 07: included.php bad: die() всегда, независимо от наличия visuotag; ветка с visuotag закомментирована.
+- 07: included.php include_my: include_once false — include_bad() -> bad() -> die.
+- 07: included.php include_array: files пуст — bad('Отсутствуют файлы для подключения').
+- 07: included.php include_array: classes не пуст, class_exists false — bad('Отсутствуют классы').
+
+## 5. Скрытая логика
+
+### 01_engine_autoload
+$class_path = str_replace('algoritm_', '', $handler); $class_path = str_replace('_', '/', $class_path). Для handler=algoritm_lang_index получается lang/index, файл lang/index/algoritm_lang_index.php. Для algoritm_auth и algoritm_error ветка сбрасывает class_path в пустую строку и файл ищется как algoritm_auth.php в корне allias/algoritm/.
+
+### 02_engine_constants
+Два независимых источника констант. При подключении engine/constants.php до создания core значения DB_LIMIT_* уже установлены. core_const::init переопределяет только DS, DSA, BR, GL_*, DB_LIMIT_* остаются из constants.php или дефолтными.
+
+### 03_engine_core
+core::is_ajax() делегирует в core_env::is_ajax() повторно. core_path::init строит пути относительно __DIR__ подмодуля, sources = dirname(__DIR__), root = dirname(sources), затем www, secure, app.
+
+### 07_engine_include
+Порядок в include.php: render, user, blacklist, vardump, log, core, db, library, language, messages, visuo, mod, cookie. Этот порядок определяет последовательность require и влияет на доступность классов при включении. include_array() собирает имена отсутствующих классов в строку через запятую и передаёт в bad().

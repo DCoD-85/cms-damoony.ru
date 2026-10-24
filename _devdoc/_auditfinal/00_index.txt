@@ -1,0 +1,55 @@
+# Карта упаковки _devdoc/_auditfinal
+
+Исходных файлов _devdoc/_audit: 83
+Выходных файлов _devdoc/_auditfinal: 37 (00_index + 36 подразделов)
+Каждый исходный NN входит ровно в один выходной файл, потерь нет, ничего не переформулировано.
+
+## Соответствие исходных NN -> выходных NN
+
+| Выход | Имя файла | Исходные NN | Ожидаемо строк |
+|---|---|---|---|
+| 00 | 00_index.txt | служебный | 45 |
+| 01 | 01_engine_core.txt | 01, 02, 03, 07 | 96 |
+| 02 | 02_engine_services.txt | 09, 11, 13, 14, 18, 21 | 101 |
+| 03 | 03_engine_db.txt | 04 | 95 |
+| 04 | 04_engine_library.txt | 05, 17 | 115 |
+| 05 | 05_engine_main_domain.txt | 06, 10 | 90 |
+| 06 | 06_engine_language_algoritm.txt | 08, 19 | 85 |
+| 07 | 07_engine_security_middleware.txt | 12, 16, 20 | 80 |
+| 08 | 08_engine_tree.txt | 15 | 55 |
+| 09 | 09_corescripts_cli_lib_render.txt | 22, 23, 24 | 185 |
+| 10 | 10_corescripts_lib_data_admin.txt | 25, 34 | 70 |
+| 11 | 11_corescripts_commands_domain_allias.txt | 26, 28 | 115 |
+| 12 | 12_corescripts_commands_block_filler.txt | 27, 29 | 95 |
+| 13 | 13_corescripts_commands_media_page.txt | 30, 31 | 95 |
+| 14 | 14_corescripts_commands_settings_vars.txt | 32, 33 | 65 |
+| 15 | 15_www_entry_admin_bootstrap.txt | 35, 40 | 125 |
+| 16 | 16_www_tests_entry_lib.txt | 36, 37 | 95 |
+| 17 | 17_www_tests_cases.txt | 38, 39 | 120 |
+| 18 | 18_admin_core_router_auth_audit_scan_view.txt | 41, 42, 43, 44, 45 | 180 |
+| 19 | 19_admin_controllers_domain_allias_base.txt | 46, 47, 49 | 105 |
+| 20 | 20_admin_controllers_block_filler.txt | 48, 50 | 60 |
+| 21 | 21_admin_controllers_media_page.txt | 51, 52 | 85 |
+| 22 | 22_admin_controllers_resource_scheme.txt | 53, 54 | 80 |
+| 23 | 23_admin_controllers_security_settings_stub.txt | 55, 56, 57 | 90 |
+| 24 | 24_admin_views.txt | 58 | 75 |
+| 25 | 25_visuo_entry_core.txt | 59, 60 | 95 |
+| 26 | 26_visuo_attrs_struct.txt | 61, 62 | 125 |
+| 27 | 27_visuoel_base_block_button_message_element.txt | 63, 64, 67, 69, 72 | 160 |
+| 28 | 28_visuoel_field_input.txt | 65, 68 | 100 |
+| 29 | 29_visuoel_form_table_tabs.txt | 66, 70, 71 | 125 |
+| 30 | 30_domain_allias_algoritm.txt | 73, 74 | 55 |
+| 31 | 31_domain_algoritm_lang_migrations.txt | 75, 78 | 130 |
+| 32 | 32_domain_dataprovider.txt | 76 | 75 |
+| 33 | 33_domain_visuo_core.txt | 77 | 75 |
+| 34 | 34_domain_alliasglobal.txt | 79, 80 | 160 |
+| 35 | 35_domain_alliasscheme.txt | 81 | 85 |
+| 36 | 36_secure_dev_infrastructure.txt | 82, 83 | 85 |
+
+## Подтверждение покрытия
+
+- NN 01..83 распределены полностью и без потерь.
+- Суммарное ожидаемое число строк во всех выходных файлах около 3500.
+- Каждый выходной файл не более 200 строк.
+- Всего файлов 37, что меньше лимита 50.
+- Если фактическое число строк файла не совпадёт с ожидаемым незначительно, соответствие NN и распределение исходных файлов не меняется.

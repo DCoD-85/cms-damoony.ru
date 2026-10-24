@@ -1,0 +1,82 @@
+# 15_www_entry_admin_bootstrap
+
+## 1. Назначение
+
+### 35_www_entry
+Точка входа веб-сайта и правила Apache. www/.htaccess — PHP-лимиты, rewrite, deny доступа к скрытым каталогам. www/index.php — глобальные константы, обработчики ошибок, роутинг /admin/, host-валидация, middleware security/rateLimit, старт сессии, подключение engine и запуск main. language/.htaccess — запрет доступа к языковым inc-файлам.
+
+### 40_www_admin_bootstrap
+Точка входа админки. bootstrap.php определяет константы ADMIN_ROOT/PROJECT_ROOT, стартует сессию по имени из admin.config, ставит security headers и CSP, подключает corescripts/_lib и admin/_lib. Разбирает p из $_GET, обрабатывает автовход по admin_fp, rateLimit для login POST, страницы login/logout/invite, диспатчит через AdminRouter. index.php — одна строка require bootstrap.
+
+## 2. Контракт (Методы)
+
+### 35_www_entry
+- www/.htaccess: модульные директивы Apache. Нет PHP-контракта.
+- www/index.php: функции error(string, string, string='', string=''), error_file(string, string, string), warning_file(string, string, string) — no-op, error_class(string, string, string); set_error_handler, set_exception_handler, register_shutdown_function.
+- language/.htaccess: Require all denied (или Order deny,allow / Deny from all для старого mod_authz).
+
+### 40_www_admin_bootstrap
+- bootstrap.php: константы, вызовы Auth/Csrf/Security/View/AdminRouter, ранний exit.
+- index.php: require __DIR__.'/bootstrap.php'.
+
+## 3. Зависимости
+
+### 35_www_entry
+config/site.config, config/admin.config, engine/middleware.php, engine/constants.php, engine/included.php, engine/main.php, $_SERVER, $_COOKIE, $_SESSION.
+
+### 40_www_admin_bootstrap
+config/admin.config, corescripts/_lib/{Fs,Json,Paths,Blocks,Config,Template,Validate,Result,Context,DataGateway,ResourceManager}.php, admin/_lib/{Auth,Security,View,WebRenderer,Csrf,AuditLog,AdminRouter}.php, engine/middleware.php, $_GET, $_POST, $_COOKIE, $_SESSION.
+
+## 4. Edge-cases
+
+### 35_www_entry
+- .htaccess: php_value задаются всегда, при mod_php. В PHP-FPM игнорируются.
+- .htaccess: RewriteCond для tests — REQUEST_FILENAME содержит 'tests' — редирект на tests?QUERY_STRING.
+- .htaccess: набор RewriteCond для статики и fallback index.php — цепочка упрощена до RewriteRule расширений [L] и RewriteRule ^(.*)$ index.php [L]. Условия с !-f, !-d, !-l перекрываются положительными (всегда false для статики, всегда true для остальных из-за OR и последней -f), фактически статика отдаётся как файл, остальное уходит в index.php.
+- .htaccess: Options -Indexes запрещает листинги.
+- index.php: path отрезает языковой префикс ^[a-z]{2}-[a-z]{2}$ из первого сегмента.
+- index.php: cfg_path отсутствует или json_decode null — cfg=[], но далее идёт проверка domains_real -> 500 Configuration error при непустом host.
+- index.php: admin_cfg отсутствует — [], ips не учитываются.
+- index.php: локальный IP и path не admin — 403 Access via IP is forbidden.
+- index.php: path admin и REMOTE_ADDR не приватный/не loopback — добавляется в allowed.
+- index.php: OSPanel в __DIR__ — ip добавляется в allowed всегда (обход).
+- index.php: REMOTE_ADDR в allowed и admin bootstrap есть — require_once, exit.
+- index.php: REMOTE_ADDR не в allowed — fallthrough на main, движок отдаст 404.
+- index.php: admin_bootstrap отсутствует — 500 Admin bootstrap not found.
+- index.php: domains_real пуст или не array — 500 Configuration error.
+- index.php: host точно равен known — valid; host оканчивается на .known и prefix есть в alliases_real[real][prefix] или alliases_available[real][prefix] — valid.
+- index.php: !host_valid и !is_local_ip — 400 Bad Host.
+- index.php: is_https через HTTPS=on, X-Forwarded-Proto только если REMOTE_ADDR в trusted_proxies.
+- index.php: middleware securityHeaders + rateLimit('site',120,60,900); StopMiddleware -> 429 Too Many Requests и die.
+- index.php: cookie_domain = '.'+real_domain если host не IP.
+- index.php: session_set_cookie_params — httponly, samesite Lax, secure=is_https.
+- index.php: error() при GL_DEBUG=true отдаёт HTML и exit; иначе 500 Internal Server Error и exit.
+- index.php: set_error_handler превращает E_WARNING и выше в ErrorException (не E_DEPRECATED/E_NOTICE), если error_reporting его не исключает.
+- index.php: set_exception_handler вызывает error с классом исключения.
+- index.php: register_shutdown_function на E_ERROR|E_PARSE|E_CORE_ERROR|E_COMPILE_ERROR|E_USER_ERROR; при headers_sent — только error_log.
+- index.php: include_once constants/included/main, ошибка — error_file.
+- language/.htaccess: Require all denied, для старых — Order deny,allow + Deny from all.
+
+### 40_www_admin_bootstrap
+- admin.config отсутствует или не array — session_name = 'admin_sid'.
+- CSRF провал на login POST — 403 CSRF token invalid, exit.
+- login успешен — AuditLog::login_ok, redirect dashboard.
+- login неудачен — AuditLog::login_fail, error = 'Неверный логин или пароль'.
+- p=login при уже авторизованном — redirect dashboard.
+- p=logout — AuditLog::logout, $auth->logout, redirect login.
+- p=invite или GET token непустой — валидация invite; невалидный — 404 'Приглашение недействительно или истекло'.
+- invite POST без canvas — error 'Не удалось получить отпечаток устройства'.
+- invite bind_only и пароль верный — Security::bind_device_from_invite, $_SESSION выставляется, redirect dashboard.
+- invite не bind_only и логин невалиден — error 'Некорректный логин'.
+- invite не bind_only и create_user_from_invite false — error 'Логин уже существует или ошибка сохранения'.
+- нет $_SESSION['admin_ok'] — redirect login.
+- POST без CSRF — 403.
+- AdminRouter::dispatch false — 404 с View result.
+
+## 5. Скрытая логика
+
+### 35_www_entry
+index.php выставляет GDEF_SECURE_CONSTANT='TRUE', SIMPLECMS=true, DS, DSA, BR. main_settings создаётся до main, чтобы main_settings передавался в main::__construct. main->main() без аргумента берёт URL из $_SERVER. Middleware rateLimit по умолчанию 120 запросов в 60 секунд с баном 900 секунд — мягче, чем admin (10/60/1800). Директивы RewriteCond в .htaccess частично избыточны, но в сумме дают отдачу статики и fallback index.php. language/.htaccess блокирует скачивание .inc-файлов через HTTP.
+
+### 40_www_admin_bootstrap
+Автовход по fingerprint-cookie admin_fp: json_decode, Security::find_device, session_regenerate_id, установка $_SESSION admin_ok/admin_login/admin_role, Security::touch_device и log('autologin:ok'). RateLimit для login — 10/60/1800, выбрасывает StopMiddleware — вылетает до этой точки index.php в engine middleware, но bootstrap ловит через require middleware и вызов rateLimit в try не обёрнут: StopMiddleware упадёт до auth проверки. Провал rateLimit обрабатывается внутри rateLimit через http_response_code(429) и throw StopMiddleware, в bootstrap нет catch — PHP фаталит. CSP: script-src 'self' 'unsafe-inline', frame-ancestors 'none'. X-Frame-Options: DENY, Referrer-Policy: same-origin. Порядок: сначала автовход (до login-страницы), потом rateLimit (только для login POST), потом login/logout/invite, потом auth check, потом глобальный CSRF для POST, потом AdminRouter.

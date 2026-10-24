@@ -1,0 +1,68 @@
+# 14_corescripts_commands_settings_vars
+
+## 1. Назначение
+
+### 32_corescripts_commands_settings
+CLI-команды настроек. SettingsList — вывод текущих ключей title, skin, logic, connect_type, списка движков app/*, списка тем media/<real>/skin/*. SettingsSet — установка whitelisted-ключей в engine.config под lock с валидацией по типу.
+
+### 33_corescripts_commands_vars
+CLI-команда VarsExtract. Сканирует algoritm дерева аллиаса, извлекает $available, $auth, $search, $default из каждого .php, если нет соответствующего .data.json — создаёт его через Json::writeAtomic. Опционально чистит .php от этих свойств (clean, по умолчанию true). Поддерживает dry (без записи) и no-clean.
+
+## 2. Контракт (Методы)
+
+### 32_corescripts_commands_settings
+- SettingsList: static plan(array): array, static run(array, ?Context=null): Result
+- SettingsSet: private const WHITELIST, static plan(array): array, static run(array, ?Context=null): Result, private static validate(string key, string value): ?string
+
+### 33_corescripts_commands_vars
+- VarsExtract: static plan(array): array, static run(array, ?Context=null): Result, private static extract_available(string): array, private static extract_bool(string, string, bool=false): bool, private static clean_php(string): string
+
+## 3. Зависимости
+
+### 32_corescripts_commands_settings
+Config, Paths, Cli, Result, Context, engine.config, site.config, filesystem.
+
+### 33_corescripts_commands_vars
+Validate, Paths, Fs, Json, Result, Context.
+
+## 4. Edge-cases
+
+### 32_corescripts_commands_settings
+- SettingsList: Config бросил Throwable — r->error('Не открыть site.config'), return.
+- SettingsList: domains_real пуст — domains не выводятся.
+- SettingsList: skin_dir не dir — skins пуст.
+- SettingsList: ключ не найден — '(не задано)'.
+- SettingsSet: params содержит только name с '=' — пары собираются из name. Остальные позиционные и --key=value идут в pairs.
+- SettingsSet: pairs пуст — r->error('Не указаны параметры'), return.
+- SettingsSet: ключ не в WHITELIST — r->error('Ключ не разрешён' + список), return.
+- SettingsSet: validate вернул строку — r->step(false, "key: err"), return.
+- SettingsSet: string пусто — 'не может быть пустым'.
+- SettingsSet: string длиннее 100 — ошибка.
+- SettingsSet: connect_type не http:// или https:// — ошибка.
+- SettingsSet: skin — Paths::skins(def_domain).'/'.value должен быть dir, иначе ошибка.
+- SettingsSet: logic — Paths::project().'/app/'.value.'/domain' должен быть dir, иначе ошибка.
+- SettingsSet: Config::mutate бросил Throwable — r->error('Не сохранить').
+
+### 33_corescripts_commands_vars
+- run: Validate domain или allias_name вернул строку — r->step(false), return.
+- run: base не dir — r->error('Каталог не найден'), return.
+- run: rel не .php — continue.
+- run: rel содержит '.data.' — continue.
+- run: basename rel === 'algoritm_pageshablon.php' — continue.
+- run: file_get_contents false — continue.
+- run: json существует — skipped++, .data.json не перезаписывается.
+- run: dry=true — r->file добавляется, но Json::writeAtomic и Fs::writeAtomic не вызываются.
+- run: no-clean установлен — clean=false, .php не правится.
+- run: cleaned_content === content — cleaned не увеличивается, файл не пишется.
+- extract_available: нет regex public array $available = [...] — return [''].
+- extract_available: regex нашёл — сбор строк в одинарных кавычках, снятие \'.
+- extract_bool: нет regex — default.
+- clean_php: удаляются 5 паттернов (available, auth, search, default, logged), поддержка LF и CRLF, схлопывание \n{3,} -> \n\n.
+
+## 5. Скрытая логика
+
+### 32_corescripts_commands_settings
+SettingsSet пишет в engine.config (Paths::engine()), не в site.config. Дефолтный домен для проверки skin: первый ключ domains_real из site.config или damoony.ru. WHITELIST: logic_type, ui_ajax_forms, title, skin, logic, connect_type — все string, кроме skin/logic/connect_type со своей валидацией. position name с '=' парсится в key=value, иначе name попадает в pairs как name. Значение всегда приводится к string перед записью.
+
+### 33_corescripts_commands_vars
+VarsExtract идемпотентен: повторный запуск не перезаписывает .data.json, пропускает уже созданные. clean_php удаляет public-свойства из исходного .php, перенося их в .data.json — переход на новый формат хранения правил в .data.json. Путь .data.json: rel с заменой .php на .data.json (preg_replace('/\.php$/', '.data.json', $rel)). dry пишет в created, но файл не создаётся — r->created показывает намерение, не результат.

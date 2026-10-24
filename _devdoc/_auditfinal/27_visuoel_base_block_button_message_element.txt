@@ -1,0 +1,154 @@
+# 27_visuoel_base_block_button_message_element
+
+## 1. Назначение
+
+### 63_visuoel_block
+Группа block. visuoel_block — прозрачная группа (singleton=false), элементы добавляются через ->text() и ->html(). build() создаёт пустой visuotag как обёртку. visuoel_block_text и visuoel_block_html — конкретные элементы с тегом div и css_class block_text / block_html. text-вариант наследует базовую обёртку, html-вариант переопределяет build() и вставляет содержимое без экранирования.
+
+### 64_visuoel_button
+Группа кнопок. visuoel_button — прозрачная multi-группа (singleton=false). Элементы: visuoel_button_submit, visuoel_button_reset, visuoel_button_button. Каждый переопределяет button_type() и создаёт свой __data. Рендер кнопки — в базовом visuoel_button__element (вне списка), типизируется через type="submit|reset|button".
+
+### 67_visuoel_base
+Базовые классы иерархии visuoel. visuoel_group — база групп (form, tabs, input, ...). Рисует div с css_class по умолчанию 'group'. visuoel_group_element — база элементов групп, рисует div с css_class по умолчанию 'element'; data() возвращает visuoel_group_element__data с полями readonly и disabled (default false). Сами по себе базовые классы не дают семантики, но задают контейнер и data-структуру для наследников.
+
+### 69_visuoel_message
+Группа сообщений. visuoel_message — прозрачная multi-группа (singleton=false). Элементы: info, success, warning, error. Каждый — наследник visuoel_message__element (вне списка) с message_type(), обёртка div с классом по типу. Используется в visuostruct_min_messages и visuoel_field_error-подобных сценариях.
+
+### 72_visuo_el_element
+Базовый корень visuoel и абстрактные элементы. visuoel — корень дерева UI, реализует ленивый init, add/remove/remove_class/clear, ленивые фабрики групп (form, tabs, input, field, button, block, message, table), getters input-data, release(), show(). Класс visuoel__data — общее хранилище данных узла, esc() и проксирующие add/remove/clear. Абстрактные __element-классы задают контракт для наследников: visuoel_input__element, visuoel_field__element, visuoel_field__button, visuoel_button__element, visuoel_block__element, visuoel_message__element.
+
+## 2. Контракт (Методы)
+
+### 63_visuoel_block
+- visuoel_block: make_default_data() -> visuoel_block__data, build(), text(?visuoel__data): visuoel_block_text, html(?visuoel__data): visuoel_block_html
+- visuoel_block__data extends visuoel_group__data (пустой)
+- visuoel_block_text extends visuoel_block__element: $tag='div', $css_class='block_text', make_default_data() -> visuoel_block_text__data
+- visuoel_block_text__data extends visuoel_block__element__data
+- visuoel_block_html extends visuoel_block__element: $tag='div', $css_class='block_html', make_default_data() -> visuoel_block_html__data, build(): content без экранирования
+- visuoel_block_html__data extends visuoel_block__element__data
+
+### 64_visuoel_button
+- visuoel_button: make_default_data() -> visuoel_button__data, build(), submit(?visuoel__data): visuoel_button_submit, reset(?visuoel__data): visuoel_button_reset, button(?visuoel__data): visuoel_button_button
+- visuoel_button__data extends visuoel_group__data (пустой)
+- visuoel_button_submit extends visuoel_button__element: button_type(): 'submit', make_default_data() -> visuoel_button_submit__data
+- visuoel_button_reset extends visuoel_button__element: button_type(): 'reset', make_default_data() -> visuoel_button_reset__data
+- visuoel_button_button extends visuoel_button__element: button_type(): 'button', make_default_data() -> visuoel_button_button__data
+
+### 67_visuoel_base
+- visuoel_group extends visuoel: $css_class='group', make_default_data() -> visuoel_group__data, build() -> div.<css_class>
+- visuoel_group__data extends visuoel__data (пустой)
+- visuoel_group_element extends visuoel: $css_class='element', make_default_data() -> visuoel_group_element__data, data(): visuoel_group_element__data, build() -> div.<css_class>
+- visuoel_group_element__data extends visuoel__data: $readonly=false, $disabled=false
+
+### 69_visuoel_message
+- visuoel_message: make_default_data() -> visuoel_message__data, build() -> пустой visuotag, info(?visuoel__data): visuoel_message_info, success(?visuoel__data): visuoel_message_success, warning(?visuoel__data): visuoel_message_warning, error(?visuoel__data): visuoel_message_error
+- visuoel_message__data extends visuoel_group__data (пустой)
+- visuoel_message_info: message_type(): 'info', make_default_data() -> visuoel_message_info__data
+- visuoel_message_success: message_type(): 'success', make_default_data() -> visuoel_message_success__data
+- visuoel_message_warning: message_type(): 'warning', make_default_data() -> visuoel_message_warning__data
+- visuoel_message_error: message_type(): 'error', make_default_data() -> visuoel_message_error__data
+
+### 72_visuo_el_element
+- visuoel: __construct(?visuoel, ?visuoel__data), make_default_data() -> visuoel__data, build(), init(): void, add(visuoel|visuotag): static, remove(visuoel|visuotag): bool, remove_class(string): int, clear(): static, form(?data), tabs(), input(), field(), button(), block(), message(), table(), data(), css_class(): string, tag(): string, is_root(): bool, get_input_text__data/get_input_hidden__data/get_input_password__data/get_input_submit__data, release(): string, show(): string
+- visuoel__data: __construct(visuoel), esc(?string): string, add(visuoel|visuotag), remove, remove_class, clear
+- visuoel_block__element: abstract, build() — div.<tag> с esc(content)
+- visuoel_block__element__data: $content='', set(string): static
+- visuoel_button__element: abstract, abstract button_type(): string, build() — button с type и class, name/value/css_class/disabled, text esc
+- visuoel_button__element__data: $text, $name, $value, $css_class + сеттеры set/text/name/value/css_class/disabled
+- visuoel_field__button: abstract, abstract make_button(): visuoel_button__element, build() — обёртка field с border-box и кнопкой
+- visuoel_field__button__data: $text, $css_class + text/css_class сеттеры
+- visuoel_field__element: abstract, abstract input_type(): string, make_input(): ?visuoel_input__element, build_element(visuotag): void, data(), make_default_data(), build()
+- visuoel_field__element__data: $label, $label_comment, $hint, $error, $show_label=true, $show_hint=true + label/hint/error/hide_label/hide_hint
+- visuoel_input__element: abstract, abstract input_type(): string, data(), make_default_data(), build() — <input> с id/name/value/placeholder/autocomplete/accept/multiple/checked/required/readonly/disabled
+- visuoel_input__element__data: все поля ввода и сеттеры set/id/value/placeholder/autocomplete/accept/multiple/checked/rows/cols/options/option/selected/size/placeholder_option/required/readonly/disabled
+- visuoel_message__element: abstract, abstract message_type(): string, build() — div.message message_<type>
+- visuoel_message__element__data: $text + set(string)
+
+## 3. Зависимости
+
+### 63_visuoel_block
+visuoel_group, visuoel_block__element (вне списка), visuoel__data, visuotag.
+
+### 64_visuoel_button
+visuoel_group, visuoel_button__element (вне списка), visuoel__data, visuotag.
+
+### 67_visuoel_base
+visuoel (вне списка), visuoel__data, visuotag.
+
+### 69_visuoel_message
+visuoel_group, visuoel_message__element (вне списка), visuotag.
+
+### 72_visuo_el_element
+visuotag, visuoel__data, htmlspecialchars(ENT_QUOTES,'UTF-8'), spl_object_id.
+
+## 4. Edge-cases
+
+### 63_visuoel_block
+- text: переданный $__data не visuoel_block_text__data — создаётся новый (data=null, default).
+- text/html: $data instanceof проверка — несовпадение приводит к дефолтным данным.
+- visuoel_block_html build: content==='' — содержимое не добавляется.
+- visuoel_block_html build: content непустой — вставляется как есть (raw HTML, без htmlspecialchars).
+- visuoel_block build: vt_start===vt_end===новый пустой visuotag, элементы крепятся через append/prepare (в базовом visuoel::release через vt_start).
+- visuoel_block_text: build унаследован от visuoel_block__element, рендерит div.block_text с содержимым.
+
+### 64_visuoel_button
+- submit/reset/button: переданный $__data не совпадает по типу — создаётся дефолт.
+- visuoel_button build: vt_start===vt_end===новый visuotag, обёртка прозрачная.
+- Каждый вызов submit/reset/button добавляет элемент в elements (multi-группа, счётчик растёт).
+- data() базового visuoel_button__element содержит поля name, value, css_class, disabled, text и т.д. (по контракту visuoel_button__element__data, вне списка).
+
+### 67_visuoel_base
+- visuoel_group build: vt_start===vt_end===новый visuotag с div.<css_class>, наследники могут переопределить build() или $css_class.
+- visuoel_group_element::data: возвращает __data приведённый к visuoel_group_element__data (в реальности наследники подменяют make_default_data на подкласс).
+- readonly/disabled в базе — false, используются в наследниках (input, field, ...).
+
+### 69_visuoel_message
+- Каждый метод: проверка instanceof по data-классу, несовпадение — дефолт.
+- visuoel_message build: vt_start===vt_end===новый visuotag, обёртка прозрачная.
+- Multi-группа: несколько info/success/warning/error накапливаются в elements.
+- Рендер конкретного элемента — в visuoel_message__element (вне списка), обёртка div с css_class по типу (по контракту базового класса).
+
+### 72_visuo_el_element
+- visuoel::__construct: parent null — is_root=true; visuoel = parent?->visuoel ?? $this.
+- init: повторный вызов — return по $this->init.
+- init: vt_end null — return до обхода.
+- init: элемент — visuoel — $el->init(), если vt_start null continue, иначе vt_end->append.
+- init: элемент — visuotag — prepare() затем append.
+- add: элемент visuoel с другим parent — remove у старого родителя, parent = $this.
+- remove: несовпадение — false.
+- remove_class: удаление всех экземпляров класса.
+- clear: обнуляет parent у дочерних visuoel.
+- form/tabs/input/field/button/block/message/table: если singleton и объект уже установлен — return существующего, иначе создаётся новый, сохраняется в свойстве, добавляется в elements.
+- form и др.: свойство visuoel_group заполняется только если ещё null — сохраняется первая группа.
+- release: !init — init(), vt_start null — ''.
+- show: алиас release.
+- visuoel__data esc: null и '' одинаково возвращают ''.
+- visuoel_input__element::build: id/name/value/placeholder/autocomplete/accept добавляются при непустых; multiple/checked/required/readonly/disabled при true.
+- visuoel_input__element::build: id/name с пустыми значениями не добавляются, но data-поля содержат значения.
+- visuoel_field__element::build: label только при show_label && label!=''.
+- build: label->attrs for='field_<name>'.
+- build: label_comment добавляется только при непустом.
+- build: build_element по умолчанию строит border-box + input через make_input; группы переопределяют build() целиком.
+- build: hint только при show_hint && hint!=''.
+- build: error всегда при error!=''.
+- visuoel_button__element::build: класс 'button button_<type>' + css_class при непустом; text esc при непустом.
+- visuoel_field__button::build: label опционально, border-box + make_button() с копированием text/name/value/css_class/disabled, hint, error; vt_end = field.
+- visuoel_block__element::build: content esc при непустом.
+- visuoel_message__element::build: класс 'message message_<type>', text esc при непустом.
+
+## 5. Скрытая логика
+
+### 63_visuoel_block
+visuoel_block — прозрачная группа: build() только контейнер, реальный тег и класс задаются в дочерних элементах через protected $tag/$css_class. visuoel_block_html — единственный visuoel-элемент, который осознанно не экранирует содержимое (комментарий 'Осторожно с пользовательскими данными!'), это XSS-точка, если данные приходят от пользователя. visuoel_block_text наследует обёртку через базовый класс visuoel_block__element (в файле не показан, но контекст указывает на стандартный div с css_class). Проверка instanceof для $__data не даёт подставить чужой data-класс — молча создаётся дефолт.
+
+### 64_visuoel_button
+visuoel_button — группа, которая не рисует собственную обёртку: тег <button> и type выводятся каждым дочерним элементом через button_type(). Порядок дочерних кнопок сохраняется (elements[] по порядку вызова). Тип кнопки управляет HTML-атрибутом type — это единственное различие submit/reset/button; name/value/css_class выставляются через data(). Проверка instanceof не позволяет подсунуть чужой data-класс.
+
+### 67_visuoel_base
+Иерархия visuoel_group / visuoel_group_element определяет, куда рендерить детей: группа крепит элементы в свой vt_end, элемент — в свой; наследники переопределяют build() и vt_start/vt_end. $css_class на группе и элементе — единственный уровень кастомизации без переопределения build(). Поле readonly/disabled на элементе распространяется через геттеры data() в input/field и пробрасывается в HTML-атрибуты через build() соответствующего наследника.
+
+### 69_visuoel_message
+visuoel_message — простая мульти-группа без обёртки, единственная задача — позволить цепочкой info()->...->error() добавить несколько сообщений в один visuotag. message_type() определяет css_class и, вероятно, data-класс конкретного элемента (по аналогии с button). В visuostruct_min_messages сообщения упаковываются как строка через visuotag->root()->release(); visuoel_message здесь напрямую не участвует, но концептуально пересекается с messages.php (старый движок).
+
+### 72_visuo_el_element
+visuoel::init вызывает build() на узле, затем обходит elements: visuoel-дети проходят init и прикрепляются vt_start к vt_end родителя; visuotag-дети проходят prepare и append. Это единая точка сборки дерева, наследники переопределяют только build() и задают vt_start/vt_end. release запускает init при необходимости — идемпотентность. visuoel_input__element::build — единый рендер <input> для text/hidden/password/email/file/submit/reset/button/checkbox/radio; select и textarea переопределяют build() полностью. visuoel_field__element::build — стандартная обёртка field для text/password/email/file/select/textarea; checkbox/radio/checkbox_group/radio_group/field_block переопределяют build() целиком. visuoel_button__element::build — общий рендер кнопки; visuoel_field__button::build — обёртка field над этой кнопкой через make_button(). Проверка instanceof на data-класс при фабриках-методах защищает от подмены типа снаружи.

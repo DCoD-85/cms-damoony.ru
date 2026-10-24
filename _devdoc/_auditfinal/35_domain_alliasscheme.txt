@@ -1,0 +1,60 @@
+# 35_domain_alliasscheme
+
+## 1. Назначение
+
+### 81_domain_alliasscheme
+Схемы домена damoony.ru для алиасов. alliasscheme — фасад-контейнер: autoload подключает login/error/min/www/visuo, init() создаёт экземпляры, load(schemename) сохраняет schemename и вызывает load() на схеме, reload() вызывает reload() на текущей. Каждая схема (error, login, min, visuo, www) реализует одинаковый контракт: __construct(alliasscheme), meta(), body_preload(), body(), clear(), init(), refresh(bool), load(), reload(). meta() наполняет visuorelease->meta() favicon, css, js; body() строит каркас html/head/body с dt_top/dt_middle/dt_left/dt_center/dt_right/dt_bottom/dt_policy/dt_debug; init() находит слоты find(class='dt_*'); refresh() заполняет слоты через main->alliasglobal-><name>->as_tag(). alliasscheme_visuo и alliasscheme_www переопределяют body() через дерево из *.data.php (массив tag/class/children/enabled/return/type) с рекурсивным _render_node и _refresh_nodes. alliasscheme_min рисует только dt_center (минимальный). alliasscheme_login и alliasscheme_error строят каркас вручную с разными наборами слотов и разными путями к css/js.
+
+## 2. Контракт (Методы)
+
+### 81_domain_alliasscheme
+- alliasscheme: __construct(main), autoload(bool=true, bool=true), init(), load(string schemename), reload()
+- alliasscheme_error: __construct, meta(), body_preload(), body(), clear(), init(), refresh(bool=false), load(), reload()
+- alliasscheme_login: __construct, meta(), body_preload(), body(), clear(), init(), refresh(bool=false), load(), reload() — дополнительно dt_policy
+- alliasscheme_min: __construct, meta(), body_preload(), body() (только dt_center), clear(), init(), refresh(bool=false), load(), reload()
+- alliasscheme_visuo: __construct, meta(), body_preload(), body(), _render_node(visuotag, array): visuotag, _init_nodes(array), _refresh_nodes(array), clear(), init(), refresh(bool=false), load(), reload()
+- alliasscheme_www: то же, что alliasscheme_visuo, но с другим *.data.php
+- Файлы *.data.php: alliasscheme_visuo.data.php и alliasscheme_www.data.php возвращают array{tag, class, layout, children[]}.
+
+## 3. Зависимости
+
+### 81_domain_alliasscheme
+main, main->main_settings->{skin('skin'), skin('allias'), domain_real_name}, main->visuorelease->{meta(), visuotag(), visuotag_clear(), visuotag_set()}, main->alliasglobal->{top,left,center,right,bottom,policy}, main->user->is_guest(), visuotag, visuometa, visuolink, DSA, DS, __DIR__.
+
+## 4. Edge-cases
+
+### 81_domain_alliasscheme
+- alliasscheme::autoload: autoload=true — include_once login/error/min/www/visuo; init=true — init().
+- load(schemename): сохраняет schemename, вызывает $this->{$schemename}->load(). При несуществующем свойстве — Warning, fatal.
+- reload(): $this->{$this->schemename}->reload().
+- meta(): visuorelease->meta()->clear() в начале; favicon с '#' . allias в href.
+- meta(): CSS алиаса для filler'ов добавляются только при $filler !== null && $filler->enabled.
+- error meta(): пути через media/<real_domain>/skin/<skin>/css/ и .../visuo/.
+- login meta(): пути через media/release/<skin>/css/ и .../visuo/visuoel/ — другой шаблон, css _log.css и _debug.css через '_' . DSA . 'log.css'.
+- visuo/www meta(): пути через media/<real_domain>/skin/<skin>/css/, .../visuo/, js из media/shared/scripts/{lib,engine}.
+- body_preload(): каждый scheme различается наборами div: error — tb_preload, tB_load с preresult_table, tB_messages, tB_tmp, tB_modules; login и www/visuo — popupload с bg-nav pos left/close/right, tB_load с bg-fon, preresult_table, tB_messages, tB_tmp, tB_modules; min — tb_preload, tB_load, tB_messages, tB_tmp, tB_modules без popupload.
+- error body(): html.cl_html.scheme_error + get_class($this) + guest/logged. head, body с append(preload), popup_result, dt с dt_top/dt_middle>dt_center/dt_bottom, затем dt_debug.
+- login body(): html.cl_html.scheme_login. dt: dt_top, dt_middle>dt_center+dt_right, dt_bottom; после dt -> dt_policy, dt_debug.
+- min body(): html — просто div.dt_center, без !DOCTYPE/html/head/body.
+- www body(): html.cl_html.scheme_visuo.scheme_login guest/logged — комбинация двух классов. Каркас вручную: dt_top, dt_middle>dt_left/dt_center/dt_right, dt_bottom; отдельно dt_policy и dt_debug.
+- visuo body(): html.cl_html.scheme_visuo guest/logged. Каркас строится через _render_node по alliasscheme_visuo.data.php. В конце body добавляются dt_policy и dt_debug.
+- _render_node: enabled=false — возврат без изменений.
+- _render_node: return=false (по умолчанию) — child, return=true — child->parent() (возврат к родителю).
+- _render_node: рекурсия по children; курсор мутируется, поэтому узлы вставляются последовательно.
+- _init_nodes: для class начинающегося на 'dt_' — $this->{$n['class']} = $this->dt_root->find(class: n['class']).
+- _refresh_nodes: для dt_*, type='block' (по умолчанию), isset($this->main->alliasglobal->{$name}) — clear() + append as_tag() блока.
+- clear(): обнуляет dt_root/top/middle/left/center/right/bottom, dt_policy если есть.
+- init(): dt_root = visuotag->root(), dt_top = find(class='dt_top') и т.д.
+- refresh(): в error/login/www/min — top/left/center/right/bottom/policy собираются через as_tag с проверкой !$logic->dt_X (короткое замыкание на null) и append в соответствующий слот.
+- refresh: в visuo/www полностью через _refresh_nodes.
+- load(): meta, body, init, refresh.
+- reload(): meta->clear, clear, meta, body, init, refresh(true).
+- login_init: дополнительно dt_policy.
+- www.data.php: root class 'dt' с layout horizontal, dt_top, dt_middle (vertical)>dt_left + dt_center (horizontal)>dt_right/dt_bottom.
+- visuo.data.php: root class 'dt' layout vertical, dt_top, dt_middle (horizontal)>dt_left/dt_center/dt_right, dt_bottom.
+- data.php: enabled=true, return=false — по умолчанию; поле type block|layout.
+
+## 5. Скрытая логика
+
+### 81_domain_alliasscheme
+Схема — независимый построитель HTML-каркаса конкретной страницы. Основная схема visuo и www используют данные *.data.php и рекурсию _render_node/_refresh_nodes, что позволяет менять каркас без правки PHP. Остальные (error, login, min) строят каркас кодом. Порядок в load(): сначала meta() (наполнить meta css/js), затем body() (построить скелет и сохранить через visuotag_set), затем init() (найти слоты по классу в построенном дереве), затем refresh() (вставить as_tag блоков). При reload() meta->clear + clear() сбрасывают состояние до повторной сборки. visuotag()->root() используется как точка входа — dt_root = root всего дерева. find(class='dt_top') — DFS-поиск по классу, устойчиво к вложенности. Каркас www содержит три отдельных dt_* (top, middle->left/center/right, bottom) плюс отдельные dt_policy и dt_debug на уровне body. В login каркас другой — dt_policy появляется в dt-middle только в set правой стороны. Отдельный курс на то, что min оставляет только div.dt_center — это режим минимального AJAX-ответа без полноценного HTML. Пути CSS/js в meta() различаются между login (media/release/<skin>/css/) и visuo/www/error (media/<real_domain>/skin/<skin>/css/) — это две разные эпохи сборки фронта, обе сохранены. _refresh_nodes в visuo/www полностью заменяет ручной refresh из error/login/min: он проходит по дереву из .data.php, находит dt_* по class и заполняет блок через as_tag из main->alliasglobal.
