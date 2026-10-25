@@ -18,9 +18,10 @@ final class LoggerTest extends TestCase
         return [new Logger($stream, Env::Test), $stream];
     }
 
-    /** @param resource $stream */
-    private function read(resource $stream): array
+    /** @param mixed $stream */
+    private function read(mixed $stream): array
     {
+        assert(is_resource($stream));
         rewind($stream);
         $raw = stream_get_contents($stream);
         assert(is_string($raw));

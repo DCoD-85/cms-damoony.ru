@@ -2,8 +2,14 @@
 /vendor/
 /vendor-dev/
 
-# composer lock (для проекта-приложения — коммитим, для библиотеки — нет)
-# composer.lock оставляем в репозитории
+# composer
+/composer.phar
+
+# phpunit / phpstan / cs-fixer cache
+.phpunit.cache/
+.phpunit.result.cache
+.php-cs-fixer.cache
+/_dev/var/
 
 # IDE
 /.idea/
@@ -19,8 +25,6 @@ desktop.ini
 
 # PHP
 *.log
-.phpunit.result.cache
-.php-cs-fixer.cache
 phpstan.neon.local
 /build/
 /coverage/
