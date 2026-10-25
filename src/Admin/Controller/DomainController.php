@@ -44,6 +44,8 @@ final class DomainController extends BaseController
                 $html .= '<td style="padding:8px; border-bottom:1px solid #eee;">' . View::esc((string)$ns) . '</td>';
                 $html .= '<td style="padding:8px; border-bottom:1px solid #eee;">';
                 $html .= '<a href="/admin/?p=allias&domain=' . urlencode($real) . '">Алиасы</a> | ';
+				$html .= '<a href="/admin/?p=block&domain=' . urlencode($real) . '">Блоки</a> | ';
+				$html .= '<a href="/admin/?p=page&domain=' . urlencode($real) . '&allias=www">Страницы</a> | ';
                 $html .= '<a href="/admin/?p=domain:remove&domain=' . urlencode($real) . '" style="color:red;">Удалить</a>';
                 $html .= '</td>';
                 $html .= '</tr>';
