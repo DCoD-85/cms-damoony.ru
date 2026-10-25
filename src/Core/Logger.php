@@ -11,15 +11,16 @@ use Stringable;
 final class Logger extends AbstractLogger
 {
     /** @var resource */
-    private $stream;
+    private mixed $stream;
 
     /** @param resource|null $stream */
     public function __construct(mixed $stream = null, private readonly Env $env = Env::Prod)
     {
-        $this->stream = $stream ?? fopen('php://stderr', 'wb');
-        if (!is_resource($this->stream)) {
+        $stream ??= fopen('php://stderr', 'wb');
+        if (!is_resource($stream)) {
             throw new \RuntimeException('Logger stream is not writable');
         }
+        $this->stream = $stream;
     }
 
     /**

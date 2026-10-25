@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 
 final class LoggerTest extends TestCase
 {
-    /** @return array{0: Logger, 1: resource} */
+    /** @return array{0: Logger, 1: mixed} */
     private function make(): array
     {
         $stream = fopen('php://memory', 'w+b');

@@ -1,10 +1,10 @@
 parameters:
     level: 8
     paths:
-        - src
+        - ../src
     excludePaths:
-        - src/Admin/Views/*
-    tmpDir: var/phpstan
+        - ../src/Admin/Views/*
+    tmpDir: ../var/phpstan
     checkMissingIterableValueType: true
     checkGenericClassInNonGenericObjectType: true
     reportUnmatchedIgnoredErrors: true

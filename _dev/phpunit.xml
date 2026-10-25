@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
-         bootstrap="vendor/autoload.php"
+         xsi:noNamespaceSchemaLocation="../vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="../vendor/autoload.php"
          colors="true"
-         cacheDirectory=".phpunit.cache"
+         cacheDirectory="../.phpunit.cache"
          executionOrder="depends"
          failOnWarning="true"
          failOnRisky="true"
@@ -11,27 +11,27 @@
          beStrictAboutTestsThatDoNotTestAnything="true">
     <testsuites>
         <testsuite name="unit">
-            <directory>tests/Unit</directory>
+            <directory>../_dev/tests/Unit</directory>
         </testsuite>
         <testsuite name="integration">
-            <directory>tests/Integration</directory>
+            <directory>../_dev/tests/Integration</directory>
         </testsuite>
         <testsuite name="scenarios">
-            <directory>tests/Scenarios</directory>
+            <directory>../_dev/tests/Scenarios</directory>
         </testsuite>
     </testsuites>
     <source>
         <include>
-            <directory>src</directory>
+            <directory>../src</directory>
         </include>
         <exclude>
-            <directory>src/Admin/Views</directory>
+            <directory>../src/Admin/Views</directory>
         </exclude>
     </source>
     <coverage>
         <report>
             <text outputFile="php://stdout" showUncoveredFiles="false"/>
-            <html outputDirectory="coverage"/>
+            <html outputDirectory="../coverage"/>
         </report>
     </coverage>
     <php>
