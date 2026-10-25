@@ -41,9 +41,17 @@ final class Config
     public function get(string $path, mixed $default = null): mixed
     {
         $segments = $path === '' ? [] : explode('.', $path);
+        return $this->getByKey($segments, $default);
+    }
+
+    /**
+     * @param list<string> $path
+     */
+    public function getByKey(array $path, mixed $default = null): mixed
+    {
         $cursor = $this->data;
 
-        foreach ($segments as $segment) {
+        foreach ($path as $segment) {
             if (!is_array($cursor) || !array_key_exists($segment, $cursor)) {
                 return $default;
             }
@@ -56,9 +64,17 @@ final class Config
     public function has(string $path): bool
     {
         $segments = $path === '' ? [] : explode('.', $path);
+        return $this->hasByKey($segments);
+    }
+
+    /**
+     * @param list<string> $path
+     */
+    public function hasByKey(array $path): bool
+    {
         $cursor = $this->data;
 
-        foreach ($segments as $segment) {
+        foreach ($path as $segment) {
             if (!is_array($cursor) || !array_key_exists($segment, $cursor)) {
                 return false;
             }

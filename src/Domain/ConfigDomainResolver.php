@@ -26,13 +26,13 @@ final class ConfigDomainResolver implements DomainResolverInterface
         foreach ($knownDomains as $known) {
             if ($host === $known) {
                 $real = $known;
-                $allias = (string) $this->site->get('alliases_real.' . $known . '.www', 'www');
+                $allias = (string) $this->site->getByKey(['alliases_real', $known, 'www'], 'www');
                 break;
             }
             $suffix = '.' . $known;
             if (str_ends_with($host, $suffix)) {
                 $prefix = substr($host, 0, -strlen($suffix));
-                $alliases = $this->site->get('alliases_real.' . $known, []);
+                $alliases = $this->site->getByKey(['alliases_real', $known], []);
                 if (is_array($alliases) && array_key_exists($prefix, $alliases)) {
                     $real = $known;
                     $allias = $prefix === '' ? 'www' : $prefix;
@@ -53,18 +53,18 @@ final class ConfigDomainResolver implements DomainResolverInterface
             );
         }
 
-        $available = (bool) $this->site->get('domains_available.' . $real, false);
+        $available = (bool) $this->site->getByKey(['domains_available', $real], false);
         $stub = null;
         if (!$available) {
-            $stub = (string) $this->site->get('domains_stub.' . $real . '.current', 'maintenance');
+            $stub = (string) $this->site->getByKey(['domains_stub', $real, 'current'], 'maintenance');
         }
 
         return new DomainContext(
             domain: $host,
             real: $real,
             allias: $allias,
-            logic: (string) $this->site->get('domains_logic.' . $real, $this->defaultLogic),
-            skin: (string) $this->site->get('domains_skins.' . $real, $this->defaultSkin),
+            logic: (string) $this->site->getByKey(['domains_logic', $real], $this->defaultLogic),
+            skin: (string) $this->site->getByKey(['domains_skins', $real], $this->defaultSkin),
             language: (string) $this->site->get('language', $this->defaultLanguage),
             available: $available,
             stub: $stub,
@@ -85,13 +85,16 @@ final class ConfigDomainResolver implements DomainResolverInterface
     public function namespace(string $domain): string
     {
         $real = $this->real($domain);
-        return (string) $this->site->get('domains_namespace.' . $real, str_replace('.', '_', $real));
+        return (string) $this->site->getByKey(
+            ['domains_namespace', $real],
+            str_replace('.', '_', $real),
+        );
     }
 
     /** @return list<string> */
     private function knownDomains(): array
     {
-        $domains = $this->site->get('domains_real', []);
+        $domains = $this->site->getByKey(['domains_real'], []);
         if (!is_array($domains)) {
             return [];
         }
