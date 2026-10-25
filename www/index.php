@@ -8,6 +8,9 @@ use Damoony\Core\Container;
 use Damoony\Core\Env;
 use Damoony\Core\ErrorHandler;
 use Damoony\Core\Logger;
+use Damoony\Http\Kernel;
+use Damoony\Http\Request;
+use Damoony\Http\Response;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -15,9 +18,7 @@ $root = dirname(__DIR__);
 $env = Env::fromServer();
 
 $configFile = $root . '/config/engine.config';
-$config = is_file($configFile)
-    ? Config::fromFile($configFile)
-    : Config::fromArray([]);
+$config = is_file($configFile) ? Config::fromFile($configFile) : Config::fromArray([]);
 
 $container = new Container();
 $logger = new Logger(null, $env);
@@ -33,8 +34,9 @@ $app = $container->get('app');
 assert($app instanceof Application);
 $app->boot();
 
-// Пока нет Kernel/Router — заглушка, чтобы front controller был валиден.
-header('Content-Type: text/plain; charset=utf-8');
-echo "Damoony engine: bootstrap OK\n";
-echo "env: " . $env->value . "\n";
-echo "php: " . PHP_VERSION . "\n";
+$handler = static function (Request $request) use ($env): Response {
+    return Response::text("Damoony engine: bootstrap OK\nenv: {$env->value}\npath: {$request->path}\nphp: " . PHP_VERSION);
+};
+
+$kernel = new Kernel($handler, $logger, $env);
+$kernel->handle(Request::fromGlobals())->send();
