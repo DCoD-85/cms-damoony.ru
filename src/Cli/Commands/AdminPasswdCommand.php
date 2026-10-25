@@ -44,10 +44,6 @@ final class AdminPasswdCommand implements CommandInterface
         }
 
         $hash = password_hash($password, PASSWORD_DEFAULT);
-        if ($hash === false) {
-            $r->error('Не удалось создать хеш');
-            return $r;
-        }
 
         $file = $this->paths->root() . '/config/admin.config';
         $cfg = is_file($file) ? Config::fromFile($file)->all() : [];
