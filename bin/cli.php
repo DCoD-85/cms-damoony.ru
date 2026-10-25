@@ -6,6 +6,7 @@ declare(strict_types=1);
 use Damoony\Cli\Application;
 use Damoony\Cli\ArgvParser;
 use Damoony\Cli\CommandRegistry;
+use Damoony\Cli\Commands\VarsExtractCommand;
 use Damoony\Cli\Commands\DbMigrateCommand;
 use Damoony\Cli\Commands\SchemeNewCommand;
 use Damoony\Cli\Commands\PageNewCommand;
@@ -42,7 +43,7 @@ $registry->add(new DbMigrateCommand($paths, [
     'driver' => 'sqlite',
     'path' => $root . '/var/damoony.db',
 ]));
-
+$registry->add(new VarsExtractCommand($paths));
 
 $app = new Application($registry, new ArgvParser(), new Renderer());
 exit($app->run($_SERVER['argv']));
