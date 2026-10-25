@@ -46,7 +46,7 @@ final class DomainNewCommandTest extends TestCase
         @rmdir($dir);
     }
 
-    private function run(array $args): Result
+    private function execute(array $args): Result
     {
         $cmd = new DomainNewCommand(new Paths($this->root));
         $result = new Result();
@@ -64,7 +64,7 @@ final class DomainNewCommandTest extends TestCase
 
     public function testCreatesDomainStructureAndConfig(): void
     {
-        $r = $this->run(['domain' => 'example.ru', 'namespace' => 'example']);
+        $r = $this->execute(['domain' => 'example.ru', 'namespace' => 'example']);
 
         self::assertTrue($r->ok);
         self::assertDirectoryExists($this->root . '/app/alpha.0.0/domain/example.ru');
@@ -81,21 +81,21 @@ final class DomainNewCommandTest extends TestCase
 
     public function testRejectsInvalidDomain(): void
     {
-        $r = $this->run(['domain' => 'bad domain']);
+        $r = $this->execute(['domain' => 'bad domain']);
         self::assertFalse($r->ok);
         self::assertContains('Некорректный домен', $r->errors);
     }
 
     public function testRejectsDuplicate(): void
     {
-        $this->run(['domain' => 'example.ru']);
-        $r = $this->run(['domain' => 'example.ru']);
+        $this->execute(['domain' => 'example.ru']);
+        $r = $this->execute(['domain' => 'example.ru']);
         self::assertFalse($r->ok);
     }
 
     public function testDefaultNamespaceFromDomain(): void
     {
-        $r = $this->run(['domain' => 'foo-bar.test']);
+        $r = $this->execute(['domain' => 'foo-bar.test']);
         self::assertTrue($r->ok);
         $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
         self::assertSame('foo_bar_test', $site['domains_namespace']['foo-bar.test']);
