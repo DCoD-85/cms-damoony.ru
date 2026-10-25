@@ -6,6 +6,7 @@ declare(strict_types=1);
 use Damoony\Cli\Application;
 use Damoony\Cli\ArgvParser;
 use Damoony\Cli\CommandRegistry;
+use Damoony\Cli\Commands\SchemeNewCommand;
 use Damoony\Cli\Commands\PageNewCommand;
 use Damoony\Cli\Commands\PageToggleCommand;
 use Damoony\Cli\Commands\FillerNewCommand;
@@ -35,6 +36,7 @@ $registry->add(new FillerNewCommand($paths));
 $registry->add(new FillerToggleCommand($paths));
 $registry->add(new PageNewCommand($paths));
 $registry->add(new PageToggleCommand($paths));
+$registry->add(new SchemeNewCommand($paths));
 
 $app = new Application($registry, new ArgvParser(), new Renderer());
 exit($app->run($_SERVER['argv']));
