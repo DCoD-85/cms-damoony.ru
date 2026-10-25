@@ -24,11 +24,11 @@
         }
     },
     "scripts": {
-        "test": "phpunit",
-        "stan": "phpstan analyse src --level=8",
-        "cs": "php-cs-fixer fix --dry-run --diff",
-        "cs-fix": "php-cs-fixer fix",
-        "check": ["@stan", "@cs", "@test"]
+		"test": "phpunit -c _dev/phpunit.xml",
+		"stan": "phpstan analyse -c _dev/phpstan.neon",
+		"cs": "php-cs-fixer fix --config=_dev/.php-cs-fixer.php --dry-run --diff",
+		"cs-fix": "php-cs-fixer fix --config=_dev/.php-cs-fixer.php",
+		"check": ["@stan", "@cs", "@test"]
     },
     "config": {
         "sort-packages": true,
