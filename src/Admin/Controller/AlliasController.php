@@ -28,9 +28,11 @@ final class AlliasController extends BaseController
     public function index(Request $request): Response
     {
         $auth = $this->requireAuth();
-        if ($auth !== null) return $auth;
+        if ($auth !== null) {
+            return $auth;
+        }
 
-        $domain = $request->query('domain', '');
+        $domain = (string) $request->query('domain', '');
         if ($domain === '') {
             return $this->redirect('/admin/?p=domain');
         }
@@ -46,9 +48,11 @@ final class AlliasController extends BaseController
 
         if (is_array($aliases)) {
             foreach ($aliases as $name => $mapped) {
-                if ($name === '') continue;
+                if ($name === '') {
+                    continue;
+                }
                 $html .= '<tr>';
-                $html .= '<td style="padding:8px; border-bottom:1px solid #eee;">' . View::esc($name) . '</td>';
+                $html .= '<td style="padding:8px; border-bottom:1px solid #eee;">' . View::esc((string)$name) . '</td>';
                 $html .= '<td style="padding:8px; border-bottom:1px solid #eee;">' . View::esc($domain . '/' . $name) . '</td>';
                 $html .= '</tr>';
             }
@@ -61,9 +65,15 @@ final class AlliasController extends BaseController
     public function new(Request $request): Response
     {
         $auth = $this->requireAuth();
-        if ($auth !== null) return $auth;
+        if ($auth !== null) {
+            return $auth;
+        }
 
-        $domain = $request->query('domain', '') ?? (string)($request->post['domain'] ?? '');
+        $domain = (string) $request->query('domain', '');
+        if ($domain === '' && $request->isPost()) {
+            $domain = (string) ($request->post['domain'] ?? '');
+        }
+        
         if ($domain === '') {
             return $this->redirect('/admin/?p=domain');
         }
@@ -71,7 +81,9 @@ final class AlliasController extends BaseController
         $error = '';
         if ($request->isPost()) {
             $csrfErr = $this->requireCsrf($request);
-            if ($csrfErr !== null) return $csrfErr;
+            if ($csrfErr !== null) {
+                return $csrfErr;
+            }
 
             $name = (string) ($request->post['name'] ?? '');
 
@@ -87,7 +99,9 @@ final class AlliasController extends BaseController
         }
 
         $html = '<div class="admin-card"><h1>Добавить алиас для ' . View::esc($domain) . '</h1>';
-        if ($error !== '') $html .= '<div class="error">' . View::esc($error) . '</div>';
+        if ($error !== '') {
+            $html .= '<div class="error">' . View::esc($error) . '</div>';
+        }
         $html .= '<form method="post" class="admin-form">';
         $html .= $this->csrf->field();
         $html .= '<input type="hidden" name="domain" value="' . View::esc($domain) . '">';
