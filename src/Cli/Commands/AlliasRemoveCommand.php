@@ -59,7 +59,7 @@ final class AlliasRemoveCommand implements CommandInterface
 
         if (Fs::isDir($alliasDir)) {
             if (!$force) {
-                $context->step('Отменено пользователем', false, 'нужен --force');
+                $r->error('Отменено пользователем (нужен --force)');
                 return $r;
             }
             $trash = $alliasDir . '_trash_' . time();
