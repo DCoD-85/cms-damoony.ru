@@ -13,7 +13,7 @@ use Damoony\Ui\Node;
 use Damoony\Demo\Region\HelloRegion;
 use Damoony\Demo\Region\FooterRegion;
 
-final class HomePage extends Algoritm
+class HomePage extends Algoritm
 {
     public function default(): Node|Response|null
     {
