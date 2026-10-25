@@ -3,15 +3,17 @@ declare(strict_types=1);
 
 use Damoony\Admin\AdminRouter;
 use Damoony\Admin\Auth;
+use Damoony\Admin\Controller\AlliasController;
 use Damoony\Admin\Controller\DashboardController;
+use Damoony\Admin\Controller\DomainController;
 use Damoony\Admin\Controller\LoginController;
 use Damoony\Admin\Controller\LogoutController;
 use Damoony\Admin\View;
 use Damoony\Core\Config;
-use Damoony\Core\Container;
 use Damoony\Core\Env;
 use Damoony\Core\ErrorHandler;
 use Damoony\Core\Logger;
+use Damoony\Files\Paths;
 use Damoony\Http\Kernel;
 use Damoony\Http\Middleware\SecurityHeadersMiddleware;
 use Damoony\Http\Request;
@@ -25,6 +27,9 @@ $env = Env::fromServer();
 
 $adminConfigFile = $root . '/config/admin.config';
 $adminConfig = is_file($adminConfigFile) ? Config::fromFile($adminConfigFile) : Config::fromArray([]);
+
+$siteConfigFile = $root . '/config/site.config';
+$siteConfig = is_file($siteConfigFile) ? Config::fromFile($siteConfigFile) : Config::fromArray([]);
 
 $logger = new Logger(null, $env);
 $errorHandler = new ErrorHandler($logger, $env);
@@ -42,11 +47,14 @@ $auth = new Auth(
 );
 
 $view = new View('Damoony Admin');
+$paths = new Paths($root);
 
 $router = new AdminRouter();
 $router->register('login', new LoginController($auth, $csrf, $view));
 $router->register('logout', new LogoutController($auth, $csrf, $view));
-$router->register('dashboard', new DashboardController($auth, $csrf, $view));
+$router->register('dashboard', new DashboardController($auth, $csrf, $view, $siteConfig));
+$router->register('domain', new DomainController($auth, $csrf, $view, $paths, $siteConfig));
+$router->register('allias', new AlliasController($auth, $csrf, $view, $paths, $siteConfig));
 
 $security = new SecurityHeadersMiddleware(isHttps: ($_SERVER['HTTPS'] ?? '') === 'on');
 $handler = static fn (Request $r) => $security->process($r, static fn (Request $r2) => $router->dispatch($r2));
