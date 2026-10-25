@@ -29,10 +29,6 @@
         </exclude>
     </source>
     <coverage>
-        <report>
-            <text outputFile="php://stdout" showUncoveredFiles="false"/>
-            <html outputDirectory="../coverage"/>
-        </report>
     </coverage>
     <php>
         <ini name="error_reporting" value="-1"/>
