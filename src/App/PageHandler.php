@@ -48,6 +48,8 @@ final class PageHandler implements PageHandlerInterface
             /** @var AlgoritmInterface $page */
             $page = new $class($context, $match->args);
             $result = $page->default();
+
+            return $this->toResponse($result, $domain);
         } catch (\Throwable $e) {
             return Response::internalError($e->getMessage());
         }
