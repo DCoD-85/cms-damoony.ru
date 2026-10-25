@@ -27,15 +27,23 @@ final class Application
             return 1;
         }
 
-        $result = new Result();
-        $context = new Context(static function (string $m, bool $ok = true, string $d = '') use ($result): void {
-            $result->step($m, $ok, $d);
+        $contextResult = new Result();
+        $context = new Context(static function (string $m, bool $ok = true, string $d = '') use ($contextResult): void {
+            $contextResult->step($m, $ok, $d);
         });
 
         try {
             $result = $handler->run($parsed['args'], $context);
         } catch (\Throwable $e) {
+            $result = new Result();
             $result->error($e->getMessage());
+        }
+
+        if ($contextResult->steps !== []) {
+            $result->steps = array_merge($contextResult->steps, $result->steps);
+        }
+        if (!$contextResult->ok) {
+            $result->ok = false;
         }
 
         echo $this->renderer->render($result);
