@@ -53,8 +53,6 @@ final class PageHandler implements PageHandlerInterface
         } catch (\Throwable $e) {
             return Response::internalError($e->getMessage());
         }
-
-        return $this->toResponse($result, $domain);
     }
 
     private function path(DomainContext $domain, string $pathRel, string $classChain): string
