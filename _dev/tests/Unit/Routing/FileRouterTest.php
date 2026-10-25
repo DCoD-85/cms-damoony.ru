@@ -83,8 +83,8 @@ final class FileRouterTest extends TestCase
 
     public function testExactSegment(): void
     {
-        $this->writeAlgoritm('example.ru', 'www', '', ['available' => ['']]);
-        $this->writeAlgoritm('example.ru', 'www', 'about', ['available' => ['about']]);
+        $this->writeAlgoritm('example.ru', 'www', '', ['available' => ['about']]);
+        $this->writeAlgoritm('example.ru', 'www', 'about', ['available' => ['']]);
         $m = $this->router()->match('/about', $this->ctx());
         self::assertTrue($m->found);
         self::assertSame('algoritm_about', $m->classChain);
@@ -93,8 +93,8 @@ final class FileRouterTest extends TestCase
 
     public function testRegexSegmentWithArg(): void
     {
-        $this->writeAlgoritm('example.ru', 'www', '', ['available' => ['']]);
-        $this->writeAlgoritm('example.ru', 'www', 'slug', ['available' => ['([a-z-]+)|slug']]);
+        $this->writeAlgoritm('example.ru', 'www', '', ['available' => ['([a-z-]+)|slug']]);
+        $this->writeAlgoritm('example.ru', 'www', 'slug', ['available' => ['']]);
         $m = $this->router()->match('/hello-world', $this->ctx());
         self::assertTrue($m->found);
         self::assertSame('algoritm_slug', $m->classChain);
@@ -126,9 +126,9 @@ final class FileRouterTest extends TestCase
 
     public function testDeepMatch(): void
     {
-        $this->writeAlgoritm('example.ru', 'www', '', ['available' => ['']]);
-        $this->writeAlgoritm('example.ru', 'www', 'docs', ['available' => ['docs']]);
-        $this->writeAlgoritm('example.ru', 'www', 'docs/page', ['available' => ['([a-z]+)|page']]);
+        $this->writeAlgoritm('example.ru', 'www', '', ['available' => ['docs']]);
+        $this->writeAlgoritm('example.ru', 'www', 'docs', ['available' => ['([a-z]+)|page']]);
+        $this->writeAlgoritm('example.ru', 'www', 'docs/page', ['available' => ['']]);
         $m = $this->router()->match('/docs/intro', $this->ctx());
         self::assertTrue($m->found);
         self::assertSame('algoritm_docs_page', $m->classChain);

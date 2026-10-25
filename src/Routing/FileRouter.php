@@ -18,31 +18,34 @@ final class FileRouter implements RouterInterface
     ) {
     }
 
-    public function match(string $path, DomainContext $domain): RouteMatch
+     public function match(string $path, DomainContext $domain): RouteMatch
     {
         $segments = $this->segments($path);
         $ns = $domain->logic;
-        $domainReal = $domain->real;
-        $allias = $domain->allias;
-
-        $base = $this->appRoot . '/app/' . $ns . '/domain/' . $domainReal . '/allias/' . $allias . '/algoritm';
+        $base = $this->appRoot . '/app/' . $ns . '/domain/' . $domain->real . '/allias/' . $domain->allias . '/algoritm';
         if (!is_dir($base)) {
             return RouteMatch::notFound();
+        }
+
+        $rootRules = $this->loadRules($base . '/.rules.json');
+        if ($rootRules === null) {
+            return RouteMatch::notFound();
+        }
+
+        if ($segments === []) {
+            return RouteMatch::found('algoritm', '');
         }
 
         $classChain = 'algoritm';
         $pathRel = '';
         $args = [];
 
-        foreach ($segments as $segment) {
-            $rulesFile = $base . ($pathRel === '' ? '' : '/' . $pathRel) . '/.rules.json';
-            $rules = $this->loadRules($rulesFile);
+        foreach ($segments as $i => $segment) {
+            $rules = $i === 0
+                ? $rootRules
+                : $this->loadRules($base . '/' . $pathRel . '/.rules.json');
             if ($rules === null) {
                 return RouteMatch::notFound();
-            }
-
-            if ($this->matcher->requiresAuth($rules)) {
-                // auth check is delegated to caller via domain context; not available here
             }
 
             $matched = $this->matcher->matchSegment($segment, $rules);
@@ -52,10 +55,12 @@ final class FileRouter implements RouterInterface
 
             [$target, $segArgs] = $matched;
             $pathRel = $pathRel === '' ? $target : $pathRel . '/' . $target;
-            $classChain = $classChain . '_' . $target;
+            $classChain .= '_' . $target;
             $args = array_merge($args, $segArgs);
 
-            if (!is_dir($base . '/' . $pathRel) && !is_file($base . '/' . $pathRel . '.php')) {
+            $candidateDir = $base . '/' . $pathRel;
+            $candidatePhp = $candidateDir . '/' . $classChain . '.php';
+            if (!is_dir($candidateDir) && !is_file($candidatePhp)) {
                 return RouteMatch::notFound();
             }
         }
