@@ -73,6 +73,20 @@ final class Request
         return $headers;
     }
 
+	public function withPath(string $path): self
+    {
+        return new self(
+            method: $this->method,
+            path: $path,
+            query: $this->query,
+            post: $this->post,
+            headers: $this->headers,
+            cookies: $this->cookies,
+            files: $this->files,
+            server: $this->server,
+        );
+    }
+
     public function header(string $name): ?string
     {
         return $this->headers[strtolower($name)] ?? null;
