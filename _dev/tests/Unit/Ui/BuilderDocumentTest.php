@@ -61,7 +61,7 @@ final class BuilderDocumentTest extends TestCase
     {
         $b = Builder::button('submit', 'primary');
         $b->content('Send');
-        self::assertSame('<button type="submit" class="primary">Send</button>', $b->release());
+        self::assertSame('<button class="primary" type="submit">Send</button>', $b->release());
     }
 
     public function testDocumentBasics(): void
