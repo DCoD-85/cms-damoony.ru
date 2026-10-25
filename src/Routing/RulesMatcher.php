@@ -10,6 +10,10 @@ final class RulesMatcher
      * @param array<string, mixed> $rules
      * @return array{0: string, 1: array<string, string>}|null
      */
+     /**
+     * @param array<string, mixed> $rules
+     * @return array{0: string, 1: array<string, string>}|null
+     */
     public function matchSegment(string $segment, array $rules): ?array
     {
         $available = $rules['available'] ?? [];
@@ -22,10 +26,6 @@ final class RulesMatcher
                 continue;
             }
 
-            if ($pattern === $segment) {
-                return [$pattern, []];
-            }
-
             if ($pattern === '') {
                 if ($segment === '') {
                     return ['', []];
@@ -34,16 +34,19 @@ final class RulesMatcher
             }
 
             if (!str_contains($pattern, '|')) {
+                if ($pattern === $segment) {
+                    return [$pattern, []];
+                }
                 continue;
             }
 
-            [$target, $regex] = explode('|', $pattern, 2) + [1 => ''];
-            if ($target === '' || !str_starts_with($regex, '/')) {
+            [$regex, $target] = explode('|', $pattern, 2) + [1 => ''];
+            if ($regex === '' || $target === '') {
                 continue;
             }
 
             $full = '#^' . $regex . '$#u';
-            $matched = @preg_match($full, $segment, $m);
+            $matched = @preg_match($full, $segment);
             if ($matched === 1) {
                 return [$target, [$target => $segment]];
             }

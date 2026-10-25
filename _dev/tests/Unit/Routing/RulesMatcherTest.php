@@ -30,7 +30,7 @@ final class RulesMatcherTest extends TestCase
     {
         self::assertSame(
             ['slug', ['slug' => 'hello-world']],
-            $this->m->matchSegment('hello-world', ['available' => ['slug|/[a-z0-9-]+/']]),
+            $this->m->matchSegment('hello-world', ['available' => ['([a-z0-9-]+)|slug']]),
         );
     }
 
