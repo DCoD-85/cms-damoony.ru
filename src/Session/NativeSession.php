@@ -6,11 +6,23 @@ namespace Damoony\Session;
 
 final class NativeSession implements SessionInterface
 {
+    /** @var 'Lax'|'lax'|'None'|'none'|'Strict'|'strict' */
+    private readonly string $sameSite;
+
     public function __construct(
         private readonly string $name = 'DSESSID',
         private readonly bool $secure = true,
-        private readonly string $sameSite = 'Lax',
+        string $sameSite = 'Lax',
     ) {
+        $this->sameSite = match ($sameSite) {
+            'Lax' => 'Lax',
+            'lax' => 'lax',
+            'None' => 'None',
+            'none' => 'none',
+            'Strict' => 'Strict',
+            'strict' => 'strict',
+            default => 'Lax',
+        };
     }
 
     public function start(): void
@@ -68,13 +80,23 @@ final class NativeSession implements SessionInterface
         $_SESSION = [];
         if (ini_get('session.use_cookies')) {
             $params = session_get_cookie_params();
+            $samesite = match ($params['samesite']) {
+                'Lax' => 'Lax',
+                'lax' => 'lax',
+                'None' => 'None',
+                'none' => 'none',
+                'Strict' => 'Strict',
+                'strict' => 'strict',
+                default => 'Lax',
+            };
+
             setcookie(session_name() ?: '', '', [
                 'expires' => time() - 42000,
                 'path' => $params['path'],
                 'domain' => $params['domain'],
                 'secure' => $params['secure'],
                 'httponly' => $params['httponly'],
-                'samesite' => $params['samesite'] ?? 'Lax',
+                'samesite' => $samesite,
             ]);
         }
         session_destroy();
