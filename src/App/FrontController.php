@@ -7,13 +7,16 @@ namespace Damoony\App;
 use Damoony\Domain\DomainResolverInterface;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
+use Damoony\Region\RegionContext;
 use Damoony\Routing\RouterInterface;
 use Psr\Container\ContainerInterface;
 
 final class FrontController
 {
-    public function __construct(private readonly ContainerInterface $container)
-    {
+    public function __construct(
+        private readonly ContainerInterface $container,
+        private readonly PageHandlerInterface $pages,
+    ) {
     }
 
     public function handle(Request $request): Response
@@ -21,7 +24,8 @@ final class FrontController
         $resolver = $this->container->get(DomainResolverInterface::class);
         assert($resolver instanceof DomainResolverInterface);
 
-        $domain = $resolver->resolve((string) ($request->header('host') ?? $request->server['SERVER_NAME'] ?? ''));
+        $host = (string) ($request->header('host') ?? $request->server['SERVER_NAME'] ?? '');
+        $domain = $resolver->resolve($host);
 
         if (!$domain->available) {
             return Response::text('Maintenance: ' . ($domain->stub ?? 'unknown'), 503);
@@ -35,11 +39,8 @@ final class FrontController
             return Response::notFound();
         }
 
-        return Response::text(sprintf(
-            "Damoony engine\npath: %s\nclass: %s\nargs: %s",
-            $request->path,
-            (string) $match->classChain,
-            json_encode($match->args) ?: '{}',
-        ));
+        $context = new RegionContext($request, $domain);
+
+        return $this->pages->handle($match, $context);
     }
 }

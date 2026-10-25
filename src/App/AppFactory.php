@@ -48,14 +48,13 @@ final class AppFactory
         );
 
         $container->set(
+            PageHandlerInterface::class,
+            fn () => new PageHandler($root, 'example'),
+        );
+
+        $container->set(
             Application::class,
-            fn (Container $c) => new Application(
-                $c,
-                $env,
-                $config,
-                $logger,
-                $errorHandler,
-            ),
+            fn (Container $c) => new Application($c, $env, $config, $logger, $errorHandler),
         );
 
         $app = $container->get(Application::class);

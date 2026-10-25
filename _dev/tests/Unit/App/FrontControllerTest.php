@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Damoony\Tests\Unit\App;
 
 use Damoony\App\FrontController;
+use Damoony\App\PageHandler;
 use Damoony\Core\Config;
 use Damoony\Core\Container;
 use Damoony\Domain\ConfigDomainResolver;
@@ -62,6 +63,11 @@ final class FrontControllerTest extends TestCase
         return $c;
     }
 
+    private function fc(bool $available): FrontController
+    {
+        return new FrontController($this->container($available), new PageHandler($this->root, 'example'));
+    }
+
     private function req(string $path): Request
     {
         return new Request('GET', $path, headers: ['host' => 'example.ru']);
@@ -69,28 +75,36 @@ final class FrontControllerTest extends TestCase
 
     public function testUnavailableDomainReturns503(): void
     {
-        $fc = new FrontController($this->container(false));
-        self::assertSame(503, $fc->handle($this->req('/'))->status);
+        self::assertSame(503, $this->fc(false)->handle($this->req('/'))->status);
     }
 
     public function testUnknownRouteReturns404(): void
     {
-        $fc = new FrontController($this->container(true));
-        self::assertSame(404, $fc->handle($this->req('/nope'))->status);
+        self::assertSame(404, $this->fc(true)->handle($this->req('/nope'))->status);
     }
 
-    public function testMatchedRouteReturns200(): void
+    public function testMatchedRouteRendersPage(): void
     {
         $base = $this->root . '/app/alpha.0.0/domain/example.ru/allias/www/algoritm';
         mkdir($base . '/about', 0777, true);
         file_put_contents($base . '/.rules.json', json_encode(['available' => ['about']]));
         file_put_contents($base . '/about/.rules.json', json_encode(['available' => ['']]));
-        file_put_contents($base . '/about/algoritm_about.php', "<?php\n");
+        file_put_contents($base . '/about/algoritm_about.php', <<<'PHP'
+<?php
+namespace example\www;
+use Damoony\Algoritm\Algoritm;
+use Damoony\Http\Response;
+use Damoony\Ui\Builder;
+use Damoony\Ui\Node;
+final class algoritm_about extends Algoritm {
+    public function default(): Node|Response|null {
+        return Builder::div('page')->content('about');
+    }
+}
+PHP);
 
-        $fc = new FrontController($this->container(true));
-        $r = $fc->handle($this->req('/about'));
-
+        $r = $this->fc(true)->handle($this->req('/about'));
         self::assertSame(200, $r->status);
-        self::assertStringContainsString('algoritm_about', $r->body);
+        self::assertStringContainsString('<div class="page">about</div>', $r->body);
     }
 }
