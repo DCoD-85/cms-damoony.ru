@@ -20,7 +20,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Damoony\\Tests\\": "tests/"
+        	"Damoony\\Tests\\": "_dev/tests/"
         }
     },
     "scripts": {
