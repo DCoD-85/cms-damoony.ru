@@ -65,7 +65,11 @@ final class FrontControllerTest extends TestCase
 
     private function fc(bool $available): FrontController
     {
-        return new FrontController($this->container($available), new PageHandler($this->root, 'example'));
+        $c = $this->container($available);
+        $resolver = $c->get(DomainResolverInterface::class);
+        assert($resolver instanceof DomainResolverInterface);
+
+        return new FrontController($c, new PageHandler($this->root, $resolver));
     }
 
     private function req(string $path): Request

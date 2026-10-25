@@ -49,7 +49,11 @@ final class AppFactory
 
         $container->set(
             PageHandlerInterface::class,
-            fn () => new PageHandler($root, 'example'),
+            function (Container $c) use ($root): PageHandlerInterface {
+                $resolver = $c->get(DomainResolverInterface::class);
+                assert($resolver instanceof DomainResolverInterface);
+                return new PageHandler($root, $resolver);
+            },
         );
 
         $container->set(

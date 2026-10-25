@@ -6,6 +6,7 @@ namespace Damoony\App;
 
 use Damoony\Algoritm\AlgoritmInterface;
 use Damoony\Domain\DomainContext;
+use Damoony\Domain\DomainResolverInterface;
 use Damoony\Http\Response;
 use Damoony\Region\RegionContext;
 use Damoony\Routing\RouteMatch;
@@ -17,7 +18,7 @@ final class PageHandler implements PageHandlerInterface
 {
     public function __construct(
         private readonly string $appRoot,
-        private readonly string $namespace,
+        private readonly DomainResolverInterface $resolver,
     ) {
     }
 
@@ -35,7 +36,8 @@ final class PageHandler implements PageHandlerInterface
 
         require_once $file;
 
-        $class = $this->namespace . '\\' . $domain->allias . '\\' . $match->classChain;
+        $ns = $this->resolver->namespace($domain->real);
+        $class = $ns . '\\' . $domain->allias . '\\' . $match->classChain;
         if (!class_exists($class, false)) {
             return Response::internalError('Page class not found: ' . $class);
         }

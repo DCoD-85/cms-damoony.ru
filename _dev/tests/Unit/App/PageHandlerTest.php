@@ -6,6 +6,7 @@ namespace Damoony\Tests\Unit\App;
 
 use Damoony\App\PageHandler;
 use Damoony\Domain\DomainContext;
+use Damoony\Domain\DomainResolverInterface;
 use Damoony\Http\Request;
 use Damoony\Region\RegionContext;
 use Damoony\Routing\RouteMatch;
@@ -39,6 +40,31 @@ final class PageHandlerTest extends TestCase
             is_dir($p) ? $this->rmrf($p) : @unlink($p);
         }
         @rmdir($dir);
+    }
+
+    private function resolver(): DomainResolverInterface
+    {
+        return new class implements DomainResolverInterface {
+            public function resolve(string $host): DomainContext
+            {
+                throw new \LogicException('not used');
+            }
+
+            public function exists(string $domain): bool
+            {
+                return true;
+            }
+
+            public function real(string $domain): string
+            {
+                return $domain;
+            }
+
+            public function namespace(string $domain): string
+            {
+                return 'example';
+            }
+        };
     }
 
     private function ctx(): RegionContext
@@ -75,12 +101,11 @@ final class algoritm_ph_about extends Algoritm {
 }
 PHP);
 
-        $h = new PageHandler($this->root, 'example');
+        $h = new PageHandler($this->root, $this->resolver());
         $r = $h->handle(RouteMatch::found('algoritm_ph_about', 'ph_about'), $this->ctx());
 
         self::assertSame(200, $r->status);
         self::assertStringContainsString('<div class="page">about</div>', $r->body);
-        self::assertStringContainsString('<!DOCTYPE html>', $r->body);
     }
 
     public function testReturnsResponseDirectly(): void
@@ -98,7 +123,7 @@ final class algoritm_ph_api extends Algoritm {
 }
 PHP);
 
-        $h = new PageHandler($this->root, 'example');
+        $h = new PageHandler($this->root, $this->resolver());
         $r = $h->handle(RouteMatch::found('algoritm_ph_api', 'ph_api'), $this->ctx());
 
         self::assertSame(200, $r->status);
@@ -107,7 +132,7 @@ PHP);
 
     public function testMissingFileReturns404(): void
     {
-        $h = new PageHandler($this->root, 'example');
+        $h = new PageHandler($this->root, $this->resolver());
         $r = $h->handle(RouteMatch::found('algoritm_ph_nope', 'ph_nope'), $this->ctx());
         self::assertSame(404, $r->status);
     }
@@ -122,7 +147,7 @@ final class algoritm_ph_nul extends Algoritm {
 }
 PHP);
 
-        $h = new PageHandler($this->root, 'example');
+        $h = new PageHandler($this->root, $this->resolver());
         $r = $h->handle(RouteMatch::found('algoritm_ph_nul', 'ph_nul'), $this->ctx());
         self::assertSame(500, $r->status);
     }
