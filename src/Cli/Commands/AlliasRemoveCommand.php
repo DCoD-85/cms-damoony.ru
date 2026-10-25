@@ -46,7 +46,6 @@ final class AlliasRemoveCommand implements CommandInterface
             return $r;
         }
         $site = Config::fromFile($siteFile)->all();
-        $site = is_array($site) ? $site : [];
 
         if (!isset($site['domains_real'][$domain])) {
             $r->error('Домен не найден');
