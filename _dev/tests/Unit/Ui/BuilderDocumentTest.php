@@ -28,7 +28,7 @@ final class BuilderDocumentTest extends TestCase
     {
         $a = Builder::a('/home', 'nav');
         $a->content('Home');
-        self::assertSame('<a href="/home" class="nav">Home</a>', $a->release());
+        self::assertSame('<a class="nav" href="/home">Home</a>', $a->release());
     }
 
     public function testImg(): void
