@@ -24,14 +24,15 @@ final class AjaxScenarioTest extends TestCase
     {
         $this->root = sys_get_temp_dir() . '/damoony_s14_' . bin2hex(random_bytes(4));
         $dir = $this->root . '/app/alpha.0.0/domain/damoony.test/allias/www/algoritm';
-        mkdir($dir . '/ajax', 0777, true);
+        mkdir($dir . '/ajax/mode', 0777, true);
         file_put_contents($dir . '/.rules.json', json_encode(['available' => ['ajax']]));
         file_put_contents($dir . '/ajax/.rules.json', json_encode(['available' => ['([a-z]+)|mode']]));
-        file_put_contents($dir . '/ajax/algoritm_ajax.php', <<<'PHP'
+        file_put_contents($dir . '/ajax/algoritm_ajax.php', "<?php\nnamespace damoony_test\\www;\nclass algoritm_ajax {}\n");
+        file_put_contents($dir . '/ajax/mode/algoritm_ajax_mode.php', <<<'PHP'
 <?php
 namespace damoony_test\www;
 use Damoony\Demo\Page\AjaxPage;
-final class algoritm_ajax extends AjaxPage {}
+final class algoritm_ajax_mode extends AjaxPage {}
 PHP);
     }
 
