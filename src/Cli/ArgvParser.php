@@ -8,13 +8,14 @@ final class ArgvParser
 {
     /**
      * @param list<string> $argv
-     * @return array{command: string, args: array<string, string>, flags: list<string>}
+     * @return array{command: string, args: array<string, string>, flags: list<string>, positional: list<string>}
      */
     public function parse(array $argv): array
     {
         $command = '';
         $args = [];
         $flags = [];
+        $positional = [];
 
         foreach ($argv as $i => $token) {
             if ($i === 0) {
@@ -39,10 +40,14 @@ final class ArgvParser
                 $flags[] = ltrim($token, '-');
                 continue;
             }
-            $args['_positional'][] = $token;
+            $positional[] = $token;
         }
 
-        /** @var array<string, string> $args */
-        return ['command' => $command, 'args' => $args, 'flags' => $flags];
+        return [
+            'command' => $command,
+            'args' => $args,
+            'flags' => $flags,
+            'positional' => $positional,
+        ];
     }
 }
