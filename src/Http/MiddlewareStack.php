@@ -15,6 +15,7 @@ final class MiddlewareStack
     {
     }
 
+    /** @param MiddlewareInterface|class-string<MiddlewareInterface> $middleware */
     public function add(MiddlewareInterface|string $middleware): self
     {
         $this->middlewares[] = $middleware;

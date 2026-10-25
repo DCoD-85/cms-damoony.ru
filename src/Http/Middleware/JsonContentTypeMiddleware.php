@@ -14,7 +14,7 @@ final class JsonContentTypeMiddleware implements MiddlewareInterface
     {
         $response = $next($request);
 
-        if ($request->isAjax() && !isset($response->headers['content-type'])) {
+        if ($request->isAjax()) {
             return $response->withHeader('content-type', 'application/json; charset=utf-8');
         }
 

@@ -30,19 +30,18 @@ final class MiddlewareStackTest extends TestCase
     public function testOrderIsOutsideIn(): void
     {
         $stack = new MiddlewareStack(new Container());
-        $log = [];
+        $log = new \ArrayObject();
 
         $mk = fn (string $name) => new class($name, $log) implements MiddlewareInterface {
-            /** @param list<string> $log */
-            public function __construct(private string $name, private array &$log)
+            public function __construct(private string $name, private \ArrayObject $log)
             {
             }
 
             public function process(Request $request, callable $next): Response
             {
-                $this->log[] = "before:{$this->name}";
+                $this->log->append("before:{$this->name}");
                 $response = $next($request);
-                $this->log[] = "after:{$this->name}";
+                $this->log->append("after:{$this->name}");
                 return $response;
             }
         };
@@ -53,7 +52,7 @@ final class MiddlewareStackTest extends TestCase
 
         self::assertSame(
             ['before:a', 'before:b', 'before:c', 'after:c', 'after:b', 'after:a'],
-            $log,
+            $log->getArrayCopy(),
         );
     }
 
