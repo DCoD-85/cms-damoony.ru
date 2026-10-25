@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Damoony\App;
 
 use Damoony\Domain\DomainResolverInterface;
+use Damoony\Error\ErrorPage;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
 use Damoony\Region\RegionContext;
@@ -28,7 +29,7 @@ final class FrontController
         $domain = $resolver->resolve($host);
 
         if (!$domain->available) {
-            return Response::text('Maintenance: ' . ($domain->stub ?? 'unknown'), 503);
+            return ErrorPage::maintenance($domain->language);
         }
 
         $router = $this->container->get(RouterInterface::class);
@@ -36,7 +37,9 @@ final class FrontController
 
         $match = $router->match($request->path, $domain);
         if (!$match->found) {
-            return Response::notFound();
+            return $match->code === 403
+                ? ErrorPage::forbidden($domain->language)
+                : ErrorPage::notFound($domain->language);
         }
 
         $context = new RegionContext($request, $domain);
