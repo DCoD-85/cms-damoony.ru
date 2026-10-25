@@ -131,15 +131,16 @@ final class VarsExtractCommand implements CommandInterface
     }
 
     /** @return list<string> */
+    /** @return list<string> */
     private function extractAvailable(string $content): array
     {
         if (!preg_match('/public\s+array\s+\$available\s*=\s*\[(.*?)\];/s', $content, $m)) {
             return [''];
         }
 
-        preg_match_all('/[\'"]([^\'"]+)[\'"]/', $m[1], $matches);
+        preg_match_all('/[\'"]([^\'"]*)[\'"]/', $m[1], $matches);
         /** @var list<string> $values */
-        $values = $matches[1] ?? [];
+        $values = $matches[1];
         return $values === [] ? [''] : $values;
     }
 
