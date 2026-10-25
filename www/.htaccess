@@ -1,8 +1,8 @@
 RewriteEngine On
 RewriteBase /
 
-# /admin/ — не переписывать, отдать DirectoryIndex (www/admin/index.php)
-RewriteRule ^admin/ - [L]
+# /admin/ и всё внутри — принудительно в admin/index.php
+RewriteRule ^admin(/.*)?$ admin/index.php [L,QSA]
 
 # --- dev: прямой доступ к /tests/ ---
 RewriteCond %{REQUEST_FILENAME} ^(.*)tests(.*)$
