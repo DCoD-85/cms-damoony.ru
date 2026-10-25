@@ -86,25 +86,25 @@ final class FrontControllerTest extends TestCase
     public function testMatchedRouteRendersPage(): void
     {
         $base = $this->root . '/app/alpha.0.0/domain/example.ru/allias/www/algoritm';
-        mkdir($base . '/about', 0777, true);
-        file_put_contents($base . '/.rules.json', json_encode(['available' => ['about']]));
-        file_put_contents($base . '/about/.rules.json', json_encode(['available' => ['']]));
-        file_put_contents($base . '/about/algoritm_about.php', <<<'PHP'
+        mkdir($base . '/fc_home', 0777, true);
+        file_put_contents($base . '/.rules.json', json_encode(['available' => ['fc_home']]));
+        file_put_contents($base . '/fc_home/.rules.json', json_encode(['available' => ['']]));
+        file_put_contents($base . '/fc_home/algoritm_fc_home.php', <<<'PHP'
 <?php
 namespace example\www;
 use Damoony\Algoritm\Algoritm;
 use Damoony\Http\Response;
 use Damoony\Ui\Builder;
 use Damoony\Ui\Node;
-final class algoritm_about extends Algoritm {
+final class algoritm_fc_home extends Algoritm {
     public function default(): Node|Response|null {
-        return Builder::div('page')->content('about');
+        return Builder::div('page')->content('home');
     }
 }
 PHP);
 
-        $r = $this->fc(true)->handle($this->req('/about'));
+        $r = $this->fc(true)->handle($this->req('/fc_home'));
         self::assertSame(200, $r->status);
-        self::assertStringContainsString('<div class="page">about</div>', $r->body);
+        self::assertStringContainsString('<div class="page">home</div>', $r->body);
     }
 }

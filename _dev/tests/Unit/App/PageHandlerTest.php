@@ -61,14 +61,14 @@ final class PageHandlerTest extends TestCase
 
     public function testRendersNodeViaDocument(): void
     {
-        $this->writePage('about', 'algoritm_about', <<<'PHP'
+        $this->writePage('ph_about', 'algoritm_ph_about', <<<'PHP'
 <?php
 namespace example\www;
 use Damoony\Algoritm\Algoritm;
 use Damoony\Http\Response;
 use Damoony\Ui\Builder;
 use Damoony\Ui\Node;
-final class algoritm_about extends Algoritm {
+final class algoritm_ph_about extends Algoritm {
     public function default(): Node|Response|null {
         return Builder::div('page')->content('about');
     }
@@ -76,7 +76,7 @@ final class algoritm_about extends Algoritm {
 PHP);
 
         $h = new PageHandler($this->root, 'example');
-        $r = $h->handle(RouteMatch::found('algoritm_about', 'about'), $this->ctx());
+        $r = $h->handle(RouteMatch::found('algoritm_ph_about', 'ph_about'), $this->ctx());
 
         self::assertSame(200, $r->status);
         self::assertStringContainsString('<div class="page">about</div>', $r->body);
@@ -85,13 +85,13 @@ PHP);
 
     public function testReturnsResponseDirectly(): void
     {
-        $this->writePage('api', 'algoritm_api', <<<'PHP'
+        $this->writePage('ph_api', 'algoritm_ph_api', <<<'PHP'
 <?php
 namespace example\www;
 use Damoony\Algoritm\Algoritm;
 use Damoony\Http\Response;
 use Damoony\Ui\Node;
-final class algoritm_api extends Algoritm {
+final class algoritm_ph_api extends Algoritm {
     public function default(): Node|Response|null {
         return Response::json(['ok' => true]);
     }
@@ -99,7 +99,7 @@ final class algoritm_api extends Algoritm {
 PHP);
 
         $h = new PageHandler($this->root, 'example');
-        $r = $h->handle(RouteMatch::found('algoritm_api', 'api'), $this->ctx());
+        $r = $h->handle(RouteMatch::found('algoritm_ph_api', 'ph_api'), $this->ctx());
 
         self::assertSame(200, $r->status);
         self::assertSame('application/json; charset=utf-8', $r->headers['content-type']);
@@ -108,22 +108,22 @@ PHP);
     public function testMissingFileReturns404(): void
     {
         $h = new PageHandler($this->root, 'example');
-        $r = $h->handle(RouteMatch::found('algoritm_nope', 'nope'), $this->ctx());
+        $r = $h->handle(RouteMatch::found('algoritm_ph_nope', 'ph_nope'), $this->ctx());
         self::assertSame(404, $r->status);
     }
 
     public function testNullResultIsError(): void
     {
-        $this->writePage('nul', 'algoritm_nul', <<<'PHP'
+        $this->writePage('ph_nul', 'algoritm_ph_nul', <<<'PHP'
 <?php
 namespace example\www;
 use Damoony\Algoritm\Algoritm;
-final class algoritm_nul extends Algoritm {
+final class algoritm_ph_nul extends Algoritm {
 }
 PHP);
 
         $h = new PageHandler($this->root, 'example');
-        $r = $h->handle(RouteMatch::found('algoritm_nul', 'nul'), $this->ctx());
+        $r = $h->handle(RouteMatch::found('algoritm_ph_nul', 'ph_nul'), $this->ctx());
         self::assertSame(500, $r->status);
     }
 }
