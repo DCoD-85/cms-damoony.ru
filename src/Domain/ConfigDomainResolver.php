@@ -19,22 +19,21 @@ final class ConfigDomainResolver implements DomainResolverInterface
     public function resolve(string $host): DomainContext
     {
         $host = strtolower($host);
-        $knownDomains = $this->knownDomains();
         $real = null;
         $allias = '';
 
-        foreach ($knownDomains as $known) {
-            if ($host === $known) {
-                $real = $known;
-                $allias = (string) $this->site->getByKey(['alliases_real', $known, 'www'], 'www');
+        foreach ($this->domainsMap() as $incoming => $mapped) {
+            if ($host === $incoming) {
+                $real = $mapped;
+                $allias = (string) $this->site->getByKey(['alliases_real', $mapped, 'www'], 'www');
                 break;
             }
-            $suffix = '.' . $known;
+            $suffix = '.' . $incoming;
             if (str_ends_with($host, $suffix)) {
                 $prefix = substr($host, 0, -strlen($suffix));
-                $alliases = $this->site->getByKey(['alliases_real', $known], []);
+                $alliases = $this->site->getByKey(['alliases_real', $mapped], []);
                 if (is_array($alliases) && array_key_exists($prefix, $alliases)) {
-                    $real = $known;
+                    $real = $mapped;
                     $allias = $prefix === '' ? 'www' : $prefix;
                     break;
                 }
@@ -73,13 +72,12 @@ final class ConfigDomainResolver implements DomainResolverInterface
 
     public function exists(string $domain): bool
     {
-        return in_array(strtolower($domain), $this->knownDomains(), true);
+        return array_key_exists(strtolower($domain), $this->domainsMap());
     }
 
     public function real(string $domain): string
     {
-        $ctx = $this->resolve($domain);
-        return $ctx->available || $ctx->allias !== '' ? $ctx->real : $domain;
+        return $this->resolve($domain)->real;
     }
 
     public function namespace(string $domain): string
@@ -91,14 +89,25 @@ final class ConfigDomainResolver implements DomainResolverInterface
         );
     }
 
-    /** @return list<string> */
-    private function knownDomains(): array
+    /** @return array<string, string> */
+    private function domainsMap(): array
     {
         $domains = $this->site->getByKey(['domains_real'], []);
         if (!is_array($domains)) {
             return [];
         }
 
-        return array_values(array_filter(array_map('strval', array_keys($domains)), fn (string $d) => $d !== ''));
+        $map = [];
+        foreach ($domains as $incoming => $mapped) {
+            if (!is_string($incoming) || $incoming === '') {
+                continue;
+            }
+            if (!is_string($mapped) || $mapped === '') {
+                continue;
+            }
+            $map[$incoming] = $mapped;
+        }
+
+        return $map;
     }
 }

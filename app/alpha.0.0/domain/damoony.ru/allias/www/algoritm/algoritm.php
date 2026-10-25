@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace damoony3_ru\www;
+namespace damoony_ru\www;
 
 use Damoony\Demo\Page\HomePage;
 

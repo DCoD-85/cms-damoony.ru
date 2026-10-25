@@ -94,4 +94,47 @@ final class ConfigDomainResolverTest extends TestCase
         self::assertSame('example', $r->namespace('example.ru'));
         self::assertSame('other', $r->namespace('other.ru'));
     }
+    private function mappedResolver(): ConfigDomainResolver
+    {
+        $site = Config::fromArray([
+            'language' => 'ru-ru',
+            'domains_real' => [
+                'damoony.ru' => 'damoony.ru',
+                'damoony.online' => 'damoony.ru',
+                'damoony.shop' => 'damoony.ru',
+                'damoony3.ru' => 'damoony.ru',
+            ],
+            'domains_available' => ['damoony.ru' => true],
+            'domains_namespace' => ['damoony.ru' => 'damoony_ru'],
+            'alliases_real' => ['damoony.ru' => ['www' => 'www', 'admin' => 'admin']],
+        ]);
+
+        return new ConfigDomainResolver($site);
+    }
+
+    public function testMappedDomainExact(): void
+    {
+        $ctx = $this->mappedResolver()->resolve('damoony.online');
+        self::assertSame('damoony.ru', $ctx->real);
+        self::assertSame('www', $ctx->allias);
+        self::assertTrue($ctx->available);
+    }
+
+    public function testMappedDomainAllias(): void
+    {
+        $ctx = $this->mappedResolver()->resolve('admin.damoony.shop');
+        self::assertSame('damoony.ru', $ctx->real);
+        self::assertSame('admin', $ctx->allias);
+    }
+
+    public function testMappedDomainNamespace(): void
+    {
+        self::assertSame('damoony_ru', $this->mappedResolver()->namespace('damoony3.ru'));
+    }
+
+    public function testMappedDomainReal(): void
+    {
+        self::assertSame('damoony.ru', $this->mappedResolver()->real('damoony.online'));
+        self::assertSame('damoony.ru', $this->mappedResolver()->real('damoony3.ru'));
+    }
 }
