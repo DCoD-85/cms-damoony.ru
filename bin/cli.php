@@ -6,6 +6,8 @@ declare(strict_types=1);
 use Damoony\Cli\Application;
 use Damoony\Cli\ArgvParser;
 use Damoony\Cli\CommandRegistry;
+use Damoony\Cli\Commands\BlockNewCommand;
+use Damoony\Cli\Commands\BlockRemoveCommand;
 use Damoony\Cli\Commands\AlliasNewCommand;
 use Damoony\Cli\Commands\AlliasRemoveCommand;
 use Damoony\Cli\Commands\DomainNewCommand;
@@ -23,6 +25,8 @@ $registry->add(new HelpCommand($registry));
 $registry->add(new DomainNewCommand($paths));
 $registry->add(new AlliasNewCommand($paths));
 $registry->add(new AlliasRemoveCommand($paths));
+$registry->add(new BlockNewCommand($paths));
+$registry->add(new BlockRemoveCommand($paths));
 
 $app = new Application($registry, new ArgvParser(), new Renderer());
 exit($app->run($_SERVER['argv']));
