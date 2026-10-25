@@ -10,6 +10,7 @@ use Damoony\Http\Response;
 
 final class SkinCookieMiddleware implements MiddlewareInterface
 {
+    /** @param list<string> $allowed */
     public function __construct(
         private readonly string $cookieName = 'skin',
         private readonly array $allowed = ['default', 'dark'],
