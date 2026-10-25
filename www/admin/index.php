@@ -55,8 +55,8 @@ $router->register('logout', new LogoutController($auth, $csrf, $view));
 $router->register('dashboard', new DashboardController($auth, $csrf, $view, $siteConfig));
 $router->register('domain', new DomainController($auth, $csrf, $view, $paths, $siteConfig));
 $router->register('allias', new AlliasController($auth, $csrf, $view, $paths, $siteConfig));
-$router->register('block', new \Damoony\Admin\Controller\BlockController($auth, $csrf, $view, $paths, $siteConfig));
-$router->register('page', new \Damoony\Admin\Controller\PageController($auth, $csrf, $view, $paths, $siteConfig));
+$router->register('block', new \Damoony\Admin\Controller\BlockController($auth, $csrf, $view, $paths));
+$router->register('page', new \Damoony\Admin\Controller\PageController($auth, $csrf, $view, $paths));
 
 $security = new SecurityHeadersMiddleware(isHttps: ($_SERVER['HTTPS'] ?? '') === 'on');
 $handler = static fn (Request $r) => $security->process($r, static fn (Request $r2) => $router->dispatch($r2));

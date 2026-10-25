@@ -22,7 +22,6 @@ final class BlockController extends BaseController
         \Damoony\Security\Csrf $csrf,
         View $view,
         private readonly Paths $paths,
-        private readonly Config $siteConfig,
     ) {
         parent::__construct($auth, $csrf, $view);
     }
