@@ -1,6 +1,4 @@
-
 <?php
-
 declare(strict_types=1);
 
 use Damoony\Admin\AdminRouter;
@@ -28,7 +26,6 @@ $env = Env::fromServer();
 $adminConfigFile = $root . '/config/admin.config';
 $adminConfig = is_file($adminConfigFile) ? Config::fromFile($adminConfigFile) : Config::fromArray([]);
 
-$container = new Container();
 $logger = new Logger(null, $env);
 $errorHandler = new ErrorHandler($logger, $env);
 $errorHandler->register();
@@ -50,10 +47,6 @@ $router = new AdminRouter();
 $router->register('login', new LoginController($auth, $csrf, $view));
 $router->register('logout', new LogoutController($auth, $csrf, $view));
 $router->register('dashboard', new DashboardController($auth, $csrf, $view));
-
-$handler = static function (Request $r) use ($router): \Damoony\Http\Response {
-    return $router->dispatch($r);
-};
 
 $security = new SecurityHeadersMiddleware(isHttps: ($_SERVER['HTTPS'] ?? '') === 'on');
 $handler = static fn (Request $r) => $security->process($r, static fn (Request $r2) => $router->dispatch($r2));
