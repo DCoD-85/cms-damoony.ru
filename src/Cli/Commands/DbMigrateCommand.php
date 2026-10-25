@@ -13,6 +13,7 @@ use Damoony\Files\Paths;
 
 final class DbMigrateCommand implements CommandInterface
 {
+    /** @param array<string, mixed> $dbConfig */
     public function __construct(
         private readonly Paths $paths,
         private readonly array $dbConfig = ['driver' => 'sqlite', 'path' => ':memory:'],
