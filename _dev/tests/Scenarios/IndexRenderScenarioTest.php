@@ -119,8 +119,19 @@ PHP);
         $c->setInstance(Paths::class, new Paths($this->root));
         $c->setInstance('site', $site);
         
-        // Мок авторизации
-        $c->setInstance(AuthInterface::class, new class implements AuthInterface {
+        $session = new class implements \Damoony\Session\SessionInterface {
+            public array $data = [];
+            public function start(): void {}
+            public function isStarted(): bool { return true; }
+            public function get(string $key, mixed $default = null): mixed { return $this->data[$key] ?? $default; }
+            public function set(string $key, mixed $value): void { $this->data[$key] = $value; }
+            public function remove(string $key): void { unset($this->data[$key]); }
+            public function regenerate(): void {}
+            public function destroy(): void { $this->data = []; }
+        };
+        $c->setInstance(\Damoony\Security\Csrf::class, new \Damoony\Security\Csrf($session));
+
+        $c->setInstance(\Damoony\Auth\AuthInterface::class, new class implements \Damoony\Auth\AuthInterface {
             public function isAuthenticated(): bool { return true; }
             public function user(): ?array { return null; }
             public function login(string $login, string $password): bool { return false; }
