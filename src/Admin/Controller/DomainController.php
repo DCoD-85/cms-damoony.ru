@@ -152,4 +152,94 @@ final class DomainController extends BaseController
 
         return Response::html($this->view->render($card, ['title' => 'Новый домен']));
     }
+
+   public function edit(Request $request): Response
+    {
+        $auth = $this->requireAuth();
+        if ($auth !== null) return $auth;
+
+        $domain = (string) $request->query('domain', '');
+        if ($domain === '') return $this->redirect('/admin/?p=domain');
+
+        // Проверяем, существует ли домен
+        if ($this->siteConfig->getByKey(['domains_real', $domain]) === null) {
+            return $this->redirect('/admin/?p=domain');
+        }
+
+        $error = '';
+        $success = $request->query('saved') ? 'Настройки сохранены' : '';
+
+        if ($request->isPost()) {
+            $csrfErr = $this->requireCsrf($request);
+            if ($csrfErr !== null) return $csrfErr;
+
+            $title = (string) ($request->post['title'] ?? '');
+            $available = isset($request->post['available']);
+            $stub = (string) ($request->post['stub'] ?? 'maintenance');
+            $until = (string) ($request->post['until'] ?? '');
+
+            // Обновляем конфиг
+            $data = $this->siteConfig->all();
+            $data['domains_titles'][$domain] = $title;
+            $data['domains_available'][$domain] = $available;
+            $data['domains_stub'][$domain]['current'] = $stub;
+            
+            if ($until !== '') {
+                $data['domains_stub'][$domain]['until'] = strtotime($until);
+            } else {
+                unset($data['domains_stub'][$domain]['until']);
+            }
+
+            try {
+                \Damoony\Files\Fs::writeAtomic($this->paths->siteConfig(), json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n");
+                return $this->redirect('/admin/?p=domain:edit&domain=' . urlencode($domain) . '&saved=1');
+            } catch (\Throwable $e) {
+                $error = 'Ошибка сохранения: ' . $e->getMessage();
+            }
+        }
+
+        // Получаем текущие значения
+        $title = (string) $this->siteConfig->getByKey(['domains_titles', $domain], '');
+        $available = (bool) $this->siteConfig->getByKey(['domains_available', $domain], false);
+        $stub = (string) $this->siteConfig->getByKey(['domains_stub', $domain, 'current'], 'maintenance');
+        $until = $this->siteConfig->getByKey(['domains_stub', $domain, 'until'], 0);
+        $untilStr = $until > 0 ? date('Y-m-d\TH:i', (int)$until) : '';
+
+        // Строим форму
+        $form = Form::create('/admin/?p=domain:edit&domain=' . urlencode($domain), 'POST')
+            ->csrf($this->csrf->field())
+            ->add(Field::text('title')->label('Заголовок (title)')->value($title))
+            ->add(Field::checkbox('available')->label('Сайт включен (если выключить — покажется заглушка)')->checked($available))
+            ->add(Field::select('stub')->label('Заглушка при выключении домена')->options([
+                'maintenance' => 'Реконструкция',
+                'coming_soon' => 'Скоро открытие',
+            ])->selected($stub))
+            ->add(Field::text('until')->label('Время авто-включения')->value($untilStr)->hint('Если указать время, сайт автоматически включится в этот момент. (Формат: YYYY-MM-DDTHH:MM)'))
+            ->submit('Сохранить');
+
+        $card = Builder::div('admin-card');
+        
+        // Хлебные крошки
+        $breadcrumbs = Builder::div('breadcrumbs');
+        $breadcrumbs->append(Builder::a('/admin/?p=domain')->content('Домены'));
+        $breadcrumbs->append(Text::raw(' / '));
+        $breadcrumbs->append(Builder::span()->content($domain));
+        
+        $card->append($breadcrumbs);
+        $card->append(Builder::h(1)->content('Настройки домена'));
+        
+        // Табы
+        $card->append(View::domainTabs($domain, 'settings'));
+
+        if ($success !== '') {
+            $card->append(Message::success($success)->build());
+        }
+        if ($error !== '') {
+            $card->append(Message::error($error)->build());
+        }
+        
+        $card->append($form->build());
+
+        return Response::html($this->view->render($card, ['title' => 'Настройки: ' . $domain]));
+    }
 }
