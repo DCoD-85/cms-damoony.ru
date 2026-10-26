@@ -171,27 +171,36 @@ final class DomainController extends BaseController
             $status = $isMain ? '<span class="badge">Основной</span>' : '<span class="badge">Алиас</span>';
             $comment = (string) $this->siteConfig->getByKey(['domains_comments', $incoming], '');
             
-            // Форма для комментария
-            $commentForm = '<form method="post" action="/admin/?p=domain:saveComment&domain=' . urlencode($domain) . '&incoming=' . urlencode($incoming) . '" style="display:flex; gap:8px; margin:0;">';
-            $commentForm .= $this->csrf->field();
-            $commentForm .= '<input type="text" name="comment" value="' . View::esc($comment) . '" placeholder="Заметка..." style="padding:6px 10px; border:1px solid #ddd; border-radius:6px; font-size:13px; width:150px;">';
-            $commentForm .= '<button type="submit" class="btn btn-outline" style="padding:6px 12px; font-size:12px;">OK</button>';
-            $commentForm .= '</form>';
+            $isMain = ($incoming === $domain);
+            $status = $isMain ? '<span class="badge">Основной</span>' : '<span class="badge">Алиас</span>';
+            $comment = (string) $this->siteConfig->getByKey(['domains_comments', $incoming], '');
 
-            $actionsHtml = '<div style="display:flex; gap:6px;">';
+            // Форма комментария через компоненты
+            $commentForm = Form::create('/admin/?p=domain:saveComment&domain=' . urlencode($domain) . '&incoming=' . urlencode($incoming), 'POST')
+                ->csrf($this->csrf->field())
+                ->hideSubmit(); // Кнопку добавим отдельно, чтобы влезло в строку
+            
+            $commentField = Field::text('comment')->value($comment)->placeholder('Заметка...');
+            // Специфичные стили для компактного вида в таблице
+            $commentField->build()->attrs()->styleAdd('display:flex; gap:8px; align-items:center; margin:0;');
+            
+            $commentFormNode = $commentForm->add($commentField)->build();
+            $commentFormNode->attrs()->classAdd('table-comment-form');
+
+            // Кнопки действий через Builder
+            $actionsHtml = Builder::div('table-actions');
             if (!$isMain) {
-                $actionsHtml .= Builder::a('/admin/?p=domain:makePrimary&domain=' . urlencode($domain) . '&incoming=' . urlencode($incoming), 'btn btn-outline')->content('Сделать основным')->release();
-                $actionsHtml .= Builder::a('/admin/?p=domain:detach&domain=' . urlencode($domain) . '&incoming=' . urlencode($incoming), 'btn btn-danger')->content('Отвязать')->release();
+                $actionsHtml->append(Builder::a('/admin/?p=domain:makePrimary&domain=' . urlencode($domain) . '&incoming=' . urlencode($incoming), 'btn btn-outline')->content('Сделать основным'));
+                $actionsHtml->append(Builder::a('/admin/?p=domain:detach&domain=' . urlencode($domain) . '&incoming=' . urlencode($incoming), 'btn btn-danger')->content('Отвязать'));
             } else {
-                $actionsHtml .= '<span style="color:#aaa; font-size:13px; display:flex; align-items:center;">Это главный домен</span>';
+                $actionsHtml->append(Builder::span('text-muted')->content('Главный'));
             }
-            $actionsHtml .= '</div>';
 
             $table->row([
                 Text::raw('<b>' . View::esc($incoming) . '</b>'),
-                Text::raw($commentForm),
+                $commentFormNode,
                 Text::raw($status),
-                Text::raw($actionsHtml)
+                $actionsHtml
             ]);
         }
         
