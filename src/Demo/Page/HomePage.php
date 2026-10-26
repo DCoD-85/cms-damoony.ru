@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Damoony\Demo\Page;
 
 use Damoony\Algoritm\Algoritm;
+use Damoony\Files\Paths;
 use Damoony\Http\Response;
 use Damoony\Region\RegionLoader;
 use Damoony\Scheme\SchemeRenderer;
@@ -14,8 +15,13 @@ class HomePage extends Algoritm
 {
     public function default(): Node|Response|null
     {
-        // Используем загрузчик регионов (он сам найдет hello и footer в папке alliasglobal)
-        $loader = new RegionLoader(new \Damoony\Files\Paths(dirname(__DIR__, 3)));
+        // Берем Paths из контекста (или создаем для локального запуска)
+        $paths = $this->context->service('paths');
+        if (!$paths instanceof Paths) {
+            $paths = new Paths(dirname(__DIR__, 3));
+        }
+
+        $loader = new RegionLoader($paths);
         $regions = $loader->load($this->context->domain);
 
         $manifest = [
