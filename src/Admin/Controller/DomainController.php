@@ -132,6 +132,63 @@ final class DomainController extends BaseController
         return $this->redirect('/admin/?p=domain');
     }
 
+	public function bindings(Request $request): Response
+    {
+        $auth = $this->requireAuth();
+        if ($auth !== null) return $auth;
+
+        $domain = (string) $request->query('domain', '');
+        if ($domain === '') return $this->redirect('/admin/?p=domain');
+
+        $domains = $this->siteConfig->getByKey(['domains_real'], []);
+        $incomingList = [];
+        
+        if (is_array($domains)) {
+            foreach ($domains as $incoming => $real) {
+                if ($real === $domain) {
+                    $incomingList[$incoming] = $incoming;
+                }
+            }
+        }
+
+        // Заголовок и табы
+        $card = Builder::div('admin-card');
+        $breadcrumbs = Builder::div('breadcrumbs');
+        $breadcrumbs->append(Builder::a('/admin/?p=domain')->content('Домены'));
+        $breadcrumbs->append(Text::raw(' / '));
+        $breadcrumbs->append(Builder::a('/admin/?p=domain:edit&domain=' . urlencode($domain))->content($domain));
+        $card->append($breadcrumbs);
+        $card->append(Builder::h(1)->content('Привязанные домены'));
+        $card->append(View::domainTabs($domain, 'bindings'));
+
+        // Таблица
+        $table = (new Table())->headers('Входящий домен', 'Статус', 'Действия');
+        foreach ($incomingList as $incoming) {
+            $isMain = ($incoming === $domain);
+            $status = $isMain ? '<span class="badge">Основной</span>' : '<span class="badge">Алиас</span>';
+            
+            $actionsHtml = '';
+            if (!$isMain) {
+                $actionsHtml = Builder::a('/admin/?p=domain:detach&domain=' . urlencode($domain) . '&incoming=' . urlencode($incoming), 'btn btn-danger')->content('Отвязать')->release();
+            } else {
+                $actionsHtml = '<span style="color:#aaa;">Нельзя отвязать главный</span>';
+            }
+
+            $table->row([
+                Text::raw('<b>' . View::esc($incoming) . '</b>'),
+                Text::raw($status),
+                Text::raw($actionsHtml)
+            ]);
+        }
+        $card->append($table->build());
+
+        // Кнопка добавления (пока просто ведет на форму, которую сделаем следом)
+        $card->append(Builder::el('br'));
+        $card->append(Builder::a('/admin/?p=domain:attach&domain=' . urlencode($domain), 'btn btn-primary')->content('+ Привязать домен'));
+
+        return Response::html($this->view->render($card, ['title' => 'Привязанные: ' . $domain]));
+    }
+
     public function new(Request $request): Response
     {
         $auth = $this->requireAuth();

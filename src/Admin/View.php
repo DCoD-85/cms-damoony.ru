@@ -47,6 +47,7 @@ final class View
         
         $items = [
             'settings' => ['Настройки', '/admin/?p=domain:edit&domain=' . urlencode($domain)],
+            'bindings' => ['Привязанные', '/admin/?p=domain:bindings&domain=' . urlencode($domain)], // <-- НОВОЕ
             'pages' => ['Страницы', '/admin/?p=page&domain=' . urlencode($domain) . '&allias=www'],
             'blocks' => ['Блоки', '/admin/?p=block&domain=' . urlencode($domain)],
             'schemes' => ['Схемы', '/admin/?p=scheme&domain=' . urlencode($domain)],
