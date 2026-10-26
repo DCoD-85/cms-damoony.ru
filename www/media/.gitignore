@@ -1,0 +1,16 @@
+# Игнорируем всё содержимое медиа
+*
+
+# Но отслеживаем сам .gitignore
+!.gitignore
+
+# Разрешаем системные стили админки
+!admin/
+!admin/*
+
+# Разрешаем стили домена
+!damoony.ru/
+!damoony.ru/skin/
+!damoony.ru/skin/default/
+!damoony.ru/skin/default/css/
+!damoony.ru/skin/default/css/*
