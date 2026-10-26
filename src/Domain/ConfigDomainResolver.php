@@ -67,6 +67,7 @@ final class ConfigDomainResolver implements DomainResolverInterface
             language: (string) $this->site->get('language', $this->defaultLanguage),
             available: $available,
             stub: $stub,
+            namespace: (string) $this->site->getByKey(['domains_namespace', $real], str_replace('.', '_', $real)),
         );
     }
 

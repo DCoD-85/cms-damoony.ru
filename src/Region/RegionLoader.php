@@ -40,8 +40,7 @@ final class RegionLoader
             require_once $file;
 
             // Дописываем неймспейс домена (например, damoony_ru\alliasglobal_top)
-            $ns = 'damoony_ru'; // В идеале брать из резолвера, но пока так
-            $fullClass = $ns . '\\' . $className;
+			$fullClass = $domain->namespace . '\\' . $className;
 
             if (class_exists($fullClass, false) && is_subclass_of($fullClass, RegionInterface::class)) {
                 /** @var RegionInterface $region */

@@ -15,7 +15,7 @@ class HomePage extends Algoritm
     public function default(): Node|Response|null
     {
         // Используем загрузчик регионов (он сам найдет hello и footer в папке alliasglobal)
-        $loader = new RegionLoader(new \Damoony\Files\Paths(dirname(__DIR__, 4)));
+        $loader = new RegionLoader(new \Damoony\Files\Paths(dirname(__DIR__, 3)));
         $regions = $loader->load($this->context->domain);
 
         $manifest = [
