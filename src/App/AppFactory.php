@@ -12,6 +12,7 @@ use Damoony\Core\ErrorHandler;
 use Damoony\Core\Logger;
 use Damoony\Domain\ConfigDomainResolver;
 use Damoony\Domain\DomainResolverInterface;
+use Damoony\Files\Paths;
 use Damoony\Routing\FileRouter;
 use Damoony\Routing\RouterInterface;
 use Damoony\Routing\RulesMatcher;
@@ -36,6 +37,8 @@ final class AppFactory
         $container->setInstance('site', $site);
         $container->setInstance('logger', $logger);
         $container->setInstance('errorHandler', $errorHandler);
+        
+        $container->setInstance(Paths::class, new Paths($root));
 
         $container->set(
             DomainResolverInterface::class,

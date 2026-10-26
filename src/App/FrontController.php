@@ -6,6 +6,7 @@ namespace Damoony\App;
 
 use Damoony\Domain\DomainResolverInterface;
 use Damoony\Error\ErrorPage;
+use Damoony\Files\Paths;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
 use Damoony\Region\RegionContext;
@@ -43,8 +44,11 @@ final class FrontController
                 : ErrorPage::notFound($domain->language);
         }
 
+        $paths = $this->container->get(Paths::class);
+        assert($paths instanceof Paths);
+        
         $meta = new Meta();
-        $context = new RegionContext($request, $domain, $meta);
+        $context = new RegionContext($request, $domain, $meta, ['paths' => $paths]);
 
         return $this->pages->handle($match, $context);
     }

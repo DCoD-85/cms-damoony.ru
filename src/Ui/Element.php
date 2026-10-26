@@ -93,4 +93,67 @@ final class Element implements Node
     {
         return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
+	    /**
+     * @param array<string, mixed> $data
+     */
+    public static function fromArray(array $data): self
+    {
+        $tag = (string) ($data['tag'] ?? 'div');
+        $el = new self($tag, (bool) ($data['selfClosing'] ?? false));
+
+        if (!empty($data['class'])) {
+            $el->attrs()->classAdd((string) $data['class']);
+        }
+        if (!empty($data['attrs']) && is_array($data['attrs'])) {
+            foreach ($data['attrs'] as $k => $v) {
+                if (is_string($k) && is_string($v)) {
+                    $el->attrs()->add($k, $v);
+                }
+            }
+        }
+        
+        if (isset($data['slot'])) {
+            $el->append(new Slot((string) $data['slot']));
+        }
+
+        if (!empty($data['children']) && is_array($data['children'])) {
+            foreach ($data['children'] as $child) {
+                if (is_array($child)) {
+                    $el->append(self::fromArray($child));
+                }
+            }
+        }
+
+        return $el;
+    }
+
+    /**
+     * @return list<Slot>
+     */
+    public function findSlots(): array
+    {
+        $slots = [];
+        foreach ($this->children as $child) {
+            if ($child instanceof Slot) {
+                $slots[] = $child;
+            } elseif ($child instanceof Element) {
+                $slots = array_merge($slots, $child->findSlots());
+            }
+        }
+        return $slots;
+    }
+
+    public function replaceChild(Node $old, Node $new): self
+    {
+        $newChildren = [];
+        foreach ($this->children as $child) {
+            if ($child === $old) {
+                $newChildren[] = $new;
+            } else {
+                $newChildren[] = $child;
+            }
+        }
+        $this->children = $newChildren;
+        return $this;
+    }
 }

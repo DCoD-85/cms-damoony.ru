@@ -74,7 +74,8 @@ final class PageHandler implements PageHandlerInterface
         }
 
         if ($result instanceof Node) {
-            $doc = new Document($domain->language, $context->meta);
+            $doc = new Document($context->meta);
+            $doc->lang($domain->language);
             $doc->body()->append($result);
             return Response::html($doc->release());
         }

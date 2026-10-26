@@ -10,6 +10,7 @@ use Damoony\Core\Config;
 use Damoony\Core\Container;
 use Damoony\Domain\ConfigDomainResolver;
 use Damoony\Domain\DomainResolverInterface;
+use Damoony\Files\Paths;
 use Damoony\Http\Request;
 use Damoony\Routing\FileRouter;
 use Damoony\Routing\RouterInterface;
@@ -46,7 +47,7 @@ final class FrontControllerTest extends TestCase
         @rmdir($dir);
     }
 
-    private function container(bool $available): Container
+    private function fc(bool $available): FrontController
     {
         $site = Config::fromArray([
             'language' => 'ru-ru',
@@ -57,16 +58,10 @@ final class FrontControllerTest extends TestCase
         ]);
 
         $c = new Container();
-        $c->setInstance(\Damoony\Files\Paths::class, new \Damoony\Files\Paths($this->root));
+        $c->setInstance(Paths::class, new Paths($this->root));
         $c->setInstance(DomainResolverInterface::class, new ConfigDomainResolver($site));
         $c->setInstance(RouterInterface::class, new FileRouter($this->root, new RulesMatcher()));
-
-        return $c;
-    }
-
-    private function fc(bool $available): FrontController
-    {
-        $c = $this->container($available);
+        
         $resolver = $c->get(DomainResolverInterface::class);
         assert($resolver instanceof DomainResolverInterface);
 

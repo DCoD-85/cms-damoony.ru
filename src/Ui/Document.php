@@ -9,17 +9,13 @@ final class Document
     private readonly Element $html;
     private readonly Element $head;
     private readonly Element $body;
-    private readonly Meta $meta;
+    public readonly Meta $meta;
 
-    public function __construct(
-        private readonly string $lang = 'ru-ru',
-        ?Meta $meta = null,
-    ) {
+    public function __construct(?Meta $meta = null)
+    {
         $this->meta = $meta ?? new Meta();
 
         $this->html = new Element('html');
-        $this->html->attrs()->add('lang', $lang);
-
         $this->head = new Element('head');
         $this->body = new Element('body');
 
@@ -30,29 +26,29 @@ final class Document
         $this->head->append($charset);
     }
 
+    public function lang(string $lang): self
+    {
+        $this->html->attrs()->add('lang', $lang);
+        return $this;
+    }
+
+    public function title(string $title): self
+    {
+        $this->meta->setTitle($title);
+        return $this;
+    }
+
     public function meta(): Meta
     {
         return $this->meta;
     }
 
-    public function html(): Element
-    {
-        return $this->html;
-    }
-
-    public function head(): Element
-    {
-        return $this->head;
-    }
-
-    public function body(): Element
-    {
-        return $this->body;
-    }
+    public function html(): Element { return $this->html; }
+    public function head(): Element { return $this->head; }
+    public function body(): Element { return $this->body; }
 
     public function release(): string
     {
-        // Внедряем Meta в head прямо перед рендером
         $metaRaw = $this->meta->render();
         if ($metaRaw !== '') {
             $this->head->append(Text::raw($metaRaw));

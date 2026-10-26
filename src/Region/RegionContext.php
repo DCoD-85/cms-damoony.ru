@@ -10,13 +10,16 @@ use Damoony\Ui\Meta;
 
 final class RegionContext
 {
+    public readonly Meta $meta;
+
     /** @param array<string, mixed> $services */
     public function __construct(
         public readonly Request $request,
         public readonly DomainContext $domain,
-        public readonly Meta $meta,
+        ?Meta $meta = null,
         public readonly array $services = [],
     ) {
+        $this->meta = $meta ?? new Meta();
     }
 
     public function service(string $name): mixed
