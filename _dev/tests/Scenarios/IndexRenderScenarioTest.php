@@ -118,8 +118,10 @@ PHP);
         ]);
         $c = new Container();
         $c->setInstance(Paths::class, new Paths($this->root));
+        $c->setInstance('site', $site); // <-- ДОБАВИТЬ
         $c->setInstance(DomainResolverInterface::class, new ConfigDomainResolver($site));
         $c->setInstance(RouterInterface::class, new FileRouter($this->root, new RulesMatcher()));
+        
         $resolver = $c->get(DomainResolverInterface::class);
         assert($resolver instanceof DomainResolverInterface);
 
