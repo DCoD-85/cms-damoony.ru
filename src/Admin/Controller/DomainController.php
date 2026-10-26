@@ -160,7 +160,10 @@ final class DomainController extends BaseController
         $card->append($breadcrumbs);
         $card->append(Builder::h(1)->content('Привязанные домены'));
         $card->append(View::domainTabs($domain, 'bindings'));
-
+        if ($request->query('saved')) {
+            $card->append(Message::success('Изменения сохранены')->build());
+        }
+		
         // Таблица
         $table = (new Table())->headers('Входящий домен', 'Статус', 'Действия');
         foreach ($incomingList as $incoming) {
@@ -232,6 +235,138 @@ final class DomainController extends BaseController
         $card->append($backBtn);
 
         return Response::html($this->view->render($card, ['title' => 'Новый домен']));
+    }
+
+    public function attach(Request $request): Response
+    {
+        $auth = $this->requireAuth();
+        if ($auth !== null) return $auth;
+
+        $domain = (string) $request->query('domain', '');
+        if ($domain === '') return $this->redirect('/admin/?p=domain');
+
+        $error = '';
+        $incomingVal = '';
+
+        if ($request->isPost()) {
+            $csrfErr = $this->requireCsrf($request);
+            if ($csrfErr !== null) return $csrfErr;
+
+            $incomingVal = (string) ($request->post['incoming'] ?? '');
+            
+            if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $incomingVal)) {
+                $error = 'Некорректный формат домена';
+            } elseif ($incomingVal === $domain) {
+                $error = 'Нельзя привязать домен к самому себе';
+            } else {
+                $data = $this->siteConfig->all();
+                if (isset($data['domains_real'][$incomingVal])) {
+                    $error = 'Этот домен уже привязан (к ' . $data['domains_real'][$incomingVal] . ')';
+                } else {
+                    $data['domains_real'][$incomingVal] = $domain;
+                    Fs::writeAtomic($this->paths->siteConfig(), json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n");
+                    return $this->redirect('/admin/?p=domain:bindings&domain=' . urlencode($domain) . '&saved=1');
+                }
+            }
+        }
+
+        $form = Form::create('/admin/?p=domain:attach&domain=' . urlencode($domain), 'POST')
+            ->csrf($this->csrf->field())
+            ->add(Field::text('incoming')->label('Входящий домен')->placeholder('example.com')->required()->value($incomingVal))
+            ->submit('Привязать');
+
+        $card = Builder::div('admin-card');
+        $card->append(Builder::a('/admin/?p=domain:bindings&domain=' . urlencode($domain))->content('&larr; Назад к списку'));
+        $card->append(Builder::h(1)->content('Привязать новый домен к ' . View::esc($domain)));
+        
+        if ($error !== '') {
+            $card->append(Message::error($error)->build());
+        }
+        
+        $card->append(Builder::p()->content('Введите домен, который будет показывать этот же сайт. Например, damoony.shop будет показывать damoony.ru.'));
+        $card->append($form->build());
+
+        return Response::html($this->view->render($card, ['title' => 'Привязка домена']));
+    }
+
+    public function detach(Request $request): Response
+    {
+        $auth = $this->requireAuth();
+        if ($auth !== null) return $auth;
+
+        $domain = (string) $request->query('domain', '');
+        $incoming = (string) $request->query('incoming', '');
+        
+        if ($domain === '' || $incoming === '' || $incoming === $domain) {
+            return $this->redirect('/admin/?p=domain');
+        }
+
+        $error = '';
+
+        if ($request->isPost()) {
+            $csrfErr = $this->requireCsrf($request);
+            if ($csrfErr !== null) return $csrfErr;
+
+            $action = (string) ($request->post['action'] ?? 'unbind');
+
+            $data = $this->siteConfig->all();
+            unset($data['domains_real'][$incoming]);
+
+            if ($action === 'promote') {
+                // Копируем файлы домена в новую папку для независимости
+                $sourceDir = $this->paths->domain($domain);
+                $targetDir = $this->paths->domain($incoming);
+                
+                if (is_dir($sourceDir) && !is_dir($targetDir)) {
+                    // Простое копирование (можно заменить на Fs::copyRecursive если есть)
+                    $this->copyDir($sourceDir, $targetDir);
+                    $data['domains_real'][$incoming] = $incoming;
+                    $data['domains_namespace'][$incoming] = str_replace('.', '_', $incoming);
+                    $data['domains_available'][$incoming] = true;
+                } else {
+                    $error = 'Не удалось перенести логику: папка уже существует или исходная папка не найдена.';
+                }
+            }
+
+            if ($error === '') {
+                Fs::writeAtomic($this->paths->siteConfig(), json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n");
+                return $this->redirect('/admin/?p=domain:bindings&domain=' . urlencode($domain) . '&saved=1');
+            }
+        }
+
+        // Форма отвязки
+        $form = Form::create('/admin/?p=domain:detach&domain=' . urlencode($domain) . '&incoming=' . urlencode($incoming), 'POST')
+            ->csrf($this->csrf->field())
+            ->add(Field::radio('action')->label('Что сделать с доменом?')->value('unbind')->checked()->hint('Отвязать (домен перестанет открывать этот сайт)'))
+            ->add(Field::radio('action')->label('')->value('promote')->hint('Сделать независимым (скопировать все файлы сайта в отдельную папку для этого домена)'))
+            ->submit('Отвязать');
+
+        $card = Builder::div('admin-card');
+        $card->append(Builder::a('/admin/?p=domain:bindings&domain=' . urlencode($domain))->content('&larr; Назад к списку'));
+        $card->append(Builder::h(1)->content('Отвязать домен: ' . View::esc($incoming)));
+        
+        if ($error !== '') {
+            $card->append(Message::error($error)->build());
+        }
+        
+        $card->append($form->build());
+
+        return Response::html($this->view->render($card, ['title' => 'Отвязка домена']));
+    }
+
+    private function copyDir(string $src, string $dst): void
+    {
+        @mkdir($dst, 0775, true);
+        $dir = opendir($src);
+        while (false !== ($file = readdir($dir))) {
+            if ($file === '.' || $file === '..') continue;
+            if (is_dir($src . '/' . $file)) {
+                $this->copyDir($src . '/' . $file, $dst . '/' . $file);
+            } else {
+                @copy($src . '/' . $file, $dst . '/' . $file);
+            }
+        }
+        closedir($dir);
     }
 
     public function edit(Request $request): Response
