@@ -41,11 +41,11 @@ final class ComponentTest extends TestCase
             ->submit('Войти');
 
         $html = $form->release();
-        self::assertStringContainsString('<form method="POST" action="/login" class="form">', $html);
+        self::assertStringContainsString('<form class="form" method="POST" action="/login">', $html);
         self::assertStringContainsString('name="_csrf" value="xyz"', $html);
         self::assertStringContainsString('name="login"', $html);
         self::assertStringContainsString('name="password"', $html);
-        self::assertStringContainsString('<button type="submit" class="btn btn-primary">Войти</button>', $html);
+        self::assertStringContainsString('<button class="btn btn-primary" type="submit">Войти</button>', $html);
     }
 
     public function testFormFile(): void
