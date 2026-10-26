@@ -132,7 +132,7 @@ final class DomainController extends BaseController
         return $this->redirect('/admin/?p=domain');
     }
 
-	public function bindings(Request $request): Response
+    public function bindings(Request $request): Response
     {
         $auth = $this->requireAuth();
         if ($auth !== null) return $auth;
@@ -151,7 +151,6 @@ final class DomainController extends BaseController
             }
         }
 
-        // Заголовок и табы
         $card = Builder::div('admin-card');
         $breadcrumbs = Builder::div('breadcrumbs');
         $breadcrumbs->append(Builder::a('/admin/?p=domain')->content('Домены'));
@@ -160,32 +159,44 @@ final class DomainController extends BaseController
         $card->append($breadcrumbs);
         $card->append(Builder::h(1)->content('Привязанные домены'));
         $card->append(View::domainTabs($domain, 'bindings'));
+
         if ($request->query('saved')) {
             $card->append(Message::success('Изменения сохранены')->build());
         }
-		
-        // Таблица
-        $table = (new Table())->headers('Входящий домен', 'Статус', 'Действия');
+
+        $table = (new Table())->headers('Входящий домен', 'Комментарий', 'Статус', 'Действия');
+        
         foreach ($incomingList as $incoming) {
             $isMain = ($incoming === $domain);
             $status = $isMain ? '<span class="badge">Основной</span>' : '<span class="badge">Алиас</span>';
+            $comment = (string) $this->siteConfig->getByKey(['domains_comments', $incoming], '');
             
-            $actionsHtml = '';
+            // Форма для комментария
+            $commentForm = '<form method="post" action="/admin/?p=domain:saveComment&domain=' . urlencode($domain) . '&incoming=' . urlencode($incoming) . '" style="display:flex; gap:8px; margin:0;">';
+            $commentForm .= $this->csrf->field();
+            $commentForm .= '<input type="text" name="comment" value="' . View::esc($comment) . '" placeholder="Заметка..." style="padding:6px 10px; border:1px solid #ddd; border-radius:6px; font-size:13px; width:150px;">';
+            $commentForm .= '<button type="submit" class="btn btn-outline" style="padding:6px 12px; font-size:12px;">OK</button>';
+            $commentForm .= '</form>';
+
+            $actionsHtml = '<div style="display:flex; gap:6px;">';
             if (!$isMain) {
-                $actionsHtml = Builder::a('/admin/?p=domain:detach&domain=' . urlencode($domain) . '&incoming=' . urlencode($incoming), 'btn btn-danger')->content('Отвязать')->release();
+                $actionsHtml .= Builder::a('/admin/?p=domain:makePrimary&domain=' . urlencode($domain) . '&incoming=' . urlencode($incoming), 'btn btn-outline')->content('Сделать основным')->release();
+                $actionsHtml .= Builder::a('/admin/?p=domain:detach&domain=' . urlencode($domain) . '&incoming=' . urlencode($incoming), 'btn btn-danger')->content('Отвязать')->release();
             } else {
-                $actionsHtml = '<span style="color:#aaa;">Нельзя отвязать главный</span>';
+                $actionsHtml .= '<span style="color:#aaa; font-size:13px; display:flex; align-items:center;">Это главный домен</span>';
             }
+            $actionsHtml .= '</div>';
 
             $table->row([
                 Text::raw('<b>' . View::esc($incoming) . '</b>'),
+                Text::raw($commentForm),
                 Text::raw($status),
                 Text::raw($actionsHtml)
             ]);
         }
+        
         $card->append($table->build());
 
-        // Кнопка добавления (пока просто ведет на форму, которую сделаем следом)
         $card->append(Builder::el('br'));
         $card->append(Builder::a('/admin/?p=domain:attach&domain=' . urlencode($domain), 'btn btn-primary')->content('+ Привязать домен'));
 
@@ -354,10 +365,84 @@ final class DomainController extends BaseController
         return Response::html($this->view->render($card, ['title' => 'Отвязка домена']));
     }
 
+	public function saveComment(Request $request): Response
+    {
+        $auth = $this->requireAuth();
+        if ($auth !== null) return $auth;
+
+        $domain = (string) $request->query('domain', '');
+        $incoming = (string) $request->query('incoming', '');
+
+        if ($domain === '' || $incoming === '') return $this->redirect('/admin/?p=domain');
+
+        if ($request->isPost()) {
+            $csrfErr = $this->requireCsrf($request);
+            if ($csrfErr !== null) return $csrfErr;
+
+            $comment = (string) ($request->post['comment'] ?? '');
+            $data = $this->siteConfig->all();
+            $data['domains_comments'][$incoming] = $comment;
+            
+            Fs::writeAtomic($this->paths->siteConfig(), json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n");
+        }
+
+        return $this->redirect('/admin/?p=domain:bindings&domain=' . urlencode($domain) . '&saved=1');
+    }
+
+    public function makePrimary(Request $request): Response
+    {
+        $auth = $this->requireAuth();
+        if ($auth !== null) return $auth;
+
+        $domain = (string) $request->query('domain', '');
+        $incoming = (string) $request->query('incoming', '');
+
+        if ($domain === '' || $incoming === '' || $incoming === $domain) return $this->redirect('/admin/?p=domain');
+
+        $sourceDir = $this->paths->domain($domain);
+        $targetDir = $this->paths->domain($incoming);
+
+        if (!is_dir($targetDir) && is_dir($sourceDir)) {
+            // Копируем файлы
+            $this->copyDir($sourceDir, $targetDir);
+
+            // Меняем namespace внутри скопированных файлов
+            $oldNs = str_replace(['.', '-'], '_', $domain);
+            $newNs = str_replace(['.', '-'], '_', $incoming);
+            
+            $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($targetDir));
+            foreach ($it as $file) {
+                if ($file->isFile() && $file->getExtension() === 'php') {
+                    $content = file_get_contents($file->getPathname());
+                    if ($content !== false) {
+                        $content = str_replace("namespace {$oldNs}", "namespace {$newNs}", $content);
+                        file_put_contents($file->getPathname(), $content);
+                    }
+                }
+            }
+
+            // Обновляем конфиг
+            $data = $this->siteConfig->all();
+            $data['domains_real'][$incoming] = $incoming;
+            $data['domains_real'][$domain] = $incoming;
+            $data['domains_namespace'][$incoming] = $newNs;
+            $data['domains_available'][$incoming] = $data['domains_available'][$domain] ?? true;
+
+            Fs::writeAtomic($this->paths->siteConfig(), json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n");
+            
+            return $this->redirect('/admin/?p=domain:bindings&domain=' . urlencode($incoming) . '&saved=1');
+        }
+
+        return $this->redirect('/admin/?p=domain:bindings&domain=' . urlencode($domain));
+    }
+
     private function copyDir(string $src, string $dst): void
     {
         @mkdir($dst, 0775, true);
-        $dir = opendir($src);
+        $dir = @opendir($src);
+        if (!is_resource($dir)) {
+            return;
+        }
         while (false !== ($file = readdir($dir))) {
             if ($file === '.' || $file === '..') continue;
             if (is_dir($src . '/' . $file)) {
