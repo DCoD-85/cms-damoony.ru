@@ -182,13 +182,9 @@ final class DomainController extends BaseController
             
             if (!$isMain) {
                 $actionsHtml->append(Builder::a('/admin/?p=domain:setPrimary&domain=' . urlencode($domain) . '&incoming=' . urlencode($incoming), 'btn btn-outline')->content('Сделать главным'));
+                $actionsHtml->append(Builder::a('/admin/?p=domain:detach&domain=' . urlencode($domain) . '&incoming=' . urlencode($incoming), 'btn btn-danger')->content('Отвязать'));
             } else {
                 $actionsHtml->append(Builder::span('badge')->content('Главный'));
-            }
-            
-            // Отвязать нельзя только если это единственный домен
-            if (count($incomingList) > 1) {
-                $actionsHtml->append(Builder::a('/admin/?p=domain:detach&domain=' . urlencode($domain) . '&incoming=' . urlencode($incoming), 'btn btn-danger')->content('Отвязать'));
             }
 
             $table->row([
@@ -201,8 +197,6 @@ final class DomainController extends BaseController
         
         $card->append($table->build());
         $card->append(Builder::el('br'));
-        
-        // Кнопки внизу: Привязать
         $card->append(Builder::a('/admin/?p=domain:attach&domain=' . urlencode($domain), 'btn btn-primary')->content('+ Привязать домен'));
 
         return Response::html($this->view->render($card, ['title' => 'Привязанные: ' . $domain]));
@@ -335,6 +329,15 @@ final class DomainController extends BaseController
         
         if ($domain === '' || $incoming === '') return $this->redirect('/admin/?p=domain');
 
+        // Защита: нельзя отвязать главный домен
+        $domains = $this->siteConfig->getByKey(['domains_real'], []);
+        $isMain = false;
+        if (is_array($domains)) {
+            $first = array_key_first(array_filter($domains, fn($r) => $r === $domain));
+            if ($first === $incoming) $isMain = true;
+        }
+        if ($isMain) return $this->redirect('/admin/?p=domain:bindings&domain=' . urlencode($domain));
+
         $error = '';
 
         if ($request->isPost()) {
@@ -342,17 +345,48 @@ final class DomainController extends BaseController
             if ($csrfErr !== null) return $csrfErr;
 
             $action = (string) ($request->post['action'] ?? 'delete');
-            $targetDomain = (string) ($request->post['target_domain'] ?? '');
-
-            $data = $this->siteConfig->all();
+            $newFolder = (string) ($request->post['new_folder'] ?? '');
             
+            $data = $this->siteConfig->all();
+
             if ($action === 'delete') {
                 unset($data['domains_real'][$incoming]);
-            } elseif ($action === 'move' && $targetDomain !== '') {
-                if (isset($data['domains_real'][$targetDomain]) && $targetDomain !== $domain) {
-                    $data['domains_real'][$incoming] = $targetDomain;
+            } else {
+                // Действия с копированием/шаблоном
+                if (!preg_match('/^[a-z0-9_\-]+$/', $newFolder)) {
+                    $error = 'Некорректное имя папки (только a-z, 0-9, _, -)';
+                } elseif (is_dir($this->paths->domain($newFolder))) {
+                    $error = 'Папка с таким именем уже существует';
                 } else {
-                    $error = 'Нельзя переназначить на указанный домен.';
+                    $sourceDir = $this->paths->domain($domain); // Текущий реальный домен
+                    $targetDir = $this->paths->domain($newFolder);
+                    
+                    if ($action === 'copy') {
+                        if (!is_dir($sourceDir)) {
+                            $error = 'Исходная папка не найдена';
+                        } else {
+                            $this->copyDir($sourceDir, $targetDir);
+                        }
+                    } elseif ($action === 'template') {
+                        $tplDir = $this->paths->root() . '/_dev/tpl/domain'; // Путь к шаблону
+                        if (!is_dir($tplDir)) {
+                            $error = 'Шаблон домена не найден (отсутствует _dev/tpl/domain)';
+                        } else {
+                            $this->copyDir($tplDir, $targetDir);
+                        }
+                    }
+
+                    if ($error === '') {
+                        // Меняем namespace в скопированных файлах
+                        $oldNs = str_replace(['.', '-'], '_', $domain);
+                        $newNs = str_replace(['.', '-'], '_', $newFolder);
+                        $this->replaceNamespace($targetDir, $oldNs, $newNs);
+
+                        // Обновляем конфиг
+                        $data['domains_real'][$incoming] = $newFolder;
+                        $data['domains_namespace'][$newFolder] = $newNs;
+                        $data['domains_available'][$newFolder] = $data['domains_available'][$domain] ?? true;
+                    }
                 }
             }
 
@@ -362,27 +396,14 @@ final class DomainController extends BaseController
             }
         }
 
-        // Опции для переназначения (другие реальные домены)
-        $domains = $this->siteConfig->getByKey(['domains_real'], []);
-        $otherReals = [];
-        if (is_array($domains)) {
-            foreach ($domains as $inc => $real) {
-                if ($real !== $domain) {
-                    $otherReals[$real] = $real;
-                }
-            }
-        }
-
+        // Форма отвязки
         $form = Form::create('/admin/?p=domain:detach&domain=' . urlencode($domain) . '&incoming=' . urlencode($incoming), 'POST')
             ->csrf($this->csrf->field())
-            ->add(Field::radio('action')->label('Удалить привязку')->value('delete')->checked()->hint('Домен перестанет открывать этот сайт.'));
-
-        if ($otherReals !== []) {
-            $form->add(Field::select('target_domain')->label('Или привязать к другому домену')->options($otherReals));
-            // По умолчанию выберем "переназначить" если есть варианты, но оставим радио
-        }
-        
-        $form->submit('Отвязать');
+            ->add(Field::radio('action')->label('Удалить привязку')->value('delete')->checked()->hint('Домен перестанет открывать этот сайт.'))
+            ->add(Field::radio('action')->label('Создать новую логику из шаблона')->value('template')->hint('Создаст чистую папку с базовыми настройками.'))
+            ->add(Field::radio('action')->label('Скопировать текущую логику')->value('copy')->hint('Перенесет все файлы текущего сайта в новую папку.'))
+            ->add(Field::text('new_folder')->label('Имя новой папки (если выбран шаблон или копия)')->placeholder('example_new_ru'))
+            ->submit('Отвязать');
 
         $card = Builder::div('admin-card');
         $card->append(Builder::a('/admin/?p=domain:bindings&domain=' . urlencode($domain))->content('← Назад к списку'));
@@ -397,6 +418,20 @@ final class DomainController extends BaseController
         return Response::html($this->view->render($card, ['title' => 'Отвязка домена']));
     }
 
+	    private function replaceNamespace(string $dir, string $oldNs, string $newNs): void
+    {
+        $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($dir));
+        foreach ($it as $file) {
+            if ($file->isFile() && $file->getExtension() === 'php') {
+                $content = file_get_contents($file->getPathname());
+                if ($content !== false) {
+                    $content = str_replace("namespace {$oldNs}", "namespace {$newNs}", $content);
+                    file_put_contents($file->getPathname(), $content);
+                }
+            }
+        }
+    }
+	
     public function setPrimary(Request $request): Response
     {
         $auth = $this->requireAuth();
@@ -421,7 +456,7 @@ final class DomainController extends BaseController
 
         return $this->redirect('/admin/?p=domain:bindings&domain=' . urlencode($domain) . '&saved=1');
     }
-	
+
 	public function saveComment(Request $request): Response
     {
         $auth = $this->requireAuth();
