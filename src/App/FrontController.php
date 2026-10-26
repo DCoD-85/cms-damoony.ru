@@ -13,6 +13,7 @@ use Damoony\Http\Request;
 use Damoony\Http\Response;
 use Damoony\Region\RegionContext;
 use Damoony\Routing\RouterInterface;
+use Damoony\Security\Csrf;
 use Damoony\Ui\Meta;
 use Psr\Container\ContainerInterface;
 
@@ -50,8 +51,11 @@ final class FrontController
         assert($auth instanceof AuthInterface);
 
         if ($match->auth && !$auth->isAuthenticated()) {
-            return Response::redirect('/login', 302);
+            return Response::redirect('/login?return=' . urlencode($request->path), 302);
         }
+
+        $csrf = $this->container->get(Csrf::class);
+        assert($csrf instanceof Csrf);
 
         $paths = $this->container->get(Paths::class);
         assert($paths instanceof Paths);
@@ -64,6 +68,7 @@ final class FrontController
             'paths' => $paths,
             'site' => $site,
             'auth' => $auth,
+            'csrf' => $csrf,
         ]);
 
         return $this->pages->handle($match, $context);

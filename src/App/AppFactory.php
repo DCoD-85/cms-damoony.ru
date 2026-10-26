@@ -19,6 +19,7 @@ use Damoony\Files\Paths;
 use Damoony\Routing\FileRouter;
 use Damoony\Routing\RouterInterface;
 use Damoony\Routing\RulesMatcher;
+use Damoony\Security\Csrf;
 use Damoony\Session\NativeSession;
 
 final class AppFactory
@@ -50,10 +51,11 @@ final class AppFactory
         ]);
         $container->setInstance(Connection::class, $db);
 
-        // Сессия и авторизация через БД
+        // Сессия, авторизация, CSRF
         $session = new NativeSession('SITE_SESSID', ($_SERVER['HTTPS'] ?? '') === 'on');
         $session->start();
         $container->setInstance(AuthInterface::class, new DbAuth($db, $session));
+        $container->setInstance(Csrf::class, new Csrf($session));
 
         $container->set(
             DomainResolverInterface::class,
