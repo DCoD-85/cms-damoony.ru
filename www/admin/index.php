@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+putenv('APP_ENV=dev');
+
 use Damoony\Admin\AdminRouter;
 use Damoony\Admin\Auth;
 use Damoony\Admin\Controller\AlliasController;
@@ -19,6 +21,7 @@ use Damoony\Http\Middleware\SecurityHeadersMiddleware;
 use Damoony\Http\Request;
 use Damoony\Security\Csrf;
 use Damoony\Session\NativeSession;
+use Damoony\Admin\Controller\EditorController;
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
@@ -61,6 +64,7 @@ $router->register('filler', new \Damoony\Admin\Controller\FillerController($auth
 $router->register('scheme', new \Damoony\Admin\Controller\SchemeController($auth, $csrf, $view, $paths));
 $router->register('media', new \Damoony\Admin\Controller\MediaController($auth, $csrf, $view, $root));
 $router->register('settings', new \Damoony\Admin\Controller\SettingsController($auth, $csrf, $view, $siteConfig, $root));
+$router->register('editor', new EditorController($auth, $csrf, $view, $root));
 
 $security = new SecurityHeadersMiddleware(isHttps: ($_SERVER['HTTPS'] ?? '') === 'on');
 $handler = static fn (Request $r) => $security->process($r, static fn (Request $r2) => $router->dispatch($r2));

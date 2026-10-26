@@ -44,7 +44,13 @@ final class SchemeController extends BaseController
 
         foreach ($schemes as $s) {
             if (!is_string($s)) continue;
-            $html .= '<tr><td style="padding:8px; border-bottom:1px solid #eee;">' . View::esc($s) . '</td></tr>';
+            $html .= '<tr><td style="padding:8px; border-bottom:1px solid #eee;">' . View::esc($s) . '</td>';
+            $html .= '<td style="padding:8px; border-bottom:1px solid #eee;">';
+            
+            $editFile = 'alliasscheme/' . $s . '.data.php';
+            $html .= '<a href="/admin/?p=editor&domain=' . urlencode($domain) . '&file=' . urlencode($editFile) . '">Редактировать</a>';
+            
+            $html .= '</td></tr>';
         }
         $html .= '</table></div>';
 

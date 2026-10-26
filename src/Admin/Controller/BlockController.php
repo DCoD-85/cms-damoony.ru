@@ -47,7 +47,13 @@ final class BlockController extends BaseController
         foreach ($blocks as $b) {
             if (!is_string($b)) continue;
             $html .= '<tr><td style="padding:8px; border-bottom:1px solid #eee;">' . View::esc($b) . '</td>';
-            $html .= '<td style="padding:8px; border-bottom:1px solid #eee;"><a href="/admin/?p=block:remove&domain=' . urlencode($domain) . '&name=' . urlencode($b) . '" style="color:red;">Удалить</a></td></tr>';
+            $html .= '<td style="padding:8px; border-bottom:1px solid #eee;">';
+            
+            // Ссылка на редактор
+            $editFile = 'alliasglobal/' . $b . '/' . $b . '.php';
+            $html .= '<a href="/admin/?p=editor&domain=' . urlencode($domain) . '&file=' . urlencode($editFile) . '">Редактировать</a> | ';
+            
+            $html .= '<a href="/admin/?p=block:remove&domain=' . urlencode($domain) . '&name=' . urlencode($b) . '" style="color:red;">Удалить</a></td></tr>';
         }
         $html .= '</table></div>';
 

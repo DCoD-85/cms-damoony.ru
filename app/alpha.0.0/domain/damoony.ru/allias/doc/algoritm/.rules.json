@@ -1,3 +1,4 @@
 {
-    "available": ["(.*)|doc"]
+    "available": ["(.*)|doc"],
+    "auth": false
 }
