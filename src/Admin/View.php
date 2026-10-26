@@ -76,12 +76,14 @@ final class View
         $brand->append(Text::raw(' <span class="sub">/ admin</span>'));
         $header->append($brand);
 
+        $p = $_GET['p'] ?? '';
+        
         $nav = Builder::el('nav');
         $nav->attrs()->classAdd('admin-nav');
-        $nav->append(Builder::a('/admin/?p=domain', 'nav-link')->content('Домены'));
-        $nav->append(Builder::a('/admin/?p=stub', 'nav-link')->content('Заглушки'));
-        $nav->append(Builder::a('/admin/?p=security', 'nav-link')->content('Безопасность'));
-        $nav->append(Builder::a('/admin/?p=settings', 'nav-link')->content('Настройки'));
+        $nav->append(Builder::a('/admin/?p=domain', 'nav-link' . (str_starts_with($p, 'domain') ? ' active' : ''))->content('Домены'));
+        $nav->append(Builder::a('/admin/?p=stub', 'nav-link' . (str_starts_with($p, 'stub') ? ' active' : ''))->content('Заглушки'));
+        $nav->append(Builder::a('/admin/?p=security', 'nav-link' . (str_starts_with($p, 'security') ? ' active' : ''))->content('Безопасность'));
+        $nav->append(Builder::a('/admin/?p=settings', 'nav-link' . (str_starts_with($p, 'settings') ? ' active' : ''))->content('Настройки'));
         $header->append($nav);
 
         $user = Builder::div('user-panel');
