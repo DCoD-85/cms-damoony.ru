@@ -34,6 +34,7 @@ use Damoony\Demo\Page\HomePage;
 final class algoritm extends HomePage {}
 PHP);
 
+        // Создаем мок-регионы
         $globalDir = $this->root . '/app/alpha.0.0/domain/damoony.test/alliasglobal';
         mkdir($globalDir . '/hello', 0777, true);
         mkdir($globalDir . '/footer', 0777, true);
@@ -69,6 +70,21 @@ final class alliasglobal_footer implements RegionInterface {
     }
 }
 PHP);
+
+        // Создаем мок-схему
+        $schemeDir = $this->root . '/app/alpha.0.0/domain/damoony.test/alliasscheme';
+        mkdir($schemeDir, 0777, true);
+        file_put_contents($schemeDir . '/www.data.php', <<<'PHP'
+<?php
+return [
+    'tag' => 'div',
+    'class' => 'layout',
+    'children' => [
+        ['tag' => 'section', 'slot' => 'hello'],
+        ['tag' => 'footer', 'slot' => 'footer'],
+    ],
+];
+PHP);
     }
 
     protected function tearDown(): void
@@ -101,7 +117,6 @@ PHP);
             'domains_namespace' => ['damoony.test' => 'damoony_test'],
         ]);
         $c = new Container();
-        // Передаем Paths в контейнер
         $c->setInstance(Paths::class, new Paths($this->root));
         $c->setInstance(DomainResolverInterface::class, new ConfigDomainResolver($site));
         $c->setInstance(RouterInterface::class, new FileRouter($this->root, new RulesMatcher()));
