@@ -1,3 +1,5 @@
+--- НАЧАЛО ФАЙЛА---
+
 # Установка и запуск
 
 ## Требования
@@ -36,7 +38,15 @@ composer install
     },
     "alliases_real": {
         "damoony.ru": {
-            "www": "www"
+            "www": "www",
+            "doc": "doc"
+        }
+    },
+    "fillers": {
+        "damoony.ru": {
+            "doc": {
+                "top": false
+            }
         }
     }
 }
@@ -46,6 +56,7 @@ composer install
 - `domains_available` — флаг доступности реального домена (false -> 503 Maintenance).
 - `domains_namespace` — PHP-неймспейс для классов домена.
 - `alliases_real` — доступные алиасы для реального домена.
+- `fillers` — глобальные переключатели для филлеров (можно отключать переопределение конкретного блока для алиаса).
 
 ### config/admin.config
 
@@ -117,8 +128,11 @@ server {
 1. `composer install`
 2. `php bin/cli.php db:migrate`
 3. `php bin/cli.php admin:passwd --name=admin --password=secret`
-4. Открыть `http://damoony3.ru/`
-5. Открыть `http://damoony3.ru/admin/`
+4. `php bin/cli.php user:new --login=admin --email=admin@example.com --password=secret`
+5. Открыть `http://damoony3.ru/`
+6. Открыть `http://damoony3.ru/admin/`
+
+*(Команда `user:new` создаёт пользователя в БД, необходимого для входа на страницы с флагом `auth: true`).*
 
 ## Разработка
 
@@ -162,16 +176,18 @@ $PHP composer.phar check
 │   ├── index.php
 │   ├── admin/
 │   │   └── index.php
-│   └── media/
+│   └── media/              # Публичные файлы и CSS
 ├── _dev/                   # Тесты и тулинг
 └── _doc/
 ```
 
 ## Безопасность
 
-- Пароли — `password_hash` / `password_verify` (bcrypt).
-- CSRF — на всех POST-формах.
+- Пароли — `password_hash` / `password_verify` (bcrypt) в базе данных.
+- CSRF — на всех POST-формах (в админке и на сайте).
 - Session — `HttpOnly`, `SameSite=Lax`, `Secure` при HTTPS.
 - Brute-force — бан IP на 15 минут после 5 неудач.
 - CSP — блокирует inline-скрипты, кроме `style-src 'unsafe-inline'`.
 - Файлы в `www/media/` — только изображения, архивы, документы, без `.php`.
+
+--- КОНЕЦ ФАЙЛА ---

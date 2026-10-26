@@ -1,3 +1,5 @@
+--- НАЧАЛО ФАЙЛА---
+
 # Руководство разработчика
 
 В этом руководстве описано, как с нуля создать сайт, добавить страницы, блоки, схемы и написать логику для них.
@@ -41,7 +43,7 @@ php bin/cli.php page:new --domain=example.ru --allias=www --parent=index --name=
 
 ## 4. Написание логики страницы
 
-Откройте созданный файл, например `app/alpha.0.0/domain/example.ru/allias/www/algoritm/index/algoritm_index.php`.
+Откройте созданный файл, например `app/.../allias/www/algoritm/index/algoritm_index.php`.
 Страница наследуется от `Algoritm` и должна реализовать метод `default()`.
 
 ```php
@@ -78,14 +80,14 @@ php bin/cli.php block:new --domain=example.ru --name=header
 php bin/cli.php block:new --domain=example.ru --name=footer
 ```
 
-В папке `alliasglobal` появятся классы блоков. Вы можете настроить их в файлах `.data.php`.
+В папке `alliasglobal` появятся классы блоков. Реализуйте их в файлах `.php` (интерфейс `RegionInterface`).
 Затем создайте схему, которая соберет эти блоки вместе:
 
 ```bash
 php bin/cli.php scheme:new --domain=example.ru --name=default
 ```
 
-В файле схемы `alliasscheme/default.data.php` укажите, какие регионы использовать:
+В файле схемы `alliasscheme/default.data.php` укажите, в какие слоты вставлять регионы:
 
 ```php
 <?php
@@ -93,22 +95,22 @@ return [
     'tag' => 'div',
     'class' => 'layout-default',
     'children' => [
-        ['tag' => 'header', 'class' => 'header'], // вызовет блок header
-        ['tag' => 'main', 'class' => 'content'],  // сюда попадет вывод страницы
-        ['tag' => 'footer', 'class' => 'footer'], // вызовет блок footer
+        ['tag' => 'header', 'slot' => 'header'], // вызовет регион header
+        ['tag' => 'main', 'slot' => 'content'],  // сюда попадет вывод страницы (если подмените через setContent)
+        ['tag' => 'footer', 'slot' => 'footer'], // вызовет регион footer
     ],
 ];
 ```
 
 ## 6. Работа с базой данных
 
-Если вашей странице нужны данные из БД, используйте PDO-соединение (класс `Connection`).
+Если вашей странице нужны данные из БД, используйте PDO-соединение через контекст.
 
 ```php
 use Damoony\Db\Connection;
 
 // Внутри метода default()
-$db = new Connection(['driver' => 'sqlite', 'path' => $this->context->service('root') . '/var/damoony.db']);
+$db = $this->context->service('db'); // (или получите из DI контейнера)
 $stmt = $db->pdo()->query('SELECT * FROM news ORDER BY created_at DESC');
 $news = $stmt->fetchAll();
 
@@ -127,7 +129,62 @@ php bin/cli.php filler:new --domain=example.ru --allias=admin --block=header
 ```
 Теперь вы можете переопределить логику `header` только для админки, не меняя основной сайт.
 
-## 8. Использование AJAX
+## 8. Управление регионами из кода
+
+Внутри `Algoritm` у вас есть доступ к `RegionRegistry`. Вы можете управлять блоками прямо из логики страницы:
+
+```php
+// Отключить шапку на этой странице
+$this->regions()->disable('header');
+
+// Принудительно использовать глобальный блок (игнорируя филлер)
+$this->regions()->useGlobal('header');
+
+// Подменить целый регион своим деревом
+$myContent = Builder::div('custom')->content('Привет');
+$this->setContent('content', $myContent);
+```
+
+## 9. Мета-информация (CSS, JS, Title)
+
+Для управления содержимым тега `<head>` используйте объект `Meta` из контекста:
+
+```php
+// Установить заголовок страницы
+$this->context->meta->setTitle('Моя страница');
+
+// Подключить CSS и JS
+$this->context->meta->addCss('/media/example.ru/skin/default/css/style.css');
+$this->context->meta->addJs('/media/example.ru/skin/default/js/app.js');
+```
+*(Они автоматически попадут в `<head>` при рендеринге).*
+
+## 10. Авторизация (Login/Logout)
+
+Чтобы страница требовала входа, добавьте `"auth": true` в её `.rules.json`:
+```json
+{
+    "available": ["about"],
+    "auth": true
+}
+```
+Движок автоматически перенаправит неавторизованного пользователя на `/login`.
+
+Создайте пользователя для входа:
+```bash
+php bin/cli.php user:new --login=admin --email=admin@example.com --password=secret
+```
+
+Внутри логики страницы вы можете получить текущего пользователя:
+```php
+$auth = $this->context->service('auth');
+if ($auth->isAuthenticated()) {
+    $user = $auth->user();
+    // ...
+}
+```
+
+## 11. Использование AJAX
 
 В `Algoritm` есть метод `$this->isAjax()`. Если запрос пришел с заголовком `X-Requested-With: XMLHttpRequest`, можно вернуть JSON:
 
@@ -141,17 +198,19 @@ if ($this->isAjax()) {
 }
 ```
 
-## 9. Миграции
+## 12. Миграции
 
 Создавайте `.sql` файлы в папке `migrations/` с префиксами `001_`, `002_` и т.д. Применяйте их командой:
 ```bash
 php bin/cli.php db:migrate
 ```
 
-## 10. Переменные и правила (.rules.json)
+## 13. Переменные и правила (.rules.json)
 
-В `page:new` можно управлять доступом к странице через `.rules.json`.
+В `page:toggle` можно управлять доступом к странице через `.rules.json`.
 ```bash
 php bin/cli.php page:toggle --domain=example.ru --allias=www --path=about --key=auth --value=1
 ```
 Теперь страница `about` требует авторизации.
+
+--- КОНЕЦ ФАЙЛА ---

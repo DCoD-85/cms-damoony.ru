@@ -1,4 +1,5 @@
-```markdown
+--- НАЧАЛО ФАЙЛА---
+
 # CLI-команды
 
 Точка входа: `php bin/cli.php <command> [--key=value]`
@@ -146,13 +147,27 @@ php bin/cli.php vars:extract --domain=example.ru --allias=www
 
 ## admin:passwd
 
-Задать логин и пароль администратора.
+Задать логин и пароль администратора (для входа в панель управления).
 
 ```bash
 php bin/cli.php admin:passwd --name=admin --password=secret
 ```
 
 Записывает `login` и `password_hash` в `config/admin.config`.
+
+## user:new
+
+Создать пользователя на сайте (для авторизации на страницах с `auth: true`).
+
+```bash
+php bin/cli.php user:new --login=admin --email=admin@example.com --password=secret
+```
+
+- `--login` — логин (3-32 символа, латиница и цифры).
+- `--email` — валидный email.
+- `--password` — пароль (минимум 6 символов).
+
+Записывает пользователя с хешированным паролем в таблицу `users` базы данных SQLite.
 
 ## Общие флаги
 
@@ -165,4 +180,5 @@ php bin/cli.php admin:passwd --name=admin --password=secret
 - `db:migrate` — повторный запуск не дублирует миграции.
 - `vars:extract` — повторный запуск не перезаписывает `.data.json`.
 - `*:new` — возвращают ошибку, если объект уже существует.
-```
+
+--- КОНЕЦ ФАЙЛА ---
