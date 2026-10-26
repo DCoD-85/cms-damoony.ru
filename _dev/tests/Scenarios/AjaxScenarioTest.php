@@ -19,12 +19,12 @@ use PHPUnit\Framework\TestCase;
 
 final class AjaxScenarioTest extends TestCase
 {
-    private string $root;
+    private static string $root = '';
 
-    protected function setUp(): void
+    public static function setUpBeforeClass(): void
     {
-        $this->root = sys_get_temp_dir() . '/damoony_s14_' . bin2hex(random_bytes(4));
-        $dir = $this->root . '/app/alpha.0.0/domain/damoony.test/allias/www/algoritm';
+        self::$root = sys_get_temp_dir() . '/damoony_s14_' . bin2hex(random_bytes(4));
+        $dir = self::$root . '/app/alpha.0.0/domain/damoony.test/allias/www/algoritm';
         mkdir($dir . '/ajax/mode', 0777, true);
         file_put_contents($dir . '/.rules.json', json_encode(['available' => ['ajax']]));
         file_put_contents($dir . '/ajax/.rules.json', json_encode(['available' => ['([a-z]+)|mode']]));
@@ -37,12 +37,12 @@ final class algoritm_ajax_mode extends AjaxPage {}
 PHP);
     }
 
-    protected function tearDown(): void
+    public static function tearDownAfterClass(): void
     {
-        $this->rmrf($this->root);
+        self::rmrf(self::$root);
     }
 
-    private function rmrf(string $dir): void
+    private static function rmrf(string $dir): void
     {
         if (!is_dir($dir)) {
             return;
@@ -52,7 +52,7 @@ PHP);
                 continue;
             }
             $p = $dir . '/' . $i;
-            is_dir($p) ? $this->rmrf($p) : @unlink($p);
+            is_dir($p) ? self::rmrf($p) : @unlink($p);
         }
         @rmdir($dir);
     }
@@ -67,14 +67,13 @@ PHP);
             'domains_namespace' => ['damoony.test' => 'damoony_test'],
         ]);
         $c = new Container();
-        $c->setInstance(Paths::class, new Paths($this->root));
+        $c->setInstance(Paths::class, new Paths(self::$root));
         $c->setInstance(DomainResolverInterface::class, new ConfigDomainResolver($site));
-        $c->setInstance(RouterInterface::class, new FileRouter($this->root, new RulesMatcher()));
-        
+        $c->setInstance(RouterInterface::class, new FileRouter(self::$root, new RulesMatcher()));
         $resolver = $c->get(DomainResolverInterface::class);
         assert($resolver instanceof DomainResolverInterface);
 
-        return new FrontController($c, new PageHandler($this->root, $resolver));
+        return new FrontController($c, new PageHandler(self::$root, $resolver));
     }
 
     private function req(string $path): Request
