@@ -2,11 +2,10 @@
 
 return [
     'tag' => 'div',
-    'class' => 'layout-www',
-    'layout' => 'vertical',
+    'class' => 'layout',
     'children' => [
-        ['tag' => 'div', 'class' => 'top'],
-        ['tag' => 'div', 'class' => 'center'],
-        ['tag' => 'div', 'class' => 'bottom'],
+        ['tag' => 'header', 'slot' => 'hello'],
+        ['tag' => 'main', 'slot' => 'center'],
+        ['tag' => 'footer', 'slot' => 'footer'],
     ],
 ];
