@@ -62,14 +62,16 @@ final class DomainController extends BaseController
             $available = (bool) $this->siteConfig->getByKey(['domains_available', $real], false);
             $hasFiles = is_dir($this->paths->domain($real));
 
-            // Собираем алиасы без кнопки "+"
+			// Собираем алиасы с учетом статуса домена
             $aliasesHtml = '';
             $alliases = $this->siteConfig->getByKey(['alliases_real', $real], []);
             if (is_array($alliases)) {
                 $aliasArray = [];
                 foreach ($alliases as $a => $mapped) {
                     if ($a === '') continue;
-                    $aliasArray[] = '<span class="badge">' . View::esc((string)$a) . '</span>';
+                    // Если домен выключен, плашка красная
+                    $badgeClass = $available ? 'badge' : 'badge badge-disabled';
+                    $aliasArray[] = '<span class="' . $badgeClass . '">' . View::esc((string)$a) . '</span>';
                 }
                 $aliasesHtml = implode(' ', $aliasArray);
             }
@@ -256,7 +258,9 @@ final class DomainController extends BaseController
         $card->append($form->build());
 
         // Добавляем зону опасности внизу
-        $card->append(Builder::el('hr')->attrs()->styleAdd('margin: 30px 0; border: 0; border-top: 1px solid #eee;'));
+        $hr = Builder::el('hr');
+        $hr->attrs()->styleAdd('margin: 30px 0; border: 0; border-top: 1px solid #eee;');
+        $card->append($hr);
         
         $dangerZone = Builder::div('danger-zone');
         $dangerZone->append(Builder::p()->content('Удаление домена приведет к потере всех файлов. Это действие нельзя отменить.'));

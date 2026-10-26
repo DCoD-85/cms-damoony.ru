@@ -33,7 +33,7 @@ final class FrontController
         $host = (string) ($request->header('host') ?? $request->server['SERVER_NAME'] ?? '');
         $domain = $resolver->resolve($host);
 
-        if (!$domain->available) {
+        if (!$domain->available && !str_starts_with($request->path, '/admin')) {
             return ErrorPage::maintenance($domain->language);
         }
 
