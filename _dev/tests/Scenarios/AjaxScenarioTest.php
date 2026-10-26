@@ -16,6 +16,8 @@ use Damoony\Http\Request;
 use Damoony\Routing\FileRouter;
 use Damoony\Routing\RouterInterface;
 use Damoony\Routing\RulesMatcher;
+use Damoony\Security\Csrf;
+use Damoony\Session\SessionInterface;
 use PHPUnit\Framework\TestCase;
 
 final class AjaxScenarioTest extends TestCase
@@ -70,18 +72,29 @@ PHP);
         $c = new Container();
         $c->setInstance(Paths::class, new Paths(self::$root));
         $c->setInstance('site', $site);
-        
-        // Мок авторизации
+
+        $session = new class implements SessionInterface {
+            public array $data = [];
+            public function start(): void {}
+            public function isStarted(): bool { return true; }
+            public function get(string $key, mixed $default = null): mixed { return $this->data[$key] ?? $default; }
+            public function set(string $key, mixed $value): void { $this->data[$key] = $value; }
+            public function remove(string $key): void { unset($this->data[$key]); }
+            public function regenerate(): void {}
+            public function destroy(): void { $this->data = []; }
+        };
+        $c->setInstance(Csrf::class, new Csrf($session));
+
         $c->setInstance(AuthInterface::class, new class implements AuthInterface {
             public function isAuthenticated(): bool { return true; }
             public function user(): ?array { return null; }
             public function login(string $login, string $password): bool { return false; }
             public function logout(): void {}
         });
-        
+
         $c->setInstance(DomainResolverInterface::class, new ConfigDomainResolver($site));
         $c->setInstance(RouterInterface::class, new FileRouter(self::$root, new RulesMatcher()));
-        
+
         $resolver = $c->get(DomainResolverInterface::class);
         assert($resolver instanceof DomainResolverInterface);
 
@@ -99,7 +112,6 @@ PHP);
     public function testAjaxMin(): void
     {
         $r = $this->fc()->handle($this->req('/ajax/min'));
-
         self::assertSame(200, $r->status);
         self::assertSame('application/json; charset=utf-8', $r->headers['content-type']);
         $data = json_decode($r->body, true);
@@ -114,7 +126,6 @@ PHP);
     public function testAjaxLayout(): void
     {
         $r = $this->fc()->handle($this->req('/ajax/layout'));
-
         self::assertSame(200, $r->status);
         $data = json_decode($r->body, true);
         self::assertIsArray($data);
@@ -128,7 +139,6 @@ PHP);
     public function testNonAjaxReturnsHtml(): void
     {
         $r = $this->fc()->handle(new Request('GET', '/ajax/min', headers: ['host' => 'damoony.test']));
-
         self::assertSame(200, $r->status);
         self::assertStringContainsString('text/html', (string) ($r->headers['content-type'] ?? ''));
         self::assertStringContainsString('Non-ajax view', $r->body);
