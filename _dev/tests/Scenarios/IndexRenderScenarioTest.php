@@ -66,17 +66,13 @@ PHP);
             'domains_namespace' => ['damoony.test' => 'damoony_test'],
         ]);
         $c = new Container();
-        
-        // Добавляем Paths в контейнер
-        $c->setInstance(\Damoony\Files\Paths::class, new \Damoony\Files\Paths(self::$root));
-        
+        $c->setInstance(\Damoony\Files\Paths::class, new \Damoony\Files\Paths($this->root));
         $c->setInstance(DomainResolverInterface::class, new ConfigDomainResolver($site));
-        $c->setInstance(RouterInterface::class, new FileRouter(self::$root, new RulesMatcher()));
-        
+        $c->setInstance(RouterInterface::class, new FileRouter($this->root, new RulesMatcher()));
         $resolver = $c->get(DomainResolverInterface::class);
         assert($resolver instanceof DomainResolverInterface);
 
-        return new FrontController($c, new PageHandler(self::$root, $resolver));
+        return new FrontController($c, new PageHandler($this->root, $resolver));
     }
 
     public function testIndexRendersRegionsViaScheme(): void

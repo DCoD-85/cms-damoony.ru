@@ -57,6 +57,7 @@ final class FrontControllerTest extends TestCase
         ]);
 
         $c = new Container();
+        $c->setInstance(\Damoony\Files\Paths::class, new \Damoony\Files\Paths($this->root));
         $c->setInstance(DomainResolverInterface::class, new ConfigDomainResolver($site));
         $c->setInstance(RouterInterface::class, new FileRouter($this->root, new RulesMatcher()));
 
