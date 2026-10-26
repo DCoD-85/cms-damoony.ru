@@ -23,17 +23,17 @@ final class SessionAuth implements AuthInterface
         return (bool) $this->session->get(self::SESSION_KEY, false);
     }
 
+    /** @return array<string, mixed>|null */
     public function user(): ?array
     {
         if (!$this->isAuthenticated()) {
             return null;
         }
-        return ['login' => 'demo_user']; // Пока демо
+        return ['login' => 'demo_user'];
     }
 
     public function login(string $login, string $password): bool
     {
-        // Пока простой хардкод для теста
         if ($login === 'user' && $password === 'secret') {
             if (!$this->session->isStarted()) {
                 $this->session->start();
