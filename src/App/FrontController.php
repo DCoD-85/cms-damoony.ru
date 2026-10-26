@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\App;
 
+use Damoony\Auth\AuthInterface;
 use Damoony\Core\Config;
 use Damoony\Domain\DomainResolverInterface;
 use Damoony\Error\ErrorPage;
@@ -45,13 +46,11 @@ final class FrontController
                 : ErrorPage::notFound($domain->language);
         }
 
-        // Проверка авторизации
-        if ($match->auth) {
-            $auth = $this->container->get(\Damoony\Auth\AuthInterface::class);
-            assert($auth instanceof \Damoony\Auth\AuthInterface);
-            if (!$auth->isAuthenticated()) {
-                return ErrorPage::forbidden($domain->language);
-            }
+        $auth = $this->container->get(AuthInterface::class);
+        assert($auth instanceof AuthInterface);
+
+        if ($match->auth && !$auth->isAuthenticated()) {
+            return Response::redirect('/login', 302);
         }
 
         $paths = $this->container->get(Paths::class);
@@ -59,11 +58,12 @@ final class FrontController
 
         $site = $this->container->get('site');
         assert($site instanceof Config);
-        
+
         $meta = new Meta();
         $context = new RegionContext($request, $domain, $meta, [
             'paths' => $paths,
             'site' => $site,
+            'auth' => $auth,
         ]);
 
         return $this->pages->handle($match, $context);

@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Damoony\App;
 
 use Damoony\Auth\AuthInterface;
-use Damoony\Auth\SessionAuth;
+use Damoony\Auth\DbAuth;
 use Damoony\Core\Application;
 use Damoony\Core\Config;
 use Damoony\Core\Container;
 use Damoony\Core\Env;
 use Damoony\Core\ErrorHandler;
 use Damoony\Core\Logger;
+use Damoony\Db\Connection;
 use Damoony\Domain\ConfigDomainResolver;
 use Damoony\Domain\DomainResolverInterface;
 use Damoony\Files\Paths;
@@ -40,13 +41,19 @@ final class AppFactory
         $container->setInstance('site', $site);
         $container->setInstance('logger', $logger);
         $container->setInstance('errorHandler', $errorHandler);
-        
         $container->setInstance(Paths::class, new Paths($root));
 
-        // Инициализация сессии и авторизации
+        // БД (SQLite)
+        $db = new Connection([
+            'driver' => 'sqlite',
+            'path' => $root . '/var/damoony.db',
+        ]);
+        $container->setInstance(Connection::class, $db);
+
+        // Сессия и авторизация через БД
         $session = new NativeSession('SITE_SESSID', ($_SERVER['HTTPS'] ?? '') === 'on');
         $session->start();
-        $container->setInstance(AuthInterface::class, new SessionAuth($session));
+        $container->setInstance(AuthInterface::class, new DbAuth($db, $session));
 
         $container->set(
             DomainResolverInterface::class,

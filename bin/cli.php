@@ -46,6 +46,10 @@ $registry->add(new DbMigrateCommand($paths, [
 ]));
 $registry->add(new VarsExtractCommand($paths));
 $registry->add(new AdminPasswdCommand($paths));
+// use Damoony\Cli\Commands\UserNewCommand;
+// use Damoony\Db\Connection;
+$db = new Connection(['driver' => 'sqlite', 'path' => $root . '/var/damoony.db']);
+$registry->add(new UserNewCommand($db));
 
 $app = new Application($registry, new ArgvParser(), new Renderer());
 exit($app->run($_SERVER['argv']));
