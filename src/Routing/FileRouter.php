@@ -18,11 +18,11 @@ final class FileRouter implements RouterInterface
     ) {
     }
 
-     public function match(string $path, DomainContext $domain): RouteMatch
+    public function match(string $path, DomainContext $domain): RouteMatch
     {
         $segments = $this->segments($path);
-        $ns = $domain->logic;
-        $base = $this->appRoot . '/app/' . $ns . '/domain/' . $domain->real . '/allias/' . $domain->allias . '/algoritm';
+        $base = $this->appRoot . '/app/' . $domain->logic . '/domain/' . $domain->real . '/allias/' . $domain->allias . '/algoritm';
+
         if (!is_dir($base)) {
             return RouteMatch::notFound();
         }
@@ -33,7 +33,7 @@ final class FileRouter implements RouterInterface
         }
 
         if ($segments === []) {
-            return RouteMatch::found('algoritm', '');
+            return RouteMatch::found('algoritm', '', [], $this->matcher->requiresAuth($rootRules), false);
         }
 
         $classChain = 'algoritm';
@@ -44,6 +44,7 @@ final class FileRouter implements RouterInterface
             $rules = $i === 0
                 ? $rootRules
                 : $this->loadRules($base . '/' . $pathRel . '/.rules.json');
+            
             if ($rules === null) {
                 return RouteMatch::notFound();
             }
@@ -65,7 +66,11 @@ final class FileRouter implements RouterInterface
             }
         }
 
-        return RouteMatch::found($classChain, $pathRel, $args);
+        // Читаем правила конечной папки (leaf rules)
+        $leafRules = $this->loadRules($base . '/' . $pathRel . '/.rules.json') ?? [];
+        $auth = $this->matcher->requiresAuth($leafRules);
+
+        return RouteMatch::found($classChain, $pathRel, $args, $auth, false);
     }
 
     /**

@@ -44,6 +44,14 @@ final class FrontController
                 : ErrorPage::notFound($domain->language);
         }
 
+        // ПРОВЕРКА АВТОРИЗАЦИИ
+        if ($match->auth) {
+            $auth = $this->container->get(\Damoony\Auth\AuthInterface::class);
+            if (!$auth->isAuthenticated()) {
+                return ErrorPage::forbidden($domain->language);
+            }
+        }
+
         $paths = $this->container->get(Paths::class);
         assert($paths instanceof Paths);
         
