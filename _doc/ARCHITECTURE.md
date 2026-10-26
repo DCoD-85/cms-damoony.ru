@@ -17,22 +17,24 @@
 1. **Kernel**: принимает `Request`, оборачивает выполнение в `try/catch`, логирует ошибки и возвращает `Response`.
 2. **Middleware**: `Kernel` пропускает запрос через стек middleware. Базовые: `SecurityHeadersMiddleware` (CSP, HSTS), `RateLimitMiddleware` (защита от брутфорса).
 3. **FrontController**:
-   - Вызывает `DomainResolver::resolve($host)`, чтобы получить `DomainContext` (реальный домен, алиас, логика, доступность).
+   - Вызывает `DomainResolver::resolve($host)`, чтобы получить `DomainContext` (реальный домен, алиас, доступность).
    - Проверяет доступность домена (если false, возвращает 503 Maintenance).
    - Вызывает `Router::match($path, $domain)`, чтобы найти маршрут. Если `RouteMatch->auth` равно true, проверяет авторизацию через `AuthInterface` и редиректит на `/login` при необходимости.
    - Создает `RegionContext` и передает в него сервисы (`paths`, `site`, `auth`, `csrf`, `meta`).
-4. **Router (FileRouter)**: идет по дереву папок `algoritm/` в `app/`, читает `.rules.json` на каждом шаге, сопоставляет сегменты URL и возвращает `RouteMatch` (имя класса, путь, аргументы).
+4. **Router (FileRouter)**: идет по дереву папок `algoritm/` в `app/<real_domain>/<allias>/`, читает `.rules.json` на каждом шаге, сопоставляет сегменты URL и возвращает `RouteMatch` (имя класса, путь, аргументы).
 5. **PageHandler**: если роут найден, загружает `RegionRegistry` (через `RegionLoader` с учетом конфига и филлеров), подключает PHP-файл страницы, проверяет, что класс реализует `AlgoritmInterface`, инстанцирует его (передавая контекст, реестр регионов и аргументы) и вызывает метод `default()`.
 6. **Algoritm (Страница)**: генерирует контент, возвращая объект `Node` (дерево UI) или `Response` (например, JSON или редирект). При необходимости управляет регионами (отключает, подменяет или включает глобальные).
 7. **Response**: если возвращен `Node`, `PageHandler` оборачивает его в `Document` (тег `<html>`) вместе с собранной мета-информацией (CSS/JS/Title) и отдает HTML. Если возвращен `Response` — отдается как есть.
 
 ## 3. Слой домена (Domain)
 
-Домен — это папка в `app/<logic>/domain/<real_domain>/`.
-Внутри домена есть алиасы (`allias/www`, `allias/admin`). Каждый алиас содержит:
+Домен — это папка в `app/<real_domain>/`.
+Внутри домена лежат алиасы (например, `www`, `doc`, `admin`). Каждый алиас содержит:
 - `algoritm/` — дерево страниц (контроллеры).
-- `alliasglobal/` — блоки (регионы шаблона).
-- `alliasscheme/` — схемы (каркасы HTML).
+
+Инфраструктурные папки домена скрыты точкой в начале:
+- `.alliasglobal/` — блоки (регионы шаблона).
+- `.alliasscheme/` — схемы (каркасы HTML).
 
 `DomainResolver` позволяет одному реальному домену (`damoony.ru`) отвечать на несколько входящих хостов (`damoony.online`, `damoony3.ru`).
 

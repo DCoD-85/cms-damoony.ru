@@ -24,9 +24,8 @@ php bin/cli.php domain:new --domain=example.ru --namespace=example
 
 - `--domain` — FQDN домена (обязательно).
 - `--namespace` — PHP-неймспейс (по умолчанию генерируется из домена: `example_ru`).
-- `--logic` — версия движка (по умолчанию `alpha.0.0`).
 
-Создаёт папку домена, папку алиаса `www`, файл `.rules.json` и обновляет `config/site.config`.
+Создаёт папку домена `app/example.ru/`, папку алиаса `www`, файл `.rules.json` и обновляет `config/site.config`.
 
 ## allias:new
 
@@ -36,7 +35,7 @@ php bin/cli.php domain:new --domain=example.ru --namespace=example
 php bin/cli.php allias:new --domain=example.ru --name=admin
 ```
 
-Создаёт структуру алиаса (папку `algoritm` и `.rules.json`) и обновляет `config/site.config`.
+Создаёт структуру алиаса (папку `app/example.ru/admin/algoritm` и `.rules.json`) и обновляет `config/site.config`.
 
 ## allias:remove
 
@@ -56,7 +55,7 @@ php bin/cli.php allias:remove --domain=example.ru --name=admin --force
 php bin/cli.php block:new --domain=example.ru --name=custom
 ```
 
-Создаёт файлы `custom.php` и `custom.data.php` в папке `alliasglobal`, обновляет `blocks.json`.
+Создаёт файлы `custom.php` и `custom.data.php` в скрытой папке `app/example.ru/.alliasglobal/`, обновляет `blocks.json`.
 
 ## block:remove
 
@@ -76,7 +75,7 @@ php bin/cli.php block:remove --domain=example.ru --name=custom
 php bin/cli.php filler:new --domain=example.ru --allias=www --block=top
 ```
 
-Создаёт `top_www.php` и `top_www.data.php`, обновляет `site.config` (включает filler).
+Создаёт `top_www.php` и `top_www.data.php` в папке блока, обновляет `site.config` (включает filler).
 
 ## filler:toggle
 
@@ -122,7 +121,7 @@ php bin/cli.php page:toggle --domain=example.ru --allias=www --path=about --key=
 php bin/cli.php scheme:new --domain=example.ru --name=visuo
 ```
 
-Создаёт `visuo.data.php` в папке `alliasscheme` и обновляет `schemes.json`.
+Создаёт `visuo.data.php` в скрытой папке `app/example.ru/.alliasscheme/` и обновляет `schemes.json`.
 
 ## db:migrate
 
@@ -173,7 +172,6 @@ php bin/cli.php user:new --login=admin --email=admin@example.com --password=secr
 
 - `--dry` — режим предпросмотра без записи (для `vars:extract`).
 - `--force` — без подтверждения (для `allias:remove`).
-- `--logic=alpha.0.0` — указать версию движка (по умолчанию `alpha.0.0`).
 
 ## Идемпотентность
 

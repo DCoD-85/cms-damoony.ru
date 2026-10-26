@@ -12,7 +12,7 @@
 php bin/cli.php domain:new --domain=example.ru --namespace=example
 ```
 
-Это создаст структуру `app/alpha.0.0/domain/example.ru/` с базовым алиасом `www`.
+Это создаст структуру `app/example.ru/` с базовым алиасом `www`.
 Не забудьте добавить домен в ваш веб-сервер (Nginx/Apache) и направить его на папку `www/`.
 
 ## 2. Создание дополнительных алиасов
@@ -23,7 +23,7 @@ php bin/cli.php domain:new --domain=example.ru --namespace=example
 php bin/cli.php allias:new --domain=example.ru --name=admin
 ```
 
-Теперь у нас есть `www` (основной сайт) и `admin` (админка).
+Теперь у нас есть папки `app/example.ru/www/` (основной сайт) и `app/example.ru/admin/` (админка).
 
 ## 3. Создание страниц
 
@@ -39,15 +39,16 @@ php bin/cli.php page:new --domain=example.ru --allias=www --name=index
 php bin/cli.php page:new --domain=example.ru --allias=www --parent=index --name=about
 ```
 
-Это создаст файлы `algoritm_index.php` и `algoritm_index_about.php`.
+Это создаст файлы `algoritm_index.php` и `algoritm_index_about.php` в папке `app/example.ru/www/algoritm/`.
 
 ## 4. Написание логики страницы
 
-Откройте созданный файл, например `app/.../allias/www/algoritm/index/algoritm_index.php`.
+Откройте созданный файл, например `app/example.ru/www/algoritm/index/algoritm_index.php`.
 Страница наследуется от `Algoritm` и должна реализовать метод `default()`.
 
 ```php
 <?php
+
 declare(strict_types=1);
 
 namespace example\www;
@@ -80,17 +81,18 @@ php bin/cli.php block:new --domain=example.ru --name=header
 php bin/cli.php block:new --domain=example.ru --name=footer
 ```
 
-В папке `alliasglobal` появятся классы блоков. Реализуйте их в файлах `.php` (интерфейс `RegionInterface`).
+В скрытой папке `app/example.ru/.alliasglobal/` появятся классы блоков. Реализуйте их в файлах `.php` (интерфейс `RegionInterface`).
 Затем создайте схему, которая соберет эти блоки вместе:
 
 ```bash
 php bin/cli.php scheme:new --domain=example.ru --name=default
 ```
 
-В файле схемы `alliasscheme/default.data.php` укажите, в какие слоты вставлять регионы:
+В файле схемы `app/example.ru/.alliasscheme/default.data.php` укажите, в какие слоты (`slot`) вставлять регионы:
 
 ```php
 <?php
+
 return [
     'tag' => 'div',
     'class' => 'layout-default',

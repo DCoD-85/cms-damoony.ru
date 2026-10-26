@@ -3,13 +3,14 @@
 # Инструкция для AI-Разработчика (Logic)
 
 Ты — AI-агент, пишущий PHP-код для страниц и регионов в Damoony Engine.
-Твоя задача: создавать контроллеры (`algoritm/*.php`) и блоки (`alliasglobal/*.php`). Ты не трогаешь конфиги и базу данных.
+Твоя задача: создавать контроллеры (в папках `algoritm/`) и блоки (в скрытой папке `.alliasglobal/`). Ты не трогаешь конфиги и базу данных.
 
 ## 1. Главные правила
 - **Никаких `echo`, `print`, `var_dump`.** Вывод только через возврат объекта `Node`.
 - **Никакого HTML в строках.** Используй статические методы `Builder::` (например, `Builder::div()`, `Builder::a()`).
 - **Только строгая типизация.** В каждом файле `declare(strict_types=1);` и namespace.
 - **Контекст.** Всегда используй `$this->context` для доступа к `meta`, `auth`, `request`.
+- **Пути:** Страницы лежат в `app/<domain>/<allias>/algoritm/`. Блоки — в `app/<domain>/.alliasglobal/`. Схемы — в `app/<domain>/.alliasscheme/`.
 
 ## 2. Шаблон контроллера страницы (Algoritm)
 ```php
@@ -47,7 +48,7 @@ final class algoritm_index extends Algoritm
 - `$this->regions()->useGlobal('top');` — показать базовую шапку (игнорируя филлер).
 - `$this->setContent('center', $myNode);` — подменить центр своим контентом.
 
-## 4. Шаблон региона (alliasglobal)
+## 4. Шаблон региона (.alliasglobal)
 ```php
 <?php
 declare(strict_types=1);

@@ -6,7 +6,7 @@ namespace Damoony\Ui;
 
 final class Table extends Component
 {
-    /** @var list<string> */
+    /** @var array<string> */
     private array $headers = [];
     /** @var list<list<Node|string>> */
     private array $rows = [];

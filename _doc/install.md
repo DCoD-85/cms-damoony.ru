@@ -1,4 +1,4 @@
---- НАЧАЛО ФАЙЛА---
+--- НАЧАЛО ФАЙЛА ---
 
 # Установка и запуск
 
@@ -155,14 +155,12 @@ $PHP composer.phar check
 ```
 .
 ├── app/                    # Пользовательские домены
-│   └── alpha.0.0/
-│       └── domain/
-│           └── damoony.ru/
-│               ├── allias/
-│               │   └── www/
-│               │       └── algoritm/    # Страницы
-│               ├── alliasglobal/        # Блоки
-│               └── alliasscheme/        # Схемы
+│   └── damoony.ru/
+│       ├── www/            # Алиас (основной сайт)
+│       │   └── algoritm/   # Страницы
+│       ├── doc/            # Алиас (документация)
+│       ├── .alliasglobal/  # Блоки (скрытая папка)
+│       └── .alliasscheme/  # Схемы (скрытая папка)
 ├── bin/
 │   └── cli.php
 ├── config/

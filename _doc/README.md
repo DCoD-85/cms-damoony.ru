@@ -23,7 +23,10 @@ Damoony Engine — это переосмысление архитектуры Si
 - `config/` — JSON-конфиги (`site.config`, `engine.config`, `admin.config`)
 - `src/` — исходный код (PSR-4, `Damoony\`)
 - `www/` — публичная директория (`index.php`, `admin/index.php`, `media/`)
-- `app/` — пользовательские домены, алиасы, страницы, схемы
+- `app/<domain>/` — пользовательские домены (например, `app/damoony.ru/`)
+  - `app/<domain>/<allias>/algoritm/` — страницы (алиасы `www`, `doc`, `admin`)
+  - `app/<domain>/.alliasglobal/` — блоки (скрытая папка)
+  - `app/<domain>/.alliasscheme/` — схемы (скрытая папка)
 - `migrations/` — SQL-миграции
 - `var/` — runtime (БД, логи, кэш, бан-листы)
 - `_dev/` — тесты, конфиги PHPUnit/PHPStan, инструменты
