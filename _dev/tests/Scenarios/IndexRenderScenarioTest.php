@@ -35,7 +35,7 @@ use Damoony\Demo\Page\HomePage;
 final class algoritm extends HomePage {}
 PHP);
 
-        $globalDir = $this->root . '/app/damoony.test/alliasglobal';
+        $globalDir = $this->root . '/app/damoony.test/.alliasglobal';
         mkdir($globalDir . '/hello', 0777, true);
         mkdir($globalDir . '/footer', 0777, true);
 
@@ -71,7 +71,7 @@ final class alliasglobal_footer implements RegionInterface {
 }
 PHP);
 
-        $schemeDir = $this->root . '/app/damoony.test/alliasscheme';
+        $schemeDir = $this->root . '/app/damoony.test/.alliasscheme';
         mkdir($schemeDir, 0777, true);
         file_put_contents($schemeDir . '/www.data.php', <<<'PHP'
 <?php
