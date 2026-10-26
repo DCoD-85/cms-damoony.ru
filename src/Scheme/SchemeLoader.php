@@ -20,8 +20,7 @@ final class SchemeLoader
      */
     public function load(DomainContext $domain, string $schemeName = 'www'): array
     {
-        $file = $this->paths->domain($domain->logic, $domain->real) 
-            . '/alliasscheme/' . $schemeName . '.data.php';
+        $file = $this->paths->domain($domain->real) . '/.alliasscheme/' . $schemeName . '.data.php';
 
         if (!is_file($file)) {
             // Fallback, если схемы нет

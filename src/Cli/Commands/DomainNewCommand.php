@@ -57,7 +57,7 @@ final class DomainNewCommand implements CommandInterface
             return $r;
         }
 
-        $domainDir = $this->paths->domain($logic, $domain);
+        $domainDir = $this->paths->domain($domain);
         if (Fs::isDir($domainDir)) {
             $r->error('Папка домена уже существует');
             return $r;
@@ -68,9 +68,9 @@ final class DomainNewCommand implements CommandInterface
         $context->step('Домен создан', true, $domain);
 
         $allias = 'www';
-        $alliasDir = $this->paths->allias($logic, $domain, $allias);
+        $alliasDir = $this->paths->allias($domain, $allias);
         Fs::mkdir($alliasDir);
-        $algoritmDir = $this->paths->algoritm($logic, $domain, $allias);
+        $algoritmDir = $this->paths->algoritm($domain, $allias);
         Fs::mkdir($algoritmDir);
 
         Fs::writeAtomic($algoritmDir . '/.rules.json', json_encode(['available' => ['']], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");

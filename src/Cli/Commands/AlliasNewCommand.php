@@ -56,7 +56,7 @@ final class AlliasNewCommand implements CommandInterface
         }
 
         $logic = (string) ($args['logic'] ?? 'alpha.0.0');
-        $alliasDir = $this->paths->allias($logic, $domain, $name);
+        $alliasDir = $this->paths->allias($domain, $name);
         if (Fs::isDir($alliasDir)) {
             $r->error('Алиас уже существует');
             return $r;
@@ -65,7 +65,7 @@ final class AlliasNewCommand implements CommandInterface
         Fs::mkdir($alliasDir);
         $r->file(Fs::rel($alliasDir, $this->paths->root()));
 
-        $algoritmDir = $this->paths->algoritm($logic, $domain, $name);
+        $algoritmDir = $this->paths->algoritm($domain, $name);
         Fs::mkdir($algoritmDir);
         Fs::writeAtomic($algoritmDir . '/.rules.json', json_encode(['available' => ['']], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
         $r->file(Fs::rel($algoritmDir . '/.rules.json', $this->paths->root()));

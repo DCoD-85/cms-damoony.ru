@@ -19,7 +19,7 @@ final class RegionLoader
     public function load(DomainContext $domain): RegionRegistry
     {
         $registry = new RegionRegistry();
-        $baseDir = $this->paths->domain($domain->logic, $domain->real) . '/alliasglobal';
+        $baseDir = $this->paths->domain($domain->real) . '/.alliasglobal';
 
         if (!is_dir($baseDir)) {
             return $registry;

@@ -55,7 +55,7 @@ final class SchemeNewCommand implements CommandInterface
         }
 
         $logic = (string) ($args['logic'] ?? 'alpha.0.0');
-        $schemesDir = $this->paths->domain($logic, $domain) . '/alliasscheme';
+        $schemesDir = $this->paths->domain($domain) . '/alliasscheme';
         $schemeFile = $schemesDir . '/' . $name . '.data.php';
 
         if (Fs::isFile($schemeFile)) {

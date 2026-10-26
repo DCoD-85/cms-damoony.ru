@@ -75,9 +75,8 @@ final class PageHandler implements PageHandlerInterface
 
     private function path(DomainContext $domain, string $pathRel, string $classChain): string
     {
-        return rtrim($this->appRoot, '/') . '/app/' . $domain->logic
-            . '/domain/' . $domain->real
-            . '/allias/' . $domain->allias
+        return rtrim($this->appRoot, '/') . '/app/' . $domain->real
+            . '/' . $domain->allias
             . '/algoritm'
             . ($pathRel === '' ? '' : '/' . $pathRel)
             . '/' . $classChain . '.php';

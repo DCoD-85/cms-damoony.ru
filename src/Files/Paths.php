@@ -30,18 +30,18 @@ final class Paths
         return $this->root . '/app';
     }
 
-    public function domain(string $logic, string $real): string
+    public function domain(string $real): string
     {
-        return $this->appRoot() . '/' . $logic . '/domain/' . $real;
+        return $this->appRoot() . '/' . $real;
     }
 
-    public function allias(string $logic, string $real, string $allias): string
+    public function allias(string $real, string $allias): string
     {
-        return $this->domain($logic, $real) . '/allias/' . $allias;
+        return $this->domain($real) . '/' . $allias;
     }
 
-    public function algoritm(string $logic, string $real, string $allias): string
+    public function algoritm(string $real, string $allias): string
     {
-        return $this->allias($logic, $real, $allias) . '/algoritm';
+        return $this->allias($real, $allias) . '/algoritm';
     }
 }

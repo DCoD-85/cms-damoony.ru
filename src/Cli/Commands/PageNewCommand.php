@@ -61,7 +61,7 @@ final class PageNewCommand implements CommandInterface
         }
 
         $logic = (string) ($args['logic'] ?? 'alpha.0.0');
-        $algoritmDir = $this->paths->algoritm($logic, $domain, $allias);
+        $algoritmDir = $this->paths->algoritm($domain, $allias);
         if (!Fs::isDir($algoritmDir)) {
             $r->error('Алиас не найден');
             return $r;
