@@ -61,4 +61,50 @@ final class ComponentTest extends TestCase
         $html = $form->release();
         self::assertStringNotContainsString('<button', $html);
     }
+
+	public function testFieldTextarea(): void
+    {
+        $f = Field::textarea('desc')->rows(5)->cols(30)->value('Hello');
+        $html = $f->release();
+        self::assertStringContainsString('<textarea id="field_desc" name="desc" rows="5" cols="30">Hello</textarea>', $html);
+    }
+
+    public function testFieldSelect(): void
+    {
+        $f = Field::select('category')
+            ->options(['a' => 'Alpha', 'b' => 'Beta'])
+            ->selected('b')
+            ->placeholderOption('Выберите');
+        $html = $f->release();
+        self::assertStringContainsString('<option value="">Выберите</option>', $html);
+        self::assertStringContainsString('<option value="a">Alpha</option>', $html);
+        self::assertStringContainsString('<option value="b" selected="selected">Beta</option>', $html);
+    }
+
+    public function testFieldCheckbox(): void
+    {
+        $f = Field::checkbox('agree')->label('Согласен')->value('1')->checked();
+        $html = $f->release();
+        self::assertStringContainsString('type="checkbox"', $html);
+        self::assertStringContainsString('value="1"', $html);
+        self::assertStringContainsString('checked="checked"', $html);
+        self::assertStringContainsString('<label for="field_agree_1">Согласен</label>', $html);
+    }
+
+    public function testFieldRadio(): void
+    {
+        $f = Field::radio('gender')->value('m')->label('М')->checked();
+        $html = $f->release();
+        self::assertStringContainsString('type="radio"', $html);
+        self::assertStringContainsString('id="field_gender_m"', $html);
+        self::assertStringContainsString('<label for="field_gender_m">М</label>', $html);
+    }
+
+    public function testFieldFile(): void
+    {
+        $f = Field::file('avatar')->accept('image/*')->label('Аватар');
+        $html = $f->release();
+        self::assertStringContainsString('type="file"', $html);
+        self::assertStringContainsString('accept="image/*"', $html);
+    }
 }
