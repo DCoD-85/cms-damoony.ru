@@ -96,9 +96,4 @@ final class View
     {
         return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
-
-    private static function css(): string
-    {
-        return ''; // CSS вынесен в www/media/admin/admin.css
-    }
 }

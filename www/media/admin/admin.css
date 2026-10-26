@@ -58,3 +58,11 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Ro
 .nav-tab { padding: 10px 16px; color: #6b7280; text-decoration: none; font-size: 14px; font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .nav-tab:hover { color: #1f2937; }
 .nav-tab.active { color: #2563eb; border-bottom-color: #2563eb; }
+
+/* Row Highlighting */
+.row-active { background-color: #f0fdf4; }
+.row-active:hover { background-color: #dcfce7; }
+
+/* Domain Link */
+.domain-link { color: #1a1a1a; text-decoration: none; font-weight: 600; font-size: 15px; }
+.domain-link:hover { color: #2563eb; text-decoration: underline; }

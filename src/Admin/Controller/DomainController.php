@@ -54,7 +54,7 @@ final class DomainController extends BaseController
         $header->append($actions);
 
         // Таблица
-        $table = (new Table())->headers('Домен', 'Namespace', 'Статус', 'Файлы', 'Алиасы', 'Быстрый переход');
+        $table = (new Table())->headers('Статус', 'Домен', 'Namespace', 'Файлы', 'Алиасы', 'Действия');
 
         foreach ($grouped as $real => $incomingDomains) {
             $ns = (string) $this->siteConfig->getByKey(['domains_namespace', $real], '-');
@@ -78,25 +78,24 @@ final class DomainController extends BaseController
             $filesHtml = $hasFiles ? '✓' : '✗';
             
             $deleteBtn = Builder::a('/admin/?p=domain:remove&domain=' . urlencode($real), 'btn btn-danger')->content('Удалить');
-            $aliasesLink = Builder::a('/admin/?p=allias&domain=' . urlencode($real), 'btn btn-outline')->content('Алиасы');
-            $pagesLink = Builder::a('/admin/?p=page&domain=' . urlencode($real) . '&allias=www', 'btn btn-outline')->content('Страницы');
-            $blocksLink = Builder::a('/admin/?p=block&domain=' . urlencode($real), 'btn btn-outline')->content('Блоки');
             
-            $actionsHtml = '<div style="display:flex; gap:6px; flex-wrap:wrap;">';
-            $actionsHtml .= $aliasesLink->release();
-            $actionsHtml .= $pagesLink->release();
-            $actionsHtml .= $blocksLink->release();
-            $actionsHtml .= $deleteBtn->release();
-            $actionsHtml .= '</div>';
+            // Ссылка на настройки домена
+            $domainLink = Builder::a('/admin/?p=domain:edit&domain=' . urlencode($real), 'domain-link')->content(View::esc($real));
 
-            $table->row([
-                Text::raw('<div style="font-weight:600;">' . View::esc($real) . '</div><div style="font-size:12px; color:#888;">aliases: ' . View::esc(implode(', ', $incomingDomains)) . '</div>'),
-                Text::raw(View::esc($ns)),
+            // Формируем строку: Статус -> Домен -> Namespace -> Файлы -> Алиасы -> Действия
+            $row = [
                 Text::raw($statusHtml),
+                Text::raw($domainLink->release() . '<div style="font-size:12px; color:#888; font-weight:normal;">aliases: ' . View::esc(implode(', ', $incomingDomains)) . '</div>'),
+                Text::raw(View::esc($ns)),
                 Text::raw($filesHtml),
                 Text::raw($aliasesHtml),
-                Text::raw($actionsHtml)
-            ]);
+                $deleteBtn
+            ];
+            
+            // Подсветка строки, если домен включен
+            $rowClass = $available ? 'row-active' : '';
+            
+            $table->row($row, $rowClass);
         }
 
         $card = Builder::div('admin-card');

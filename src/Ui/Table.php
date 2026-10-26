@@ -8,7 +8,8 @@ final class Table extends Component
 {
     /** @var array<string> */
     private array $headers = [];
-    /** @var list<list<Node|string>> */
+    
+    /** @var list<array{cells: list<Node|string>, class: string}> */
     private array $rows = [];
 
     public function headers(string ...$headers): self
@@ -18,9 +19,9 @@ final class Table extends Component
     }
 
     /** @param list<Node|string> $cells */
-    public function row(array $cells): self
+    public function row(array $cells, string $class = ''): self
     {
-        $this->rows[] = $cells;
+        $this->rows[] = ['cells' => $cells, 'class' => $class];
         return $this;
     }
 
@@ -42,9 +43,12 @@ final class Table extends Component
         }
 
         $tbody = new Element('tbody');
-        foreach ($this->rows as $row) {
+        foreach ($this->rows as $rowData) {
             $tr = new Element('tr');
-            foreach ($row as $cell) {
+            if ($rowData['class'] !== '') {
+                $tr->attrs()->classAdd($rowData['class']);
+            }
+            foreach ($rowData['cells'] as $cell) {
                 $td = new Element('td');
                 $td->append($cell);
                 $tr->append($td);
