@@ -61,21 +61,18 @@ class algoritm_doc extends Algoritm
         $container->append($sidebar);
         $container->append($content);
         
-        $style = Builder::el('style')->content(self::css());
+        $style = Builder::el('style');
         $container->prepend($style);
 
         // --- ИНТЕГРАЦИЯ СО СХЕМОЙ ---
-        // Берем Paths из контекста
         $paths = $this->context->service('paths');
         if (!$paths instanceof \Damoony\Files\Paths) {
             $paths = new \Damoony\Files\Paths(dirname(__DIR__, 6));
         }
 
-        // Загружаем регионы (включая top_doc)
         $regionLoader = new \Damoony\Region\RegionLoader($paths);
         $regions = $regionLoader->load($this->context->domain);
 
-        // Создаем виртуальный регион для слота center с нашим doc-layout
         $regions->add(new class($container) implements \Damoony\Region\RegionInterface {
             public function __construct(private Node $node) {}
             public function name(): string { return 'center'; }
@@ -83,31 +80,12 @@ class algoritm_doc extends Algoritm
             public function render(\Damoony\Region\RegionContext $context): Node { return $this->node; }
         });
 
-        // Загружаем схему
         $schemeLoader = new \Damoony\Scheme\SchemeLoader($paths);
-        $manifest = $schemeLoader->load($this->context->domain, 'www');
+        // Используем динамическое имя схемы
+        $manifest = $schemeLoader->load($this->context->domain, $this->context->domain->scheme);
 
         $renderer = new \Damoony\Scheme\SchemeRenderer($regions);
 
         return $renderer->render($manifest, $this->context);
-    }
-
-    private static function css(): string
-    {
-        return '
-        .doc-layout { display: flex; max-width: 1200px; margin: 40px auto; gap: 40px; font-family: system-ui, sans-serif; padding: 0 20px; }
-        .doc-sidebar { width: 250px; flex-shrink: 0; }
-        .doc-sidebar h2 { font-size: 20px; margin-bottom: 16px; }
-        .doc-nav { list-style: none; padding: 0; margin: 0; }
-        .doc-nav li { margin-bottom: 8px; }
-        .doc-nav a { text-decoration: none; color: #0071e3; }
-        .doc-nav li.active a { font-weight: bold; color: #1d1d1f; }
-        .doc-content { flex-grow: 1; min-width: 0; }
-        .doc-content pre { background: #f5f5f7; padding: 16px; border-radius: 8px; overflow-x: auto; }
-        .doc-content code { font-family: monospace; background: #f5f5f7; padding: 2px 6px; border-radius: 4px; }
-        .doc-content pre code { background: transparent; padding: 0; }
-        .doc-content h1, .doc-content h2, .doc-content h3 { margin-top: 24px; }
-        .doc-content p { line-height: 1.6; color: #333; }
-        ';
     }
 }

@@ -68,6 +68,7 @@ final class ConfigDomainResolver implements DomainResolverInterface
             available: $available,
             stub: $stub,
             namespace: (string) $this->site->getByKey(['domains_namespace', $real], str_replace('.', '_', $real)),
+            scheme: (string) $this->site->getByKey(['domains_scheme', $real], 'www'),
         );
     }
 

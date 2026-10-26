@@ -21,6 +21,23 @@ final class SchemeRenderer
      */
     public function render(array $skeleton, RegionContext $context): Element
     {
+        if (isset($skeleton['meta']) && is_array($skeleton['meta'])) {
+            $meta = $skeleton['meta'];
+            if (isset($meta['title'])) {
+                $context->meta->setTitle((string) $meta['title']);
+            }
+            if (isset($meta['css']) && is_array($meta['css'])) {
+                foreach ($meta['css'] as $css) {
+                    $context->meta->addCss((string) $css);
+                }
+            }
+            if (isset($meta['js']) && is_array($meta['js'])) {
+                foreach ($meta['js'] as $js) {
+                    $context->meta->addJs((string) $js);
+                }
+            }
+        }
+
         $root = Element::fromArray($skeleton);
         $this->replaceSlots($root, $context);
         return $root;

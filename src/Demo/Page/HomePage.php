@@ -25,9 +25,9 @@ class HomePage extends Algoritm
         $regionLoader = new RegionLoader($paths);
         $regions = $regionLoader->load($this->context->domain);
 
-        // Загружаем схему (www)
+        // Загружаем схему (динамически)
         $schemeLoader = new SchemeLoader($paths);
-        $manifest = $schemeLoader->load($this->context->domain, 'www');
+        $manifest = $schemeLoader->load($this->context->domain, $this->context->domain->scheme);
 
         $renderer = new SchemeRenderer($regions);
 

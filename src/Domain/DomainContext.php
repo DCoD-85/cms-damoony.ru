@@ -16,6 +16,7 @@ final class DomainContext
         public readonly bool $available,
         public readonly ?string $stub = null,
         public readonly string $namespace = '',
+        public readonly string $scheme = 'www',
     ) {
     }
 
