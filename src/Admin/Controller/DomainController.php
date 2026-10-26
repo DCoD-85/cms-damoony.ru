@@ -48,6 +48,8 @@ final class DomainController extends BaseController
 				$html .= '<a href="/admin/?p=page&domain=' . urlencode($real) . '&allias=www">Страницы</a> | ';
 				$html .= '<a href="/admin/?p=scheme&domain=' . urlencode($real) . '">Схемы</a> | ';
 				$html .= '<a href="/admin/?p=filler&domain=' . urlencode($real) . '&allias=www">Fillers</a> | ';
+				$html .= '<a href="/admin/?p=media&domain=' . urlencode($real) . '">Медиа</a> | ';
+				$html .= '<a href="/admin/?p=settings">Настройки</a> | ';
                 $html .= '<a href="/admin/?p=domain:remove&domain=' . urlencode($real) . '" style="color:red;">Удалить</a>';
                 $html .= '</td>';
                 $html .= '</tr>';

@@ -59,6 +59,8 @@ $router->register('block', new \Damoony\Admin\Controller\BlockController($auth, 
 $router->register('page', new \Damoony\Admin\Controller\PageController($auth, $csrf, $view, $paths));
 $router->register('filler', new \Damoony\Admin\Controller\FillerController($auth, $csrf, $view, $paths, $siteConfig));
 $router->register('scheme', new \Damoony\Admin\Controller\SchemeController($auth, $csrf, $view, $paths));
+$router->register('media', new \Damoony\Admin\Controller\MediaController($auth, $csrf, $view, $root));
+$router->register('settings', new \Damoony\Admin\Controller\SettingsController($auth, $csrf, $view, $siteConfig, $root));
 
 $security = new SecurityHeadersMiddleware(isHttps: ($_SERVER['HTTPS'] ?? '') === 'on');
 $handler = static fn (Request $r) => $security->process($r, static fn (Request $r2) => $router->dispatch($r2));
