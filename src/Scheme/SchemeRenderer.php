@@ -11,16 +11,12 @@ use Damoony\Ui\Slot;
 
 final class SchemeRenderer
 {
-    public function __construct(
-        private readonly RegionRegistry $regions,
-    ) {
-    }
-
     /**
      * @param array<string, mixed> $skeleton
      */
-    public function render(array $skeleton, RegionContext $context): Element
+    public function render(array $skeleton, RegionRegistry $regions, RegionContext $context): Element
     {
+        // Мета
         if (isset($skeleton['meta']) && is_array($skeleton['meta'])) {
             $meta = $skeleton['meta'];
             if (isset($meta['title'])) {
@@ -39,24 +35,22 @@ final class SchemeRenderer
         }
 
         $root = Element::fromArray($skeleton);
-        $this->replaceSlots($root, $context);
+        $this->replaceSlots($root, $regions, $context);
         return $root;
     }
 
-    private function replaceSlots(Element $el, RegionContext $context): void
+    private function replaceSlots(Element $el, RegionRegistry $regions, RegionContext $context): void
     {
         $newChildren = [];
         
         foreach ($el->children() as $child) {
             if ($child instanceof Slot) {
-                $region = $this->regions->get($child->name());
+                $region = $regions->get($child->name());
                 if ($region !== null && $region->enabled()) {
                     $newChildren[] = $region->render($context);
                 }
-                // Если региона нет или он выключен — просто не добавляем ничего (слот исчезает)
             } elseif ($child instanceof Element) {
-                // Рекурсивно идем внутрь элемента
-                $this->replaceSlots($child, $context);
+                $this->replaceSlots($child, $regions, $context);
                 $newChildren[] = $child;
             } else {
                 $newChildren[] = $child;

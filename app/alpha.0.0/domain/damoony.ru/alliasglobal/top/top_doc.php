@@ -18,7 +18,7 @@ final class alliasglobal_top_doc implements RegionInterface
 
     public function enabled(): bool
     {
-        return false;
+        return true;
     }
 
     public function render(RegionContext $context): Node

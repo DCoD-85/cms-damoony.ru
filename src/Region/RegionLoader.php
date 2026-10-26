@@ -34,34 +34,35 @@ final class RegionLoader
             $baseFile = $baseDir . '/' . $item . '/' . $item . '.php';
             $fillerFile = $baseDir . '/' . $item . '/' . $item . '_' . $domain->allias . '.php';
 
-            $fileToLoad = null;
-            $className = '';
-
-            // Проверяем, не выключен ли филлер в конфиге (по умолчанию true)
+            // Проверяем конфиг (по умолчанию true)
             $isFillerEnabled = true;
             if ($this->site !== null) {
                 $isFillerEnabled = (bool) $this->site->getByKey(['fillers', $domain->real, $domain->allias, $item], true);
             }
 
-            // Если филлер включен и файл есть — берем его
-            if ($isFillerEnabled && is_file($fillerFile)) {
-                $fileToLoad = $fillerFile;
-                $className = 'alliasglobal_' . $item . '_' . $domain->allias;
-            } 
-            // Иначе берем базовый (top)
-            elseif (is_file($baseFile)) {
-                $fileToLoad = $baseFile;
-                $className = 'alliasglobal_' . $item;
+            // Загружаем базовый
+            if (is_file($baseFile)) {
+                require_once $baseFile;
+                $baseClass = $domain->namespace . '\\alliasglobal_' . $item;
+                if (class_exists($baseClass, false) && is_subclass_of($baseClass, RegionInterface::class)) {
+                    $registry->add(new $baseClass(), true);
+                }
             }
 
-            if ($fileToLoad !== null) {
-                require_once $fileToLoad;
-                $fullClass = $domain->namespace . '\\' . $className;
+            // Загружаем филлер
+            if ($isFillerEnabled && is_file($fillerFile)) {
+                require_once $fillerFile;
+                $fillerClass = $domain->namespace . '\\alliasglobal_' . $item . '_' . $domain->allias;
+                if (class_exists($fillerClass, false) && is_subclass_of($fillerClass, RegionInterface::class)) {
+                    $registry->add(new $fillerClass(), false);
+                }
+            }
 
-                if (class_exists($fullClass, false) && is_subclass_of($fullClass, RegionInterface::class)) {
-                    /** @var RegionInterface $region */
-                    $region = new $fullClass();
-                    $registry->add($region);
+            // Проверяем глобальное отключение из конфига
+            if ($this->site !== null) {
+                $isRegionDisabled = $this->site->getByKey(['regions', $domain->real, $domain->allias, $item], true) === false;
+                if ($isRegionDisabled) {
+                    $registry->disable($item);
                 }
             }
         }

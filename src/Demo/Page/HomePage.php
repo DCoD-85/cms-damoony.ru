@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace Damoony\Demo\Page;
 
 use Damoony\Algoritm\Algoritm;
-use Damoony\Core\Config;
 use Damoony\Files\Paths;
 use Damoony\Http\Response;
-use Damoony\Region\RegionLoader;
 use Damoony\Scheme\SchemeLoader;
 use Damoony\Scheme\SchemeRenderer;
 use Damoony\Ui\Node;
@@ -22,19 +20,11 @@ class HomePage extends Algoritm
             $paths = new Paths(dirname(__DIR__, 3));
         }
 
-        $site = $this->context->service('site');
-        if (!$site instanceof Config) {
-            $site = null;
-        }
-
-        $regionLoader = new RegionLoader($paths, $site);
-        $regions = $regionLoader->load($this->context->domain);
-
         $schemeLoader = new SchemeLoader($paths);
         $manifest = $schemeLoader->load($this->context->domain, $this->context->domain->scheme);
 
-        $renderer = new SchemeRenderer($regions);
+        $renderer = new SchemeRenderer();
 
-        return $renderer->render($manifest, $this->context);
+        return $renderer->render($manifest, $this->regions(), $this->context);
     }
 }

@@ -6,6 +6,7 @@ namespace Damoony\Tests\Scenarios;
 
 use Damoony\App\FrontController;
 use Damoony\App\PageHandler;
+use Damoony\Auth\AuthInterface;
 use Damoony\Core\Config;
 use Damoony\Core\Container;
 use Damoony\Domain\ConfigDomainResolver;
@@ -68,7 +69,16 @@ PHP);
         ]);
         $c = new Container();
         $c->setInstance(Paths::class, new Paths(self::$root));
-        $c->setInstance('site', $site); // <-- ДОБАВИТЬ
+        $c->setInstance('site', $site);
+        
+        // Мок авторизации
+        $c->setInstance(AuthInterface::class, new class implements AuthInterface {
+            public function isAuthenticated(): bool { return true; }
+            public function user(): ?array { return null; }
+            public function login(string $login, string $password): bool { return false; }
+            public function logout(): void {}
+        });
+        
         $c->setInstance(DomainResolverInterface::class, new ConfigDomainResolver($site));
         $c->setInstance(RouterInterface::class, new FileRouter(self::$root, new RulesMatcher()));
         
