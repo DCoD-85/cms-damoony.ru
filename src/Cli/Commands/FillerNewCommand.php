@@ -59,14 +59,13 @@ final class FillerNewCommand implements CommandInterface
             return $r;
         }
 
-        $logic = (string) ($args['logic'] ?? 'alpha.0.0');
         $alliasDir = $this->paths->allias($domain, $allias);
         if (!Fs::isDir($alliasDir)) {
             $r->error('Алиас не найден');
             return $r;
         }
 
-        $blockDir = $this->paths->domain($domain) . '/alliasglobal/' . $block;
+        $blockDir = $this->paths->domain($domain) . '/.alliasglobal/' . $block;
         if (!Fs::isDir($blockDir)) {
             $r->error('Блок не найден');
             return $r;

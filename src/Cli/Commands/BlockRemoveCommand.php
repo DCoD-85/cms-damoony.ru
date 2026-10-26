@@ -50,7 +50,7 @@ final class BlockRemoveCommand implements CommandInterface
             return $r;
         }
 
-        $blocksDir = $this->paths->domain($domain) . '/alliasglobal';
+        $blocksDir = $this->paths->domain($domain) . '/.alliasglobal';
         $blockDir = $blocksDir . '/' . $name;
 
         if (!Fs::isDir($blockDir)) {

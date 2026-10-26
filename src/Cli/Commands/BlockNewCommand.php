@@ -54,8 +54,7 @@ final class BlockNewCommand implements CommandInterface
             return $r;
         }
 
-        $logic = (string) ($args['logic'] ?? 'alpha.0.0');
-        $blocksDir = $this->paths->domain($domain) . '/alliasglobal';
+        $blocksDir = $this->paths->domain($domain) . '/.alliasglobal';
         $blockDir = $blocksDir . '/' . $name;
 
         if (Fs::isDir($blockDir)) {
