@@ -27,7 +27,6 @@ final class View
         $doc->lang($this->lang);
         $doc->title((string) ($data['title'] ?? $this->title));
 
-        // Подключаем CSS из файла
         $css = new Element('link', true);
         $css->attrs()->add('rel', 'stylesheet');
         $css->attrs()->add('href', '/media/admin/admin.css');
@@ -40,6 +39,32 @@ final class View
         $doc->body()->append($main);
 
         return $doc->release();
+    }
+
+    public static function domainTabs(string $domain, string $active): Element
+    {
+        $tabs = Builder::div('nav-tabs');
+        
+        $items = [
+            'pages' => ['Страницы', '/admin/?p=page&domain=' . urlencode($domain) . '&allias=www'],
+            'blocks' => ['Блоки', '/admin/?p=block&domain=' . urlencode($domain)],
+            'schemes' => ['Схемы', '/admin/?p=scheme&domain=' . urlencode($domain)],
+            'allias' => ['Алиасы', '/admin/?p=allias&domain=' . urlencode($domain)],
+            'fillers' => ['Fillers', '/admin/?p=filler&domain=' . urlencode($domain) . '&allias=www'],
+            'media' => ['Медиа', '/admin/?p=media&domain=' . urlencode($domain)],
+        ];
+
+        foreach ($items as $key => $item) {
+            [$label, $url] = $item;
+            $a = Builder::a($url, 'nav-tab');
+            if ($key === $active) {
+                $a->attrs()->classAdd('active');
+            }
+            $a->content($label);
+            $tabs->append($a);
+        }
+
+        return $tabs;
     }
 
     private function header(): Element
@@ -70,5 +95,10 @@ final class View
     public static function esc(string $value): string
     {
         return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    }
+
+    private static function css(): string
+    {
+        return ''; // CSS вынесен в www/media/admin/admin.css
     }
 }

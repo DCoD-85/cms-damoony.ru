@@ -7,7 +7,6 @@ namespace Damoony\Admin\Controller;
 use Damoony\Admin\View;
 use Damoony\Cli\Commands\AlliasNewCommand;
 use Damoony\Cli\Context;
-use Damoony\Cli\Result;
 use Damoony\Core\Config;
 use Damoony\Files\Paths;
 use Damoony\Http\Request;
@@ -77,6 +76,7 @@ final class AlliasController extends BaseController
         $card->append($table->build());
 
         $content = Builder::div();
+        $content->append(View::domainTabs($domain, 'allias'));
         $content->append($header);
         $content->append($card);
 
@@ -88,7 +88,10 @@ final class AlliasController extends BaseController
         $auth = $this->requireAuth();
         if ($auth !== null) return $auth;
 
-        $domain = (string) $request->query('domain', '') ?? (string)($request->post['domain'] ?? '');
+        $domain = (string) $request->query('domain', '');
+        if ($domain === '') {
+            $domain = (string) ($request->post['domain'] ?? '');
+        }
         if ($domain === '') return $this->redirect('/admin/?p=domain');
 
         $error = '';
@@ -115,10 +118,13 @@ final class AlliasController extends BaseController
             ->submit('Создать');
 
         $card = Builder::div('admin-card');
+        $card->append(View::domainTabs($domain, 'allias'));
         $card->append(Builder::h(1)->content('Добавить алиас: ' . View::esc($domain)));
+        
         if ($error !== '') {
             $card->append(Message::error($error)->build());
         }
+        
         $card->append($form->build());
         
         $backBtn = Builder::a('/admin/?p=allias&domain=' . urlencode($domain), 'btn btn-outline')->content('Назад');
