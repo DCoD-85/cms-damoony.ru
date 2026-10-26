@@ -63,7 +63,7 @@ final class Markdown
                 $inList = false;
             }
 
-            if (str_starts_with($line, '___CODE_BLOCK_')) {
+            if (str_starts_with($line, '___CODE_BLOCK_') || preg_match('/^<\/?(ul|ol|li|h[1-6]|blockquote|pre)/', $line)) {
                 $out[] = $line;
             } else {
                 $out[] = '<p>' . $line . '</p>';

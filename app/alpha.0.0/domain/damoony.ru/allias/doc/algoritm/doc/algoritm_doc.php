@@ -15,14 +15,10 @@ class algoritm_doc extends Algoritm
 {
     public function default(): Node|Response|null
     {
-        // Корень проекта
         $root = dirname((string) ($_SERVER['DOCUMENT_ROOT'] ?? __DIR__));
         $docDir = $root . '/_doc';
         
-        // Берем имя файла из URL
         $file = $this->args['doc'] ?? 'README.md';
-        
-        // Защита от Path Traversal
         $file = basename($file);
         if (!str_ends_with($file, '.md')) {
             $file .= '.md';
@@ -32,7 +28,6 @@ class algoritm_doc extends Algoritm
         
         $container = Builder::div('doc-layout');
         
-        // 1. Боковое меню
         $sidebar = Builder::div('doc-sidebar');
         $sidebar->append(Builder::h(2)->content('Документация'));
         
@@ -53,7 +48,6 @@ class algoritm_doc extends Algoritm
         }
         $sidebar->append($nav);
         
-        // 2. Контент
         $content = Builder::div('doc-content');
         if (is_file($filePath)) {
             $raw = (string) file_get_contents($filePath);
@@ -67,11 +61,35 @@ class algoritm_doc extends Algoritm
         $container->append($sidebar);
         $container->append($content);
         
-        // 3. Стили (встроенные)
         $style = Builder::el('style')->content(self::css());
         $container->prepend($style);
-        
-        return $container;
+
+        // --- ИНТЕГРАЦИЯ СО СХЕМОЙ ---
+        // Берем Paths из контекста
+        $paths = $this->context->service('paths');
+        if (!$paths instanceof \Damoony\Files\Paths) {
+            $paths = new \Damoony\Files\Paths(dirname(__DIR__, 6));
+        }
+
+        // Загружаем регионы (включая top_doc)
+        $regionLoader = new \Damoony\Region\RegionLoader($paths);
+        $regions = $regionLoader->load($this->context->domain);
+
+        // Создаем виртуальный регион для слота center с нашим doc-layout
+        $regions->add(new class($container) implements \Damoony\Region\RegionInterface {
+            public function __construct(private Node $node) {}
+            public function name(): string { return 'center'; }
+            public function enabled(): bool { return true; }
+            public function render(\Damoony\Region\RegionContext $context): Node { return $this->node; }
+        });
+
+        // Загружаем схему
+        $schemeLoader = new \Damoony\Scheme\SchemeLoader($paths);
+        $manifest = $schemeLoader->load($this->context->domain, 'www');
+
+        $renderer = new \Damoony\Scheme\SchemeRenderer($regions);
+
+        return $renderer->render($manifest, $this->context);
     }
 
     private static function css(): string
