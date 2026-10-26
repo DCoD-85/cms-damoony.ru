@@ -6,7 +6,6 @@ namespace Damoony\Region;
 
 use Damoony\Domain\DomainContext;
 use Damoony\Files\Paths;
-use RuntimeException;
 
 final class RegionLoader
 {
@@ -30,22 +29,32 @@ final class RegionLoader
                 continue;
             }
 
-            $className = 'alliasglobal_' . $item;
-            $file = $baseDir . '/' . $item . '/' . $item . '.php';
+            $baseFile = $baseDir . '/' . $item . '/' . $item . '.php';
+            $fillerFile = $baseDir . '/' . $item . '/' . $item . '_' . $domain->allias . '.php';
 
-            if (!is_file($file)) {
-                continue;
+            $fileToLoad = null;
+            $className = '';
+
+            // Проверяем филлер (top_visuo)
+            if (is_file($fillerFile)) {
+                $fileToLoad = $fillerFile;
+                $className = 'alliasglobal_' . $item . '_' . $domain->allias;
+            } 
+            // Если филлера нет, берем базовый (top)
+            elseif (is_file($baseFile)) {
+                $fileToLoad = $baseFile;
+                $className = 'alliasglobal_' . $item;
             }
 
-            require_once $file;
+            if ($fileToLoad !== null) {
+                require_once $fileToLoad;
+                $fullClass = $domain->namespace . '\\' . $className;
 
-            // Дописываем неймспейс домена (например, damoony_ru\alliasglobal_top)
-			$fullClass = $domain->namespace . '\\' . $className;
-
-            if (class_exists($fullClass, false) && is_subclass_of($fullClass, RegionInterface::class)) {
-                /** @var RegionInterface $region */
-                $region = new $fullClass();
-                $registry->add($region);
+                if (class_exists($fullClass, false) && is_subclass_of($fullClass, RegionInterface::class)) {
+                    /** @var RegionInterface $region */
+                    $region = new $fullClass();
+                    $registry->add($region);
+                }
             }
         }
 
