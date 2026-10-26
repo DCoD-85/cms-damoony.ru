@@ -76,7 +76,7 @@ final class DomainController extends BaseController
             $statusUrl = '/admin/?p=domain:toggle&domain=' . urlencode($real);
             $statusHtml = $available 
                 ? '<a href="' . $statusUrl . '" class="status-toggle" title="Выключить"></a>' 
-                : '<a href="' . $statusUrl . '" class="status-toggle" style="background:#e5e7eb;" title="Включить"></a>';
+                : '<a href="' . $statusUrl . '" class="status-toggle off" title="Включить"></a>';
                 
             $filesHtml = $hasFiles ? '✓' : '✗';
             
@@ -117,7 +117,11 @@ final class DomainController extends BaseController
         if ($auth !== null) return $auth;
 
         $domain = (string) $request->query('domain', '');
-        if ($domain === '') return $this->redirect('/admin/?p=domain');
+        $domains = $this->siteConfig->getByKey(['domains_real'], []);
+        
+        if ($domain === '' || !is_array($domains) || !isset($domains[$domain])) {
+            return $this->redirect('/admin/?p=domain');
+        }
 
         $data = $this->siteConfig->all();
         $current = (bool) ($data['domains_available'][$domain] ?? false);

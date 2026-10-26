@@ -47,8 +47,10 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Ro
 .field input:focus, .field select:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
 
 /* Utils */
-.status-toggle { width: 40px; height: 22px; background: #10b981; border-radius: 11px; position: relative; cursor: pointer; }
-.status-toggle::after { content: ''; position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; background: #fff; border-radius: 50%; }
+.status-toggle { display: inline-block; width: 40px; height: 22px; background: #10b981; border-radius: 11px; position: relative; cursor: pointer; transition: 0.3s; vertical-align: middle; }
+.status-toggle::after { content: ''; position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; background: #fff; border-radius: 50%; transition: 0.3s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+.status-toggle.off { background: #e5e7eb; }
+.status-toggle.off::after { right: auto; left: 2px; }
 .text-danger { color: #dc2626; }
 .success { background: #dcfce7; color: #166534; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 14px; }
 .error { background: #fef2f2; color: #991b1b; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 14px; }
