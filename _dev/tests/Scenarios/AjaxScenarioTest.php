@@ -68,11 +68,11 @@ PHP);
         $c = new Container();
 		$c->setInstance(\Damoony\Files\Paths::class, new \Damoony\Files\Paths($this->root)); 
         $c->setInstance(DomainResolverInterface::class, new ConfigDomainResolver($site));
-        $c->setInstance(RouterInterface::class, new FileRouter(self::$root, new RulesMatcher()));
+        $c->setInstance(RouterInterface::class, new FileRouter($this->root, new RulesMatcher()));
         $resolver = $c->get(DomainResolverInterface::class);
         assert($resolver instanceof DomainResolverInterface);
-
-        return new FrontController($c, new PageHandler(self::$root, $resolver));
+		
+        return new FrontController($c, new PageHandler($this->root, $resolver));
     }
 
     private function req(string $path): Request
