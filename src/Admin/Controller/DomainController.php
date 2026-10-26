@@ -54,25 +54,26 @@ final class DomainController extends BaseController
         $actions->append(Builder::a('/admin/?p=domain:new', 'btn btn-primary')->content('+ Добавить домен'));
         $header->append($actions);
 
-        // Таблица
-        $table = (new Table())->headers('Статус', 'Домен', 'Namespace', 'Файлы', 'Алиасы', 'Действия');
+        // Таблица (убрали колонку Действия)
+        $table = (new Table())->headers('Статус', 'Домен', 'Namespace', 'Файлы', 'Алиасы');
 
         foreach ($grouped as $real => $incomingDomains) {
             $ns = (string) $this->siteConfig->getByKey(['domains_namespace', $real], '-');
             $available = (bool) $this->siteConfig->getByKey(['domains_available', $real], false);
             $hasFiles = is_dir($this->paths->domain($real));
 
+            // Собираем алиасы без кнопки "+"
             $aliasesHtml = '';
             $alliases = $this->siteConfig->getByKey(['alliases_real', $real], []);
             if (is_array($alliases)) {
+                $aliasArray = [];
                 foreach ($alliases as $a => $mapped) {
                     if ($a === '') continue;
-                    $aliasesHtml .= '<span class="badge">' . View::esc((string)$a) . '</span> ';
+                    $aliasArray[] = '<span class="badge">' . View::esc((string)$a) . '</span>';
                 }
+                $aliasesHtml = implode(' ', $aliasArray);
             }
-            $aliasesHtml .= '<span class="badge badge-add">+</span>';
 
-            // Рабочий переключатель статуса
             $statusUrl = '/admin/?p=domain:toggle&domain=' . urlencode($real);
             $statusHtml = $available 
                 ? '<a href="' . $statusUrl . '" class="status-toggle" title="Выключить"></a>' 
@@ -80,24 +81,18 @@ final class DomainController extends BaseController
                 
             $filesHtml = $hasFiles ? '✓' : '✗';
             
-            $deleteBtn = Builder::a('/admin/?p=domain:remove&domain=' . urlencode($real), 'btn btn-danger')->content('Удалить');
-            
-            // Ссылка на настройки домена
+            // Ссылка на настройки
             $domainLink = Builder::a('/admin/?p=domain:edit&domain=' . urlencode($real), 'domain-link')->content(View::esc($real));
 
-            // Формируем строку: Статус -> Домен -> Namespace -> Файлы -> Алиасы -> Действия
             $row = [
                 Text::raw($statusHtml),
                 Text::raw($domainLink->release() . '<div style="font-size:12px; color:#888; font-weight:normal;">aliases: ' . View::esc(implode(', ', $incomingDomains)) . '</div>'),
                 Text::raw(View::esc($ns)),
                 Text::raw($filesHtml),
-                Text::raw($aliasesHtml),
-                $deleteBtn
+                Text::raw($aliasesHtml)
             ];
             
-            // Подсветка строки, если домен включен
             $rowClass = $available ? 'row-active' : '';
-            
             $table->row($row, $rowClass);
         }
 
@@ -259,6 +254,15 @@ final class DomainController extends BaseController
         }
         
         $card->append($form->build());
+
+        // Добавляем зону опасности внизу
+        $card->append(Builder::el('hr')->attrs()->styleAdd('margin: 30px 0; border: 0; border-top: 1px solid #eee;'));
+        
+        $dangerZone = Builder::div('danger-zone');
+        $dangerZone->append(Builder::p()->content('Удаление домена приведет к потере всех файлов. Это действие нельзя отменить.'));
+        $dangerZone->append(Builder::a('/admin/?p=domain:remove&domain=' . urlencode($domain), 'btn btn-danger')->content('Удалить домен'));
+        
+        $card->append($dangerZone);
 
         return Response::html($this->view->render($card, ['title' => 'Настройки: ' . $domain]));
     }
