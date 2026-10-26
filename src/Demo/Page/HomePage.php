@@ -7,7 +7,6 @@ namespace Damoony\Demo\Page;
 use Damoony\Algoritm\Algoritm;
 use Damoony\Http\Response;
 use Damoony\Region\RegionRegistry;
-use Damoony\Scheme\SchemeNode;
 use Damoony\Scheme\SchemeRenderer;
 use Damoony\Ui\Node;
 use Damoony\Demo\Region\HelloRegion;
@@ -20,14 +19,14 @@ class HomePage extends Algoritm
         $regions = new RegionRegistry();
         $regions->add(new HelloRegion())->add(new FooterRegion());
 
-        $manifest = SchemeNode::fromArray([
+        $manifest = [
             'tag' => 'div',
             'class' => 'layout',
             'children' => [
-                ['tag' => 'section', 'class' => 'hello'],
-                ['tag' => 'footer', 'class' => 'footer'],
+                ['tag' => 'section', 'slot' => 'hello'], // заменили class на slot
+                ['tag' => 'footer', 'slot' => 'footer'],
             ],
-        ]);
+        ];
 
         $renderer = new SchemeRenderer($regions);
 

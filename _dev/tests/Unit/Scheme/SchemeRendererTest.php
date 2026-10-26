@@ -104,6 +104,7 @@ final class SchemeRendererTest extends TestCase
         ];
 
         $html = $r->render($skeleton, $this->ctx())->release();
-        self::assertSame('<div></div>', $html);
+        // Мы оставляем пустой <main>, так как слот был его ребенком
+        self::assertSame('<div><main></main></div>', $html);
     }
 }

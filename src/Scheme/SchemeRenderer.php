@@ -7,6 +7,7 @@ namespace Damoony\Scheme;
 use Damoony\Region\RegionContext;
 use Damoony\Region\RegionRegistry;
 use Damoony\Ui\Element;
+use Damoony\Ui\Slot;
 
 final class SchemeRenderer
 {
@@ -15,33 +16,39 @@ final class SchemeRenderer
     ) {
     }
 
-    public function render(SchemeNode $node, RegionContext $context): Element
+    /**
+     * @param array<string, mixed> $skeleton
+     */
+    public function render(array $skeleton, RegionContext $context): Element
     {
-        $el = new Element($node->tag);
-        if ($node->class !== '') {
-            $el->attrs()->classAdd($node->class);
-        }
-        if ($node->layout !== '') {
-            $el->attrs()->add('data-layout', $node->layout);
-        }
+        $root = Element::fromArray($skeleton);
+        $this->replaceSlots($root, $context);
+        return $root;
+    }
 
-        $region = $this->regions->get($node->class);
-        if ($region !== null && $region->enabled()) {
-            $el->append($region->render($context));
-            return $el;
-        }
-
-        foreach ($node->children as $child) {
-            if (!$child->enabled) {
-                continue;
+    private function replaceSlots(Element $el, RegionContext $context): void
+    {
+        $newChildren = [];
+        
+        foreach ($el->children() as $child) {
+            if ($child instanceof Slot) {
+                $region = $this->regions->get($child->name());
+                if ($region !== null && $region->enabled()) {
+                    $newChildren[] = $region->render($context);
+                }
+                // Если региона нет или он выключен — просто не добавляем ничего (слот исчезает)
+            } elseif ($child instanceof Element) {
+                // Рекурсивно идем внутрь элемента
+                $this->replaceSlots($child, $context);
+                $newChildren[] = $child;
+            } else {
+                $newChildren[] = $child;
             }
-            $rendered = $this->render($child, $context);
-            if ($child->return) {
-                return $rendered;
-            }
-            $el->append($rendered);
         }
 
-        return $el;
+        $el->clear();
+        foreach ($newChildren as $c) {
+            $el->append($c);
+        }
     }
 }
