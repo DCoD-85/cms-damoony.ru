@@ -6,6 +6,7 @@ namespace Damoony\Algoritm;
 
 use Damoony\Http\Response;
 use Damoony\Region\RegionContext;
+use Damoony\Region\RegionRegistry;
 use Damoony\Ui\Node;
 
 class Algoritm implements AlgoritmInterface
@@ -13,8 +14,21 @@ class Algoritm implements AlgoritmInterface
     /** @param array<string, string> $args */
     public function __construct(
         protected readonly RegionContext $context,
+        protected readonly RegionRegistry $regions,
         protected readonly array $args = [],
     ) {
+    }
+
+    /** Удобный доступ для управления регионами из логики страницы */
+    public function regions(): RegionRegistry
+    {
+        return $this->regions;
+    }
+
+    public function setContent(string $slotName, Node $content): self
+    {
+        $this->regions->add(new \Damoony\Region\ContentRegion($slotName, $content));
+        return $this;
     }
 
     public function default(): Node|Response|null

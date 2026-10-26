@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace damoony_ru\doc;
 
 use Damoony\Algoritm\Algoritm;
-use Damoony\Core\Config;
 use Damoony\Http\Response;
+use Damoony\Region\RegionContext;
+use Damoony\Region\RegionInterface;
 use Damoony\Support\Markdown;
 use Damoony\Ui\Builder;
 use Damoony\Ui\Node;
@@ -29,21 +30,18 @@ class algoritm_doc extends Algoritm
         
         $container = Builder::div('doc-layout');
         
+        // ... (сборка sidebar и content без изменений)
         $sidebar = Builder::div('doc-sidebar');
         $sidebar->append(Builder::h(2)->content('Документация'));
-        
         $nav = Builder::ul('doc-nav');
         $files = glob($docDir . '/*.md') ?: [];
         sort($files);
-        
         foreach ($files as $f) {
             $name = basename($f);
             $li = Builder::li();
             $a = Builder::a('/' . $name);
             $a->content($name);
-            if ($name === $file) {
-                $li->attrs()->classAdd('active');
-            }
+            if ($name === $file) $li->attrs()->classAdd('active');
             $li->append($a);
             $nav->append($li);
         }
@@ -52,8 +50,7 @@ class algoritm_doc extends Algoritm
         $content = Builder::div('doc-content');
         if (is_file($filePath)) {
             $raw = (string) file_get_contents($filePath);
-            $html = Markdown::render($raw);
-            $content->append(Text::raw($html));
+            $content->append(Text::raw(Markdown::render($raw)));
         } else {
             $content->append(Builder::h(1)->content('404'));
             $content->append(Builder::p()->content('Файл ' . $file . ' не найден.'));
@@ -61,32 +58,26 @@ class algoritm_doc extends Algoritm
         
         $container->append($sidebar);
         $container->append($content);
+
+        // --- УПРАВЛЕНИЕ РЕГИОНАМИ ИЗ КОДА ---
         
+        // 1. Отключаем шапку на этой странице (если она не отключена в конфиге)
+        $this->regions()->disable('top');
+        
+        // 2. Подменяем регион center на наш контейнер
+        $this->setContent('center', $container);
+
+        // 3. Загружаем схему и рендерим
         $paths = $this->context->service('paths');
         if (!$paths instanceof \Damoony\Files\Paths) {
             $paths = new \Damoony\Files\Paths(dirname(__DIR__, 6));
         }
 
-        $site = $this->context->service('site');
-        if (!$site instanceof Config) {
-            $site = null;
-        }
-
-        $regionLoader = new \Damoony\Region\RegionLoader($paths, $site);
-        $regions = $regionLoader->load($this->context->domain);
-
-        $regions->add(new class($container) implements \Damoony\Region\RegionInterface {
-            public function __construct(private Node $node) {}
-            public function name(): string { return 'center'; }
-            public function enabled(): bool { return true; }
-            public function render(\Damoony\Region\RegionContext $context): Node { return $this->node; }
-        });
-
         $schemeLoader = new \Damoony\Scheme\SchemeLoader($paths);
         $manifest = $schemeLoader->load($this->context->domain, $this->context->domain->scheme);
 
-        $renderer = new \Damoony\Scheme\SchemeRenderer($regions);
+        $renderer = new \Damoony\Scheme\SchemeRenderer();
 
-        return $renderer->render($manifest, $this->context);
+        return $renderer->render($manifest, $this->regions(), $this->context);
     }
 }
