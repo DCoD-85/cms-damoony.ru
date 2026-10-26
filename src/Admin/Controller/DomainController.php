@@ -214,7 +214,7 @@ final class DomainController extends BaseController
                 'maintenance' => 'Реконструкция',
                 'coming_soon' => 'Скоро открытие',
             ])->selected($stub))
-            ->add(Field::text('until')->label('Время авто-включения')->value($untilStr)->hint('Если указать время, сайт автоматически включится в этот момент. (Формат: YYYY-MM-DDTHH:MM)'))
+			->add(Field::datetime('until')->label('Время авто-включения')->value($untilStr)->hint('Если указать время, сайт автоматически включится в этот момент.'))
             ->submit('Сохранить');
 
         $card = Builder::div('admin-card');

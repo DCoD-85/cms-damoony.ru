@@ -38,6 +38,7 @@ final class Field extends Component
 
     public static function text(string $name): self { return new self($name, 'text'); }
     public static function password(string $name): self { return new self($name, 'password'); }
+	public static function datetime(string $name): self { return new self($name, 'datetime-local'); }
     public static function email(string $name): self { return new self($name, 'email'); }
     public static function hidden(string $name): self { return new self($name, 'hidden'); }
     public static function file(string $name): self { return new self($name, 'file'); }
