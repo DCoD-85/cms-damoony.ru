@@ -8,6 +8,7 @@ use Damoony\Admin\View;
 use Damoony\Cli\Commands\DomainNewCommand;
 use Damoony\Cli\Context;
 use Damoony\Core\Config;
+use Damoony\Files\Fs;
 use Damoony\Files\Paths;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
@@ -71,9 +72,11 @@ final class DomainController extends BaseController
             }
             $aliasesHtml .= '<span class="badge badge-add">+</span>';
 
+            // Рабочий переключатель статуса
+            $statusUrl = '/admin/?p=domain:toggle&domain=' . urlencode($real);
             $statusHtml = $available 
-                ? '<div class="status-toggle"></div>' 
-                : '<div class="status-toggle" style="background:#e5e7eb;"></div>';
+                ? '<a href="' . $statusUrl . '" class="status-toggle" title="Выключить"></a>' 
+                : '<a href="' . $statusUrl . '" class="status-toggle" style="background:#e5e7eb;" title="Включить"></a>';
                 
             $filesHtml = $hasFiles ? '✓' : '✗';
             
@@ -106,6 +109,26 @@ final class DomainController extends BaseController
         $content->append($card);
 
         return Response::html($this->view->render($content, ['title' => 'Домены']));
+    }
+
+    public function toggle(Request $request): Response
+    {
+        $auth = $this->requireAuth();
+        if ($auth !== null) return $auth;
+
+        $domain = (string) $request->query('domain', '');
+        if ($domain === '') return $this->redirect('/admin/?p=domain');
+
+        $data = $this->siteConfig->all();
+        $current = (bool) ($data['domains_available'][$domain] ?? false);
+        $data['domains_available'][$domain] = !$current;
+
+        Fs::writeAtomic(
+            $this->paths->siteConfig(), 
+            json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n"
+        );
+
+        return $this->redirect('/admin/?p=domain');
     }
 
     public function new(Request $request): Response
@@ -153,7 +176,7 @@ final class DomainController extends BaseController
         return Response::html($this->view->render($card, ['title' => 'Новый домен']));
     }
 
-   public function edit(Request $request): Response
+    public function edit(Request $request): Response
     {
         $auth = $this->requireAuth();
         if ($auth !== null) return $auth;
@@ -161,7 +184,6 @@ final class DomainController extends BaseController
         $domain = (string) $request->query('domain', '');
         if ($domain === '') return $this->redirect('/admin/?p=domain');
 
-        // Проверяем, существует ли домен
         if ($this->siteConfig->getByKey(['domains_real', $domain]) === null) {
             return $this->redirect('/admin/?p=domain');
         }
@@ -178,7 +200,6 @@ final class DomainController extends BaseController
             $stub = (string) ($request->post['stub'] ?? 'maintenance');
             $until = (string) ($request->post['until'] ?? '');
 
-            // Обновляем конфиг
             $data = $this->siteConfig->all();
             $data['domains_titles'][$domain] = $title;
             $data['domains_available'][$domain] = $available;
@@ -191,21 +212,19 @@ final class DomainController extends BaseController
             }
 
             try {
-                \Damoony\Files\Fs::writeAtomic($this->paths->siteConfig(), json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n");
+                Fs::writeAtomic($this->paths->siteConfig(), json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n");
                 return $this->redirect('/admin/?p=domain:edit&domain=' . urlencode($domain) . '&saved=1');
             } catch (\Throwable $e) {
                 $error = 'Ошибка сохранения: ' . $e->getMessage();
             }
         }
 
-        // Получаем текущие значения
         $title = (string) $this->siteConfig->getByKey(['domains_titles', $domain], '');
         $available = (bool) $this->siteConfig->getByKey(['domains_available', $domain], false);
         $stub = (string) $this->siteConfig->getByKey(['domains_stub', $domain, 'current'], 'maintenance');
         $until = $this->siteConfig->getByKey(['domains_stub', $domain, 'until'], 0);
         $untilStr = $until > 0 ? date('Y-m-d\TH:i', (int)$until) : '';
 
-        // Строим форму
         $form = Form::create('/admin/?p=domain:edit&domain=' . urlencode($domain), 'POST')
             ->csrf($this->csrf->field())
             ->add(Field::text('title')->label('Заголовок (title)')->value($title))
@@ -214,12 +233,11 @@ final class DomainController extends BaseController
                 'maintenance' => 'Реконструкция',
                 'coming_soon' => 'Скоро открытие',
             ])->selected($stub))
-			->add(Field::datetime('until')->label('Время авто-включения')->value($untilStr)->hint('Если указать время, сайт автоматически включится в этот момент.'))
+            ->add(Field::datetime('until')->label('Время авто-включения')->value($untilStr)->hint('Если указать время, сайт автоматически включится в этот момент.'))
             ->submit('Сохранить');
 
         $card = Builder::div('admin-card');
         
-        // Хлебные крошки
         $breadcrumbs = Builder::div('breadcrumbs');
         $breadcrumbs->append(Builder::a('/admin/?p=domain')->content('Домены'));
         $breadcrumbs->append(Text::raw(' / '));
@@ -227,8 +245,6 @@ final class DomainController extends BaseController
         
         $card->append($breadcrumbs);
         $card->append(Builder::h(1)->content('Настройки домена'));
-        
-        // Табы
         $card->append(View::domainTabs($domain, 'settings'));
 
         if ($success !== '') {
