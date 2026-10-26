@@ -6,6 +6,7 @@ namespace Damoony\Region;
 
 use Damoony\Domain\DomainContext;
 use Damoony\Http\Request;
+use Damoony\Ui\Meta;
 
 final class RegionContext
 {
@@ -13,6 +14,7 @@ final class RegionContext
     public function __construct(
         public readonly Request $request,
         public readonly DomainContext $domain,
+        public readonly Meta $meta,
         public readonly array $services = [],
     ) {
     }

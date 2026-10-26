@@ -10,6 +10,7 @@ use Damoony\Http\Request;
 use Damoony\Http\Response;
 use Damoony\Region\RegionContext;
 use Damoony\Routing\RouterInterface;
+use Damoony\Ui\Meta;
 use Psr\Container\ContainerInterface;
 
 final class FrontController
@@ -42,7 +43,8 @@ final class FrontController
                 : ErrorPage::notFound($domain->language);
         }
 
-        $context = new RegionContext($request, $domain);
+        $meta = new Meta();
+        $context = new RegionContext($request, $domain, $meta);
 
         return $this->pages->handle($match, $context);
     }

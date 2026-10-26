@@ -51,7 +51,7 @@ final class PageHandler implements PageHandlerInterface
             $page = new $class($context, $match->args);
             $result = $page->default();
 
-            return $this->toResponse($result, $domain);
+            return $this->toResponse($result, $domain, $context);
         } catch (\Throwable $e) {
             return Response::internalError($e->getMessage());
         }
@@ -67,14 +67,14 @@ final class PageHandler implements PageHandlerInterface
             . '/' . $classChain . '.php';
     }
 
-    private function toResponse(Node|Response|null $result, DomainContext $domain): Response
+    private function toResponse(Node|Response|null $result, DomainContext $domain, RegionContext $context): Response
     {
         if ($result instanceof Response) {
             return $result;
         }
 
         if ($result instanceof Node) {
-            $doc = new Document($domain->language);
+            $doc = new Document($domain->language, $context->meta);
             $doc->body()->append($result);
             return Response::html($doc->release());
         }
