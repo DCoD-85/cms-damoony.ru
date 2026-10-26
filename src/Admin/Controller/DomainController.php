@@ -12,6 +12,13 @@ use Damoony\Core\Config;
 use Damoony\Files\Paths;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
+use Damoony\Ui\Builder;
+use Damoony\Ui\Button;
+use Damoony\Ui\Field;
+use Damoony\Ui\Form;
+use Damoony\Ui\Message;
+use Damoony\Ui\Table;
+use Damoony\Ui\Text;
 
 final class DomainController extends BaseController
 {
@@ -25,16 +32,13 @@ final class DomainController extends BaseController
         parent::__construct($auth, $csrf, $view);
     }
 
-	public function index(Request $request): Response
+    public function index(Request $request): Response
     {
         $auth = $this->requireAuth();
-        if ($auth !== null) {
-            return $auth;
-        }
+        if ($auth !== null) return $auth;
 
         $domains = $this->siteConfig->getByKey(['domains_real'], []);
         
-        // Группируем входящие домены по реальному домену
         $grouped = [];
         if (is_array($domains)) {
             foreach ($domains as $incoming => $real) {
@@ -42,40 +46,60 @@ final class DomainController extends BaseController
             }
         }
 
-        $html = '<div class="admin-card"><h1>Домены</h1>';
-        $html .= '<p><a href="/admin/?p=domain:new" class="btn">+ Добавить домен</a></p>';
-        $html .= '<table style="width:100%; border-collapse:collapse; margin-top:16px;">';
-        $html .= '<tr><th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Реальный домен</th><th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Привязанные домены</th><th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Действия</th></tr>';
+        // Заголовок
+        $header = Builder::div('page-header');
+        $header->append(Builder::h(1)->content('Домены'));
+        
+        $actions = Builder::div('page-actions');
+        $actions->append(Builder::a('/admin/?p=stub', 'btn btn-outline')->content('Библиотека заглушек'));
+        $actions->append(Builder::a('/admin/?p=domain:new', 'btn btn-primary')->content('+ Добавить домен'));
+        $header->append($actions);
+
+        // Таблица
+        $table = (new Table())->headers('Домен', 'Namespace', 'Статус', 'Файлы', 'Алиасы', 'Действия');
 
         foreach ($grouped as $real => $incomingDomains) {
             $ns = (string) $this->siteConfig->getByKey(['domains_namespace', $real], '-');
-            
-            $html .= '<tr>';
-            // Реальный домен
-            $html .= '<td style="padding:8px; border-bottom:1px solid #eee;"><b>' . View::esc($real) . '</b><br><small style="color:#666;">ns: ' . View::esc($ns) . '</small></td>';
-            
-            // Привязанные
-            $html .= '<td style="padding:8px; border-bottom:1px solid #eee;">';
-            foreach ($incomingDomains as $inc) {
-                $html .= '<div>' . View::esc($inc) . ($inc === $real ? ' <small>(основной)</small>' : '') . '</div>';
-            }
-            $html .= '</td>';
-            
-            // Действия
-            $html .= '<td style="padding:8px; border-bottom:1px solid #eee;">';
-            $html .= '<a href="/admin/?p=allias&domain=' . urlencode($real) . '">Алиасы</a> | ';
-            $html .= '<a href="/admin/?p=block&domain=' . urlencode($real) . '">Блоки</a> | ';
-            $html .= '<a href="/admin/?p=page&domain=' . urlencode($real) . '&allias=www">Страницы</a> | ';
-            $html .= '<a href="/admin/?p=scheme&domain=' . urlencode($real) . '">Схемы</a> | ';
-            $html .= '<a href="/admin/?p=filler&domain=' . urlencode($real) . '&allias=www">Fillers</a> | ';
-            $html .= '<a href="/admin/?p=media&domain=' . urlencode($real) . '">Медиа</a> | ';
-            $html .= '<a href="/admin/?p=settings">Настройки</a>';
-            $html .= '</td>';
-            $html .= '</tr>';
-        }
-        $html .= '</table></div>';
+            $available = (bool) $this->siteConfig->getByKey(['domains_available', $real], false);
+            $hasFiles = is_dir($this->paths->domain($real));
 
-        return Response::html($this->view->render($html, ['title' => 'Домены']));
+            $aliasesHtml = '';
+            $alliases = $this->siteConfig->getByKey(['alliases_real', $real], []);
+            if (is_array($alliases)) {
+                foreach ($alliases as $a => $mapped) {
+                    if ($a === '') continue;
+                    $aliasesHtml .= '<span class="badge">' . View::esc((string)$a) . '</span> ';
+                }
+            }
+            $aliasesHtml .= '<span class="badge badge-add">+</span>';
+
+            $statusHtml = $available 
+                ? '<div class="status-toggle"></div>' 
+                : '<div class="status-toggle" style="background:#e5e7eb;"></div>';
+                
+            $filesHtml = $hasFiles ? '✓' : '✗';
+            
+            $deleteBtn = Builder::a('/admin/?p=domain:remove&domain=' . urlencode($real), 'btn btn-danger')->content('Удалить');
+
+            $row = [
+                Text::raw('<div style="font-weight:600;">' . View::esc($real) . '</div><div style="font-size:12px; color:#888;">aliases: ' . View::esc(implode(', ', $incomingDomains)) . '</div>'),
+                Text::raw(View::esc($ns)),
+                Text::raw($statusHtml),
+                Text::raw($filesHtml),
+                Text::raw($aliasesHtml),
+                $deleteBtn
+            ];
+            $table->row($row);
+        }
+
+        $card = Builder::div('admin-card');
+        $card->append($table->build());
+
+        $content = Builder::div();
+        $content->append($header);
+        $content->append($card);
+
+        return Response::html($this->view->render($content, ['title' => 'Домены']));
     }
 
     public function new(Request $request): Response
@@ -84,17 +108,18 @@ final class DomainController extends BaseController
         if ($auth !== null) return $auth;
 
         $error = '';
+        $domainVal = '';
+        $nsVal = '';
+
         if ($request->isPost()) {
             $csrfErr = $this->requireCsrf($request);
             if ($csrfErr !== null) return $csrfErr;
 
-            $domain = (string) ($request->post['domain'] ?? '');
-            $ns = (string) ($request->post['namespace'] ?? '');
+            $domainVal = (string) ($request->post['domain'] ?? '');
+            $nsVal = (string) ($request->post['namespace'] ?? '');
 
             $cmd = new DomainNewCommand($this->paths);
-            $result = new Result();
-            $ctx = new Context(static fn() => null); // Step handler stub
-            $res = $cmd->run(['domain' => $domain, 'namespace' => $ns], $ctx);
+            $res = $cmd->run(['domain' => $domainVal, 'namespace' => $nsVal], new Context(static fn() => null));
 
             if ($res->ok) {
                 return $this->redirect('/admin/?p=domain');
@@ -102,16 +127,20 @@ final class DomainController extends BaseController
             $error = implode('; ', $res->errors);
         }
 
-        $html = '<div class="admin-card"><h1>Добавить домен</h1>';
-        if ($error !== '') $html .= '<div class="error">' . View::esc($error) . '</div>';
-        $html .= '<form method="post" class="admin-form">';
-        $html .= $this->csrf->field();
-        $html .= '<label>Домен (например, example.ru)<input type="text" name="domain" required></label>';
-        $html .= '<label>Namespace (латиница, опционально)<input type="text" name="namespace"></label>';
-        $html .= '<button type="submit">Создать</button>';
-        $html .= '<a href="/admin/?p=domain" style="text-align:center;">Отмена</a>';
-        $html .= '</form></div>';
+        $form = Form::create('/admin/?p=domain:new', 'POST')
+            ->csrf($this->csrf->field())
+            ->add(Field::text('domain')->label('Домен')->placeholder('example.ru')->required()->value($domainVal))
+            ->add(Field::text('namespace')->label('Namespace (опционально)')->placeholder('example_ru')->value($nsVal))
+            ->submit('Создать');
 
-        return Response::html($this->view->render($html, ['title' => 'Новый домен']));
+        $card = Builder::div('admin-card');
+        $card->append(Builder::h(1)->content('Добавить домен'));
+        if ($error !== '') {
+            $card->append(Message::error($error)->build());
+        }
+        $card->append($form->build());
+        $card->append(Builder::a('/admin/?p=domain', 'btn btn-outline')->content('Назад')->attrs()->styleAdd('margin-top:20px;'));
+
+        return Response::html($this->view->render($card, ['title' => 'Новый домен']));
     }
 }
