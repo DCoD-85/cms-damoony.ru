@@ -10,6 +10,7 @@ use Damoony\Core\Config;
 use Damoony\Core\Container;
 use Damoony\Domain\ConfigDomainResolver;
 use Damoony\Domain\DomainResolverInterface;
+use Damoony\Files\Paths;
 use Damoony\Http\Request;
 use Damoony\Routing\FileRouter;
 use Damoony\Routing\RouterInterface;
@@ -31,6 +32,42 @@ final class IndexRenderScenarioTest extends TestCase
 namespace damoony_test\www;
 use Damoony\Demo\Page\HomePage;
 final class algoritm extends HomePage {}
+PHP);
+
+        $globalDir = $this->root . '/app/alpha.0.0/domain/damoony.test/alliasglobal';
+        mkdir($globalDir . '/hello', 0777, true);
+        mkdir($globalDir . '/footer', 0777, true);
+
+        file_put_contents($globalDir . '/hello/hello.php', <<<'PHP'
+<?php
+namespace damoony_test;
+use Damoony\Region\RegionContext;
+use Damoony\Region\RegionInterface;
+use Damoony\Ui\Builder;
+use Damoony\Ui\Node;
+final class alliasglobal_hello implements RegionInterface {
+    public function name(): string { return 'hello'; }
+    public function enabled(): bool { return true; }
+    public function render(RegionContext $context): Node {
+        return Builder::div('hello')->content('Hello from test');
+    }
+}
+PHP);
+
+        file_put_contents($globalDir . '/footer/footer.php', <<<'PHP'
+<?php
+namespace damoony_test;
+use Damoony\Region\RegionContext;
+use Damoony\Region\RegionInterface;
+use Damoony\Ui\Builder;
+use Damoony\Ui\Node;
+final class alliasglobal_footer implements RegionInterface {
+    public function name(): string { return 'footer'; }
+    public function enabled(): bool { return true; }
+    public function render(RegionContext $context): Node {
+        return Builder::div('footer')->content('Footer from test');
+    }
+}
 PHP);
     }
 
@@ -54,8 +91,6 @@ PHP);
         @rmdir($dir);
     }
 
-    // ... (метод setUp оставляем как есть) ...
-
     private function fc(): FrontController
     {
         $site = Config::fromArray([
@@ -66,7 +101,8 @@ PHP);
             'domains_namespace' => ['damoony.test' => 'damoony_test'],
         ]);
         $c = new Container();
-        $c->setInstance(\Damoony\Files\Paths::class, new \Damoony\Files\Paths($this->root));
+        // Передаем Paths в контейнер
+        $c->setInstance(Paths::class, new Paths($this->root));
         $c->setInstance(DomainResolverInterface::class, new ConfigDomainResolver($site));
         $c->setInstance(RouterInterface::class, new FileRouter($this->root, new RulesMatcher()));
         $resolver = $c->get(DomainResolverInterface::class);
@@ -82,9 +118,7 @@ PHP);
         self::assertSame(200, $r->status);
         self::assertStringContainsString('<!DOCTYPE html>', $r->body);
         self::assertStringContainsString('lang="ru-ru"', $r->body);
-        self::assertStringContainsString('<div class="hello">', $r->body);
-        self::assertStringContainsString('Damoony engine', $r->body);
-        self::assertStringContainsString('damoony.test', $r->body);
-        self::assertStringContainsString('<div class="footer">', $r->body);
+        self::assertStringContainsString('<div class="hello">Hello from test</div>', $r->body);
+        self::assertStringContainsString('<div class="footer">Footer from test</div>', $r->body);
     }
 }

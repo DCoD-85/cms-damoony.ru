@@ -1,0 +1,50 @@
+    protected function setUp(): void
+    {
+        $this->root = sys_get_temp_dir() . '/damoony_s11_' . bin2hex(random_bytes(4));
+        $dir = $this->root . '/app/alpha.0.0/domain/damoony.test/allias/www/algoritm';
+        mkdir($dir, 0777, true);
+        file_put_contents($dir . '/.rules.json', json_encode(['available' => ['']]));
+        file_put_contents($dir . '/algoritm.php', <<<'PHP'
+<?php
+namespace damoony_test\www;
+use Damoony\Demo\Page\HomePage;
+final class algoritm extends HomePage {}
+PHP);
+
+        // Создаем мок-регионы для теста
+        $globalDir = $this->root . '/app/alpha.0.0/domain/damoony.test/alliasglobal';
+        mkdir($globalDir . '/hello', 0777, true);
+        mkdir($globalDir . '/footer', 0777, true);
+
+        file_put_contents($globalDir . '/hello/hello.php', <<<'PHP'
+<?php
+namespace damoony_test;
+use Damoony\Region\RegionContext;
+use Damoony\Region\RegionInterface;
+use Damoony\Ui\Builder;
+use Damoony\Ui\Node;
+final class alliasglobal_hello implements RegionInterface {
+    public function name(): string { return 'hello'; }
+    public function enabled(): bool { return true; }
+    public function render(RegionContext $context): Node {
+        return Builder::div('hello')->content('Hello from test');
+    }
+}
+PHP);
+
+        file_put_contents($globalDir . '/footer/footer.php', <<<'PHP'
+<?php
+namespace damoony_test;
+use Damoony\Region\RegionContext;
+use Damoony\Region\RegionInterface;
+use Damoony\Ui\Builder;
+use Damoony\Ui\Node;
+final class alliasglobal_footer implements RegionInterface {
+    public function name(): string { return 'footer'; }
+    public function enabled(): bool { return true; }
+    public function render(RegionContext $context): Node {
+        return Builder::div('footer')->content('Footer from test');
+    }
+}
+PHP);
+    }

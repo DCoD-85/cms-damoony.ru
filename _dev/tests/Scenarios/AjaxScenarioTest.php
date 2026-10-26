@@ -66,7 +66,7 @@ PHP);
             'domains_namespace' => ['damoony.test' => 'damoony_test'],
         ]);
         $c = new Container();
-        $c->setInstance(\Damoony\Files\Paths::class, new \Damoony\Files\Paths(self::$root));
+		$c->setInstance(\Damoony\Files\Paths::class, new \Damoony\Files\Paths($this->root)); 
         $c->setInstance(DomainResolverInterface::class, new ConfigDomainResolver($site));
         $c->setInstance(RouterInterface::class, new FileRouter(self::$root, new RulesMatcher()));
         $resolver = $c->get(DomainResolverInterface::class);
