@@ -19,22 +19,10 @@ final class SchemeRendererTest extends TestCase
     private function region(string $name): RegionInterface
     {
         return new class($name) implements RegionInterface {
-            public function __construct(private string $n)
-            {
-            }
-
-            public function name(): string
-            {
-                return $this->n;
-            }
-
-            public function enabled(): bool
-            {
-                return true;
-            }
-
-            public function render(RegionContext $context): Node
-            {
+            public function __construct(private string $n) {}
+            public function name(): string { return $this->n; }
+            public function enabled(): bool { return true; }
+            public function render(RegionContext $context): Node {
                 $el = new Element('div');
                 $el->attrs()->classAdd('region-' . $this->n);
                 $el->content('content-' . $this->n);
@@ -53,14 +41,14 @@ final class SchemeRendererTest extends TestCase
 
     public function testRendersSimpleSkeleton(): void
     {
-        $r = new SchemeRenderer(new RegionRegistry());
-        $html = $r->render(['tag' => 'div', 'class' => 'wrap'], $this->ctx())->release();
+        $r = new SchemeRenderer();
+        $html = $r->render(['tag' => 'div', 'class' => 'wrap'], new RegionRegistry(), $this->ctx())->release();
         self::assertSame('<div class="wrap"></div>', $html);
     }
 
     public function testRenderChildren(): void
     {
-        $r = new SchemeRenderer(new RegionRegistry());
+        $r = new SchemeRenderer();
         $skeleton = [
             'tag' => 'div',
             'class' => 'wrap',
@@ -70,7 +58,7 @@ final class SchemeRendererTest extends TestCase
             ],
         ];
 
-        $html = $r->render($skeleton, $this->ctx())->release();
+        $html = $r->render($skeleton, new RegionRegistry(), $this->ctx())->release();
         self::assertStringContainsString('<span class="a"></span>', $html);
         self::assertStringContainsString('<span class="b"></span>', $html);
     }
@@ -80,7 +68,7 @@ final class SchemeRendererTest extends TestCase
         $regions = new RegionRegistry();
         $regions->add($this->region('center'));
 
-        $r = new SchemeRenderer($regions);
+        $r = new SchemeRenderer();
         $skeleton = [
             'tag' => 'div',
             'class' => 'layout',
@@ -89,13 +77,13 @@ final class SchemeRendererTest extends TestCase
             ]
         ];
 
-        $html = $r->render($skeleton, $this->ctx())->release();
+        $html = $r->render($skeleton, $regions, $this->ctx())->release();
         self::assertStringContainsString('<div class="region-center">content-center</div>', $html);
     }
 
     public function testMissingRegionRemovesSlot(): void
     {
-        $r = new SchemeRenderer(new RegionRegistry());
+        $r = new SchemeRenderer();
         $skeleton = [
             'tag' => 'div',
             'children' => [
@@ -103,8 +91,7 @@ final class SchemeRendererTest extends TestCase
             ]
         ];
 
-        $html = $r->render($skeleton, $this->ctx())->release();
-        // Мы оставляем пустой <main>, так как слот был его ребенком
+        $html = $r->render($skeleton, new RegionRegistry(), $this->ctx())->release();
         self::assertSame('<div><main></main></div>', $html);
     }
 }

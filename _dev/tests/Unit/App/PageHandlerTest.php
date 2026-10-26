@@ -69,9 +69,13 @@ final class PageHandlerTest extends TestCase
 
     private function ctx(): RegionContext
     {
+        $paths = new \Damoony\Files\Paths(sys_get_temp_dir());
+        
         return new RegionContext(
             new Request('GET', '/'),
             new DomainContext('example.ru', 'example.ru', 'www', 'alpha.0.0', 'default', 'ru-RU', true),
+            null,
+            ['paths' => $paths]
         );
     }
 
