@@ -66,7 +66,8 @@ final class BuilderDocumentTest extends TestCase
 
     public function testDocumentBasics(): void
     {
-        $doc = new Document('en-en');
+        $doc = new Document();
+        $doc->lang('en-en');
         $doc->title('Hello');
 
         $html = $doc->release();
@@ -79,6 +80,7 @@ final class BuilderDocumentTest extends TestCase
     public function testDocumentDefaultLang(): void
     {
         $doc = new Document();
+        $doc->lang('ru-ru');
         self::assertStringContainsString('<html lang="ru-ru">', $doc->release());
     }
 
