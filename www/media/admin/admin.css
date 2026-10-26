@@ -40,11 +40,47 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Ro
 /* Table Cell Layouts */
 .table td { vertical-align: middle; }
 .table-actions { display: flex; gap: 8px; align-items: center; }
+/* Inline Comment Form in Table */
 .table-comment-form { display: flex !important; flex-direction: row; gap: 8px; align-items: center; margin: 0; }
-.table-comment-form .field { display: block; margin: 0; width: auto; }
-.table-comment-form input { padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; width: 140px; }
-.table-comment-form button { padding: 6px 12px; font-size: 12px; white-space: nowrap; }
-.text-muted { color: #6b7280; font-size: 13px; }
+.table-comment-form .field { margin: 0 !important; flex-grow: 0; }
+
+/* Перебиваем стили инпута */
+.table-comment-form input { 
+    width: 140px !important; 
+    height: 32px !important; 
+    padding: 0 10px !important; 
+    font-size: 13px !important; 
+    border-radius: 6px; 
+    border: 1px solid #d1d5db; 
+    margin: 0 !important;
+}
+
+/* Перебиваем стили кнопки .btn-primary и .form button */
+.table-comment-form button, 
+.table-comment-form .btn-primary { 
+    height: 32px !important; 
+    min-width: auto !important; 
+    padding: 0 16px !important; 
+    font-size: 13px !important; 
+    border-radius: 6px; 
+    background: #f3f4f6 !important; 
+    color: #374151 !important; 
+    border: 1px solid #d1d5db !important; 
+    cursor: pointer; 
+    transition: 0.2s; 
+    box-shadow: none !important;
+    text-align: center;
+}
+
+.table-comment-form button:hover, 
+.table-comment-form .btn-primary:hover { 
+    background: #e5e7eb !important; 
+}
+
+/* Radio Layout Fix */
+.field-choice { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 16px; }
+.field-choice input[type="radio"], .field-choice input[type="checkbox"] { margin-top: 4px; }
+.field-choice label { margin: 0; font-weight: 500; font-size: 14px; cursor: pointer; }
 
 /* Badges */
 .badge { display: inline-block; padding: 4px 10px; background: #e0f2fe; color: #0369a1; border-radius: 20px; font-size: 12px; font-weight: 500; margin-right: 4px; margin-bottom: 4px; }
