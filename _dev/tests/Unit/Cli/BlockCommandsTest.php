@@ -25,7 +25,7 @@ final class BlockCommandsTest extends TestCase
             'domains_namespace' => ['example.ru' => 'example'],
             'alliases_real' => ['example.ru' => ['www' => 'www']],
         ]));
-        mkdir($this->root . '/app/example.ru/alliasglobal', 0777, true);
+        mkdir($this->root . '/app/example.ru/.alliasglobal', 0777, true);
     }
 
     protected function tearDown(): void
@@ -62,12 +62,12 @@ final class BlockCommandsTest extends TestCase
             ->run(['domain' => 'example.ru', 'name' => 'custom'], $this->ctx($r));
 
         self::assertTrue($res->ok);
-        $dir = $this->root . '/app/example.ru/alliasglobal/custom';
+        $dir = $this->root . '/app/example.ru/.alliasglobal/custom';
         self::assertDirectoryExists($dir);
         self::assertFileExists($dir . '/custom.php');
         self::assertFileExists($dir . '/custom.data.php');
 
-        $manifest = json_decode((string) file_get_contents($this->root . '/app/example.ru/alliasglobal/blocks.json'), true);
+        $manifest = json_decode((string) file_get_contents($this->root . '/app/example.ru/.alliasglobal/blocks.json'), true);
         self::assertTrue($manifest['blocks']['custom']['enabled']);
     }
 
@@ -95,9 +95,9 @@ final class BlockCommandsTest extends TestCase
             ->run(['domain' => 'example.ru', 'name' => 'custom'], $this->ctx(new Result()));
 
         self::assertTrue($res->ok);
-        self::assertDirectoryDoesNotExist($this->root . '/app/example.ru/alliasglobal/custom');
+        self::assertDirectoryDoesNotExist($this->root . '/app/example.ru/.alliasglobal/custom');
 
-        $manifest = json_decode((string) file_get_contents($this->root . '/app/example.ru/alliasglobal/blocks.json'), true);
+        $manifest = json_decode((string) file_get_contents($this->root . '/app/example.ru/.alliasglobal/blocks.json'), true);
         self::assertArrayNotHasKey('custom', $manifest['blocks']);
     }
 
