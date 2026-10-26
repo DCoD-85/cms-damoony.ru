@@ -21,7 +21,8 @@ final class View
      */
     public function render(string $content, array $data = []): string
     {
-        $doc = new Document($this->lang);
+        $doc = new Document();
+        $doc->lang($this->lang);
         $doc->title((string) ($data['title'] ?? $this->title));
 
         $style = new Element('style');

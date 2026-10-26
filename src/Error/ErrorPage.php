@@ -35,7 +35,8 @@ final class ErrorPage
         $title = $title !== '' ? $title : self::defaultTitle($code);
         $message = $message !== '' ? $message : self::defaultMessage($code);
 
-        $doc = new Document($lang);
+        $doc = new Document();
+        $doc->lang($lang);
         $doc->title($code . ' ' . $title);
 
         $wrap = Builder::div('error error-' . $code);
