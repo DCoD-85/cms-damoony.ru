@@ -198,7 +198,7 @@ final class Field extends Component
 
         if ($this->placeholderOption !== '') {
             $opt = new Element('option');
-            $opt->attrs()->add('value', '');
+            $opt->attrs()->add('value', '', true);
             $opt->content($this->placeholderOption);
             $sel->append($opt);
         }
