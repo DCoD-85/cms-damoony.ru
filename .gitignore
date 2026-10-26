@@ -44,3 +44,4 @@ phpstan.neon.local
 # временное
 /tmp/
 *.tmp
+!www/media/damoony.ru/skin/default/css/

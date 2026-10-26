@@ -61,9 +61,6 @@ class algoritm_doc extends Algoritm
         $container->append($sidebar);
         $container->append($content);
         
-        $style = Builder::el('style');
-        $container->prepend($style);
-
         // --- ИНТЕГРАЦИЯ СО СХЕМОЙ ---
         $paths = $this->context->service('paths');
         if (!$paths instanceof \Damoony\Files\Paths) {
