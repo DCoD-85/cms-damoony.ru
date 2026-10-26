@@ -17,6 +17,8 @@ use Damoony\Routing\FileRouter;
 use Damoony\Routing\RouterInterface;
 use Damoony\Routing\RulesMatcher;
 use PHPUnit\Framework\TestCase;
+use Damoony\Session\SessionInterface;
+use Damoony\Security\Csrf;
 
 final class FrontControllerTest extends TestCase
 {
