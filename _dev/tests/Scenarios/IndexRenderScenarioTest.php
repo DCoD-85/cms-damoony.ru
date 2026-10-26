@@ -25,7 +25,7 @@ final class IndexRenderScenarioTest extends TestCase
     protected function setUp(): void
     {
         $this->root = sys_get_temp_dir() . '/damoony_s11_' . bin2hex(random_bytes(4));
-        $dir = $this->root . '/app/alpha.0.0/domain/damoony.test/allias/www/algoritm';
+        $dir = $this->root . '/app/damoony.test/www/algoritm';
         mkdir($dir, 0777, true);
         file_put_contents($dir . '/.rules.json', json_encode(['available' => ['']]));
         file_put_contents($dir . '/algoritm.php', <<<'PHP'
@@ -35,7 +35,7 @@ use Damoony\Demo\Page\HomePage;
 final class algoritm extends HomePage {}
 PHP);
 
-        $globalDir = $this->root . '/app/alpha.0.0/domain/damoony.test/alliasglobal';
+        $globalDir = $this->root . '/app/damoony.test/alliasglobal';
         mkdir($globalDir . '/hello', 0777, true);
         mkdir($globalDir . '/footer', 0777, true);
 
@@ -71,7 +71,7 @@ final class alliasglobal_footer implements RegionInterface {
 }
 PHP);
 
-        $schemeDir = $this->root . '/app/alpha.0.0/domain/damoony.test/alliasscheme';
+        $schemeDir = $this->root . '/app/damoony.test/alliasscheme';
         mkdir($schemeDir, 0777, true);
         file_put_contents($schemeDir . '/www.data.php', <<<'PHP'
 <?php

@@ -32,8 +32,7 @@ final class SchemeController extends BaseController
         $domain = (string) $request->query('domain', '');
         if ($domain === '') return $this->redirect('/admin/?p=domain');
 
-        $logic = 'alpha.0.0';
-        $manifestFile = $this->paths->domain($logic, $domain) . '/alliasscheme/schemes.json';
+        $manifestFile = $this->paths->domain($domain) . '/.alliasscheme/schemes.json';
         $manifest = is_file($manifestFile) ? json_decode((string) file_get_contents($manifestFile), true) : [];
         $schemes = is_array($manifest) && isset($manifest['schemes']) ? array_keys($manifest['schemes']) : [];
 

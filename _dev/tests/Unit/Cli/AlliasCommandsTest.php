@@ -25,7 +25,7 @@ final class AlliasCommandsTest extends TestCase
             'domains_namespace' => ['example.ru' => 'example'],
             'alliases_real' => ['example.ru' => ['www' => 'www']],
         ]));
-        mkdir($this->root . '/app/alpha.0.0/domain/example.ru/allias/www/algoritm', 0777, true);
+        mkdir($this->root . '/app/example.ru/www/algoritm', 0777, true);
     }
 
     protected function tearDown(): void
@@ -64,8 +64,8 @@ final class AlliasCommandsTest extends TestCase
         $res = $cmd->run(['domain' => 'example.ru', 'name' => 'admin'], $this->context($r));
 
         self::assertTrue($res->ok);
-        self::assertDirectoryExists($this->root . '/app/alpha.0.0/domain/example.ru/allias/admin');
-        self::assertFileExists($this->root . '/app/alpha.0.0/domain/example.ru/allias/admin/algoritm/.rules.json');
+        self::assertDirectoryExists($this->root . '/app/example.ru/admin');
+        self::assertFileExists($this->root . '/app/example.ru/admin/algoritm/.rules.json');
 
         $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
         self::assertSame('admin', $site['alliases_real']['example.ru']['admin']);
@@ -99,7 +99,7 @@ final class AlliasCommandsTest extends TestCase
         $res = $cmd->run(['domain' => 'example.ru', 'name' => 'admin', 'force' => '1'], $this->context($r));
 
         self::assertTrue($res->ok);
-        self::assertDirectoryDoesNotExist($this->root . '/app/alpha.0.0/domain/example.ru/allias/admin');
+        self::assertDirectoryDoesNotExist($this->root . '/app/example.ru/admin');
 
         $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
         self::assertArrayNotHasKey('admin', $site['alliases_real']['example.ru']);
@@ -115,7 +115,7 @@ final class AlliasCommandsTest extends TestCase
         $res = $cmd->run(['domain' => 'example.ru', 'name' => 'admin'], $this->context($r));
 
         self::assertFalse($res->ok);
-        self::assertDirectoryExists($this->root . '/app/alpha.0.0/domain/example.ru/allias/admin');
+        self::assertDirectoryExists($this->root . '/app/example.ru/admin');
     }
 
     public function testS03MissingFolderCleansConfig(): void

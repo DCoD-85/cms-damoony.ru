@@ -52,8 +52,7 @@ final class AlliasRemoveCommand implements CommandInterface
             return $r;
         }
 
-        $logic = (string) ($args['logic'] ?? 'alpha.0.0');
-        $alliasDir = $this->paths->allias($logic, $domain, $name);
+        $alliasDir = $this->paths->allias($domain, $name);
         $inTrash = false;
         $trash = '';
 

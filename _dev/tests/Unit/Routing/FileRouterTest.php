@@ -42,7 +42,7 @@ final class FileRouterTest extends TestCase
 
     private function writeAlgoritm(string $real, string $allias, string $rel, array $rules, bool $withPhp = true): void
     {
-        $base = $this->root . '/app/alpha.0.0/domain/' . $real . '/allias/' . $allias . '/algoritm';
+        $base = $this->root . '/app/' . $real . '/' . $allias . '/algoritm';
         $dir = $rel === '' ? $base : $base . '/' . $rel;
         if (!is_dir($dir)) {
             mkdir($dir, 0777, true);
@@ -110,7 +110,7 @@ final class FileRouterTest extends TestCase
 
     public function testMissingRulesReturnsNotFound(): void
     {
-        $base = $this->root . '/app/alpha.0.0/domain/example.ru/allias/www/algoritm';
+        $base = $this->root . '/app/example.ru/www/algoritm';
         mkdir($base, 0777, true);
 
         $m = $this->router()->match('/', $this->ctx());

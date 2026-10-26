@@ -25,7 +25,7 @@ final class PageCommandsTest extends TestCase
             'domains_namespace' => ['example.ru' => 'example'],
             'alliases_real' => ['example.ru' => ['www' => 'www']],
         ]));
-        $algoritm = $this->root . '/app/alpha.0.0/domain/example.ru/allias/www/algoritm';
+        $algoritm = $this->root . '/app/example.ru/www/algoritm';
         mkdir($algoritm, 0777, true);
         file_put_contents($algoritm . '/.rules.json', json_encode(['available' => ['']]));
     }
@@ -64,7 +64,7 @@ final class PageCommandsTest extends TestCase
             ->run(['domain' => 'example.ru', 'allias' => 'www', 'name' => 'about'], $this->ctx($r));
 
         self::assertTrue($res->ok);
-        $dir = $this->root . '/app/alpha.0.0/domain/example.ru/allias/www/algoritm/about';
+        $dir = $this->root . '/app/example.ru/www/algoritm/about';
         self::assertDirectoryExists($dir);
         self::assertFileExists($dir . '/algoritm_about.php');
         self::assertFileExists($dir . '/.rules.json');
@@ -72,7 +72,7 @@ final class PageCommandsTest extends TestCase
         $rules = json_decode((string) file_get_contents($dir . '/.rules.json'), true);
         self::assertSame(['about'], $rules['available']);
 
-        $parent = json_decode((string) file_get_contents($this->root . '/app/alpha.0.0/domain/example.ru/allias/www/algoritm/.rules.json'), true);
+        $parent = json_decode((string) file_get_contents($this->root . '/app/example.ru/www/algoritm/.rules.json'), true);
         self::assertContains('about', $parent['available']);
     }
 
@@ -100,7 +100,7 @@ final class PageCommandsTest extends TestCase
             ->run(['domain' => 'example.ru', 'allias' => 'www', 'path' => 'about', 'key' => 'auth', 'value' => '1'], $this->ctx(new Result()));
 
         self::assertTrue($res->ok);
-        $rules = json_decode((string) file_get_contents($this->root . '/app/alpha.0.0/domain/example.ru/allias/www/algoritm/about/.rules.json'), true);
+        $rules = json_decode((string) file_get_contents($this->root . '/app/example.ru/www/algoritm/about/.rules.json'), true);
         self::assertTrue($rules['auth']);
         self::assertTrue($rules['search']);
         self::assertFalse($rules['default']);

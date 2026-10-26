@@ -55,8 +55,7 @@ final class PageToggleCommand implements CommandInterface
             return $r;
         }
 
-        $logic = (string) ($args['logic'] ?? 'alpha.0.0');
-        $algoritmDir = $this->paths->algoritm($logic, $domain, $allias);
+        $algoritmDir = $this->paths->algoritm($domain, $allias);
         $pageDir = $path === '' ? $algoritmDir : $algoritmDir . '/' . $path;
 
         if (!Fs::isDir($pageDir)) {

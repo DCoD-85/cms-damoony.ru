@@ -18,7 +18,7 @@ final class VarsExtractScenarioTest extends TestCase
     protected function setUp(): void
     {
         $this->root = sys_get_temp_dir() . '/damoony_vx_' . bin2hex(random_bytes(4));
-        $this->algoritm = $this->root . '/app/alpha.0.0/domain/example.ru/allias/www/algoritm';
+        $this->algoritm = $this->root . '/app/example.ru/www/algoritm';
         mkdir($this->algoritm . '/about', 0777, true);
 
         file_put_contents($this->algoritm . '/algoritm.php', <<<'PHP'

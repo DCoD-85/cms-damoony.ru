@@ -27,7 +27,7 @@ final class AjaxScenarioTest extends TestCase
     public static function setUpBeforeClass(): void
     {
         self::$root = sys_get_temp_dir() . '/damoony_s14_' . bin2hex(random_bytes(4));
-        $dir = self::$root . '/app/alpha.0.0/domain/damoony.test/allias/www/algoritm';
+        $dir = self::$root . '/app/damoony.test/www/algoritm';
         mkdir($dir . '/ajax/mode', 0777, true);
         file_put_contents($dir . '/.rules.json', json_encode(['available' => ['ajax']]));
         file_put_contents($dir . '/ajax/.rules.json', json_encode(['available' => ['([a-z]+)|mode']]));

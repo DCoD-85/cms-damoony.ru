@@ -67,9 +67,9 @@ final class DomainNewCommandTest extends TestCase
         $r = $this->execute(['domain' => 'example.ru', 'namespace' => 'example']);
 
         self::assertTrue($r->ok);
-        self::assertDirectoryExists($this->root . '/app/alpha.0.0/domain/example.ru');
-        self::assertDirectoryExists($this->root . '/app/alpha.0.0/domain/example.ru/allias/www/algoritm');
-        self::assertFileExists($this->root . '/app/alpha.0.0/domain/example.ru/allias/www/algoritm/.rules.json');
+        self::assertDirectoryExists($this->root . '/app/example.ru');
+        self::assertDirectoryExists($this->root . '/app/example.ru/www/algoritm');
+        self::assertFileExists($this->root . '/app/example.ru/www/algoritm/.rules.json');
 
         $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
         self::assertIsArray($site);

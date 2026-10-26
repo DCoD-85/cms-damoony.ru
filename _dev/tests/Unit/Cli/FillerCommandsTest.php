@@ -25,8 +25,8 @@ final class FillerCommandsTest extends TestCase
             'domains_namespace' => ['example.ru' => 'example'],
             'alliases_real' => ['example.ru' => ['www' => 'www']],
         ]));
-        mkdir($this->root . '/app/alpha.0.0/domain/example.ru/allias/www/algoritm', 0777, true);
-        mkdir($this->root . '/app/alpha.0.0/domain/example.ru/alliasglobal/top', 0777, true);
+        mkdir($this->root . '/app/example.ru/www/algoritm', 0777, true);
+        mkdir($this->root . '/app/example.ru/alliasglobal/top', 0777, true);
     }
 
     protected function tearDown(): void
@@ -63,8 +63,8 @@ final class FillerCommandsTest extends TestCase
             ->run(['domain' => 'example.ru', 'allias' => 'www', 'block' => 'top'], $this->ctx($r));
 
         self::assertTrue($res->ok);
-        self::assertFileExists($this->root . '/app/alpha.0.0/domain/example.ru/alliasglobal/top/top_www.php');
-        self::assertFileExists($this->root . '/app/alpha.0.0/domain/example.ru/alliasglobal/top/top_www.data.php');
+        self::assertFileExists($this->root . '/app/example.ru/alliasglobal/top/top_www.php');
+        self::assertFileExists($this->root . '/app/example.ru/alliasglobal/top/top_www.data.php');
 
         $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
         self::assertTrue($site['fillers']['example.ru']['www']['top']);

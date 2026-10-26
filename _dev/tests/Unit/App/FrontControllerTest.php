@@ -110,7 +110,7 @@ final class FrontControllerTest extends TestCase
 
     public function testMatchedRouteRendersPage(): void
     {
-        $base = $this->root . '/app/alpha.0.0/domain/example.ru/allias/www/algoritm';
+        $base = $this->root . '/app/example.ru/www/algoritm';
         mkdir($base . '/fc_home', 0777, true);
         file_put_contents($base . '/.rules.json', json_encode(['available' => ['fc_home']]));
         file_put_contents($base . '/fc_home/.rules.json', json_encode(['available' => ['']]));

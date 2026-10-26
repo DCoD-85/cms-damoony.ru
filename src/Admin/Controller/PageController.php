@@ -36,8 +36,7 @@ final class PageController extends BaseController
 
         if ($domain === '') return $this->redirect('/admin/?p=domain');
 
-        $logic = 'alpha.0.0';
-        $baseDir = $this->paths->algoritm($logic, $domain, $allias) . ($path === '' ? '' : '/' . $path);
+        $baseDir = $this->paths->algoritm($domain, $allias) . ($path === '' ? '' : '/' . $path);
         
         $html = '<div class="admin-card"><h1>Страницы: ' . View::esc($domain . '/' . $allias) . ($path !== '' ? '/' . View::esc($path) : '') . '</h1>';
         $html .= '<p><a href="/admin/?p=domain">&larr; Назад к доменам</a> | <a href="/admin/?p=page:new&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&parent=' . urlencode($path) . '">+ Добавить страницу</a></p>';

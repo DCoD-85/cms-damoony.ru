@@ -34,8 +34,7 @@ final class BlockController extends BaseController
         $domain = (string) $request->query('domain', '');
         if ($domain === '') return $this->redirect('/admin/?p=domain');
 
-        $logic = 'alpha.0.0';
-        $manifestFile = $this->paths->domain($logic, $domain) . '/alliasglobal/blocks.json';
+		$manifestFile = $this->paths->domain($domain) . '/.alliasglobal/blocks.json';
         $manifest = is_file($manifestFile) ? json_decode((string) file_get_contents($manifestFile), true) : [];
         $blocks = is_array($manifest) && isset($manifest['blocks']) ? array_keys($manifest['blocks']) : [];
 

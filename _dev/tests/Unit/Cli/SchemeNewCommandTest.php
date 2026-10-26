@@ -24,7 +24,7 @@ final class SchemeNewCommandTest extends TestCase
             'domains_namespace' => ['example.ru' => 'example'],
             'alliases_real' => ['example.ru' => ['www' => 'www']],
         ]));
-        mkdir($this->root . '/app/alpha.0.0/domain/example.ru', 0777, true);
+        mkdir($this->root . '/app/example.ru', 0777, true);
     }
 
     protected function tearDown(): void
@@ -61,7 +61,7 @@ final class SchemeNewCommandTest extends TestCase
             ->run(['domain' => 'example.ru', 'name' => 'visuo'], $this->ctx($r));
 
         self::assertTrue($res->ok);
-        $file = $this->root . '/app/alpha.0.0/domain/example.ru/alliasscheme/visuo.data.php';
+        $file = $this->root . '/app/example.ru/alliasscheme/visuo.data.php';
         self::assertFileExists($file);
 
         $data = require $file;
@@ -69,7 +69,7 @@ final class SchemeNewCommandTest extends TestCase
         self::assertSame('layout-visuo', $data['class']);
         self::assertCount(3, $data['children']);
 
-        $manifest = json_decode((string) file_get_contents($this->root . '/app/alpha.0.0/domain/example.ru/alliasscheme/schemes.json'), true);
+        $manifest = json_decode((string) file_get_contents($this->root . '/app/example.ru/alliasscheme/schemes.json'), true);
         self::assertTrue($manifest['schemes']['visuo']['enabled']);
     }
 

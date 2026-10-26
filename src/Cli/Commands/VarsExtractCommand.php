@@ -41,8 +41,7 @@ final class VarsExtractCommand implements CommandInterface
         $dry = isset($args['dry']);
         $clean = !isset($args['no-clean']);
 
-        $logic = (string) ($args['logic'] ?? 'alpha.0.0');
-        $base = $this->paths->algoritm($logic, $domain, $allias);
+        $base = $this->paths->algoritm($domain, $allias);
         if (!Fs::isDir($base)) {
             $r->error('Каталог не найден: ' . $base);
             return $r;

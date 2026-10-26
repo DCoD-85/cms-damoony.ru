@@ -81,7 +81,7 @@ final class PageHandlerTest extends TestCase
 
     private function writePage(string $rel, string $chain, string $code): void
     {
-        $dir = $this->root . '/app/alpha.0.0/domain/example.ru/allias/www/algoritm'
+        $dir = $this->root . '/app/example.ru/www/algoritm'
             . ($rel === '' ? '' : '/' . $rel);
         if (!is_dir($dir)) {
             mkdir($dir, 0777, true);
