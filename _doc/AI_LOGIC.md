@@ -1,0 +1,99 @@
+--- НАЧАЛО ФАЙЛА: _doc/AI_LOGIC.md ---
+
+# Инструкция для AI-Разработчика (Logic)
+
+Ты — AI-агент, пишущий PHP-код для страниц и регионов в Damoony Engine.
+Твоя задача: создавать контроллеры (`algoritm/*.php`) и блоки (`alliasglobal/*.php`). Ты не трогаешь конфиги и базу данных.
+
+## 1. Главные правила
+- **Никаких `echo`, `print`, `var_dump`.** Вывод только через возврат объекта `Node`.
+- **Никакого HTML в строках.** Используй статические методы `Builder::` (например, `Builder::div()`, `Builder::a()`).
+- **Только строгая типизация.** В каждом файле `declare(strict_types=1);` и namespace.
+- **Контекст.** Всегда используй `$this->context` для доступа к `meta`, `auth`, `request`.
+
+## 2. Шаблон контроллера страницы (Algoritm)
+```php
+<?php
+declare(strict_types=1);
+
+namespace example\www;
+
+use Damoony\Algoritm\Algoritm;
+use Damoony\Http\Response;
+use Damoony\Ui\Builder;
+use Damoony\Ui\Node;
+
+final class algoritm_index extends Algoritm
+{
+    public function default(): Node|Response|null
+    {
+        // Добавляем CSS в <head>
+        $this->context->meta->setTitle('Главная');
+        $this->context->meta->addCss('/media/style.css');
+
+        // Строим дерево
+        $div = Builder::div('wrapper');
+        $div->append(Builder::h(1)->content('Привет'));
+        $div->append(Builder::p()->content('Мир'));
+
+        return $div; // Отдаем в слот center
+    }
+}
+```
+
+## 3. Управление регионами (слотами)
+Внутри `default()` ты можешь управлять блоками:
+- `$this->regions()->disable('top');` — скрыть шапку на этой странице.
+- `$this->regions()->useGlobal('top');` — показать базовую шапку (игнорируя филлер).
+- `$this->setContent('center', $myNode);` — подменить центр своим контентом.
+
+## 4. Шаблон региона (alliasglobal)
+```php
+<?php
+declare(strict_types=1);
+
+namespace example;
+
+use Damoony\Region\RegionContext;
+use Damoony\Region\RegionInterface;
+use Damoony\Ui\Builder;
+use Damoony\Ui\Node;
+
+final class alliasglobal_top implements RegionInterface
+{
+    public function name(): string { return 'top'; }
+    public function enabled(): bool { return true; }
+
+    public function render(RegionContext $context): Node
+    {
+        $wrap = Builder::div('top');
+        $wrap->append(Builder::h(2)->content('Логотип'));
+        return $wrap;
+    }
+}
+```
+
+## 5. Работа с формами (POST)
+Формы отправляются на текущий URL. Проверка CSRF обязательна.
+```php
+if ($this->isPost()) {
+    $csrf = $this->context->service('csrf');
+    if (!$csrf->check($this->context->request->post)) {
+        return Response::text('CSRF Error', 403);
+    }
+    $login = $this->context->request->post['login'] ?? '';
+    // ... логика
+}
+```
+Поле для CSRF в форме выводится через `$csrf->field()`.
+
+## 6. Авторизация
+Узнать, вошел ли пользователь:
+```php
+$auth = $this->context->service('auth');
+if ($auth->isAuthenticated()) {
+    $user = $auth->user();
+}
+```
+
+--- КОНЕЦ ФАЙЛА ---
