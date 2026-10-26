@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Damoony\App;
 
 use Damoony\Algoritm\AlgoritmInterface;
+use Damoony\Core\Config;
 use Damoony\Domain\DomainContext;
 use Damoony\Domain\DomainResolverInterface;
+use Damoony\Files\Paths;
 use Damoony\Http\Response;
 use Damoony\Region\RegionContext;
+use Damoony\Region\RegionLoader;
 use Damoony\Routing\RouteMatch;
 use Damoony\Ui\Document;
 use Damoony\Ui\Node;
@@ -46,9 +49,22 @@ final class PageHandler implements PageHandlerInterface
             return Response::internalError('Page class does not implement AlgoritmInterface');
         }
 
+        $paths = $context->service('paths');
+        $site = $context->service('site');
+
+        if (!$paths instanceof Paths) {
+            return Response::internalError('Paths service missing');
+        }
+
+        $loader = new RegionLoader(
+            $paths,
+            $site instanceof Config ? $site : null
+        );
+        $regions = $loader->load($domain);
+
         try {
             /** @var AlgoritmInterface $page */
-            $page = new $class($context, $match->args);
+            $page = new $class($context, $regions, $match->args);
             $result = $page->default();
 
             return $this->toResponse($result, $domain, $context);
