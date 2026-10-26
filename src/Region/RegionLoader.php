@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Region;
 
+use Damoony\Core\Config;
 use Damoony\Domain\DomainContext;
 use Damoony\Files\Paths;
 
@@ -11,6 +12,7 @@ final class RegionLoader
 {
     public function __construct(
         private readonly Paths $paths,
+        private readonly ?Config $site = null,
     ) {
     }
 
@@ -35,12 +37,18 @@ final class RegionLoader
             $fileToLoad = null;
             $className = '';
 
-            // Проверяем филлер (top_visuo)
-            if (is_file($fillerFile)) {
+            // Проверяем, не выключен ли филлер в конфиге (по умолчанию true)
+            $isFillerEnabled = true;
+            if ($this->site !== null) {
+                $isFillerEnabled = (bool) $this->site->getByKey(['fillers', $domain->real, $domain->allias, $item], true);
+            }
+
+            // Если филлер включен и файл есть — берем его
+            if ($isFillerEnabled && is_file($fillerFile)) {
                 $fileToLoad = $fillerFile;
                 $className = 'alliasglobal_' . $item . '_' . $domain->allias;
             } 
-            // Если филлера нет, берем базовый (top)
+            // Иначе берем базовый (top)
             elseif (is_file($baseFile)) {
                 $fileToLoad = $baseFile;
                 $className = 'alliasglobal_' . $item;

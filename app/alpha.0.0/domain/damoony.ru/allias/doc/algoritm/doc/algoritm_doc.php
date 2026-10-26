@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace damoony_ru\doc;
 
 use Damoony\Algoritm\Algoritm;
+use Damoony\Core\Config;
 use Damoony\Http\Response;
 use Damoony\Support\Markdown;
 use Damoony\Ui\Builder;
@@ -61,13 +62,17 @@ class algoritm_doc extends Algoritm
         $container->append($sidebar);
         $container->append($content);
         
-        // --- ИНТЕГРАЦИЯ СО СХЕМОЙ ---
         $paths = $this->context->service('paths');
         if (!$paths instanceof \Damoony\Files\Paths) {
             $paths = new \Damoony\Files\Paths(dirname(__DIR__, 6));
         }
 
-        $regionLoader = new \Damoony\Region\RegionLoader($paths);
+        $site = $this->context->service('site');
+        if (!$site instanceof Config) {
+            $site = null;
+        }
+
+        $regionLoader = new \Damoony\Region\RegionLoader($paths, $site);
         $regions = $regionLoader->load($this->context->domain);
 
         $regions->add(new class($container) implements \Damoony\Region\RegionInterface {
@@ -78,7 +83,6 @@ class algoritm_doc extends Algoritm
         });
 
         $schemeLoader = new \Damoony\Scheme\SchemeLoader($paths);
-        // Используем динамическое имя схемы
         $manifest = $schemeLoader->load($this->context->domain, $this->context->domain->scheme);
 
         $renderer = new \Damoony\Scheme\SchemeRenderer($regions);

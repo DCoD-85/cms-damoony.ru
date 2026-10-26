@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Damoony\Demo\Page;
 
 use Damoony\Algoritm\Algoritm;
+use Damoony\Core\Config;
 use Damoony\Files\Paths;
 use Damoony\Http\Response;
 use Damoony\Region\RegionLoader;
@@ -21,11 +22,14 @@ class HomePage extends Algoritm
             $paths = new Paths(dirname(__DIR__, 3));
         }
 
-        // Загружаем регионы
-        $regionLoader = new RegionLoader($paths);
+        $site = $this->context->service('site');
+        if (!$site instanceof Config) {
+            $site = null;
+        }
+
+        $regionLoader = new RegionLoader($paths, $site);
         $regions = $regionLoader->load($this->context->domain);
 
-        // Загружаем схему (динамически)
         $schemeLoader = new SchemeLoader($paths);
         $manifest = $schemeLoader->load($this->context->domain, $this->context->domain->scheme);
 
