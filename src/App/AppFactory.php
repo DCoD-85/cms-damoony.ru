@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Damoony\App;
 
+use Damoony\Auth\AuthInterface;
+use Damoony\Auth\SessionAuth;
 use Damoony\Core\Application;
 use Damoony\Core\Config;
 use Damoony\Core\Container;
@@ -16,6 +18,7 @@ use Damoony\Files\Paths;
 use Damoony\Routing\FileRouter;
 use Damoony\Routing\RouterInterface;
 use Damoony\Routing\RulesMatcher;
+use Damoony\Session\NativeSession;
 
 final class AppFactory
 {
@@ -39,6 +42,11 @@ final class AppFactory
         $container->setInstance('errorHandler', $errorHandler);
         
         $container->setInstance(Paths::class, new Paths($root));
+
+        // Инициализация сессии и авторизации
+        $session = new NativeSession('SITE_SESSID', ($_SERVER['HTTPS'] ?? '') === 'on');
+        $session->start();
+        $container->setInstance(AuthInterface::class, new SessionAuth($session));
 
         $container->set(
             DomainResolverInterface::class,
