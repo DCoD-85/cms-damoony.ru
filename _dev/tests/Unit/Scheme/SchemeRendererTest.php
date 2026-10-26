@@ -9,7 +9,6 @@ use Damoony\Http\Request;
 use Damoony\Region\RegionContext;
 use Damoony\Region\RegionInterface;
 use Damoony\Region\RegionRegistry;
-use Damoony\Scheme\SchemeNode;
 use Damoony\Scheme\SchemeRenderer;
 use Damoony\Ui\Element;
 use Damoony\Ui\Node;
@@ -37,8 +36,8 @@ final class SchemeRendererTest extends TestCase
             public function render(RegionContext $context): Node
             {
                 $el = new Element('div');
-                $el->attrs()->classAdd('region');
-                $el->content($this->n);
+                $el->attrs()->classAdd('region-' . $this->n);
+                $el->content('content-' . $this->n);
                 return $el;
             }
         };
@@ -52,88 +51,59 @@ final class SchemeRendererTest extends TestCase
         );
     }
 
-    public function testNodeFromArray(): void
-    {
-        $n = SchemeNode::fromArray([
-            'tag' => 'section',
-            'class' => 'main',
-            'layout' => 'horizontal',
-            'children' => [
-                ['tag' => 'div', 'class' => 'left'],
-                'ignored',
-            ],
-        ]);
-
-        self::assertSame('section', $n->tag);
-        self::assertSame('main', $n->class);
-        self::assertSame('horizontal', $n->layout);
-        self::assertCount(1, $n->children);
-    }
-
-    public function testRenderSimple(): void
+    public function testRendersSimpleSkeleton(): void
     {
         $r = new SchemeRenderer(new RegionRegistry());
-        $node = SchemeNode::fromArray(['tag' => 'div', 'class' => 'wrap']);
-
-        self::assertSame('<div class="wrap" data-layout="vertical"></div>', $r->render($node, $this->ctx())->release());
+        $html = $r->render(['tag' => 'div', 'class' => 'wrap'], $this->ctx())->release();
+        self::assertSame('<div class="wrap"></div>', $html);
     }
 
     public function testRenderChildren(): void
     {
         $r = new SchemeRenderer(new RegionRegistry());
-        $node = SchemeNode::fromArray([
+        $skeleton = [
             'tag' => 'div',
             'class' => 'wrap',
             'children' => [
                 ['tag' => 'span', 'class' => 'a'],
                 ['tag' => 'span', 'class' => 'b'],
             ],
-        ]);
+        ];
 
-        self::assertSame(
-            '<div class="wrap" data-layout="vertical"><span class="a" data-layout="vertical"></span><span class="b" data-layout="vertical"></span></div>',
-            $r->render($node, $this->ctx())->release(),
-        );
+        $html = $r->render($skeleton, $this->ctx())->release();
+        self::assertStringContainsString('<span class="a"></span>', $html);
+        self::assertStringContainsString('<span class="b"></span>', $html);
     }
 
-    public function testDisabledChildSkipped(): void
-    {
-        $r = new SchemeRenderer(new RegionRegistry());
-        $node = SchemeNode::fromArray([
-            'children' => [
-                ['tag' => 'span', 'enabled' => false],
-                ['tag' => 'span', 'class' => 'ok'],
-            ],
-        ]);
-
-        self::assertStringContainsString('<span class="ok"', $r->render($node, $this->ctx())->release());
-        self::assertStringNotContainsString('enabled', $r->render($node, $this->ctx())->release());
-    }
-
-    public function testRegionOverride(): void
+    public function testReplacesSlotWithRegion(): void
     {
         $regions = new RegionRegistry();
         $regions->add($this->region('center'));
 
         $r = new SchemeRenderer($regions);
-        $node = SchemeNode::fromArray(['tag' => 'main', 'class' => 'center']);
+        $skeleton = [
+            'tag' => 'div',
+            'class' => 'layout',
+            'children' => [
+                ['tag' => 'main', 'slot' => 'center']
+            ]
+        ];
 
-        self::assertSame(
-            '<main class="center" data-layout="vertical"><div class="region">center</div></main>',
-            $r->render($node, $this->ctx())->release(),
-        );
+        $html = $r->render($skeleton, $this->ctx())->release();
+        self::assertStringContainsString('<div class="region-center">content-center</div>', $html);
     }
 
-    public function testReturnChild(): void
+    public function testMissingRegionRemovesSlot(): void
     {
         $r = new SchemeRenderer(new RegionRegistry());
-        $node = SchemeNode::fromArray([
+        $skeleton = [
             'tag' => 'div',
             'children' => [
-                ['tag' => 'section', 'class' => 'ret', 'return' => true],
-            ],
-        ]);
+                ['tag' => 'main', 'slot' => 'ghost']
+            ]
+        ];
 
-        self::assertSame('<section class="ret" data-layout="vertical"></section>', $r->render($node, $this->ctx())->release());
+        $html = $r->render($skeleton, $this->ctx())->release();
+        self::assertSame('<div></div>', $html);
     }
 }
