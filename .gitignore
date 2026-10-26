@@ -1,47 +1,16 @@
-# vendor
-/vendor/
-/vendor-dev/
+# Игнорируем всё содержимое медиа
+*
 
-# composer
-/composer.phar
+# Но отслеживаем сам .gitignore
+!.gitignore
 
-# phpunit / phpstan / cs-fixer cache
-.phpunit.cache/
-.phpunit.result.cache
-.php-cs-fixer.cache
-/_dev/var/
+# Разрешаем системные стили админки
+!admin/
+!admin/*
 
-# IDE
-/.idea/
-/.vscode/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# PHP
-*.log
-phpstan.neon.local
-/build/
-/coverage/
-
-# секреты и runtime
-/secure/
-/var/
-/storage/
-/env.php
-.env
-.env.local
-
-# тестовые артефакты
-/tests/fixtures/scenarios/**/actual/
-/tests/fixtures/scenarios/**/diff/
-
-# временное
-/tmp/
-*.tmp
-!www/media/damoony.ru/skin/default/css/
+# Разрешаем стили домена
+!damoony.ru/
+!damoony.ru/skin/
+!damoony.ru/skin/default/
+!damoony.ru/skin/default/css/
+!damoony.ru/skin/default/css/*

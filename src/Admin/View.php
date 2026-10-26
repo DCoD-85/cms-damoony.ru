@@ -46,11 +46,11 @@ final class View
         $tabs = Builder::div('nav-tabs');
         
         $items = [
+            'settings' => ['Настройки', '/admin/?p=domain:edit&domain=' . urlencode($domain)],
             'pages' => ['Страницы', '/admin/?p=page&domain=' . urlencode($domain) . '&allias=www'],
             'blocks' => ['Блоки', '/admin/?p=block&domain=' . urlencode($domain)],
             'schemes' => ['Схемы', '/admin/?p=scheme&domain=' . urlencode($domain)],
             'allias' => ['Алиасы', '/admin/?p=allias&domain=' . urlencode($domain)],
-            'fillers' => ['Fillers', '/admin/?p=filler&domain=' . urlencode($domain) . '&allias=www'],
             'media' => ['Медиа', '/admin/?p=media&domain=' . urlencode($domain)],
         ];
 
