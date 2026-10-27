@@ -159,7 +159,9 @@ final class View
         foreach (['ru' => 'RU', 'en' => 'EN'] as $code => $label) {
             if ($lang !== $code) {
                 $query['lang'] = $code;
-                $rightPanel->append(Builder::a('/admin/?' . http_build_query($query), 'nav-link')->content($label)->attrs()->styleAdd('margin-right:10px; font-size:12px;'));
+                $langLink = Builder::a('/admin/?' . http_build_query($query), 'nav-link')->content($label);
+                $langLink->attrs()->styleAdd('margin-right:10px; font-size:12px;');
+                $rightPanel->append($langLink);
                 break;
             }
         }
@@ -180,29 +182,6 @@ final class View
         $header->append($rightPanel);
 
         return $header;
-    }
-
-    private function langSwitcher(): Element
-    {
-        $box = Builder::div('lang-switch');
-
-        $uri = (string) ($_SERVER['REQUEST_URI'] ?? '/admin/');
-        $query = [];
-        $qs = parse_url($uri, PHP_URL_QUERY);
-        if (is_string($qs)) {
-            parse_str($qs, $query);
-        }
-        unset($query['lang']);
-
-        foreach (['ru' => 'RU', 'en' => 'EN'] as $code => $label) {
-            $q = $query;
-            $q['lang'] = $code;
-            $href = '/admin/?' . http_build_query($q);
-            $cls = 'lang-link' . (self::currentLang() === $code ? ' active' : '');
-            $box->append(Builder::a($href, $cls)->content($label));
-        }
-
-        return $box;
     }
 
     public static function esc(string $value): string

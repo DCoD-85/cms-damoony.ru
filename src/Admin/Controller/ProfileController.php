@@ -13,6 +13,7 @@ use Damoony\Ui\Builder;
 use Damoony\Ui\Field;
 use Damoony\Ui\Form;
 use Damoony\Ui\Message;
+use Damoony\Ui\Node;
 
 final class ProfileController extends BaseController
 {
@@ -87,7 +88,7 @@ final class ProfileController extends BaseController
         return $this->renderTab('security', $request, $content);
     }
 
-    private function renderTab(string $active, Request $request, ?\Damoony\Ui\Node $customContent = null): Response
+    private function renderTab(string $active, Request $request, ?Node $customContent = null): Response
     {
         $auth = $this->requireAuth();
         if ($auth !== null) {
@@ -128,7 +129,9 @@ final class ProfileController extends BaseController
             if ($logs === []) {
                 $contentBox->append(Message::info('Журнал пуст. Логи появятся после успешного входа.')->build());
             } else {
-                $table = Builder::el('table')->attrs()->classAdd('log-table');
+                $table = Builder::el('table');
+                $table->attrs()->classAdd('log-table');
+
                 $thead = Builder::el('thead');
                 $tr = Builder::el('tr');
                 $tr->append(Builder::el('th')->content('Дата'));
@@ -140,10 +143,14 @@ final class ProfileController extends BaseController
                 $tbody = Builder::el('tbody');
                 foreach (array_reverse(array_slice($logs, -50)) as $log) { // Последние 50
                     $row = Builder::el('tr');
-                    $row->append(Builder::el('td')->content((string)($log['time'] ?? '')));
-                    $row->append(Builder::el('td')->content((string)($log['ip'] ?? '')));
+                    $row->append(Builder::el('td')->content((string) ($log['time'] ?? '')));
+                    $row->append(Builder::el('td')->content((string) ($log['ip'] ?? '')));
+
                     $class = ($log['status'] ?? '') === 'success' ? 'log-status-success' : 'log-status-fail';
-                    $row->append(Builder::el('td')->content($log['status'] ?? '')->attrs()->classAdd($class));
+                    $tdStatus = Builder::el('td')->content((string) ($log['status'] ?? ''));
+                    $tdStatus->attrs()->classAdd($class);
+
+                    $row->append($tdStatus);
                     $tbody->append($row);
                 }
                 $table->append($tbody);

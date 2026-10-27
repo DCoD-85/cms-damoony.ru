@@ -12,12 +12,14 @@ use PHPUnit\Framework\TestCase;
 final class AuthTest extends TestCase
 {
     private string $failsFile;
+    private string $logsFile;
 
     protected function setUp(): void
     {
         $dir = sys_get_temp_dir() . '/damoony_auth_' . bin2hex(random_bytes(4));
         mkdir($dir, 0o777, true);
         $this->failsFile = $dir . '/fails.json';
+        $this->logsFile = $dir . '/logs.json';
     }
 
     private function session(): SessionInterface
@@ -73,7 +75,7 @@ final class AuthTest extends TestCase
 
     private function auth(SessionInterface $session, string $ip = '10.0.0.1'): Auth
     {
-        return new Auth($this->adminConfig(), $session, $this->failsFile, $ip);
+        return new Auth($this->adminConfig(), $session, $this->failsFile, $this->logsFile, $ip);
     }
 
     public function testSuccessfulLogin(): void
@@ -103,7 +105,7 @@ final class AuthTest extends TestCase
     public function testEmptyHashFails(): void
     {
         $cfg = Config::fromArray(['login' => 'admin', 'password_hash' => '']);
-        $a = new Auth($cfg, $this->session(), $this->failsFile, '10.0.0.1');
+        $a = new Auth($cfg, $this->session(), $this->failsFile, $this->logsFile, '10.0.0.1');
         self::assertFalse($a->attempt('admin', 'anything'));
     }
 
