@@ -56,10 +56,14 @@ final class MigrationRunner
                     throw new RuntimeException('Cannot prepare insert');
                 }
                 $stmt->execute(['v' => $version]);
-                $pdo->commit();
+                if ($pdo->inTransaction()) {
+                    $pdo->commit();
+                }
                 $executed[] = $version;
             } catch (\Throwable $e) {
-                $pdo->rollBack();
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
                 throw new RuntimeException('Migration failed: ' . $version . ' — ' . $e->getMessage(), 0, $e);
             }
         }
