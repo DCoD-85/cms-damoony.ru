@@ -49,13 +49,25 @@ final class BlockController extends BaseController
         }
         sort($blocks);
 
-        // Заголовок
+        $card = Builder::div('admin-card');
+
+        // Хлебные крошки
+        $breadcrumbs = Builder::div('breadcrumbs');
+        $breadcrumbs->append(Builder::a('/admin/?p=domain')->content('Домены'));
+        $breadcrumbs->append(Text::raw(' / '));
+        $breadcrumbs->append(Builder::a('/admin/?p=domain:edit&domain=' . urlencode($domain))->content($domain));
+        $card->append($breadcrumbs);
+
+        // Заголовок и кнопка
         $header = Builder::div('page-header');
-        $header->append(Builder::h(1)->content('Блоки: ' . View::esc($domain)));
-        
+        $header->append(Builder::h(1)->content('Блоки'));
         $actions = Builder::div('page-actions');
         $actions->append(Builder::a('/admin/?p=block:new&domain=' . urlencode($domain), 'btn btn-primary')->content('+ Создать блок'));
         $header->append($actions);
+        $card->append($header);
+
+        // Табы
+        $card->append(View::domainTabs($domain, 'blocks'));
 
         // Таблица
         $table = (new Table())->headers('Имя блока', 'Действия');
@@ -77,16 +89,9 @@ final class BlockController extends BaseController
                 ]);
             }
         }
-
-        $card = Builder::div('admin-card');
         $card->append($table->build());
 
-        $content = Builder::div();
-        $content->append(View::domainTabs($domain, 'blocks'));
-        $content->append($header);
-        $content->append($card);
-
-        return Response::html($this->view->render($content, ['title' => 'Блоки: ' . $domain]));
+        return Response::html($this->view->render($card, ['title' => 'Блоки: ' . $domain]));
     }
 
     public function new(Request $request): Response
@@ -120,8 +125,16 @@ final class BlockController extends BaseController
             ->submit('Создать');
 
         $card = Builder::div('admin-card');
-        $card->append(Builder::a('/admin/?p=block&domain=' . urlencode($domain))->content('← Назад к списку'));
-        $card->append(Builder::h(1)->content('Создать блок для ' . View::esc($domain)));
+
+        // Хлебные крошки
+        $breadcrumbs = Builder::div('breadcrumbs');
+        $breadcrumbs->append(Builder::a('/admin/?p=domain')->content('Домены'));
+        $breadcrumbs->append(Text::raw(' / '));
+        $breadcrumbs->append(Builder::a('/admin/?p=domain:edit&domain=' . urlencode($domain))->content($domain));
+        $card->append($breadcrumbs);
+
+        $card->append(Builder::h(1)->content('Создать блок'));
+        $card->append(View::domainTabs($domain, 'blocks'));
         
         if ($error !== '') {
             $card->append(Message::error($error)->build());
