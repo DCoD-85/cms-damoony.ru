@@ -47,24 +47,21 @@ final class DomainController extends BaseController
             }
         }
 
-        // Заголовок
         $header = Builder::div('page-header');
-        $header->append(Builder::h(1)->content('Домены'));
+        $header->append(Builder::h(1)->content(View::t('domain.title')));
 
         $actions = Builder::div('page-actions');
-        $actions->append(Builder::a('/admin/?p=stub', 'btn btn-outline')->content('Библиотека заглушек'));
-        $actions->append(Builder::a('/admin/?p=domain:new', 'btn btn-primary')->content('+ Добавить домен'));
+        $actions->append(Builder::a('/admin/?p=stub', 'btn btn-outline')->content(View::t('domain.stub_lib')));
+        $actions->append(Builder::a('/admin/?p=domain:new', 'btn btn-primary')->content(View::t('domain.add')));
         $header->append($actions);
 
-        // Таблица (убрали колонку Действия)
-        $table = (new Table())->headers('Статус', 'Домен', 'Namespace', 'Файлы', 'Алиасы');
+        $table = (new Table())->headers(View::t('domain.th_status'), View::t('domain.th_domain'), View::t('domain.th_ns'), View::t('domain.th_files'), View::t('domain.th_aliases'));
 
         foreach ($grouped as $real => $incomingDomains) {
             $ns = (string) $this->siteConfig->getByKey(['domains_namespace', $real], '-');
             $available = (bool) $this->siteConfig->getByKey(['domains_available', $real], false);
             $hasFiles = is_dir($this->paths->domain($real));
 
-            // Собираем алиасы с учетом статуса домена
             $aliasesHtml = '';
             $alliases = $this->siteConfig->getByKey(['alliases_real', $real], []);
             if (is_array($alliases)) {
@@ -73,7 +70,6 @@ final class DomainController extends BaseController
                     if ($a === '') {
                         continue;
                     }
-                    // Если домен выключен, плашка красная
                     $badgeClass = $available ? 'badge' : 'badge badge-disabled';
                     $aliasArray[] = '<span class="' . $badgeClass . '">' . View::esc((string)$a) . '</span>';
                 }
@@ -82,12 +78,11 @@ final class DomainController extends BaseController
 
             $statusUrl = '/admin/?p=domain:toggle&domain=' . urlencode($real);
             $statusHtml = $available
-                ? '<a href="' . $statusUrl . '" class="status-toggle" title="Выключить"></a>'
-                : '<a href="' . $statusUrl . '" class="status-toggle off" title="Включить"></a>';
+                ? '<a href="' . $statusUrl . '" class="status-toggle" title="' . View::t('domain.avail_label') . '"></a>'
+                : '<a href="' . $statusUrl . '" class="status-toggle off" title="' . View::t('domain.avail_label') . '"></a>';
 
             $filesHtml = $hasFiles ? '✓' : '✗';
 
-            // Ссылка на настройки
             $domainLink = Builder::a('/admin/?p=domain:edit&domain=' . urlencode($real), 'domain-link')->content(View::esc($real));
 
             $row = [
@@ -109,7 +104,7 @@ final class DomainController extends BaseController
         $content->append($header);
         $content->append($card);
 
-        return Response::html($this->view->render($content, ['title' => 'Домены']));
+        return Response::html($this->view->render($content, ['title' => View::t('domain.title')]));
     }
 
     public function toggle(Request $request): Response
@@ -163,27 +158,27 @@ final class DomainController extends BaseController
 
         $card = Builder::div('admin-card');
         $breadcrumbs = Builder::div('breadcrumbs');
-        $breadcrumbs->append(Builder::a('/admin/?p=domain')->content('Домены'));
+        $breadcrumbs->append(Builder::a('/admin/?p=domain')->content(View::t('domain.bread_domains')));
         $breadcrumbs->append(Text::raw(' / '));
         $breadcrumbs->append(Builder::a('/admin/?p=domain:edit&domain=' . urlencode($domain))->content($domain));
         $card->append($breadcrumbs);
-        $card->append(Builder::h(1)->content('Привязанные домены'));
+        $card->append(Builder::h(1)->content(View::t('domain.bind_title')));
         $card->append(View::domainTabs($domain, 'bindings'));
 
         if ($request->query('saved')) {
-            $card->append(Message::success('Изменения сохранены')->build());
+            $card->append(Message::success(View::t('msg.saved'))->build());
         }
 
-        $table = (new Table())->headers('Входящий домен', 'Комментарий', 'Действия');
+        $table = (new Table())->headers(View::t('domain.bind_th_in'), View::t('domain.bind_th_com'), View::t('domain.bind_th_act'));
 
         $index = 0;
         foreach ($incomingList as $incoming) {
-            $isMain = ($index === 0); // Первый в списке — главный
+            $isMain = ($index === 0);
             $comment = (string) $this->siteConfig->getByKey(['domains_comments', $incoming], '');
 
             $commentForm = Form::create('/admin/?p=domain:saveComment&domain=' . urlencode($domain) . '&incoming=' . urlencode($incoming), 'POST')
                 ->csrf($this->csrf->field())
-                ->add(Field::text('comment')->value($comment)->placeholder('Заметка...'))
+                ->add(Field::text('comment')->value($comment)->placeholder('...'))
                 ->submit('OK');
             $commentFormNode = $commentForm->build();
             $commentFormNode->attrs()->classAdd('table-comment-form');
@@ -191,10 +186,10 @@ final class DomainController extends BaseController
             $actionsHtml = Builder::div('table-actions');
 
             if (!$isMain) {
-                $actionsHtml->append(Builder::a('/admin/?p=domain:setPrimary&domain=' . urlencode($domain) . '&incoming=' . urlencode($incoming), 'btn btn-outline')->content('Сделать главным'));
-                $actionsHtml->append(Builder::a('/admin/?p=domain:detach&domain=' . urlencode($domain) . '&incoming=' . urlencode($incoming), 'btn btn-danger')->content('Отвязать'));
+                $actionsHtml->append(Builder::a('/admin/?p=domain:setPrimary&domain=' . urlencode($domain) . '&incoming=' . urlencode($incoming), 'btn btn-outline')->content(View::t('domain.bind_make_main')));
+                $actionsHtml->append(Builder::a('/admin/?p=domain:detach&domain=' . urlencode($domain) . '&incoming=' . urlencode($incoming), 'btn btn-danger')->content(View::t('domain.bind_detach')));
             } else {
-                $actionsHtml->append(Builder::span('badge')->content('Главный'));
+                $actionsHtml->append(Builder::span('badge')->content(View::t('domain.bind_main')));
             }
 
             $table->row([
@@ -207,9 +202,9 @@ final class DomainController extends BaseController
 
         $card->append($table->build());
         $card->append(Builder::el('br'));
-        $card->append(Builder::a('/admin/?p=domain:attach&domain=' . urlencode($domain), 'btn btn-primary')->content('+ Привязать домен'));
+        $card->append(Builder::a('/admin/?p=domain:attach&domain=' . urlencode($domain), 'btn btn-primary')->content(View::t('domain.bind_add')));
 
-        return Response::html($this->view->render($card, ['title' => 'Привязанные: ' . $domain]));
+        return Response::html($this->view->render($card, ['title' => View::t('domain.bind_title') . ': ' . $domain]));
     }
 
     public function new(Request $request): Response
@@ -243,22 +238,22 @@ final class DomainController extends BaseController
 
         $form = Form::create('/admin/?p=domain:new', 'POST')
             ->csrf($this->csrf->field())
-            ->add(Field::text('domain')->label('Домен')->placeholder('example.ru')->required()->value($domainVal))
-            ->add(Field::text('namespace')->label('Namespace (опционально)')->placeholder('example_ru')->value($nsVal))
-            ->submit('Создать');
+            ->add(Field::text('domain')->label(View::t('domain.new_domain'))->placeholder('example.ru')->required()->value($domainVal))
+            ->add(Field::text('namespace')->label(View::t('domain.new_ns'))->placeholder('example_ru')->value($nsVal))
+            ->submit(View::t('domain.new_submit'));
 
         $card = Builder::div('admin-card');
-        $card->append(Builder::h(1)->content('Добавить домен'));
+        $card->append(Builder::h(1)->content(View::t('domain.new_title')));
         if ($error !== '') {
             $card->append(Message::error($error)->build());
         }
         $card->append($form->build());
 
-        $backBtn = Builder::a('/admin/?p=domain', 'btn btn-outline')->content('Назад');
+        $backBtn = Builder::a('/admin/?p=domain', 'btn btn-outline')->content(View::t('domain.back'));
         $backBtn->attrs()->styleAdd('margin-top:20px;');
         $card->append($backBtn);
 
-        return Response::html($this->view->render($card, ['title' => 'Новый домен']));
+        return Response::html($this->view->render($card, ['title' => View::t('domain.new_title')]));
     }
 
     public function attach(Request $request): Response
@@ -286,17 +281,17 @@ final class DomainController extends BaseController
             $fromDomain = (string) ($request->post['from_domain'] ?? '');
 
             if ($fromDomain !== '') {
-                $incomingVal = $fromDomain; // Если выбран перенос, берем его имя
+                $incomingVal = $fromDomain;
             }
 
             if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $incomingVal)) {
-                $error = 'Некорректный формат домена';
+                $error = 'Invalid domain format';
             } elseif ($incomingVal === $domain) {
-                $error = 'Нельзя привязать домен к самому себе';
+                $error = 'Cannot bind domain to itself';
             } else {
                 $data = $this->siteConfig->all();
                 if (isset($data['domains_real'][$incomingVal]) && $data['domains_real'][$incomingVal] !== $domain) {
-                    $error = 'Этот домен уже привязан к ' . $data['domains_real'][$incomingVal];
+                    $error = 'This domain is already bound to ' . $data['domains_real'][$incomingVal];
                 } else {
                     $data['domains_real'][$incomingVal] = $domain;
                     Fs::writeAtomic($this->paths->siteConfig(), json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n");
@@ -305,30 +300,29 @@ final class DomainController extends BaseController
             }
         }
 
-        // Собираем домены, которые можно перенести (не принадлежат текущему)
         $domains = $this->siteConfig->getByKey(['domains_real'], []);
         $transferOptions = [];
         if (is_array($domains)) {
             foreach ($domains as $inc => $real) {
                 if ($real !== $domain && $inc !== $domain) {
-                    $transferOptions[$inc] = $inc . ' (из ' . $real . ')';
+                    $transferOptions[$inc] = $inc . ' (from ' . $real . ')';
                 }
             }
         }
 
         $form = Form::create('/admin/?p=domain:attach&domain=' . urlencode($domain), 'POST')
             ->csrf($this->csrf->field())
-            ->add(Field::text('incoming')->label('Новый домен')->placeholder('example.com')->value($incomingVal)->hint('Введите имя, если хотите создать новую привязку.'));
+            ->add(Field::text('incoming')->label(View::t('domain.bind_new'))->placeholder('example.com')->value($incomingVal)->hint(View::t('domain.bind_new_hint')));
 
         if ($transferOptions !== []) {
-            $form->add(Field::select('from_domain')->label('Или перенести из другого домена')->options(['' => '— Не переносить —'] + $transferOptions));
+            $form->add(Field::select('from_domain')->label(View::t('domain.bind_from'))->options(['' => View::t('domain.bind_from_no')] + $transferOptions));
         }
 
-        $form->submit('Привязать');
+        $form->submit(View::t('domain.bind_attach_submit'));
 
         $card = Builder::div('admin-card');
-        $card->append(Builder::a('/admin/?p=domain:bindings&domain=' . urlencode($domain))->content('← Назад к списку'));
-        $card->append(Builder::h(1)->content('Привязать домен к ' . View::esc($domain)));
+        $card->append(Builder::a('/admin/?p=domain:bindings&domain=' . urlencode($domain))->content(View::t('domain.bind_back')));
+        $card->append(Builder::h(1)->content(View::t('domain.bind_attach_title', ['domain' => $domain])));
 
         if ($error !== '') {
             $card->append(Message::error($error)->build());
@@ -336,7 +330,7 @@ final class DomainController extends BaseController
 
         $card->append($form->build());
 
-        return Response::html($this->view->render($card, ['title' => 'Привязка домена']));
+        return Response::html($this->view->render($card, ['title' => View::t('domain.bind_attach_title', ['domain' => $domain])]));
     }
 
     public function detach(Request $request): Response
@@ -353,7 +347,6 @@ final class DomainController extends BaseController
             return $this->redirect('/admin/?p=domain');
         }
 
-        // Защита: нельзя отвязать главный домен
         $domains = $this->siteConfig->getByKey(['domains_real'], []);
         $isMain = false;
         if (is_array($domains)) {
@@ -382,37 +375,34 @@ final class DomainController extends BaseController
             if ($action === 'delete') {
                 unset($data['domains_real'][$incoming]);
             } else {
-                // Действия с копированием/шаблоном
                 if (!preg_match('/^[a-z0-9_\-]+$/', $newFolder)) {
-                    $error = 'Некорректное имя папки (только a-z, 0-9, _, -)';
+                    $error = 'Invalid folder name (a-z, 0-9, _, - only)';
                 } elseif (is_dir($this->paths->domain($newFolder))) {
-                    $error = 'Папка с таким именем уже существует';
+                    $error = 'Folder with this name already exists';
                 } else {
-                    $sourceDir = $this->paths->domain($domain); // Текущий реальный домен
+                    $sourceDir = $this->paths->domain($domain);
                     $targetDir = $this->paths->domain($newFolder);
 
                     if ($action === 'copy') {
                         if (!is_dir($sourceDir)) {
-                            $error = 'Исходная папка не найдена';
+                            $error = 'Source folder not found';
                         } else {
                             $this->copyDir($sourceDir, $targetDir);
                         }
                     } elseif ($action === 'template') {
-                        $tplDir = $this->paths->root() . '/_dev/tpl/domain'; // Путь к шаблону
+                        $tplDir = $this->paths->root() . '/_dev/tpl/domain';
                         if (!is_dir($tplDir)) {
-                            $error = 'Шаблон домена не найден (отсутствует _dev/tpl/domain)';
+                            $error = 'Domain template not found (missing _dev/tpl/domain)';
                         } else {
                             $this->copyDir($tplDir, $targetDir);
                         }
                     }
 
                     if ($error === '') {
-                        // Меняем namespace в скопированных файлах
                         $oldNs = str_replace(['.', '-'], '_', $domain);
                         $newNs = str_replace(['.', '-'], '_', $newFolder);
                         $this->replaceNamespace($targetDir, $oldNs, $newNs);
 
-                        // Обновляем конфиг
                         $data['domains_real'][$incoming] = $newFolder;
                         $data['domains_namespace'][$newFolder] = $newNs;
                         $data['domains_available'][$newFolder] = $data['domains_available'][$domain] ?? true;
@@ -426,18 +416,17 @@ final class DomainController extends BaseController
             }
         }
 
-        // Форма отвязки
         $form = Form::create('/admin/?p=domain:detach&domain=' . urlencode($domain) . '&incoming=' . urlencode($incoming), 'POST')
             ->csrf($this->csrf->field())
-            ->add(Field::radio('action')->label('Удалить привязку')->value('delete')->checked()->hint('Домен перестанет открывать этот сайт.'))
-            ->add(Field::radio('action')->label('Создать новую логику из шаблона')->value('template')->hint('Создаст чистую папку с базовыми настройками.'))
-            ->add(Field::radio('action')->label('Скопировать текущую логику')->value('copy')->hint('Перенесет все файлы текущего сайта в новую папку.'))
-            ->add(Field::text('new_folder')->label('Имя новой папки (если выбран шаблон или копия)')->placeholder('example_new_ru'))
-            ->submit('Отвязать');
+            ->add(Field::radio('action')->label(View::t('domain.det_act_delete'))->value('delete')->checked()->hint(View::t('domain.det_act_delete_hint')))
+            ->add(Field::radio('action')->label(View::t('domain.det_act_template'))->value('template')->hint(View::t('domain.det_act_template_hint')))
+            ->add(Field::radio('action')->label(View::t('domain.det_act_copy'))->value('copy')->hint(View::t('domain.det_act_copy_hint')))
+            ->add(Field::text('new_folder')->label(View::t('domain.det_new_folder'))->placeholder('example_new_ru'))
+            ->submit(View::t('domain.det_submit'));
 
         $card = Builder::div('admin-card');
-        $card->append(Builder::a('/admin/?p=domain:bindings&domain=' . urlencode($domain))->content('← Назад к списку'));
-        $card->append(Builder::h(1)->content('Отвязать домен: ' . View::esc($incoming)));
+        $card->append(Builder::a('/admin/?p=domain:bindings&domain=' . urlencode($domain))->content(View::t('domain.bind_back')));
+        $card->append(Builder::h(1)->content(View::t('domain.bind_detach_title', ['domain' => $incoming])));
 
         if ($error !== '') {
             $card->append(Message::error($error)->build());
@@ -445,7 +434,7 @@ final class DomainController extends BaseController
 
         $card->append($form->build());
 
-        return Response::html($this->view->render($card, ['title' => 'Отвязка домена']));
+        return Response::html($this->view->render($card, ['title' => View::t('domain.bind_detach_title', ['domain' => $incoming])]));
     }
 
     private function replaceNamespace(string $dir, string $oldNs, string $newNs): void
@@ -476,7 +465,6 @@ final class DomainController extends BaseController
             $data = $this->siteConfig->all();
             $realDomains = $data['domains_real'];
 
-            // Вырезаем и ставим первым
             if (isset($realDomains[$incoming])) {
                 $val = $realDomains[$incoming];
                 unset($realDomains[$incoming]);
@@ -537,10 +525,8 @@ final class DomainController extends BaseController
         $targetDir = $this->paths->domain($incoming);
 
         if (!is_dir($targetDir) && is_dir($sourceDir)) {
-            // Копируем файлы
             $this->copyDir($sourceDir, $targetDir);
 
-            // Меняем namespace внутри скопированных файлов
             $oldNs = str_replace(['.', '-'], '_', $domain);
             $newNs = str_replace(['.', '-'], '_', $incoming);
 
@@ -555,7 +541,6 @@ final class DomainController extends BaseController
                 }
             }
 
-            // Обновляем конфиг
             $data = $this->siteConfig->all();
             $data['domains_real'][$incoming] = $incoming;
             $data['domains_real'][$domain] = $incoming;
@@ -607,7 +592,7 @@ final class DomainController extends BaseController
         }
 
         $error = '';
-        $success = $request->query('saved') ? 'Настройки сохранены' : '';
+        $success = $request->query('saved') ? View::t('msg.saved') : '';
 
         if ($request->isPost()) {
             $csrfErr = $this->requireCsrf($request);
@@ -635,7 +620,7 @@ final class DomainController extends BaseController
                 Fs::writeAtomic($this->paths->siteConfig(), json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n");
                 return $this->redirect('/admin/?p=domain:edit&domain=' . urlencode($domain) . '&saved=1');
             } catch (\Throwable $e) {
-                $error = 'Ошибка сохранения: ' . $e->getMessage();
+                $error = View::t('msg.error', ['msg' => $e->getMessage()]);
             }
         }
 
@@ -647,24 +632,24 @@ final class DomainController extends BaseController
 
         $form = Form::create('/admin/?p=domain:edit&domain=' . urlencode($domain), 'POST')
             ->csrf($this->csrf->field())
-            ->add(Field::text('title')->label('Заголовок (title)')->value($title))
-            ->add(Field::checkbox('available')->label('Сайт включен (если выключить — покажется заглушка)')->checked($available))
-            ->add(Field::select('stub')->label('Заглушка при выключении домена')->options([
-                'maintenance' => 'Реконструкция',
-                'coming_soon' => 'Скоро открытие',
+            ->add(Field::text('title')->label(View::t('domain.title_label'))->value($title))
+            ->add(Field::checkbox('available')->label(View::t('domain.avail_label'))->checked($available))
+            ->add(Field::select('stub')->label(View::t('domain.stub_label'))->options([
+                'maintenance' => View::t('domain.stub_maint'),
+                'coming_soon' => View::t('domain.stub_soon'),
             ])->selected($stub))
-            ->add(Field::datetime('until')->label('Время авто-включения')->value($untilStr)->hint('Если указать время, сайт автоматически включится в этот момент.'))
-            ->submit('Сохранить');
+            ->add(Field::datetime('until')->label(View::t('domain.until_label'))->hint(View::t('domain.until_hint'))->value($untilStr))
+            ->submit(View::t('domain.save'));
 
         $card = Builder::div('admin-card');
 
         $breadcrumbs = Builder::div('breadcrumbs');
-        $breadcrumbs->append(Builder::a('/admin/?p=domain')->content('Домены'));
+        $breadcrumbs->append(Builder::a('/admin/?p=domain')->content(View::t('domain.bread_domains')));
         $breadcrumbs->append(Text::raw(' / '));
         $breadcrumbs->append(Builder::span()->content($domain));
 
         $card->append($breadcrumbs);
-        $card->append(Builder::h(1)->content('Настройки домена'));
+        $card->append(Builder::h(1)->content(View::t('domain.settings_title')));
         $card->append(View::domainTabs($domain, 'settings'));
 
         if ($success !== '') {
@@ -676,17 +661,16 @@ final class DomainController extends BaseController
 
         $card->append($form->build());
 
-        // Добавляем зону опасности внизу
         $hr = Builder::el('hr');
         $hr->attrs()->styleAdd('margin: 30px 0; border: 0; border-top: 1px solid #eee;');
         $card->append($hr);
 
         $dangerZone = Builder::div('danger-zone');
-        $dangerZone->append(Builder::p()->content('Удаление домена приведет к потере всех файлов. Это действие нельзя отменить.'));
-        $dangerZone->append(Builder::a('/admin/?p=domain:remove&domain=' . urlencode($domain), 'btn btn-danger')->content('Удалить домен'));
+        $dangerZone->append(Builder::p()->content(View::t('domain.delete_warn')));
+        $dangerZone->append(Builder::a('/admin/?p=domain:remove&domain=' . urlencode($domain), 'btn btn-danger')->content(View::t('domain.delete_btn')));
 
         $card->append($dangerZone);
 
-        return Response::html($this->view->render($card, ['title' => 'Настройки: ' . $domain]));
+        return Response::html($this->view->render($card, ['title' => View::t('domain.settings_title') . ': ' . $domain]));
     }
 }
