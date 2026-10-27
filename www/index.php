@@ -16,7 +16,9 @@ use Damoony\Http\Response;
 require_once __DIR__ . '/../vendor/autoload.php';
 
 $root = dirname(__DIR__);
-putenv('APP_ENV=dev'); // Включаем dev-режим для плашки таймера
+if (is_file($root . '/.dev')) {
+    putenv('APP_ENV=dev');
+}
 $app = AppFactory::create($root);
 $container = $app->container();
 

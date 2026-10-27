@@ -1,15 +1,19 @@
 <?php
 declare(strict_types=1);
 
-putenv('APP_ENV=dev');
-
 use Damoony\Admin\AdminRouter;
 use Damoony\Admin\Auth;
+use Damoony\Admin\Controller\AliasDbController;
+use Damoony\Admin\Controller\AliasSchemeController;
 use Damoony\Admin\Controller\AlliasController;
+use Damoony\Admin\Controller\BaseController;
 use Damoony\Admin\Controller\DashboardController;
 use Damoony\Admin\Controller\DomainController;
+use Damoony\Admin\Controller\EditorController;
 use Damoony\Admin\Controller\LoginController;
 use Damoony\Admin\Controller\LogoutController;
+use Damoony\Admin\Controller\SecurityController;
+use Damoony\Admin\Controller\StubController;
 use Damoony\Admin\View;
 use Damoony\Core\Config;
 use Damoony\Core\Env;
@@ -17,20 +21,20 @@ use Damoony\Core\ErrorHandler;
 use Damoony\Core\Logger;
 use Damoony\Files\Paths;
 use Damoony\Http\Kernel;
+use Damoony\Http\Middleware\RateLimitMiddleware;
 use Damoony\Http\Middleware\SecurityHeadersMiddleware;
+use Damoony\Http\MiddlewareStack;
 use Damoony\Http\Request;
 use Damoony\Security\Csrf;
 use Damoony\Session\NativeSession;
-use Damoony\Admin\Controller\EditorController;
-use Damoony\Admin\Controller\BaseController;
-use Damoony\Admin\Controller\AliasSchemeController;
-use Damoony\Admin\Controller\AliasDbController;
-use Damoony\Admin\Controller\StubController;
-use Damoony\Admin\Controller\SecurityController;
-
-require_once __DIR__ . '/../../vendor/autoload.php';
 
 $root = dirname(__DIR__, 2);
+if (is_file($root . '/.dev')) {
+    putenv('APP_ENV=dev');
+}
+
+require_once $root . '/vendor/autoload.php';
+
 $env = Env::fromServer();
 
 $adminConfigFile = $root . '/config/admin.config';
@@ -38,6 +42,9 @@ $adminConfig = is_file($adminConfigFile) ? Config::fromFile($adminConfigFile) : 
 
 $siteConfigFile = $root . '/config/site.config';
 $siteConfig = is_file($siteConfigFile) ? Config::fromFile($siteConfigFile) : Config::fromArray([]);
+
+$engineConfigFile = $root . '/config/engine.config';
+$engineConfig = is_file($engineConfigFile) ? Config::fromFile($engineConfigFile) : Config::fromArray([]);
 
 $logger = new Logger(null, $env);
 $errorHandler = new ErrorHandler($logger, $env);
@@ -88,8 +95,28 @@ $router->register('allias_db', new AliasDbController($auth, $csrf, $view));
 $router->register('stub', new StubController($auth, $csrf, $view));
 $router->register('security', new SecurityController($auth, $csrf, $view));
 
-$security = new SecurityHeadersMiddleware(isHttps: ($_SERVER['HTTPS'] ?? '') === 'on');
-$handler = static fn (Request $r) => $security->process($r, static fn (Request $r2) => $router->dispatch($r2));
+// Middleware stack
+$loopback = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
+$rlWhitelist = $env->isDev() ? $loopback : [];
+
+$stack = new MiddlewareStack(new \Damoony\Core\Container());
+$stack->add(new SecurityHeadersMiddleware(
+    isHttps: ($_SERVER['HTTPS'] ?? '') === 'on',
+    csp: (string) $engineConfig->get('csp', "default-src 'self'; frame-ancestors 'none'"),
+));
+// Админка: строже лимит, чем фронт; отдельный storageDir, чтобы не смешивать счётчики
+$stack->add(new RateLimitMiddleware(
+    storageDir: $root . '/var/ratelimit/admin',
+    max: 60,
+    window: 60,
+    ban: 900,
+    whitelist: $rlWhitelist,
+));
+
+$handler = static fn (Request $r) => $stack->dispatch(
+    $r,
+    static fn (Request $r2) => $router->dispatch($r2)
+);
 
 $kernel = new Kernel($handler, $logger, $env);
 $kernel->handle(Request::fromGlobals())->send();

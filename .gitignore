@@ -44,3 +44,5 @@ env.php
 # временное
 /tmp/
 *.tmp/_doc/_audit-snapshot.txt
+# dev-маркер (локально)
+/.dev
