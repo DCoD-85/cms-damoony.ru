@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Damoony\Admin\Controller;
 
 use Damoony\Admin\View;
-use Damoony\Files\Fs;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
 use Damoony\Ui\Builder;
@@ -84,7 +83,11 @@ final class MediaController extends BaseController
             ->submit('Загрузить');
 
         $card->append($form->build());
-        $card->append(Builder::el('hr')->attrs()->styleAdd('margin: 30px 0; border: 0; border-top: 1px solid #eee;'));
+        
+        // ИСПРАВЛЕНИЕ ОШИБКИ append(Attrs): разделяем создание hr и добавление стилей
+        $hr = Builder::el('hr');
+        $hr->attrs()->styleAdd('margin: 30px 0; border: 0; border-top: 1px solid #eee;');
+        $card->append($hr);
 
         // Таблица файлов
         $table = (new Table())->headers('Файл', 'Размер', 'Действия');
@@ -97,7 +100,15 @@ final class MediaController extends BaseController
                 
                 $actionsHtml = Builder::div('table-actions');
                 $actionsHtml->append(Builder::a($f['url'], 'btn btn-outline')->content('Открыть')->attrs()->add('target', '_blank'));
-                $actionsHtml->append(Builder::a('/admin/?p=media:delete&domain=' . urlencode($domain) . '&file=' . urlencode($f['name']), 'btn btn-danger')->content('Удалить'));
+                
+                // ИСПРАВЛЕНИЕ CSRF: Удаление через POST-форму, а не GET-ссылку
+                $delForm = Form::create('/admin/?p=media:delete&domain=' . urlencode($domain) . '&file=' . urlencode($f['name']), 'POST')
+                    ->csrf($this->csrf->field())
+                    ->submit('Удалить');
+                $delFormNode = $delForm->build();
+                $delFormNode->attrs()->styleAdd('display:inline-block; margin:0; border:none;');
+                
+                $actionsHtml->append($delFormNode);
 
                 $table->row([
                     Text::raw('<a href="' . View::esc($f['url']) . '" target="_blank">' . View::esc($f['name']) . '</a>'),
@@ -127,20 +138,26 @@ final class MediaController extends BaseController
         if (!is_dir($dir)) @mkdir($dir, 0775, true);
 
         if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
-            $name = basename($_FILES['file']['name']);
-            // Разрешаем только безопасные символы
-            $name = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $name);
-            $dest = $dir . '/' . $name;
+            $rawName = $_FILES['file']['name'] ?? '';
             
-            // Защита от перезаписи
-            $i = 1;
-            while (is_file($dest)) {
-                $pathInfo = pathinfo($name);
-                $dest = $dir . '/' . $pathInfo['filename'] . '_' . $i . '.' . $pathInfo['extension'];
-                $i++;
+            // ИСПРАВЛЕНИЕ pathinfo: проверяем, что имя это строка
+            if (is_string($rawName)) {
+                $name = basename($rawName);
+                $name = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $name) ?: 'file';
+                $dest = $dir . '/' . $name;
+                
+                // Защита от перезаписи
+                $i = 1;
+                while (is_file($dest)) {
+                    $pathInfo = pathinfo($name);
+                    $filename = $pathInfo['filename'] ?? 'file';
+                    $ext = isset($pathInfo['extension']) ? '.' . $pathInfo['extension'] : '';
+                    $dest = $dir . '/' . $filename . '_' . $i . $ext;
+                    $i++;
+                }
+                
+                move_uploaded_file($_FILES['file']['tmp_name'], $dest);
             }
-            
-            move_uploaded_file($_FILES['file']['tmp_name'], $dest);
         }
 
         return $this->redirect('/admin/?p=media&domain=' . urlencode($domain) . '&saved=1');
@@ -150,6 +167,10 @@ final class MediaController extends BaseController
     {
         $auth = $this->requireAuth();
         if ($auth !== null) return $auth;
+
+        // ИСПРАВЛЕНИЕ БЕЗОПАСНОСТИ: требуем POST
+        $postErr = $this->requirePost($request);
+        if ($postErr !== null) return $postErr;
 
         $csrfErr = $this->requireCsrf($request);
         if ($csrfErr !== null) return $csrfErr;
