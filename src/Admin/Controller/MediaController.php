@@ -5,8 +5,15 @@ declare(strict_types=1);
 namespace Damoony\Admin\Controller;
 
 use Damoony\Admin\View;
+use Damoony\Files\Fs;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
+use Damoony\Ui\Builder;
+use Damoony\Ui\Field;
+use Damoony\Ui\Form;
+use Damoony\Ui\Message;
+use Damoony\Ui\Table;
+use Damoony\Ui\Text;
 
 final class MediaController extends BaseController
 {
@@ -25,7 +32,8 @@ final class MediaController extends BaseController
         if ($auth !== null) return $auth;
 
         $domain = (string) $request->query('domain', '');
-        $dir = $this->root . '/www/media/' . ($domain !== '' ? $domain : 'shared');
+        $dirName = $domain !== '' ? $domain : 'shared';
+        $dir = $this->root . '/www/media/' . $dirName;
         
         if (!is_dir($dir)) {
             @mkdir($dir, 0775, true);
@@ -39,35 +47,69 @@ final class MediaController extends BaseController
                 $files[] = [
                     'name' => $item,
                     'size' => filesize($dir . '/' . $item) ?: 0,
-                    'url' => '/media/' . ($domain !== '' ? $domain . '/' : 'shared/') . $item
+                    'url' => '/media/' . $dirName . '/' . $item
                 ];
             }
         }
 
-        $html = '<div class="admin-card"><h1>Медиа: ' . View::esc($domain ?: 'Общие') . '</h1>';
-        $html .= '<p><a href="/admin/?p=domain">&larr; Назад</a></p>';
-        
-        $html .= '<form method="post" enctype="multipart/form-data" action="/admin/?p=media:upload&domain=' . urlencode($domain) . '" style="margin-bottom:24px; display:flex; gap:12px; align-items:center;">';
-        $html .= $this->csrf->field();
-        $html .= '<input type="file" name="file" required>';
-        $html .= '<button type="submit" class="btn" style="padding:8px 16px; background:#0071e3; color:#fff; border:none; border-radius:6px; cursor:pointer;">Загрузить</button>';
-        $html .= '</form>';
+        $card = Builder::div('admin-card');
 
-        $html .= '<table style="width:100%; border-collapse:collapse;">';
-        $html .= '<tr><th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Файл</th><th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Размер</th><th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Действия</th></tr>';
+        // Хлебные крошки
+        $breadcrumbs = Builder::div('breadcrumbs');
+        $breadcrumbs->append(Builder::a('/admin/?p=domain')->content('Домены'));
+        $breadcrumbs->append(Text::raw(' / '));
+        $breadcrumbs->append(Builder::a('/admin/?p=domain:edit&domain=' . urlencode($domain))->content($domain));
+        $card->append($breadcrumbs);
+
+        $header = Builder::div('page-header');
+        $header->append(Builder::h(1)->content('Медиа: ' . View::esc($dirName)));
+        $card->append($header);
+
+        if ($domain !== '') {
+            $card->append(View::domainTabs($domain, 'media'));
+        }
+
+        if ($request->query('saved')) {
+            $card->append(Message::success('Файл загружен')->build());
+        }
+        if ($request->query('deleted')) {
+            $card->append(Message::success('Файл удален')->build());
+        }
+
+        // Форма загрузки
+        $form = Form::create('/admin/?p=media:upload&domain=' . urlencode($domain), 'POST')
+            ->enctype('multipart/form-data')
+            ->csrf($this->csrf->field())
+            ->add(Field::file('file')->label('Загрузить файл')->required())
+            ->submit('Загрузить');
+
+        $card->append($form->build());
+        $card->append(Builder::el('hr')->attrs()->styleAdd('margin: 30px 0; border: 0; border-top: 1px solid #eee;'));
+
+        // Таблица файлов
+        $table = (new Table())->headers('Файл', 'Размер', 'Действия');
 
         if ($files === []) {
-            $html .= '<tr><td colspan="3" style="padding:8px;">Файлов нет</td></tr>';
+            $table->row([Text::raw('Файлов пока нет'), Text::raw(''), Text::raw('')]);
+        } else {
+            foreach ($files as $f) {
+                $sizeKb = round($f['size'] / 1024, 1) . ' KB';
+                
+                $actionsHtml = Builder::div('table-actions');
+                $actionsHtml->append(Builder::a($f['url'], 'btn btn-outline')->content('Открыть')->attrs()->add('target', '_blank'));
+                $actionsHtml->append(Builder::a('/admin/?p=media:delete&domain=' . urlencode($domain) . '&file=' . urlencode($f['name']), 'btn btn-danger')->content('Удалить'));
+
+                $table->row([
+                    Text::raw('<a href="' . View::esc($f['url']) . '" target="_blank">' . View::esc($f['name']) . '</a>'),
+                    Text::raw($sizeKb),
+                    $actionsHtml
+                ]);
+            }
         }
 
-        foreach ($files as $f) {
-            $html .= '<tr><td style="padding:8px; border-bottom:1px solid #eee;"><a href="' . View::esc($f['url']) . '" target="_blank">' . View::esc($f['name']) . '</a></td>';
-            $html .= '<td style="padding:8px; border-bottom:1px solid #eee;">' . round($f['size'] / 1024, 1) . ' KB</td>';
-            $html .= '<td style="padding:8px; border-bottom:1px solid #eee;"><a href="/admin/?p=media:delete&domain=' . urlencode($domain) . '&file=' . urlencode($f['name']) . '" style="color:red;" onclick="return confirm(\'Удалить?\')">Удалить</a></td></tr>';
-        }
-        $html .= '</table></div>';
+        $card->append($table->build());
 
-        return Response::html($this->view->render($html, ['title' => 'Медиа']));
+        return Response::html($this->view->render($card, ['title' => 'Медиа']));
     }
 
     public function upload(Request $request): Response
@@ -79,18 +121,29 @@ final class MediaController extends BaseController
         if ($csrfErr !== null) return $csrfErr;
 
         $domain = (string) $request->query('domain', '');
-        $dir = $this->root . '/www/media/' . ($domain !== '' ? $domain : 'shared');
+        $dirName = $domain !== '' ? $domain : 'shared';
+        $dir = $this->root . '/www/media/' . $dirName;
         
         if (!is_dir($dir)) @mkdir($dir, 0775, true);
 
         if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
             $name = basename($_FILES['file']['name']);
+            // Разрешаем только безопасные символы
             $name = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $name);
             $dest = $dir . '/' . $name;
+            
+            // Защита от перезаписи
+            $i = 1;
+            while (is_file($dest)) {
+                $pathInfo = pathinfo($name);
+                $dest = $dir . '/' . $pathInfo['filename'] . '_' . $i . '.' . $pathInfo['extension'];
+                $i++;
+            }
+            
             move_uploaded_file($_FILES['file']['tmp_name'], $dest);
         }
 
-        return $this->redirect('/admin/?p=media&domain=' . urlencode($domain));
+        return $this->redirect('/admin/?p=media&domain=' . urlencode($domain) . '&saved=1');
     }
 
     public function delete(Request $request): Response
@@ -98,14 +151,18 @@ final class MediaController extends BaseController
         $auth = $this->requireAuth();
         if ($auth !== null) return $auth;
 
+        $csrfErr = $this->requireCsrf($request);
+        if ($csrfErr !== null) return $csrfErr;
+
         $domain = (string) $request->query('domain', '');
         $file = (string) $request->query('file', '');
         
         if ($file !== '') {
-            $path = $this->root . '/www/media/' . ($domain !== '' ? $domain : 'shared') . '/' . basename($file);
+            $dirName = $domain !== '' ? $domain : 'shared';
+            $path = $this->root . '/www/media/' . $dirName . '/' . basename($file);
             if (is_file($path)) @unlink($path);
         }
 
-        return $this->redirect('/admin/?p=media&domain=' . urlencode($domain));
+        return $this->redirect('/admin/?p=media&domain=' . urlencode($domain) . '&deleted=1');
     }
 }
