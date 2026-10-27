@@ -44,11 +44,22 @@ final class AppFactory
         $container->setInstance('errorHandler', $errorHandler);
         $container->setInstance(Paths::class, new Paths($root));
 
-        // БД (SQLite)
-        $db = new Connection([
-            'driver' => 'sqlite',
-            'path' => $root . '/var/damoony.db',
-        ]);
+        // БД (из engine.config)
+        $dbConfig = $config->getByKey(['db'], []);
+        if (!is_array($dbConfig) || $dbConfig === []) {
+            $dbConfig = [
+                'driver' => 'sqlite',
+                'path' => $root . '/var/damoony.db',
+            ];
+        } else {
+            if (($dbConfig['driver'] ?? '') === 'sqlite' && isset($dbConfig['path'])) {
+                $path = (string) $dbConfig['path'];
+                if (!str_starts_with($path, '/') && !preg_match('/^[a-zA-Z]:[\\\\\/]/', $path)) {
+                    $dbConfig['path'] = $root . '/' . ltrim($path, '/\\');
+                }
+            }
+        }
+        $db = new Connection($dbConfig);
         $container->setInstance(Connection::class, $db);
 
         // Сессия, авторизация, CSRF
