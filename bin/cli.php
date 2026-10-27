@@ -19,7 +19,7 @@ use Damoony\Cli\Commands\BlockRemoveCommand;
 use Damoony\Cli\Commands\AlliasNewCommand;
 use Damoony\Cli\Commands\AlliasRemoveCommand;
 use Damoony\Cli\Commands\DomainNewCommand;
-use Damoony\Cli\Commands\HelpCommand;
+use Damoony\Cli\HelpCommand;
 use Damoony\Cli\Renderer;
 use Damoony\Files\Paths;
 use Damoony\Db\Connection;
