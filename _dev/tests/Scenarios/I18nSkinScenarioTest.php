@@ -65,15 +65,15 @@ final class I18nSkinScenarioTest extends TestCase
     public function testNegotiatorUrlPriority(): void
     {
         $n = new LanguageNegotiator();
-        $req = new Request('GET', '/en/about', cookies: ['lang' => 'ch']);
+        $req = new Request('GET', '/en/about', cookies: ['lang' => 'zh']);
         self::assertSame('en', $n->resolve($req, $this->domain('ru')));
     }
 
     public function testNegotiatorCookieFallback(): void
     {
         $n = new LanguageNegotiator();
-        $req = new Request('GET', '/about', cookies: ['lang' => 'ch']);
-        self::assertSame('ch', $n->resolve($req, $this->domain('ru')));
+        $req = new Request('GET', '/about', cookies: ['lang' => 'zh']);
+        self::assertSame('zh', $n->resolve($req, $this->domain('ru')));
     }
 
     public function testNegotiatorDomainFallback(): void
