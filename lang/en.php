@@ -167,4 +167,9 @@ return [
     'admin.allias.active' => 'Alias is active',
     'admin.allias.skin' => 'Skin',
     'admin.allias.quick_links' => 'Content management',
+
+    'admin.allias.th_path' => 'Path',
+    'admin.allias.empty' => 'No aliases',
+    'admin.allias.new_title' => 'Add alias',
+    'admin.allias.name_label' => 'Alias name',
 ];

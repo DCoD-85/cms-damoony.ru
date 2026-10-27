@@ -49,17 +49,17 @@ final class AlliasController extends BaseController
 
         // Хлебные крошки
         $breadcrumbs = Builder::div('breadcrumbs');
-        $breadcrumbs->append(Builder::a('/admin/?p=domain')->content('Домены'));
+        $breadcrumbs->append(Builder::a('/admin/?p=domain')->content(View::t('domain.bread_domains')));
         $breadcrumbs->append(Text::raw(' / '));
         $breadcrumbs->append(Builder::a('/admin/?p=domain:edit&domain=' . urlencode($domain))->content($domain));
         $card->append($breadcrumbs);
 
         // Заголовок
         $header = Builder::div('page-header');
-        $header->append(Builder::h(1)->content('Алиасы'));
+        $header->append(Builder::h(1)->content(View::t('tab.alliases')));
 
         $actions = Builder::div('page-actions');
-        $actions->append(Builder::a('/admin/?p=allias:new&domain=' . urlencode($domain), 'btn btn-primary')->content('+ Создать алиас'));
+        $actions->append(Builder::a('/admin/?p=allias:new&domain=' . urlencode($domain), 'btn btn-primary')->content(View::t('domain.add')));
         $header->append($actions);
         $card->append($header);
 
@@ -67,7 +67,12 @@ final class AlliasController extends BaseController
         $card->append(View::domainTabs($domain, 'allias'));
 
         // Таблица
-        $table = (new Table())->headers('Статус', 'Алиас', 'Путь', 'Действия');
+        $table = (new Table())->headers(
+            View::t('domain.th_status'),
+            View::t('allias.title'),
+            View::t('allias.th_path'),
+            View::t('domain.bind_th_act'),
+        );
 
         if (is_array($aliases) && $aliases !== []) {
             foreach ($aliases as $name => $mapped) {
@@ -80,15 +85,15 @@ final class AlliasController extends BaseController
 
                 $statusUrl = '/admin/?p=allias:toggle&domain=' . urlencode($domain) . '&name=' . urlencode((string)$name);
                 $statusHtml = $available
-                    ? '<a href="' . $statusUrl . '" class="status-toggle" title="Выключить"></a>'
-                    : '<a href="' . $statusUrl . '" class="status-toggle off" title="Включить"></a>';
+                    ? '<a href="' . $statusUrl . '" class="status-toggle" title="' . View::t('domain.avail_label') . '"></a>'
+                    : '<a href="' . $statusUrl . '" class="status-toggle off" title="' . View::t('domain.avail_label') . '"></a>';
 
                 $editUrl = '/admin/?p=allias:edit&domain=' . urlencode($domain) . '&allias=' . urlencode((string)$name);
                 $aliasLink = Builder::a($editUrl, 'domain-link')->content((string)$name);
 
                 $pathHtml = '<span style="font-family:monospace; font-size:12px; background:#f3f4f6; padding:2px 6px; border-radius:4px;">app/' . View::esc($domain) . '/' . View::esc((string)$name) . '</span>';
 
-                $deleteBtn = Builder::a('/admin/?p=allias:remove&domain=' . urlencode($domain) . '&name=' . urlencode((string)$name), 'btn btn-danger')->content('Удалить');
+                $deleteBtn = Builder::a('/admin/?p=allias:remove&domain=' . urlencode($domain) . '&name=' . urlencode((string)$name), 'btn btn-danger')->content(View::t('stub.delete'));
 
                 $table->row([
                     Text::raw($statusHtml),
@@ -98,11 +103,11 @@ final class AlliasController extends BaseController
                 ]);
             }
         } else {
-            $table->row([Text::raw(''), Text::raw('Алиасов нет'), Text::raw(''), Text::raw('')]);
+            $table->row([Text::raw(''), Text::raw(View::t('allias.empty')), Text::raw(''), Text::raw('')]);
         }
 
         $card->append($table->build());
-        return Response::html($this->view->render($card, ['title' => 'Алиасы']));
+        return Response::html($this->view->render($card, ['title' => View::t('tab.alliases')]));
     }
 
     public function toggle(Request $request): Response
@@ -166,10 +171,10 @@ final class AlliasController extends BaseController
         $card = Builder::div('admin-card');
 
         $breadcrumbs = Builder::div('breadcrumbs');
-        $breadcrumbs->append(Builder::a('/admin/?p=allias&domain=' . urlencode($domain))->content('← Назад к алиасам'));
+        $breadcrumbs->append(Builder::a('/admin/?p=allias&domain=' . urlencode($domain))->content(View::t('domain.bind_back')));
         $card->append($breadcrumbs);
 
-        $card->append(Builder::h(1)->content('Добавить алиас: ' . View::esc($domain)));
+        $card->append(Builder::h(1)->content(View::t('allias.new_title') . ': ' . View::esc($domain)));
         $card->append(View::domainTabs($domain, 'allias'));
 
         if ($error !== '') {
@@ -178,12 +183,12 @@ final class AlliasController extends BaseController
 
         $form = Form::create('/admin/?p=allias:new&domain=' . urlencode($domain), 'POST')
             ->csrf($this->csrf->field())
-            ->add(Field::text('name')->label('Имя алиаса')->placeholder('admin, api, mobile')->required()->value($nameVal))
-            ->submit('Создать');
+            ->add(Field::text('name')->label(View::t('allias.name_label'))->placeholder('admin, api, mobile')->required()->value($nameVal))
+            ->submit(View::t('domain.new_submit'));
 
         $card->append($form->build());
 
-        return Response::html($this->view->render($card, ['title' => 'Новый алиас']));
+        return Response::html($this->view->render($card, ['title' => View::t('allias.new_title')]));
     }
 
     public function edit(Request $request): Response
@@ -262,7 +267,7 @@ final class AlliasController extends BaseController
         $breadcrumbs->append(Text::raw(' / '));
         $breadcrumbs->append(Builder::a('/admin/?p=domain:edit&domain=' . urlencode($domain))->content($domain));
         $breadcrumbs->append(Text::raw(' / '));
-        $breadcrumbs->append(Builder::a('/admin/?p=allias&domain=' . urlencode($domain))->content(View::t('domain.tab_alliases')));
+        $breadcrumbs->append(Builder::a('/admin/?p=allias&domain=' . urlencode($domain))->content(View::t('tab.alliases')));
         $card->append($breadcrumbs);
 
         $card->append(Builder::h(1)->content(View::t('allias.title') . ': ' . View::esc($allias)));
@@ -276,9 +281,9 @@ final class AlliasController extends BaseController
         $card->append(Builder::h(2)->content(View::t('allias.quick_links')));
         $links = Builder::div('page-actions');
         $base = '/admin/?domain=' . urlencode($domain) . '&allias=' . urlencode($allias);
-        $links->append(Builder::a('/admin/?p=page' . $base, 'btn btn-outline')->content(View::t('domain.tab_pages')));
-        $links->append(Builder::a('/admin/?p=filler' . $base, 'btn btn-outline')->content(View::t('domain.tab_fillers')));
-        $links->append(Builder::a('/admin/?p=allias_scheme' . $base, 'btn btn-outline')->content(View::t('domain.tab_allias_schemes')));
+        $links->append(Builder::a('/admin/?p=page' . $base, 'btn btn-outline')->content(View::t('tab.pages')));
+        $links->append(Builder::a('/admin/?p=filler' . $base, 'btn btn-outline')->content(View::t('tab.fillers')));
+        $links->append(Builder::a('/admin/?p=allias_scheme' . $base, 'btn btn-outline')->content(View::t('tab.allias_schemes')));
         $links->attrs()->styleAdd('margin-bottom: 30px;');
         $card->append($links);
 

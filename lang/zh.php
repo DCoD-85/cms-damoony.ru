@@ -140,4 +140,9 @@ return [
     'admin.allias.active' => '别名已激活',
     'admin.allias.skin' => '皮肤',
     'admin.allias.quick_links' => '内容管理',
+
+    'admin.allias.th_path' => '路径',
+    'admin.allias.empty' => '无别名',
+    'admin.allias.new_title' => '添加别名',
+    'admin.allias.name_label' => '别名名称',
 ];

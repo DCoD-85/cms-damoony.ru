@@ -167,4 +167,9 @@ return [
     'admin.allias.active' => 'Алиас активен',
     'admin.allias.skin' => 'Скин',
     'admin.allias.quick_links' => 'Управление контентом',
+
+	'admin.allias.th_path' => 'Путь',
+    'admin.allias.empty' => 'Алиасов нет',
+    'admin.allias.new_title' => 'Добавить алиас',
+    'admin.allias.name_label' => 'Имя алиаса',
 ];
