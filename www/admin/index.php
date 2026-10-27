@@ -62,6 +62,33 @@ $auth = new Auth(
 );
 
 $view = new View('Damoony Admin');
+$adminLangs = $adminConfig->get('domains_langs', ['ru']);
+if (!is_array($adminLangs) || $adminLangs === []) {
+    $adminLangs = ['ru'];
+}
+$defaultLang = (string) $adminConfig->get('default_lang', 'ru');
+if (!in_array($defaultLang, $adminLangs, true)) {
+    $defaultLang = (string) $adminLangs[0];
+}
+
+$reqLang = (string) ($_GET['lang'] ?? '');
+if ($reqLang !== '' && in_array($reqLang, $adminLangs, true)) {
+    if (!headers_sent()) {
+        setcookie('admin_lang', $reqLang, [
+            'expires' => time() + 86400 * 365,
+            'path' => '/',
+            'httponly' => false,
+            'samesite' => 'Lax',
+        ]);
+    }
+    $currentLang = $reqLang;
+} else {
+    $cookieLang = (string) ($_COOKIE['admin_lang'] ?? '');
+    $currentLang = in_array($cookieLang, $adminLangs, true) ? $cookieLang : $defaultLang;
+}
+
+View::setLang(new \Damoony\I18n\Translator($currentLang, $defaultLang));
+
 $paths = new Paths($root);
 
 $router = new AdminRouter();

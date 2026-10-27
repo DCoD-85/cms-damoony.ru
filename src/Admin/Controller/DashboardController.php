@@ -32,14 +32,14 @@ final class DashboardController extends BaseController
         $count = is_array($domains) ? count($domains) : 0;
 
         $card = Builder::div('admin-card');
-        $card->append(Builder::h(1)->content('Панель управления'));
-        $card->append(Builder::p()->content('Вы вошли как ' . View::esc($this->auth->login())));
-        $card->append(Builder::p()->content('Доменов в конфигурации: ' . $count));
+        $card->append(Builder::h(1)->content(View::t('dash.title')));
+        $card->append(Builder::p()->content(View::t('dash.logged_as', ['login' => $this->auth->login()])));
+        $card->append(Builder::p()->content(View::t('dash.domain_count', ['count' => $count])));
 
         $actions = Builder::div('page-actions');
-        $actions->append(Builder::a('/admin/?p=domain', 'btn btn-primary')->content('Управление доменами'));
+        $actions->append(Builder::a('/admin/?p=domain', 'btn btn-primary')->content(View::t('dash.manage_domains')));
         $card->append($actions);
 
-        return Response::html($this->view->render($card, ['title' => 'Панель']));
+        return Response::html($this->view->render($card, ['title' => View::t('page.title')]));
     }
 }
