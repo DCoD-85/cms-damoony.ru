@@ -30,11 +30,16 @@ $stack->add(new SecurityHeadersMiddleware(
     isHttps: ($_SERVER['HTTPS'] ?? '') === 'on',
     csp: (string) $app->config()->get('csp', "default-src 'self'; frame-ancestors 'none'"),
 ));
+
+$loopback = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
+$rlWhitelist = $app->env()->isDev() ? $loopback : [];
+
 $stack->add(new RateLimitMiddleware(
     storageDir: $root . '/var/ratelimit',
     max: (int) $app->config()->get('rate_limit.max', 120),
     window: (int) $app->config()->get('rate_limit.window', 60),
     ban: (int) $app->config()->get('rate_limit.ban', 900),
+    whitelist: $rlWhitelist,
 ));
 
 $handler = static fn (Request $r) => $stack->dispatch($r, static fn (Request $r2) => $fc->handle($r2));

@@ -10,11 +10,15 @@ use Damoony\Http\Response;
 
 final class RateLimitMiddleware implements MiddlewareInterface
 {
+    /**
+     * @param list<string> $whitelist IP-адреса, для которых лимит не применяется
+     */
     public function __construct(
         private readonly string $storageDir,
         private readonly int $max = 60,
         private readonly int $window = 60,
         private readonly int $ban = 900,
+        private readonly array $whitelist = [],
     ) {
     }
 
@@ -22,6 +26,10 @@ final class RateLimitMiddleware implements MiddlewareInterface
     {
         $ip = $request->ip();
         if ($ip === '') {
+            return $next($request);
+        }
+
+        if (in_array($ip, $this->whitelist, true)) {
             return $next($request);
         }
 
