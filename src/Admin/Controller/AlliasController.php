@@ -204,6 +204,18 @@ final class AlliasController extends BaseController
             return $this->redirect('/admin/?p=domain');
         }
 
+        // Получаем список скинов домена (для чекбоксов и селекта)
+        $skinsMap = $this->siteConfig->getByKey(['domains_skins_allowed', $domain], ['default']);
+        $skinOptions = [];
+        if (is_array($skinsMap)) {
+            foreach ($skinsMap as $s) {
+                $skinOptions[(string)$s] = (string)$s;
+            }
+        }
+        if ($skinOptions === []) {
+            $skinOptions = ['default' => 'default'];
+        }
+
         $success = '';
         if ($request->isPost()) {
             $csrfErr = $this->requireCsrf($request);
@@ -213,14 +225,30 @@ final class AlliasController extends BaseController
 
             $data = $this->siteConfig->all();
 
-            // Статус
+            // 1. Основные настройки
+            $data['alliases_titles'][$domain][$allias] = (string) ($request->post['title'] ?? '');
             $data['alliases_available'][$domain][$allias] = isset($request->post['available']);
+            $data['alliases_stubs'][$domain][$allias] = (string) ($request->post['stub'] ?? 'maintenance');
 
-            // Скин
-            $skin = (string) ($request->post['skin'] ?? 'default');
-            $data['alliases_skins'][$domain][$allias] = $skin;
+            $until = (string) ($request->post['until'] ?? '');
+            if ($until !== '') {
+                $data['alliases_stub_until'][$domain][$allias] = strtotime($until);
+            } else {
+                unset($data['alliases_stub_until'][$domain][$allias]);
+            }
 
-            // Языки (собираем чекбоксы)
+            // 2. Контент (Скины)
+            $data['alliases_skins'][$domain][$allias] = (string) ($request->post['active_skin'] ?? 'default');
+
+            $skinsAllowed = [];
+            foreach (array_keys($skinOptions) as $s) {
+                if (isset($request->post['skin_' . $s])) {
+                    $skinsAllowed[] = $s;
+                }
+            }
+            $data['alliases_skins_allowed'][$domain][$allias] = $skinsAllowed;
+
+            // 3. Языки
             $langs = [];
             if (isset($request->post['lang_ru'])) {
                 $langs[] = 'ru';
@@ -240,23 +268,25 @@ final class AlliasController extends BaseController
             $success = View::t('msg.saved');
         }
 
-        // Получаем текущие настройки
+        // Текущие значения
+        $title = (string) $this->siteConfig->getByKey(['alliases_titles', $domain, $allias], '');
         $available = (bool) $this->siteConfig->getByKey(['alliases_available', $domain, $allias], true);
+
+        $defaultStub = (string) $this->siteConfig->getByKey(['domains_stub', $domain, 'current'], 'maintenance');
+        $stub = (string) $this->siteConfig->getByKey(['alliases_stubs', $domain, $allias], $defaultStub);
+
+        $until = $this->siteConfig->getByKey(['alliases_stub_until', $domain, $allias], 0);
+        $untilStr = $until > 0 ? date('Y-m-d\TH:i', (int)$until) : '';
+
         $currentSkin = (string) $this->siteConfig->getByKey(['alliases_skins', $domain, $allias], 'default');
+        $currentSkinsAllowed = $this->siteConfig->getByKey(['alliases_skins_allowed', $domain, $allias], ['default']);
+        if (!is_array($currentSkinsAllowed)) {
+            $currentSkinsAllowed = ['default'];
+        }
+
         $currentLangs = $this->siteConfig->getByKey(['alliases_langs', $domain, $allias], ['ru']);
         if (!is_array($currentLangs)) {
             $currentLangs = ['ru'];
-        }
-
-        $skinsAllowed = $this->siteConfig->getByKey(['domains_skins_allowed', $domain], ['default']);
-        $skinOptions = [];
-        if (is_array($skinsAllowed)) {
-            foreach ($skinsAllowed as $s) {
-                $skinOptions[(string)$s] = (string)$s;
-            }
-        }
-        if ($skinOptions === []) {
-            $skinOptions = ['default' => 'default'];
         }
 
         $card = Builder::div('admin-card');
@@ -277,7 +307,7 @@ final class AlliasController extends BaseController
             $card->append(Message::success($success)->build());
         }
 
-        // Быстрые ссылки на контент
+        // Быстрые ссылки
         $card->append(Builder::h(2)->content(View::t('allias.quick_links')));
         $links = Builder::div('page-actions');
         $base = '/admin/?domain=' . urlencode($domain) . '&allias=' . urlencode($allias);
@@ -287,22 +317,57 @@ final class AlliasController extends BaseController
         $links->attrs()->styleAdd('margin-bottom: 30px;');
         $card->append($links);
 
-        // Форма настроек
+        // Основная форма
         $card->append(Builder::h(2)->content(View::t('allias.settings')));
 
         $form = Form::create('/admin/?p=allias:edit&domain=' . urlencode($domain) . '&allias=' . urlencode($allias), 'POST')
             ->csrf($this->csrf->field())
-            ->add(Field::checkbox('available')->label(View::t('allias.active'))->checked($available))
-            ->add(Field::select('skin')->label(View::t('allias.skin'))->options($skinOptions)->selected($currentSkin))
+            ->add(Field::text('title')->label(View::t('domain.title_label'))->value($title))
+            ->add(Field::checkbox('available')->label(View::t('domain.avail_label'))->checked($available))
+            ->add(Field::select('stub')->label(View::t('domain.stub_label'))->options($this->getStubOptions())->selected($stub))
+            ->add(Field::datetime('until')->label(View::t('domain.until_label'))->hint(View::t('domain.until_hint'))->value($untilStr))
 
-            ->add(Field::checkbox('lang_ru')->label('Русский (RU)')->checked(in_array('ru', $currentLangs, true)))
-            ->add(Field::checkbox('lang_en')->label('English (EN)')->checked(in_array('en', $currentLangs, true)))
-            ->add(Field::checkbox('lang_zh')->label('中文 (ZH)')->checked(in_array('zh', $currentLangs, true)))
+            // Выбор активного скина
+            ->add(Field::select('active_skin')->label('Активный скин (по умолчанию)')->options($skinOptions)->selected($currentSkin));
 
-            ->submit(View::t('domain.save'));
+        // Чекбоксы доступных скинов
+        foreach ($skinOptions as $code => $label) {
+            $form->add(Field::checkbox('skin_' . $code)->label('Разрешить скин: ' . $label)->checked(in_array($code, $currentSkinsAllowed, true)));
+        }
+
+        // Чекбоксы языков
+        $form->add(Field::checkbox('lang_ru')->label('Русский (RU)')->checked(in_array('ru', $currentLangs, true)))
+             ->add(Field::checkbox('lang_en')->label('English (EN)')->checked(in_array('en', $currentLangs, true)))
+             ->add(Field::checkbox('lang_zh')->label('中文 (ZH)')->checked(in_array('zh', $currentLangs, true)))
+             ->submit(View::t('domain.save'));
 
         $card->append($form->build());
 
+        // Зона опасности
+        $hr = Builder::el('hr');
+        $hr->attrs()->styleAdd('margin: 30px 0; border: 0; border-top: 1px solid #eee;');
+        $card->append($hr);
+
+        $dangerZone = Builder::div('danger-zone');
+        $dangerZone->append(Builder::p()->content(View::t('domain.delete_warn')));
+        $dangerZone->append(Builder::a('/admin/?p=allias:remove&domain=' . urlencode($domain) . '&name=' . urlencode($allias), 'btn btn-danger')->content(View::t('domain.delete_btn')));
+        $card->append($dangerZone);
+
         return Response::html($this->view->render($card, ['title' => View::t('allias.title') . ': ' . $allias]));
+    }
+
+    /** @return array<string, string> */
+    private function getStubOptions(): array
+    {
+        $dir = $this->paths->root() . '/stubs';
+        $files = is_dir($dir) ? glob($dir . '/*.html') : [];
+        $options = [];
+        if ($files) {
+            foreach ($files as $file) {
+                $name = basename($file, '.html');
+                $options[$name] = $name;
+            }
+        }
+        return $options ?: ['maintenance' => 'maintenance'];
     }
 }
