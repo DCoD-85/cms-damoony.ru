@@ -14,6 +14,7 @@ use Damoony\Ui\Field;
 use Damoony\Ui\Form;
 use Damoony\Ui\Message;
 use Damoony\Ui\Node;
+use Damoony\Ui\Text;
 
 final class ProfileController extends BaseController
 {
@@ -76,6 +77,12 @@ final class ProfileController extends BaseController
             ->add(Field::password('confirm_password')->label(View::t('profile.sec_confirm'))->required())
             ->submit(View::t('profile.sec_submit'));
 
+        $formNode = $form->build();
+
+        // Внедряем индикатор надежности после поля new_password
+        $indicator = Text::raw('<div class="pwd-strength-bar"><div id="pwd-strength" class="pwd-strength-fill"></div></div>');
+        $formNode->append($indicator);
+
         $content = Builder::div();
         if ($error !== '') {
             $content->append(Message::error($error)->build());
@@ -83,9 +90,43 @@ final class ProfileController extends BaseController
         if ($success !== '') {
             $content->append(Message::success($success)->build());
         }
-        $content->append($form->build());
+        $content->append($formNode);
 
         return $this->renderTab('security', $request, $content);
+    }
+
+    public function clearLogs(Request $request): Response
+    {
+        $auth = $this->requireAuth();
+        if ($auth !== null) {
+            return $auth;
+        }
+
+        $logFile = $this->root . '/var/admin_logs.json';
+        if (is_file($logFile)) {
+            unlink($logFile);
+        }
+        return $this->redirect('/admin/?p=profile:logs&saved=cleared');
+    }
+
+    public function archiveLogs(Request $request): Response
+    {
+        $auth = $this->requireAuth();
+        if ($auth !== null) {
+            return $auth;
+        }
+
+        $logFile = $this->root . '/var/admin_logs.json';
+        $archiveDir = $this->root . '/var/archive';
+
+        if (is_file($logFile)) {
+            if (!is_dir($archiveDir)) {
+                mkdir($archiveDir, 0o775, true);
+            }
+            $archiveFile = $archiveDir . '/admin_logs_' . date('Y-m-d_H-i-s') . '.json';
+            rename($logFile, $archiveFile);
+        }
+        return $this->redirect('/admin/?p=profile:logs&saved=archived');
     }
 
     private function renderTab(string $active, Request $request, ?Node $customContent = null): Response
@@ -126,6 +167,26 @@ final class ProfileController extends BaseController
                 $logs = [];
             }
 
+            // Пагинация
+            $page = (int)($request->query('page') ?? 1);
+            $perPage = 10;
+            $total = count($logs);
+            $totalPages = (int) max(1, (int) ceil($total / $perPage));
+            $page = (int) max(1, min($page, $totalPages));
+
+            $offset = (int) (($page - 1) * $perPage);
+            $logsSlice = array_slice(array_reverse($logs), $offset, $perPage);
+
+            // Кнопки управления
+            $actions = Builder::div();
+            $actions->attrs()->styleAdd('margin-bottom: 20px; display: flex; gap: 10px;');
+
+            if ($total > 0) {
+                $actions->append(Builder::a('/admin/?p=profile:archiveLogs', 'btn btn-outline')->content(View::t('profile.logs_archive')));
+                $actions->append(Builder::a('/admin/?p=profile:clearLogs', 'btn btn-danger')->content(View::t('profile.logs_clear')));
+            }
+            $contentBox->append($actions);
+
             if ($logs === []) {
                 $contentBox->append(Message::info(View::t('profile.logs_empty'))->build());
             } else {
@@ -141,7 +202,7 @@ final class ProfileController extends BaseController
                 $table->append($thead);
 
                 $tbody = Builder::el('tbody');
-                foreach (array_reverse(array_slice($logs, -50)) as $log) {
+                foreach ($logsSlice as $log) {
                     $row = Builder::el('tr');
                     $row->append(Builder::el('td')->content((string) ($log['time'] ?? '')));
                     $row->append(Builder::el('td')->content((string) ($log['ip'] ?? '')));
@@ -149,12 +210,22 @@ final class ProfileController extends BaseController
                     $class = ($log['status'] ?? '') === 'success' ? 'log-status-success' : 'log-status-fail';
                     $tdStatus = Builder::el('td')->content((string) ($log['status'] ?? ''));
                     $tdStatus->attrs()->classAdd($class);
-
                     $row->append($tdStatus);
                     $tbody->append($row);
                 }
                 $table->append($tbody);
                 $contentBox->append($table);
+
+                // Вывод пагинации
+                if ($totalPages > 1) {
+                    $pagination = Builder::div();
+                    $pagination->attrs()->styleAdd('margin-top: 20px; display: flex; gap: 5px;');
+                    for ($i = 1; $i <= $totalPages; $i++) {
+                        $btn = Builder::a('/admin/?p=profile:logs&page=' . $i, 'btn ' . ($i === $page ? 'btn-primary' : 'btn-outline'))->content((string)$i);
+                        $pagination->append($btn);
+                    }
+                    $contentBox->append($pagination);
+                }
             }
         }
 
