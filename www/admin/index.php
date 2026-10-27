@@ -91,6 +91,7 @@ if ($reqLang !== '' && in_array($reqLang, $adminLangs, true)) {
 }
 
 View::setLang(new \Damoony\I18n\Translator($currentLang, $defaultLang));
+View::setAvailableLangs($adminLangs);
 
 $paths = new Paths($root);
 

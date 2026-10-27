@@ -15,10 +15,12 @@ final class View
 {
     private static ?Translator $i18n = null;
     private static bool $isLoggedIn = false;
+    /** @var list<string> */
+    private static array $availableLangs = ['ru'];
 
     public function __construct(
         private readonly string $title = 'Damoony Admin',
-        private readonly string $lang = 'ru-ru',
+        private readonly string $lang = 'ru',
     ) {
     }
 
@@ -30,6 +32,14 @@ final class View
     public static function setLang(?Translator $lang): void
     {
         self::$i18n = $lang;
+    }
+
+    /** @param list<string> $langs */
+    public static function setAvailableLangs(array $langs): void
+    {
+        if ($langs !== []) {
+            self::$availableLangs = $langs;
+        }
     }
 
     public static function currentLang(): string
@@ -131,7 +141,6 @@ final class View
         $brand->append(Text::raw(' <span class="sub">' . self::esc(self::t('brand.sub')) . '</span>'));
         $header->append($brand);
 
-        // Если пользователь НЕ залогинен, показываем только логотип и переключатель языка
         if (self::$isLoggedIn) {
             $p = $_GET['p'] ?? 'dashboard';
 
@@ -152,10 +161,9 @@ final class View
             $header->append($nav);
         }
 
-        // Правая панель (Языки + Профиль)
         $rightPanel = Builder::div('user-panel');
 
-        // Переключатель языка
+        // Динамический переключатель языков
         $lang = self::currentLang();
         $uri = (string) ($_SERVER['REQUEST_URI'] ?? '/admin/');
         $query = [];
@@ -165,17 +173,26 @@ final class View
         }
         unset($query['lang']);
 
-        foreach (['ru' => 'RU', 'en' => 'EN'] as $code => $label) {
-            if ($lang !== $code) {
-                $query['lang'] = $code;
-                $langLink = Builder::a('/admin/?' . http_build_query($query), 'nav-link')->content($label);
-                $langLink->attrs()->styleAdd('margin-right:10px; font-size:12px;');
-                $rightPanel->append($langLink);
-                break;
+        $langContainer = Builder::div();
+        $langContainer->attrs()->styleAdd('display:flex; gap:12px; align-items:center; margin-right:16px;');
+
+        foreach (self::$availableLangs as $code) {
+            $label = strtoupper($code);
+            $query['lang'] = $code;
+            $href = '/admin/?' . http_build_query($query);
+
+            if ($lang === $code) {
+                $activeLang = Builder::span()->content($label);
+                $activeLang->attrs()->styleAdd('color:#fff; font-weight:bold; font-size:12px;');
+                $langContainer->append($activeLang);
+            } else {
+                $langLink = Builder::a($href)->content($label);
+                $langLink->attrs()->styleAdd('color:#8a93a8; text-decoration:none; font-size:12px;');
+                $langContainer->append($langLink);
             }
         }
+        $rightPanel->append($langContainer);
 
-        // Меню профиля (только если залогинен)
         if (self::$isLoggedIn) {
             $dropdown = Builder::div('user-dropdown');
             $trigger = Builder::div('user-trigger');
@@ -184,7 +201,7 @@ final class View
             $dropdown->append($trigger);
 
             $menu = Builder::div('dropdown-menu');
-            $menu->append(Builder::a('/admin/?p=profile', '')->content('Мой профиль'));
+            $menu->append(Builder::a('/admin/?p=profile', '')->content(self::t('profile.my_profile')));
             $menu->append(Builder::a('/admin/?p=logout', '')->content(self::t('nav.logout')));
             $dropdown->append($menu);
 
