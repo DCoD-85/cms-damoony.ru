@@ -82,7 +82,9 @@ final class PageController extends BaseController
 
         // Текущий путь
         if ($path !== '') {
-            $card->append(Builder::p('text-muted')->content('Текущий путь: /' . View::esc($path))->attrs()->styleAdd('margin-bottom: 16px;'));
+            $pathInfo = Builder::p('text-muted')->content('Текущий путь: /' . View::esc($path));
+			$pathInfo->attrs()->styleAdd('margin-bottom: 16px;');
+			$card->append($pathInfo);
         }
 
         // Таблица
