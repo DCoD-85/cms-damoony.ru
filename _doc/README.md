@@ -57,7 +57,7 @@ php bin/cli.php user:new --login=admin --email=admin@example.com --password=secr
 Открой `http://damoony3.ru/` (сайт) и `http://damoony3.ru/admin/` (админка).
 Страницы с `"auth": true` в `.rules.json` будут требовать входа через форму `/login`.
 
-Подробнее: `INSTALL.md`, `CLI.md`, `ARCHITECTURE.md`, `GUIDE.md`, `ADMIN.md`.
+Подробнее: `install.md`, `cli.md`, `architecture.md`, `guide.md`, `admin.md`.
 
 ## Статус
 

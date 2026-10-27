@@ -1,20 +1,24 @@
---- НАЧАЛО ФАЙЛА: _doc/AI_LOGIC.md ---
+--- НАЧАЛО ФАЙЛА ---
 
-# Инструкция для AI-Разработчика (Logic)
-
+Инструкция для AI-Разработчика (Logic)
 Ты — AI-агент, пишущий PHP-код для страниц и регионов в Damoony Engine.
-Твоя задача: создавать контроллеры (в папках `algoritm/`) и блоки (в скрытой папке `.alliasglobal/`). Ты не трогаешь конфиги и базу данных.
+Твоя задача: создавать контроллеры (в папках algoritm/) и блоки (в скрытой папке .alliasglobal/). Ты не трогаешь конфиги и базу данных.
 
-## 1. Главные правила
-- **Никаких `echo`, `print`, `var_dump`.** Вывод только через возврат объекта `Node` (или `Response`).
-- **Никакого HTML в строках.** Используй статические методы `Builder::` (например, `Builder::div()`, `Builder::a()`).
-- **Используй UI-компоненты для сложных элементов.** Вместо ручной сборки форм и таблиц, используй готовые классы из `Damoony\Ui\` (`Form`, `Field`, `Table`, `Button`, `Message`).
-- **Только строгая типизация.** В каждом файле `declare(strict_types=1);` и namespace.
-- **Контекст.** Всегда используй `$this->context` для доступа к `meta`, `auth`, `request`.
-- **Пути:** Страницы лежат в `app/<domain>/<allias>/algoritm/`. Блоки — в `app/<domain>/.alliasglobal/`.
+1. Главные правила
+Никаких echo, print, var_dump. Вывод только через возврат объекта Node (или Response).
 
-## 2. Шаблон контроллера страницы (Algoritm)
-```php
+Никакого HTML в строках. Используй статические методы Builder:: (например, Builder::div(), Builder::a()).
+
+Используй UI-компоненты для сложных элементов. Вместо ручной сборки форм и таблиц, используй готовые классы из Damoony\Ui\ (Form, Field, Table, Button, Message).
+
+Только строгая типизация. В каждом файле declare(strict_types=1); и namespace.
+
+Контекст. Всегда используй $this->context для доступа к meta, auth, request.
+
+Пути: Страницы лежат в app/<domain>/<allias>/algoritm/. Блоки — в app/<domain>/.alliasglobal/.
+
+2. Шаблон контроллера страницы (Algoritm)
+php
 <?php
 declare(strict_types=1);
 
@@ -41,16 +45,17 @@ final class algoritm_index extends Algoritm
         return $div; // Отдаем в слот center
     }
 }
-```
+3. Управление регионами (слотами)
+Внутри default() ты можешь управлять блоками:
 
-## 3. Управление регионами (слотами)
-Внутри `default()` ты можешь управлять блоками:
-- `$this->regions()->disable('top');` — скрыть шапку на этой странице.
-- `$this->regions()->useGlobal('top');` — показать базовую шапку (игнорируя филлер алиаса).
-- `$this->setContent('center', $myNode);` — подменить центр своим контентом.
+$this->regions()->disable('top'); — скрыть шапку на этой странице.
 
-## 4. Шаблон региона (.alliasglobal)
-```php
+$this->regions()->useGlobal('top'); — показать базовую шапку (игнорируя филлер алиаса).
+
+$this->setContent('center', $myNode); — подменить центр своим контентом.
+
+4. Шаблон региона (.alliasglobal)
+php
 <?php
 declare(strict_types=1);
 
@@ -73,11 +78,10 @@ final class alliasglobal_top implements RegionInterface
         return $wrap;
     }
 }
-```
+5. Работа с формами (POST) и CSRF
+Для форм используй компонент Form. Он автоматически вставляет CSRF-токен и защищает от подделки запросов.
 
-## 5. Работа с формами (POST) и CSRF
-Для форм используй компонент `Form`. Он автоматически вставляет CSRF-токен и защищает от подделки запросов.
-```php
+php
 use Damoony\Ui\Form;
 use Damoony\Ui\Field;
 
@@ -90,29 +94,27 @@ $form = Form::create('/login', 'POST')
 
 // Добавляем на страницу
 $div->append($form->build());
-```
 Если форма обрабатывается вручную, проверяй токен:
-```php
+
+php
 if ($this->isPost()) {
     $csrf = $this->context->service('csrf');
     if (!$csrf->check($this->context->request->post)) {
         return Response::text('CSRF Error', 403);
     }
 }
-```
-
-## 6. Авторизация
+6. Авторизация
 Узнать, вошел ли пользователь:
-```php
+
+php
 $auth = $this->context->service('auth');
 if ($auth->isAuthenticated()) {
     $user = $auth->user();
 }
-```
+7. Использование AJAX
+Если запрос пришел с заголовком X-Requested-With: XMLHttpRequest, можно вернуть JSON-структуру (MinStruct или AjaxStruct):
 
-## 7. Использование AJAX
-Если запрос пришел с заголовком `X-Requested-With: XMLHttpRequest`, можно вернуть JSON-структуру (`MinStruct` или `AjaxStruct`):
-```php
+php
 use Damoony\Response\MinStruct;
 
 if ($this->isAjax()) {
@@ -120,6 +122,4 @@ if ($this->isAjax()) {
     $struct->messages('<div class="ok">Успешно</div>');
     return $struct->toResponse();
 }
-```
-
---- КОНЕЦ ФАЙЛА: _doc/AI_LOGIC.md ---
+--- КОНЕЦ ФАЙЛА ---

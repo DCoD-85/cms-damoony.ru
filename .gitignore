@@ -43,4 +43,4 @@ env.php
 
 # временное
 /tmp/
-*.tmp
+*.tmp/_doc/_audit-snapshot.txt

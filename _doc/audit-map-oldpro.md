@@ -102,7 +102,7 @@
 ## Гейт Этапа 0
 
 Этап 0 считается закрытым, когда:
-- philosophy.md, contracts.md, scenarios.md, audit-map.md существуют
+- philosophy.md, contracts.md, scenarios.md, audit-map-oldpro.md существуют
 - все 36 файлов _auditfinal имеют статус и привязку
 - все 5 контрактов покрывают все сценарии
 - все 10 принципов подтверждены источниками
