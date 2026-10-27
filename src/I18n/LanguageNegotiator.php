@@ -9,7 +9,7 @@ use Damoony\Http\Request;
 
 final class LanguageNegotiator
 {
-    public const SUPPORTED = ['ru-ru', 'en-en', 'ch-ch'];
+    public const SUPPORTED = ['ru', 'en', 'ch'];
 
     public function __construct(
         private readonly string $default = 'ru-ru',

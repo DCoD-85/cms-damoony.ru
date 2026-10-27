@@ -13,6 +13,8 @@ use Damoony\Http\MiddlewareStack;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
 use Damoony\Http\Middleware\SkinCookieMiddleware;
+use Damoony\Http\Middleware\LanguageCookieMiddleware;
+use Damoony\Session\SessionInterface;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -61,6 +63,11 @@ if (is_array($skinsAllowedMap)) {
     }
 }
 $skinsFlat = array_keys($skinsFlat) ?: ['default'];
+
+$session = $container->get(SessionInterface::class);
+if ($session instanceof SessionInterface) {
+    $stack->add(new LanguageCookieMiddleware($session));
+}
 
 $stack->add(new SkinCookieMiddleware(
     cookieName: 'skin',
