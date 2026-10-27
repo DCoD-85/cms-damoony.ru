@@ -53,6 +53,7 @@ final class RateLimitMiddleware implements MiddlewareInterface
             $data['count'] = 0;
         }
 
+        $data['ip'] = $ip;
         $data['count']++;
 
         if ($data['count'] > $this->max) {

@@ -116,4 +116,18 @@ return [
     'admin.stub.err_exists' => '已存在',
     'admin.stub.edit_title' => '编辑',
     'admin.stub.save' => '保存 HTML',
+
+    'admin.security.title' => '安全',
+    'admin.security.summary' => '摘要',
+    'admin.security.fails_24h' => '24小时内登录失败次数：{count}',
+    'admin.security.bans' => '活动封禁 (Rate Limit)',
+    'admin.security.no_bans' => '无活动封禁。',
+    'admin.security.until' => '封禁至',
+    'admin.security.actions' => '操作',
+    'admin.security.unban' => '解封',
+    'admin.security.settings' => '限制设置',
+    'admin.security.max' => '最大请求数',
+    'admin.security.window' => '时间窗口 (秒)',
+    'admin.security.ban_time' => '封禁时间 (秒)',
+    'admin.security.save' => '保存设置',
 ];

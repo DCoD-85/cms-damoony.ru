@@ -143,4 +143,18 @@ return [
     'admin.stub.err_exists' => 'Уже существует',
     'admin.stub.edit_title' => 'Редактирование',
     'admin.stub.save' => 'Сохранить HTML',
+
+    'admin.security.title' => 'Безопасность',
+    'admin.security.summary' => 'Сводка',
+    'admin.security.fails_24h' => 'Неудачных попыток входа за 24 часа: {count}',
+    'admin.security.bans' => 'Активные блокировки (Rate Limit)',
+    'admin.security.no_bans' => 'Активных блокировок нет.',
+    'admin.security.until' => 'Заблокирован до',
+    'admin.security.actions' => 'Действия',
+    'admin.security.unban' => 'Разблокировать',
+    'admin.security.settings' => 'Настройки лимитов',
+    'admin.security.max' => 'Максимум запросов',
+    'admin.security.window' => 'Окно (сек)',
+    'admin.security.ban_time' => 'Время бана (сек)',
+    'admin.security.save' => 'Сохранить настройки',
 ];

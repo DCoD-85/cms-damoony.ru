@@ -143,4 +143,18 @@ return [
     'admin.stub.err_exists' => 'Already exists',
     'admin.stub.edit_title' => 'Edit',
     'admin.stub.save' => 'Save HTML',
+
+    'admin.security.title' => 'Security',
+    'admin.security.summary' => 'Summary',
+    'admin.security.fails_24h' => 'Failed login attempts in 24h: {count}',
+    'admin.security.bans' => 'Active bans (Rate Limit)',
+    'admin.security.no_bans' => 'No active bans.',
+    'admin.security.until' => 'Banned until',
+    'admin.security.actions' => 'Actions',
+    'admin.security.unban' => 'Unban',
+    'admin.security.settings' => 'Rate Limit Settings',
+    'admin.security.max' => 'Max requests',
+    'admin.security.window' => 'Window (sec)',
+    'admin.security.ban_time' => 'Ban time (sec)',
+    'admin.security.save' => 'Save settings',
 ];
