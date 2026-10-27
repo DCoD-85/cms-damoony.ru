@@ -74,7 +74,9 @@ final class SettingsController extends BaseController
         if ($error !== '') $card->append(Message::error($error)->build());
 
         $card->append($form->build());
-        $card->append(Builder::a('/admin/?p=domain', 'btn btn-outline')->content('← Назад к доменам')->attrs()->styleAdd('margin-top: 20px;'));
+        $backBtn = Builder::a('/admin/?p=domain', 'btn btn-outline')->content('← Назад к доменам');
+		$backBtn->attrs()->styleAdd('margin-top: 20px;');
+		$card->append($backBtn);
 
         return Response::html($this->view->render($card, ['title' => 'Настройки']));
     }
