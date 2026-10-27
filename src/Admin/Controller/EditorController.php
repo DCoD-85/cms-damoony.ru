@@ -8,6 +8,8 @@ use Damoony\Admin\View;
 use Damoony\Files\Fs;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
+use Damoony\Ui\Builder;
+use Damoony\Ui\Message;
 
 final class EditorController extends BaseController
 {
@@ -28,44 +30,63 @@ final class EditorController extends BaseController
         $domain = (string) $request->query('domain', '');
         $file = (string) $request->query('file', '');
 
-        if ($domain === '' || $file === '') {
+        if ($domain === '' || $file === '' || str_contains($file, '..') || str_contains($domain, '..')) {
             return $this->redirect('/admin/?p=domain');
         }
 
-        // Защита от Path Traversal
-        if (str_contains($file, '..') || str_contains($domain, '..')) {
-            return $this->redirect('/admin/?p=domain');
-        }
-
-        $path = $this->root . '/app/alpha.0.0/domain/' . $domain . '/' . ltrim($file, '/');
+        $path = $this->root . '/app/' . $domain . '/' . ltrim($file, '/');
         
         if (!is_file($path)) {
-            return Response::notFound('File not found');
+            return Response::notFound('Файл не найден: ' . $file);
         }
 
         $error = '';
+        $success = $request->query('saved') ? 'Файл сохранён' : '';
 
         if ($request->isPost()) {
             $csrfErr = $this->requireCsrf($request);
             if ($csrfErr !== null) return $csrfErr;
 
-            $content = (string) $request->post['content'];
-            Fs::writeAtomic($path, $content);
-            
-            return $this->redirect('/admin/?p=editor&domain=' . urlencode($domain) . '&file=' . urlencode($file) . '&saved=1');
+            $content = (string) ($request->post['content'] ?? '');
+            try {
+                Fs::writeAtomic($path, $content);
+                return $this->redirect('/admin/?p=editor&domain=' . urlencode($domain) . '&file=' . urlencode($file) . '&saved=1');
+            } catch (\Throwable $e) {
+                $error = 'Ошибка сохранения: ' . $e->getMessage();
+            }
         }
 
         $content = (string) file_get_contents($path);
-        $saved = $request->query('saved') ? '<div class="success">Файл сохранен</div>' : '';
+        $backUrl = '/admin/?p=domain';
 
-        $html = '<div class="admin-card"><h1>Редактор: ' . View::esc($file) . '</h1>' . $saved;
-        $html .= '<p><a href="/admin/?p=domain">&larr; Назад к доменам</a></p>';
-        $html .= '<form method="post" class="admin-form" style="max-width:100%;">';
-        $html .= $this->csrf->field();
-        $html .= '<textarea name="content" style="width:100%; height:500px; font-family:monospace; font-size:14px; padding:12px; border:1px solid #ccc; border-radius:6px; background:#1e1e1e; color:#d4d4d4; white-space:pre;">' . View::esc($content) . '</textarea>';
-        $html .= '<button type="submit" style="margin-top:12px;">Сохранить</button>';
-        $html .= '</form></div>';
+        // Определяем, куда вернуться
+        if (str_starts_with($file, '.alliasglobal/')) {
+            $backUrl = '/admin/?p=block&domain=' . urlencode($domain);
+        } elseif (str_starts_with($file, '.alliasscheme/')) {
+            $backUrl = '/admin/?p=scheme&domain=' . urlencode($domain);
+        } elseif (str_contains($file, '/algoritm/')) {
+            $backUrl = '/admin/?p=page&domain=' . urlencode($domain) . '&allias=www';
+        }
 
-        return Response::html($this->view->render($html, ['title' => 'Редактор']));
+        $card = Builder::div('admin-card');
+        $card->append(Builder::a($backUrl)->content('← Назад'));
+        $card->append(Builder::h(1)->content('Редактор: ' . View::esc($file)));
+        
+        if ($success !== '') {
+            $card->append(Message::success($success)->build());
+        }
+        if ($error !== '') {
+            $card->append(Message::error($error)->build());
+        }
+
+        $form = '<form method="post" class="editor-form">';
+        $form .= $this->csrf->field();
+        $form .= '<textarea name="content" class="code-editor" spellcheck="false">' . htmlspecialchars($content, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</textarea>';
+        $form .= '<div class="editor-actions"><button type="submit" class="btn btn-primary">Сохранить</button></div>';
+        $form .= '</form>';
+
+        $card->append(\Damoony\Ui\Text::raw($form));
+
+        return Response::html($this->view->render($card, ['title' => 'Редактор']));
     }
 }

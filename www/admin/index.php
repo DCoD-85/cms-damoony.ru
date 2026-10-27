@@ -23,6 +23,8 @@ use Damoony\Security\Csrf;
 use Damoony\Session\NativeSession;
 use Damoony\Admin\Controller\EditorController;
 use Damoony\Admin\Controller\BaseController;
+use Damoony\Admin\Controller\AliasSchemeController;
+use Damoony\Admin\Controller\AliasDbController;
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
@@ -78,6 +80,9 @@ $router->register('domain_db', new class($auth, $csrf, $view) extends BaseContro
         return \Damoony\Http\Response::html($this->view->render($card, ['title' => 'БД домена']));
     }
 });
+
+$router->register('allias_scheme', new AliasSchemeController($auth, $csrf, $view));
+$router->register('allias_db', new AliasDbController($auth, $csrf, $view));
 
 $security = new SecurityHeadersMiddleware(isHttps: ($_SERVER['HTTPS'] ?? '') === 'on');
 $handler = static fn (Request $r) => $security->process($r, static fn (Request $r2) => $router->dispatch($r2));

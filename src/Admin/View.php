@@ -47,20 +47,41 @@ final class View
         
         $items = [
             'settings' => ['Настройки', '/admin/?p=domain:edit&domain=' . urlencode($domain)],
-            'bindings' => ['Привязанные', '/admin/?p=domain:bindings&domain=' . urlencode($domain)], // <-- НОВОЕ
-            'pages' => ['Страницы', '/admin/?p=page&domain=' . urlencode($domain) . '&allias=www'],
+            'bindings' => ['Привязанные', '/admin/?p=domain:bindings&domain=' . urlencode($domain)],
+            'allias' => ['Алиасы', '/admin/?p=allias&domain=' . urlencode($domain)],
             'blocks' => ['Блоки', '/admin/?p=block&domain=' . urlencode($domain)],
             'schemes' => ['Схемы', '/admin/?p=scheme&domain=' . urlencode($domain)],
-            'allias' => ['Алиасы', '/admin/?p=allias&domain=' . urlencode($domain)],
-            'media' => ['Медиа', '/admin/?p=media&domain=' . urlencode($domain)],
+            'db' => ['БД домена', '/admin/?p=domain:db&domain=' . urlencode($domain)],
         ];
 
         foreach ($items as $key => $item) {
             [$label, $url] = $item;
             $a = Builder::a($url, 'nav-tab');
-            if ($key === $active) {
-                $a->attrs()->classAdd('active');
-            }
+            if ($key === $active) $a->attrs()->classAdd('active');
+            $a->content($label);
+            $tabs->append($a);
+        }
+
+        return $tabs;
+    }
+
+    public static function alliasTabs(string $domain, string $allias, string $active): Element
+    {
+        $tabs = Builder::div('nav-tabs');
+        $baseUrl = '/admin/?domain=' . urlencode($domain) . '&allias=' . urlencode($allias);
+        
+        $items = [
+            'settings' => ['Настройки алиаса', '/admin/?p=allias:edit' . $baseUrl],
+            'blocks' => ['Блоки (Fillers)', '/admin/?p=filler' . $baseUrl],
+            'pages' => ['Страницы', '/admin/?p=page' . $baseUrl],
+            'schemes' => ['Схемы алиаса', '/admin/?p=allias_scheme' . $baseUrl],
+            'db' => ['БД алиаса', '/admin/?p=allias:db' . $baseUrl],
+        ];
+
+        foreach ($items as $key => $item) {
+            [$label, $url] = $item;
+            $a = Builder::a($url, 'nav-tab');
+            if ($key === $active) $a->attrs()->classAdd('active');
             $a->content($label);
             $tabs->append($a);
         }

@@ -78,7 +78,7 @@ final class PageController extends BaseController
         $card->append($header);
 
         // Табы
-        $card->append(View::domainTabs($domain, 'pages'));
+		$card->append(View::alliasTabs($domain, $allias, 'pages'));
 
         // Текущий путь
         if ($path !== '') {
