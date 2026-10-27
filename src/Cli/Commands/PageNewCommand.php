@@ -60,7 +60,10 @@ final class PageNewCommand implements CommandInterface
             return $r;
         }
 
-        $logic = (string) ($args['logic'] ?? 'alpha.0.0');
+        $realDomain = (string) $site['domains_real'][$domain];
+        $namespace = (string) ($site['domains_namespace'][$realDomain]
+            ?? str_replace(['.', '-'], '_', $realDomain));
+
         $algoritmDir = $this->paths->algoritm($domain, $allias);
         if (!Fs::isDir($algoritmDir)) {
             $r->error('Алиас не найден');
@@ -84,7 +87,20 @@ final class PageNewCommand implements CommandInterface
         Fs::mkdir($pageDir);
         $r->file(Fs::rel($pageDir, $this->paths->root()));
 
-        $php = "<?php\n\ndeclare(strict_types=1);\n\nuse Damoony\\Algoritm\\Algoritm;\nuse Damoony\\Http\\Response;\nuse Damoony\\Ui\\Builder;\nuse Damoony\\Ui\\Node;\n\nfinal class {$classChain} extends Algoritm\n{\n    public function default(): Node|Response|null\n    {\n        return Builder::div('page {$name}')->content('{$name}');\n    }\n}\n";
+        $php = "<?php\n\n"
+            . "declare(strict_types=1);\n\n"
+            . "namespace {$namespace}\\{$allias};\n\n"
+            . "use Damoony\\Algoritm\\Algoritm;\n"
+            . "use Damoony\\Http\\Response;\n"
+            . "use Damoony\\Ui\\Builder;\n"
+            . "use Damoony\\Ui\\Node;\n\n"
+            . "final class {$classChain} extends Algoritm\n"
+            . "{\n"
+            . "    public function default(): Node|Response|null\n"
+            . "    {\n"
+            . "        return Builder::div('page {$name}')->content('{$name}');\n"
+            . "    }\n"
+            . "}\n";
         Fs::writeAtomic($pageDir . '/' . $classChain . '.php', $php);
         $r->file(Fs::rel($pageDir . '/' . $classChain . '.php', $this->paths->root()));
 

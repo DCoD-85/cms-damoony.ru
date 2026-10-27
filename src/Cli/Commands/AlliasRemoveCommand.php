@@ -53,8 +53,6 @@ final class AlliasRemoveCommand implements CommandInterface
         }
 
         $alliasDir = $this->paths->allias($domain, $name);
-        $inTrash = false;
-        $trash = '';
 
         if (Fs::isDir($alliasDir)) {
             if (!$force) {
@@ -66,7 +64,6 @@ final class AlliasRemoveCommand implements CommandInterface
                 $r->error('Не удалось переместить в карантин');
                 return $r;
             }
-            $inTrash = true;
             $context->step('Перемещено в карантин', true, Fs::rel($trash, $this->paths->root()));
         } else {
             $r->warn('Папка алиаса не найдена — чистим только конфиг');
@@ -82,26 +79,6 @@ final class AlliasRemoveCommand implements CommandInterface
             $context->step('Конфиг обновлён');
         }
 
-        if ($inTrash && Fs::isDir($trash)) {
-            $this->rmrf($trash);
-            $context->step('Карантин удалён');
-        }
-
         return $r;
-    }
-
-    private function rmrf(string $dir): void
-    {
-        if (!is_dir($dir)) {
-            return;
-        }
-        foreach (scandir($dir) ?: [] as $i) {
-            if ($i === '.' || $i === '..') {
-                continue;
-            }
-            $p = $dir . '/' . $i;
-            is_dir($p) ? $this->rmrf($p) : @unlink($p);
-        }
-        @rmdir($dir);
     }
 }

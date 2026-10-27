@@ -59,6 +59,10 @@ final class FillerNewCommand implements CommandInterface
             return $r;
         }
 
+        $realDomain = (string) $site['domains_real'][$domain];
+        $namespace = (string) ($site['domains_namespace'][$realDomain]
+            ?? str_replace(['.', '-'], '_', $realDomain));
+
         $alliasDir = $this->paths->allias($domain, $allias);
         if (!Fs::isDir($alliasDir)) {
             $r->error('Алиас не найден');
@@ -71,13 +75,37 @@ final class FillerNewCommand implements CommandInterface
             return $r;
         }
 
+        $className = 'alliasglobal_' . $block . '_' . $allias;
         $fillerPhp = $blockDir . '/' . $block . '_' . $allias . '.php';
         if (Fs::isFile($fillerPhp)) {
             $r->error('Filler уже существует');
             return $r;
         }
 
-        $php = "<?php\n\ndeclare(strict_types=1);\n\nuse alliasglobal_filler_trait;\n\nclass {$block}_{$allias}\n{\n    use alliasglobal_filler_trait;\n}\n";
+        $php = "<?php\n\n"
+            . "declare(strict_types=1);\n\n"
+            . "namespace {$namespace};\n\n"
+            . "use Damoony\\Region\\RegionContext;\n"
+            . "use Damoony\\Region\\RegionInterface;\n"
+            . "use Damoony\\Ui\\Builder;\n"
+            . "use Damoony\\Ui\\Node;\n\n"
+            . "final class {$className} implements RegionInterface\n"
+            . "{\n"
+            . "    public function name(): string\n"
+            . "    {\n"
+            . "        return '{$block}';\n"
+            . "    }\n\n"
+            . "    public function enabled(): bool\n"
+            . "    {\n"
+            . "        return true;\n"
+            . "    }\n\n"
+            . "    public function render(RegionContext \$context): Node\n"
+            . "    {\n"
+            . "        \$wrap = Builder::div('{$block}-{$allias}');\n"
+            . "        \$wrap->append(Builder::p()->content('Filler {$block} для алиаса {$allias}'));\n"
+            . "        return \$wrap;\n"
+            . "    }\n"
+            . "}\n";
         Fs::writeAtomic($fillerPhp, $php);
         $r->file(Fs::rel($fillerPhp, $this->paths->root()));
 
@@ -90,7 +118,7 @@ final class FillerNewCommand implements CommandInterface
         Fs::writeAtomic($siteFile, json_encode($site, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
         $r->file(Fs::rel($siteFile, $this->paths->root()));
 
-        $context->step('Filler создан', true, $block . '_' . $allias);
+        $context->step('Filler создан', true, $className);
 
         return $r;
     }

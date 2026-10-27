@@ -54,6 +54,10 @@ final class BlockNewCommand implements CommandInterface
             return $r;
         }
 
+        $realDomain = (string) $site['domains_real'][$domain];
+        $namespace = (string) ($site['domains_namespace'][$realDomain]
+            ?? str_replace(['.', '-'], '_', $realDomain));
+
         $blocksDir = $this->paths->domain($domain) . '/.alliasglobal';
         $blockDir = $blocksDir . '/' . $name;
 
@@ -65,7 +69,30 @@ final class BlockNewCommand implements CommandInterface
         Fs::mkdir($blockDir);
         $r->file(Fs::rel($blockDir, $this->paths->root()));
 
-        $php = "<?php\n\ndeclare(strict_types=1);\n\nclass alliasglobal_{$name}\n{\n}\n";
+        $php = "<?php\n\n"
+            . "declare(strict_types=1);\n\n"
+            . "namespace {$namespace};\n\n"
+            . "use Damoony\\Region\\RegionContext;\n"
+            . "use Damoony\\Region\\RegionInterface;\n"
+            . "use Damoony\\Ui\\Builder;\n"
+            . "use Damoony\\Ui\\Node;\n\n"
+            . "final class alliasglobal_{$name} implements RegionInterface\n"
+            . "{\n"
+            . "    public function name(): string\n"
+            . "    {\n"
+            . "        return '{$name}';\n"
+            . "    }\n\n"
+            . "    public function enabled(): bool\n"
+            . "    {\n"
+            . "        return true;\n"
+            . "    }\n\n"
+            . "    public function render(RegionContext \$context): Node\n"
+            . "    {\n"
+            . "        \$wrap = Builder::div('{$name}');\n"
+            . "        \$wrap->append(Builder::p()->content('Блок {$name}'));\n"
+            . "        return \$wrap;\n"
+            . "    }\n"
+            . "}\n";
         Fs::writeAtomic($blockDir . '/' . $name . '.php', $php);
         $r->file(Fs::rel($blockDir . '/' . $name . '.php', $this->paths->root()));
 
