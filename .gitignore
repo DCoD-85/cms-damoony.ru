@@ -57,4 +57,4 @@ env.php
 # /www/media/damoony.ru/skin/
 
 # личный briefing (пути, IP, git-workflow)
-/_doc/start_new_agent.md
+/_doc/start_new_agent.md/config/engine.config
