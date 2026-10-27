@@ -47,4 +47,6 @@ env.php
 /tmp/
 *.tmp/_doc/_audit-snapshot.txt
 # dev-маркер (локально)
-/.dev
+/.dev/config/admin.config
+/config/site.config
+/www/media/damoony.ru/skin/
