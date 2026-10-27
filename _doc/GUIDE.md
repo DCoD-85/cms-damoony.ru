@@ -1,50 +1,42 @@
---- НАЧАЛО ФАЙЛА---
+--- НАЧАЛО ФАЙЛА ---
 
 # Руководство разработчика
 
-В этом руководстве описано, как с нуля создать сайт, добавить страницы, блоки, схемы и написать логику для них.
+В этом руководстве описано, как с нуля создать сайт, добавить страницы, блоки, схемы и написать логику для них. Разработку можно вести как через командную строку (CLI), так и через веб-интерфейс (Админку).
 
-## 1. Создание нового сайта (домена)
+## 1. Концепция и структура
+Архитектура разделена на два уровня:
+- **Домен (Инфраструктура):** Папка `app/<domain>/`. Здесь хранятся настройки, привязки хостов и глобальные ресурсы.
+- **Алиас (Контент):** Папки `app/<domain>/<allias>/` (например, `www`, `doc`). Здесь живут конкретные страницы.
 
-Для начала нужно создать домен. Предположим, мы делаем сайт `example.ru`.
+Инфраструктурные папки домена скрыты точкой:
+- `.alliasglobal/` — глобальные блоки (регионы).
+- `.alliasscheme/` — глобальные схемы (каркасы).
 
+## 2. Создание сайта (Домена)
+**Через CLI:**
 ```bash
 php bin/cli.php domain:new --domain=example.ru --namespace=example
 ```
+**Через Админку:** Раздел «Домены» -> «+ Добавить домен».
 
-Это создаст структуру `app/example.ru/` с базовым алиасом `www`.
-Не забудьте добавить домен в ваш веб-сервер (Nginx/Apache) и направить его на папку `www/`.
-
-## 2. Создание дополнительных алиасов
-
-Алиасы нужны для разделения частей сайта (например, основной сайт и админка).
-
+## 3. Создание дополнительных алиасов
+**Через CLI:**
 ```bash
 php bin/cli.php allias:new --domain=example.ru --name=admin
 ```
+**Через Админку:** Настройки домена -> вкладка «Алиасы» -> «+ Создать алиас».
 
-Теперь у нас есть папки `app/example.ru/www/` (основной сайт) и `app/example.ru/admin/` (админка).
-
-## 3. Создание страниц
-
-Страницы создаются в дереве `algoritm/` конкретного алиаса.
-
-Создадим главную страницу:
-```bash
-php bin/cli.php page:new --domain=example.ru --allias=www --name=index
-```
-
-Создадим страницу "О нас" внутри главной:
+## 4. Создание страниц
+**Через CLI:**
 ```bash
 php bin/cli.php page:new --domain=example.ru --allias=www --parent=index --name=about
 ```
-
+**Через Админку:** Дашборд алиаса (`www`) -> вкладка «Страницы» -> «+ Создать страницу».
 Это создаст файлы `algoritm_index.php` и `algoritm_index_about.php` в папке `app/example.ru/www/algoritm/`.
 
-## 4. Написание логики страницы
-
-Откройте созданный файл, например `app/example.ru/www/algoritm/index/algoritm_index.php`.
-Страница наследуется от `Algoritm` и должна реализовать метод `default()`.
+## 5. Написание логики страницы
+Страница наследуется от `Algoritm` и должна реализовать метод `default()`. Вывод — только через возврат объекта `Node` (без `echo` и `print`).
 
 ```php
 <?php
@@ -62,7 +54,10 @@ final class algoritm_index extends Algoritm
 {
     public function default(): Node|Response|null
     {
-        // Создаем div с классом container и текстом
+        // Мета-информация
+        $this->context->meta->setTitle('Главная');
+        
+        // Построение дерева
         $div = Builder::div('container');
         $div->append(Builder::h(1)->content('Добро пожаловать на Example.ru'));
         $div->append(Builder::p()->content('Это главная страница.'));
@@ -71,48 +66,59 @@ final class algoritm_index extends Algoritm
     }
 }
 ```
+*Совет:* Вы можете редактировать PHP-код прямо из браузера, нажав «Редактировать» в списке страниц админки.
 
-## 5. Создание блоков (Регионов) и Схем
-
-Если вы хотите вынести шапку и подвал в отдельные блоки, используйте `alliasglobal`.
-
+## 6. Создание блоков (Регионов) и Схем
+Блоки выносятся в `.alliasglobal`.
 ```bash
 php bin/cli.php block:new --domain=example.ru --name=header
-php bin/cli.php block:new --domain=example.ru --name=footer
 ```
-
-В скрытой папке `app/example.ru/.alliasglobal/` появятся классы блоков. Реализуйте их в файлах `.php` (интерфейс `RegionInterface`).
-Затем создайте схему, которая соберет эти блоки вместе:
-
+В файле блока (интерфейс `RegionInterface`) описывается логика рендеринга шапки.
+Затем создается глобальная схема, которая собирает блоки:
 ```bash
 php bin/cli.php scheme:new --domain=example.ru --name=default
 ```
-
-В файле схемы `app/example.ru/.alliasscheme/default.data.php` укажите, в какие слоты (`slot`) вставлять регионы:
-
+В файле `app/example.ru/.alliasscheme/default.data.php` указываются слоты:
 ```php
 <?php
-
 return [
     'tag' => 'div',
     'class' => 'layout-default',
     'children' => [
         ['tag' => 'header', 'slot' => 'header'], // вызовет регион header
-        ['tag' => 'main', 'slot' => 'content'],  // сюда попадет вывод страницы (если подмените через setContent)
+        ['tag' => 'main', 'slot' => 'content'],  // сюда попадет вывод страницы
         ['tag' => 'footer', 'slot' => 'footer'], // вызовет регион footer
     ],
 ];
 ```
 
-## 6. Работа с базой данных
-
-Если вашей странице нужны данные из БД, используйте PDO-соединение через контекст.
-
+## 7. Управление регионами из кода (Runtime API)
+Внутри `default()` вы можете управлять регионами на лету:
 ```php
-use Damoony\Db\Connection;
+// Отключить шапку на этой конкретной странице
+$this->regions()->disable('header');
 
-// Внутри метода default()
-$db = $this->context->service('db'); // (или получите из DI контейнера)
+// Принудительно использовать глобальный блок (игнорируя филлер алиаса)
+$this->regions()->useGlobal('header');
+
+// Подменить целый регион своим деревом
+$myContent = Builder::div('custom')->content('Привет');
+$this->setContent('content', $myContent);
+```
+
+## 8. Мета-информация (CSS, JS, Title)
+Управление `<head>` через объект `Meta` из контекста:
+```php
+$this->context->meta->setTitle('Страница');
+$this->context->meta->addCss('/media/example.ru/skin/default/css/style.css');
+$this->context->meta->addJs('/media/example.ru/skin/default/js/app.js');
+```
+*(Ресурсы автоматически подключатся при рендеринге).*
+
+## 9. Работа с базой данных
+Используйте PDO-соединение через контекст.
+```php
+$db = $this->context->service('db');
 $stmt = $db->pdo()->query('SELECT * FROM news ORDER BY created_at DESC');
 $news = $stmt->fetchAll();
 
@@ -123,73 +129,28 @@ foreach ($news as $item) {
 return $ul;
 ```
 
-## 7. Добавление филлеров
-
-Если блоку нужно особое поведение для конкретного алиаса, создайте filler:
-```bash
-php bin/cli.php filler:new --domain=example.ru --allias=admin --block=header
-```
-Теперь вы можете переопределить логику `header` только для админки, не меняя основной сайт.
-
-## 8. Управление регионами из кода
-
-Внутри `Algoritm` у вас есть доступ к `RegionRegistry`. Вы можете управлять блоками прямо из логики страницы:
-
-```php
-// Отключить шапку на этой странице
-$this->regions()->disable('header');
-
-// Принудительно использовать глобальный блок (игнорируя филлер)
-$this->regions()->useGlobal('header');
-
-// Подменить целый регион своим деревом
-$myContent = Builder::div('custom')->content('Привет');
-$this->setContent('content', $myContent);
-```
-
-## 9. Мета-информация (CSS, JS, Title)
-
-Для управления содержимым тега `<head>` используйте объект `Meta` из контекста:
-
-```php
-// Установить заголовок страницы
-$this->context->meta->setTitle('Моя страница');
-
-// Подключить CSS и JS
-$this->context->meta->addCss('/media/example.ru/skin/default/css/style.css');
-$this->context->meta->addJs('/media/example.ru/skin/default/js/app.js');
-```
-*(Они автоматически попадут в `<head>` при рендеринге).*
-
-## 10. Авторизация (Login/Logout)
-
-Чтобы страница требовала входа, добавьте `"auth": true` в её `.rules.json`:
+## 10. Авторизация и Безопасность
+Чтобы страница требовала вход, добавьте `"auth": true` в её `.rules.json`:
 ```json
 {
     "available": ["about"],
     "auth": true
 }
 ```
-Движок автоматически перенаправит неавторизованного пользователя на `/login`.
-
-Создайте пользователя для входа:
+Создать пользователя:
 ```bash
 php bin/cli.php user:new --login=admin --email=admin@example.com --password=secret
 ```
-
-Внутри логики страницы вы можете получить текущего пользователя:
+Проверка авторизации в коде:
 ```php
 $auth = $this->context->service('auth');
 if ($auth->isAuthenticated()) {
     $user = $auth->user();
-    // ...
 }
 ```
 
 ## 11. Использование AJAX
-
-В `Algoritm` есть метод `$this->isAjax()`. Если запрос пришел с заголовком `X-Requested-With: XMLHttpRequest`, можно вернуть JSON:
-
+Если запрос пришел с заголовком `X-Requested-With`, можно вернуть JSON:
 ```php
 use Damoony\Response\MinStruct;
 
@@ -201,18 +162,16 @@ if ($this->isAjax()) {
 ```
 
 ## 12. Миграции
-
-Создавайте `.sql` файлы в папке `migrations/` с префиксами `001_`, `002_` и т.д. Применяйте их командой:
+Файлы `.sql` кладутся в `migrations/` (с префиксами `001_`, `002_`). Применяются командой:
 ```bash
 php bin/cli.php db:migrate
 ```
 
-## 13. Переменные и правила (.rules.json)
-
-В `page:toggle` можно управлять доступом к странице через `.rules.json`.
+## 13. Филлеры (переопределение блоков)
+Чтобы изменить шапку только для одного алиаса:
 ```bash
-php bin/cli.php page:toggle --domain=example.ru --allias=www --path=about --key=auth --value=1
+php bin/cli.php filler:new --domain=example.ru --allias=admin --block=header
 ```
-Теперь страница `about` требует авторизации.
+Это создаст `header_admin.php` и автоматически включит его в `site.config`. Управлять филлерами можно в админке (вкладка «Блоки» внутри алиаса).
 
 --- КОНЕЦ ФАЙЛА ---

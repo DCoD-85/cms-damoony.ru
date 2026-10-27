@@ -1,4 +1,4 @@
---- НАЧАЛО ФАЙЛА---
+--- НАЧАЛО ФАЙЛА ---
 
 # Damoony Engine
 
@@ -24,9 +24,9 @@ Damoony Engine — это переосмысление архитектуры Si
 - `src/` — исходный код (PSR-4, `Damoony\`)
 - `www/` — публичная директория (`index.php`, `admin/index.php`, `media/`)
 - `app/<domain>/` — пользовательские домены (например, `app/damoony.ru/`)
-  - `app/<domain>/<allias>/algoritm/` — страницы (алиасы `www`, `doc`, `admin`)
-  - `app/<domain>/.alliasglobal/` — блоки (скрытая папка)
-  - `app/<domain>/.alliasscheme/` — схемы (скрытая папка)
+  - `app/<domain>/<allias>/algoritm/` — страницы алиасов (`www`, `doc`, `admin`)
+  - `app/<domain>/.alliasglobal/` — глобальные блоки домена (скрытая папка)
+  - `app/<domain>/.alliasscheme/` — глобальные схемы домена (скрытая папка)
 - `migrations/` — SQL-миграции
 - `var/` — runtime (БД, логи, кэш, бан-листы)
 - `_dev/` — тесты, конфиги PHPUnit/PHPStan, инструменты
@@ -42,7 +42,7 @@ Damoony Engine — это переосмысление архитектуры Si
 6. **Один способ сделать что-то.** Один слой БД (PDO), один роутер, один автозагрузчик (Composer PSR-4).
 7. **Explicit over implicit.** Нет `$GLOBALS`, статических кэшей, магии `__get`.
 8. **Контракт-first.** Публичный API — интерфейсы (`AuthInterface`, `RegionInterface` и др.).
-9. **CLI — первый класс.** Любое управление доступно в CLI, админка — надстройка с встроенным редактором кода.
+9. **CLI и Админка — равноправные интерфейсы.** Любое управление доступно как в CLI, так и в визуальном интерфейсе (с использованием собственных UI-компонентов и встроенного редактора кода).
 10. **Безопасность — основа.** Пароли через `password_hash`, база данных для пользователей, CSRF на POST, HttpOnly куки, защита от брутфорса.
 
 ## Быстрый старт
@@ -64,10 +64,11 @@ php bin/cli.php user:new --login=admin --email=admin@example.com --password=secr
 - [x] Ядро (DI, PSR-3/11, Config, Env, ErrorHandler)
 - [x] HTTP, Routing (FileRouter), Domain (Resolver)
 - [x] UI (Node, Element, Attrs, Meta, Document)
+- [x] UI-компоненты (Form, Field, Table, Button, Message)
 - [x] Регионы (Slots, Fillers, Runtime Region Manager)
 - [x] Auth (DbAuth, SessionAuth, CSRF, Login/Logout)
 - [x] DB (PDO, MigrationRunner)
 - [x] CLI (14 команд)
-- [x] Admin (CRUD: домены, алиасы, блоки, страницы, схемы, filler'ы, медиа, настройки + Code Editor)
+- [x] Admin (Древовидная навигация Домен/Алиас, CRUD, управление привязками хостов, медиа-менеджер, встроенный редактор кода)
 
 --- КОНЕЦ ФАЙЛА ---

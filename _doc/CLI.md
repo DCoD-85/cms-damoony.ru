@@ -1,4 +1,4 @@
---- НАЧАЛО ФАЙЛА---
+--- НАЧАЛО ФАЙЛА ---
 
 # CLI-команды
 
@@ -11,17 +11,14 @@
 ```bash
 php bin/cli.php help
 ```
-
 Выводит список всех доступных команд.
 
 ## domain:new
 
 Создать домен.
-
 ```bash
 php bin/cli.php domain:new --domain=example.ru --namespace=example
 ```
-
 - `--domain` — FQDN домена (обязательно).
 - `--namespace` — PHP-неймспейс (по умолчанию генерируется из домена: `example_ru`).
 
@@ -30,71 +27,57 @@ php bin/cli.php domain:new --domain=example.ru --namespace=example
 ## allias:new
 
 Создать алиас для домена.
-
 ```bash
 php bin/cli.php allias:new --domain=example.ru --name=admin
 ```
-
 Создаёт структуру алиаса (папку `app/example.ru/admin/algoritm` и `.rules.json`) и обновляет `config/site.config`.
 
 ## allias:remove
 
 Удалить алиас (перемещает папку в карантин).
-
 ```bash
 php bin/cli.php allias:remove --domain=example.ru --name=admin --force
 ```
-
 Без `--force` команда отменяется. С `--force` папка переименовывается в `_trash_<timestamp>`, конфиг очищается, карантин удаляется.
 
 ## block:new
 
 Создать блок (регион шаблона).
-
 ```bash
 php bin/cli.php block:new --domain=example.ru --name=custom
 ```
-
 Создаёт файлы `custom.php` и `custom.data.php` в скрытой папке `app/example.ru/.alliasglobal/`, обновляет `blocks.json`.
 
 ## block:remove
 
 Удалить блок.
-
 ```bash
 php bin/cli.php block:remove --domain=example.ru --name=custom
 ```
-
 Удаляет папку блока и убирает запись из `blocks.json`.
 
 ## filler:new
 
 Создать filler (переопределение блока для конкретного алиаса).
-
 ```bash
 php bin/cli.php filler:new --domain=example.ru --allias=www --block=top
 ```
-
 Создаёт `top_www.php` и `top_www.data.php` в папке блока, обновляет `site.config` (включает filler).
 
 ## filler:toggle
 
 Включить или выключить filler.
-
 ```bash
 php bin/cli.php filler:toggle --domain=example.ru --allias=www --block=top --value=0
 ```
-
 `--value=0` — выключить, `--value=1` (или любой другой символ) — включить. Обновляет `site.config`.
 
 ## page:new
 
 Создать страницу.
-
 ```bash
 php bin/cli.php page:new --domain=example.ru --allias=www --parent=index --name=about
 ```
-
 - `--parent` — путь родительской страницы (пусто = корень).
 - `--name` — имя новой страницы (латиница).
 
@@ -103,11 +86,9 @@ php bin/cli.php page:new --domain=example.ru --allias=www --parent=index --name=
 ## page:toggle
 
 Переключить флаг страницы.
-
 ```bash
 php bin/cli.php page:toggle --domain=example.ru --allias=www --path=about --key=auth --value=1
 ```
-
 - `--key` — `auth`, `search` или `default`.
 - `--value` — `0` или `1`.
 
@@ -116,52 +97,42 @@ php bin/cli.php page:toggle --domain=example.ru --allias=www --path=about --key=
 ## scheme:new
 
 Создать схему (каркас страницы).
-
 ```bash
 php bin/cli.php scheme:new --domain=example.ru --name=visuo
 ```
-
 Создаёт `visuo.data.php` в скрытой папке `app/example.ru/.alliasscheme/` и обновляет `schemes.json`.
 
 ## db:migrate
 
 Применить SQL-миграции.
-
 ```bash
 php bin/cli.php db:migrate
 ```
-
 Читает `.sql` файлы из папки `migrations/`, применяет их и записывает в таблицу `migrations`. Команда идемпотентна (не применяет одно и то же дважды).
 
 ## vars:extract
 
 Перенести свойства `$available`, `$auth`, `$search`, `$default` из `.php` файлов в `.data.json`.
-
 ```bash
 php bin/cli.php vars:extract --domain=example.ru --allias=www
 ```
-
 - `--dry` — показать план без реальной записи.
 - `--no-clean` — не удалять свойства из исходных `.php` файлов.
 
 ## admin:passwd
 
 Задать логин и пароль администратора (для входа в панель управления).
-
 ```bash
 php bin/cli.php admin:passwd --name=admin --password=secret
 ```
-
 Записывает `login` и `password_hash` в `config/admin.config`.
 
 ## user:new
 
 Создать пользователя на сайте (для авторизации на страницах с `auth: true`).
-
 ```bash
 php bin/cli.php user:new --login=admin --email=admin@example.com --password=secret
 ```
-
 - `--login` — логин (3-32 символа, латиница и цифры).
 - `--email` — валидный email.
 - `--password` — пароль (минимум 6 символов).

@@ -25,7 +25,7 @@ final class alliasglobal_top implements RegionInterface
     {
         $wrap = Builder::div('top-wrapper');
         $wrap->append(Builder::h(1)->content('Damoony'));
-        $wrap->append(Builder::p()->content('Это базовая шапка сайта (блок top)'));
+        $wrap->append(Builder::p()->content('Это базовая шапка сай33та (блок top)'));
         return $wrap;
     }
 }

@@ -1,198 +1,169 @@
+--- НАЧАЛО ФАЙЛА ---
+
 # Контракты проекта Damoony
 
-Источник: docs/philosophy.md, _devdoc/_auditfinal/.
-Пять контрактов, которые переносятся из старого проекта в новый движок.
-Код не переносится. Переносятся сигнатуры, инварианты и границы ответственности.
-Каждый контракт — интерфейс. Реализация — отдельный модуль.
+Документ фиксирует текущие архитектурные контракты (интерфейсы и границы ответственности) движка. Код реализаций скрыт за этими контрактами.
 
 ---
 
-## 1. DomainResolver
+## 1. DomainResolver (Разрешение доменов)
 
-Назначение: определить текущий домен и алиас по запросу, дать доступ к конфигу домена.
+Назначение: определение реального домена и алиаса по входящему хосту, предоставление контекста.
 
 Методы:
-- resolve(Request): DomainContext
-- exists(string domain): bool
-- real(string domain): string
-- namespace(string domain): string
+- `resolve(string $host): DomainContext`
+- `exists(string $domain): bool`
+- `real(string $domain): string`
+- `namespace(string $domain): string`
 
-DomainContext (value object, readonly):
-- domain: string (входной домен)
-- real: string (канонический домен)
-- allias: string
-- logic: string
-- skin: string
-- language: string
-- available: bool
-- stub: ?string
+DomainContext (readonly):
+- `domain`: string (входной хост)
+- `real`: string (канонический домен, папка в `app/`)
+- `allias`: string (текущий алиас)
+- `logic`: string
+- `skin`: string
+- `language`: string
+- `available`: bool (доступен ли домен И алиас)
+- `stub`: ?string
+- `namespace`: string (PHP-неймспейс)
+- `scheme`: string (имя схемы)
 
 Инварианты:
-- resolve идемпотентен в рамках запроса.
-- real(domain) для неизвестного домена возвращает входной domain.
-- available=false не бросает исключение, а помечает контекст; решение — за вызывающим.
-- DomainResolver не знает про БД, регионы, UI.
+- Резолвер не бросает исключения, а возвращает контекст с `available=false`.
+- Отвечает только за вычисление контекста. Не загружает контроллеры и не рендерит страницы.
 
-Не входит:
-- загрузка конфигов (Config)
-- маршрутизация (Router)
-- выбор схемы (Scheme)
-
-Источник: _auditfinal/05, _auditfinal/30, _auditfinal/32.
+Источник: `src/Domain/`
 
 ---
 
-## 2. Region
+## 2. Router (Маршрутизация)
 
-Назначение: единица шаблона домена (top, left, center, right, bottom, policy, debug и любые пользовательские).
+Назначение: поиск класса контроллера по URL и контексту домена.
 
 Методы:
-- name(): string
-- render(Context): Node
-- enabled(): bool
+- `match(string $path, DomainContext $domain): RouteMatch`
 
-Filler (расширение Region для конкретного алиаса):
-- appliesTo(DomainContext): bool
-- render(Context): Node
-
-Реестр регионов:
-- add(string name, callable factory): void
-- get(string name): Region
-- has(string name): bool
-- all(): array
+RouteMatch (readonly):
+- `found`: bool
+- `classChain`: ?string (имя класса, например `algoritm_about`)
+- `pathRel`: ?string (относительный путь)
+- `args`: array (параметры из regex)
+- `auth`: bool (требуется ли авторизация)
+- `code`: int
 
 Инварианты:
-- Регион не знает о других регионах.
-- Регион возвращает Node, не строку.
-- Filler имеет приоритет над базовым регионом.
-- Реестр не хранит состояние между запросами.
+- Роутер не выполняет код контроллера.
+- Роутер не рендерит ошибки (возвращает `found=false` и `code`).
+- Конфигурация правил хранится в `.rules.json` рядом с файлами страниц.
 
-Не входит:
-- сборка страницы (Scheme)
-- рендер в HTML (Renderer)
-- маршрутизация
-
-Источник: _auditfinal/34, _auditfinal/35.
+Источник: `src/Routing/`
 
 ---
 
-## 3. Router
+## 3. Region (Регионы и Блоки)
 
-Назначение: по URL и контексту домена найти обработчик страницы.
+Назначение: единица шаблона (шапка, подвал, сайдбар), которая вставляется в слоты схемы.
 
 Методы:
-- match(Request, DomainContext): MatchResult
-- MatchResult: found: bool, handler: ?callable, args: array, code: int
+- `name(): string`
+- `enabled(): bool`
+- `render(RegionContext $context): Node`
 
-Правила:
-- правила хранятся в .rules.json рядом со страницей
-- available: список сегментов или regex
-- auth: bool
-- обработчик — callable, возвращающий Node или Response
+RegionRegistry (Управление регионами):
+- `add(RegionInterface $region)`
+- `disable(string $name)` / `enable(string $name)`
+- `useGlobal(string $name)` (игнорировать филлер)
+- `get(string $name): ?RegionInterface`
 
 Инварианты:
-- match не выполняет обработчик.
-- match не бросает исключение на 404, возвращает found=false.
-- Приоритет: точное совпадение, затем regex, затем пустой сегмент.
-- Router не знает про UI, регионы, БД.
+- Регион не знает о других регионах и о схеме.
+- Регион возвращает объект `Node`, а не строку.
+- Загрузка филлеров и глобальных блоков контролируется `RegionLoader` на основе `site.config`.
 
-Не входит:
-- выполнение страницы
-- рендер ошибок
-- auth-проверка (только флаг)
-
-Источник: _auditfinal/08.
+Источник: `src/Region/`
 
 ---
 
-## 4. UiNode
+## 4. UI (Дерево представления и Компоненты)
 
-Назначение: узел дерева представления. Заменяет visuotag/visuoel концептуально, но не кодом.
+Назначение: типизированное дерево DOM, а не строки.
 
-Базовый узел:
-- tag(): string
-- attrs(): Attrs
-- children(): array
-- append(Node): static
-- prepend(Node): static
-- parent(): ?Node
-- release(): string
+Базовые элементы:
+- `Node` (интерфейс)
+- `Element` (HTML-тег, атрибуты, дочерние элементы)
+- `Attrs` (безопасное управление атрибутами)
+- `Builder` (хелперы для быстрой сборки: `div()`, `a()`, `p()`)
+- `Document` (корневой `html`, `head`, `body`)
+- `Meta` (управление `<title>`, CSS, JS)
 
-Attrs:
-- add(string key, string value, bool empty=false): static
-- get(string key): ?string
-- has(string key): bool
-- class(): ClassSet
-- style(): StyleSet
-- data(): DataSet
-
-Составные узлы (по контракту, не по реализации):
-- Element (базовый)
-- Group (прозрачный контейнер)
-- Region (в контракте Region, но результат — Node)
-- Form, Field, Button, Table, Tabs, Message, Block
+Компоненты (`Component`):
+- `Form` (обертка с action, method, enctype, CSRF)
+- `Field` (text, password, email, hidden, file, textarea, select, checkbox, radio)
+- `Table` (headers, rows, кастомные классы строк)
+- `Button` (submit, button)
+- `Message` (info, success, warning, error)
 
 Инварианты:
-- Дерево иммутабельно после release().
-- escape выполняется на уровне attrs/content, не на уровне рендера.
-- Никаких глобальных состояний.
-- Node не знает про домен, БД, роутер.
+- Дерево иммутабельно до вызова `release()`.
+- Автоматическое экранирование данных (XSS-защита) на уровне `Attrs` и `Text`.
+- Компоненты используются как на фронтенде, так и в админке.
 
-Не входит:
-- сборка страницы (Scheme)
-- HTTP-ответ
-- кэширование
-
-Источник: _auditfinal/25, _auditfinal/26, _auditfinal/27, _auditfinal/28, _auditfinal/29.
+Источник: `src/Ui/`
 
 ---
 
-## 5. Scheme
+## 5. Scheme (Схемы)
 
-Назначение: каркас страницы, собираемый из регионов. Определяет, какие регионы и в каком порядке попадут в итоговый документ.
+Назначение: HTML-каркас страницы, собираемый из регионов с помощью слотов.
 
 Методы:
-- load(string name): self
-- render(Context): Node
-- regions(): array
+- `SchemeLoader::load(DomainContext $domain, string $name): array`
+- `SchemeRenderer::render(array $manifest, RegionRegistry $regions, RegionContext $context): Element`
 
-Манифест схемы (декларативно, не PHP-код):
-- tag: string
-- class: string
-- layout: horizontal|vertical
-- children: array of nodes
-- каждый child: tag, class, type (block|layout), enabled, return
+Манифест схемы (декларативный массив):
+- `tag`, `class`, `children` (вложенные теги).
+- `slot` (имя слота для вставки региона).
+
+Иерархия схем:
+1. Локальная схема алиаса (если включена).
+2. Глобальная схема домена.
+3. Если нет ни одной — ошибка 500 (скрытых дефолтов нет).
 
 Инварианты:
-- Схема — данные, не код.
-- Схема не знает о конкретных регионах, только о их именах.
-- Порядок детей определяет порядок в документе.
-- enabled=false исключает узел без ошибки.
+- Схема — это данные, а не PHP-код.
+- Схема не знает о содержимом регионов.
 
-Не входит:
-- содержимое регионов
-- HTTP
-- рендер в HTML
-
-Источник: _auditfinal/35.
+Источник: `src/Scheme/`
 
 ---
 
-## Границы между контрактами
+## 6. Auth (Авторизация и Безопасность)
 
-- DomainResolver — до всего.
-- Router — после DomainResolver, до выполнения обработчика.
-- Обработчик возвращает UiNode.
-- Scheme собирает UiNode из регионов.
-- Region рендерит свою часть UiNode.
-- UiNode ничего не знает о Router, Region, Scheme, Domain.
+Назначение: аутентификация и защита от подделки запросов.
 
-## Что НЕ входит ни в один контракт
+Методы:
+- `AuthInterface`: `login()`, `logout()`, `isAuthenticated()`, `user()`
+- `DbAuth` (база данных)
+- `Csrf`: `field()`, `check()`
 
-- БД (отдельный контракт Repository).
-- CLI (отдельный контракт Command).
-- Admin (отдельный пакет).
-- Config (инфраструктура, не домен).
-- Logger (PSR-3, инфраструктура).
+Инварианты:
+- Пароли хранятся только в виде `password_hash`.
+- Все POST-запросы (на фронтенде и в админке) защищены CSRF-токеном.
+- Флаг `auth: true` в `.rules.json` автоматически перенаправляет гостя на `/login`.
 
-Эти контракты фиксируются отдельно на этапах 1 и 3.
+Источник: `src/Auth/`, `src/Security/`
+
+---
+
+## 7. CLI и Админка
+
+Назначение: интерфейсы управления.
+
+- **CLI**: команды на базе `CommandInterface`, возвращают `Result`.
+- **Admin**: использует те же UI-компоненты для рендеринга. Включает `BaseController`, `AdminRouter` и встроенный редактор кода.
+
+Инварианты:
+- Админка и CLI — равноправные способы управления.
+- Админка не дублирует бизнес-логику, а вызывает команды или использует общие сервисы.
+
+--- КОНЕЦ ФАЙЛА ---

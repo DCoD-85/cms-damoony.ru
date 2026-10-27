@@ -17,8 +17,8 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Ro
 /* Main & Cards */
 .admin-main { max-width: 1100px; margin: 32px auto; padding: 0 24px; }
 .admin-card { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); padding: 32px; margin-bottom: 24px; }
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-.page-header h1 { margin: 0; font-size: 24px; font-weight: 600; }
+.page-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; }
+.page-header h1 { margin: 0; font-size: 32px; font-weight: 700; line-height: 1.2; color: #1a1a1a; }
 
 /* Breadcrumbs */
 .breadcrumbs { font-size: 14px; color: #6b7280; margin-bottom: 16px; }
@@ -128,3 +128,24 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Ro
 /* Danger Zone */
 .danger-zone { margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb; }
 .danger-zone p { color: #6b7280; font-size: 14px; margin-top: 0; margin-bottom: 16px; }
+
+
+/* Code Editor */
+.editor-form { display: flex; flex-direction: column; gap: 16px; }
+.code-editor {
+    width: 100%;
+    height: 600px;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 16px;
+    border: 1px solid #333;
+    border-radius: 8px;
+    resize: vertical;
+    outline: none;
+    tab-size: 4;
+}
+.code-editor:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.2); }
+.editor-actions { display: flex; justify-content: flex-start; }

@@ -4,7 +4,7 @@
 
 ## Требования
 
-- PHP >= 8.4 (расширения: mbstring, json, pdo_sqlite, pdo_mysql, openssl, fileinfo, tokenizer, xml)
+- PHP >= 8.4 (расширения: mbstring, json, pdo_sqlite, pdo_mysql, openssl, fileinfo, tokenizer, xml, curl)
 - Composer
 - Apache 2.4 + mod_rewrite или Nginx + PHP-FPM
 - SQLite (для разработки) или MySQL 8 (для продакшена)
@@ -20,8 +20,7 @@ composer install
 ## Конфигурация
 
 ### config/site.config
-
-Основной конфиг доменов и алиасов.
+Основной конфиг доменов и алиасов. Включает инфраструктуру (доступность) и маппинг входящих хостов.
 
 ```json
 {
@@ -42,6 +41,12 @@ composer install
             "doc": "doc"
         }
     },
+    "alliases_available": {
+        "damoony.ru": {
+            "www": true,
+            "doc": true
+        }
+    },
     "fillers": {
         "damoony.ru": {
             "doc": {
@@ -56,21 +61,19 @@ composer install
 - `domains_available` — флаг доступности реального домена (false -> 503 Maintenance).
 - `domains_namespace` — PHP-неймспейс для классов домена.
 - `alliases_real` — доступные алиасы для реального домена.
-- `fillers` — глобальные переключатели для филлеров (можно отключать переопределение конкретного блока для алиаса).
+- `alliases_available` — флаг доступности конкретного алиаса (false -> 503 Maintenance для этого алиаса).
+- `fillers` — глобальные переключатели для филлеров (например, отключение `top` для `doc`).
 
 ### config/admin.config
-
 ```json
 {
     "login": "admin",
     "password_hash": ""
 }
 ```
-
 Пароль ставится командой `php bin/cli.php admin:passwd --name=admin --password=secret`.
 
 ### config/engine.config
-
 ```json
 {
     "rate_limit": {
@@ -87,7 +90,6 @@ composer install
 ```bash
 php bin/cli.php db:migrate
 ```
-
 Создаст `var/damoony.db` (SQLite) и таблицы `users`, `news`, `files`, `migrations`.
 
 Для MySQL переопредели конфиг в `DbMigrateCommand` или передай через DI.
@@ -95,11 +97,9 @@ php bin/cli.php db:migrate
 ## Веб-сервер
 
 ### Apache
-
 Убедись, что `www/.htaccess` используется и `mod_rewrite` включён. Виртуальный хост должен указывать `DocumentRoot` на `www/`.
 
 ### Nginx
-
 ```nginx
 server {
     listen 80;
@@ -123,7 +123,7 @@ server {
 }
 ```
 
-## Запуск
+## Первый запуск
 
 1. `composer install`
 2. `php bin/cli.php db:migrate`
@@ -132,18 +132,16 @@ server {
 5. Открыть `http://damoony3.ru/`
 6. Открыть `http://damoony3.ru/admin/`
 
-*(Команда `user:new` создаёт пользователя в БД, необходимого для входа на страницы с флагом `auth: true`).*
+*(Команда `user:new` создаёт пользователя в БД, необходимого для входа на страницы с флагом `"auth": true`).*
 
-## Разработка
+## Разработка и тестирование
 
 ```bash
 export PHP=/path/to/php8.4
 $PHP vendor/bin/phpunit -c _dev/phpunit.xml
 $PHP vendor/bin/phpstan analyse -c _dev/phpstan.neon --memory-limit=1G
 ```
-
 Или через Composer:
-
 ```bash
 $PHP composer.phar test
 $PHP composer.phar stan
@@ -174,7 +172,7 @@ $PHP composer.phar check
 │   ├── index.php
 │   ├── admin/
 │   │   └── index.php
-│   └── media/              # Публичные файлы и CSS
+│   └── media/              # Публичные файлы, CSS (в т.ч. /media/admin/)
 ├── _dev/                   # Тесты и тулинг
 └── _doc/
 ```
@@ -186,6 +184,6 @@ $PHP composer.phar check
 - Session — `HttpOnly`, `SameSite=Lax`, `Secure` при HTTPS.
 - Brute-force — бан IP на 15 минут после 5 неудач.
 - CSP — блокирует inline-скрипты, кроме `style-src 'unsafe-inline'`.
-- Файлы в `www/media/` — только изображения, архивы, документы, без `.php`.
+- Файлы в `www/media/` — только безопасные файлы, запрещены `.php` скрипты.
 
 --- КОНЕЦ ФАЙЛА ---
