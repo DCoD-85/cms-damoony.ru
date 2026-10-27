@@ -22,6 +22,7 @@ use Damoony\Http\Request;
 use Damoony\Security\Csrf;
 use Damoony\Session\NativeSession;
 use Damoony\Admin\Controller\EditorController;
+use Damoony\Admin\Controller\BaseController;
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
@@ -65,6 +66,18 @@ $router->register('scheme', new \Damoony\Admin\Controller\SchemeController($auth
 $router->register('media', new \Damoony\Admin\Controller\MediaController($auth, $csrf, $view, $root));
 $router->register('settings', new \Damoony\Admin\Controller\SettingsController($auth, $csrf, $view, $siteConfig, $root));
 $router->register('editor', new EditorController($auth, $csrf, $view, $root));
+
+// Заглушки для БД (чтобы не было 404)
+$router->register('domain_db', new class($auth, $csrf, $view) extends BaseController {
+    public function index(\Damoony\Http\Request $request): \Damoony\Http\Response {
+        $domain = (string) $request->query('domain', '');
+        $card = \Damoony\Ui\Builder::div('admin-card');
+        $card->append(\Damoony\Ui\Builder::h(1)->content('База данных домена: ' . $domain));
+        $card->append(\Damoony\Admin\View::domainTabs($domain, 'db'));
+        $card->append(\Damoony\Ui\Message::info('Раздел находится в разработке.')->build());
+        return \Damoony\Http\Response::html($this->view->render($card, ['title' => 'БД домена']));
+    }
+});
 
 $security = new SecurityHeadersMiddleware(isHttps: ($_SERVER['HTTPS'] ?? '') === 'on');
 $handler = static fn (Request $r) => $security->process($r, static fn (Request $r2) => $router->dispatch($r2));
