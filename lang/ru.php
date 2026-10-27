@@ -157,4 +157,8 @@ return [
     'admin.security.window' => 'Окно (сек)',
     'admin.security.ban_time' => 'Время бана (сек)',
     'admin.security.save' => 'Сохранить настройки',
+
+    'admin.security.time_left' => 'Осталось',
+    'admin.security.minutes_left' => '{mins} мин.',
+    'admin.security.unban_all' => 'Разблокировать всё',
 ];

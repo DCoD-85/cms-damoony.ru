@@ -66,16 +66,19 @@ final class SecurityController extends BaseController
         $rlDir = $this->paths->root() . '/var/ratelimit';
         $files = is_dir($rlDir) ? glob($rlDir . '/*.json') : [];
         $activeBans = [];
+        $now = time();
 
         if ($files) {
             foreach ($files as $file) {
                 $data = json_decode((string) file_get_contents($file), true);
-                if (is_array($data) && ($data['banned_until'] ?? 0) > time()) {
+                if (is_array($data) && ($data['banned_until'] ?? 0) > $now) {
                     $ip = $data['ip'] ?? 'Unknown (hash)';
+                    $remaining = (int) ceil(($data['banned_until'] - $now) / 60);
+
                     $activeBans[] = [
                         'ip' => $ip,
                         'file' => basename($file),
-                        'until' => date('Y-m-d H:i:s', $data['banned_until']),
+                        'minutes' => $remaining,
                     ];
                 }
             }
@@ -84,13 +87,34 @@ final class SecurityController extends BaseController
         if ($activeBans === []) {
             $card->append(Message::info(View::t('security.no_bans'))->build());
         } else {
-            $table = (new Table())->headers('IP', View::t('security.until'), View::t('security.actions'));
+            // Кнопка "Разблокировать всё"
+            $unbanAllForm = Form::create('/admin/?p=security:unbanAll', 'POST')
+                ->csrf($this->csrf->field())
+                ->submit(View::t('security.unban_all'));
+            $unbanAllNode = $unbanAllForm->build();
+            $unbanAllNode->attrs()->styleAdd('margin-bottom: 15px;');
+            $card->append($unbanAllNode);
+
+            $table = (new Table())->headers('IP', View::t('security.time_left'), View::t('security.actions'));
             foreach ($activeBans as $ban) {
-                $btn = Builder::a('/admin/?p=security:unban&file=' . urlencode($ban['file']), 'btn btn-danger')->content(View::t('security.unban'));
+                // Форма для разбана конкретного IP (POST + CSRF)
+                $unbanForm = Form::create('/admin/?p=security:unban', 'POST')
+                    ->csrf($this->csrf->field())
+                    ->add(Field::hidden('file')->value($ban['file']))
+                    ->submit(View::t('security.unban'));
+                $unbanBtn = $unbanForm->build();
+                // Делаем кнопку маленькой и красной
+                foreach ($unbanBtn->children() as $child) {
+                    if ($child instanceof \Damoony\Ui\Element && $child->tag() === 'button') {
+                        $child->attrs()->classAdd('btn btn-danger');
+                        $child->attrs()->styleAdd('padding: 6px 12px; font-size: 13px;');
+                    }
+                }
+
                 $table->row([
                     Text::raw('<b>' . View::esc($ban['ip']) . '</b>'),
-                    Text::raw(View::esc($ban['until'])),
-                    $btn,
+                    Text::raw(View::t('security.minutes_left', ['mins' => $ban['minutes']])),
+                    $unbanBtn,
                 ]);
             }
             $card->append($table->build());
@@ -122,11 +146,38 @@ final class SecurityController extends BaseController
             return $auth;
         }
 
-        $file = (string) $request->query('file', '');
+        $csrfErr = $this->requireCsrf($request);
+        if ($csrfErr !== null) {
+            return $csrfErr;
+        }
+
+        $file = (string) ($request->post['file'] ?? '');
         if (preg_match('/^rl_[a-f0-9]{32}\.json$/', $file)) {
             $path = $this->paths->root() . '/var/ratelimit/' . $file;
             if (is_file($path)) {
                 unlink($path);
+            }
+        }
+        return $this->redirect('/admin/?p=security&saved=1');
+    }
+
+    public function unbanAll(Request $request): Response
+    {
+        $auth = $this->requireAuth();
+        if ($auth !== null) {
+            return $auth;
+        }
+
+        $csrfErr = $this->requireCsrf($request);
+        if ($csrfErr !== null) {
+            return $csrfErr;
+        }
+
+        $rlDir = $this->paths->root() . '/var/ratelimit';
+        $files = is_dir($rlDir) ? glob($rlDir . '/*.json') : [];
+        if ($files) {
+            foreach ($files as $file) {
+                unlink($file);
             }
         }
         return $this->redirect('/admin/?p=security&saved=1');

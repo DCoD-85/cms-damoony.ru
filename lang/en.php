@@ -157,4 +157,8 @@ return [
     'admin.security.window' => 'Window (sec)',
     'admin.security.ban_time' => 'Ban time (sec)',
     'admin.security.save' => 'Save settings',
+
+    'admin.security.time_left' => 'Time left',
+    'admin.security.minutes_left' => '{mins} min.',
+    'admin.security.unban_all' => 'Unban all',
 ];

@@ -130,4 +130,8 @@ return [
     'admin.security.window' => '时间窗口 (秒)',
     'admin.security.ban_time' => '封禁时间 (秒)',
     'admin.security.save' => '保存设置',
+
+    'admin.security.time_left' => '剩余时间',
+    'admin.security.minutes_left' => '{mins} 分钟',
+    'admin.security.unban_all' => '解封全部',
 ];
