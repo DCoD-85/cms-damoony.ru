@@ -1,18 +1,24 @@
---- НАЧАЛО ФАЙЛА ---
-
+--- НАЧАЛО ФАЙЛА _docrebuild/i18n_skins_plan.md ---
 План разработки: Мультиязычность (I18n) и Скины (Skins)
+
+Статус (2026-10-27): частично реализовано.
+Есть в коде: src/I18n/LanguageNegotiator.php, LanguagePathMiddleware,
+LanguageCookieMiddleware, SkinCookieMiddleware.
+Нет: SkinManager, автоподключение CSS/JS, UI-переключатели языка и скина,
+локализация текстов админки.
+
 Данный документ фиксирует архитектурные решения для будущей интеграции поддержки нескольких языков и визуальных тем (скинов) в движок Damoony.
 
 1. Мультиязычность (I18n)
 Архитектура:
 
-Конфиг: Список доступных языков задается на уровне домена в site.config (ключ domains_langs, например ["ru-ru", "en-en"]).
+Конфиг: Список доступных языков задаётся на уровне домена в site.config (ключ domains_langs, например ["ru-ru", "en-en"]).
 
-URL: Язык передается первым сегментом URL (например, /ru-ru/about или /en-en/about). Это оптимально для SEO.
+URL: Язык передаётся первым сегментом URL (например, /ru-ru/about или /en-en/about). Это оптимально для SEO.
 
 Middleware: LanguagePathMiddleware отрезает первый сегмент URL, если он есть в списке доступных языков, и сохраняет его в DomainContext->language.
 
-Приоритет выбора: URL -> Cookie (lang) -> Конфиг домена -> Дефолт (ru-ru).
+Приоритет выбора: URL → Cookie (lang) → Конфиг домена → Дефолт (ru-ru).
 
 Хранилище: Файлы переводов language/<lang>.inc (или JSON) на уровне домена.
 
@@ -27,21 +33,20 @@ Middleware: LanguagePathMiddleware отрезает первый сегмент 
 
 Хранение: Физические папки в www/media/<domain>/skin/<skin_name>/ (содержат css/, js/, images/).
 
-Middleware: SkinCookieMiddleware читает cookie skin. Если скин невалиден или отсутствует, берется default.
+Middleware: SkinCookieMiddleware читает cookie skin. Если скин невалиден или отсутствует, берётся default.
 
 Автоподгрузка: При инициализации Document/Meta движок автоматически подключает main.css и main.js из папки активного скина. Разработчику не нужно прописывать это вручную в каждой странице.
 
 Переключатель: GET-параметр ?skin=dark меняет cookie и редиректит обратно на ту же страницу (или используется AJAX).
 
-3. План внедрения (Этапы)
+3. План внедрения (оставшиеся шаги)
+Реализовать SkinManager (сканер скинов, валидация cookie).
+
+Автоподключение main.css/main.js из активного скина в Document.
+
 Создать файлы переводов и класс LanguageLoader.
-
-Написать LanguagePathMiddleware и интегрировать в AppFactory / FrontController.
-
-Добавить сканер скинов SkinManager и логику автоподключения CSS/JS в Document.
 
 Создать UI-компоненты (селекторы языка и скина) для фронтенда и админки.
 
 Перевести все тексты админки на использование I18n.
-
---- КОНЕЦ ФАЙЛА ---
+--- КОНЕЦ ФАЙЛА _docrebuild/i18n_skins_plan.md ---
