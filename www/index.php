@@ -78,6 +78,10 @@ $handler = static fn (Request $r) => $stack->dispatch($r, static fn (Request $r2
 
 $kernel = new Kernel($handler, $app->logger(), $app->env());
 $response = $kernel->handle(Request::fromGlobals());
+if ($response->status === 429) {
+    $retryAfter = (int) ($response->headers['retry-after'] ?? 60);
+    $response = \Damoony\Error\ErrorPage::tooManyRequests('ru', $retryAfter);
+}
 
 // Остановка таймера и внедрение красивой плашки
 $time = round((microtime(true) - $start) * 1000, 2);

@@ -154,4 +154,11 @@ $handler = static fn (Request $r) => $stack->dispatch(
 );
 
 $kernel = new Kernel($handler, $logger, $env);
-$kernel->handle(Request::fromGlobals())->send();
+$response = $kernel->handle(Request::fromGlobals());
+
+if ($response->status === 429) {
+    $retryAfter = (int) ($response->headers['retry-after'] ?? 60);
+    $response = \Damoony\Error\ErrorPage::tooManyRequests('ru', $retryAfter);
+}
+
+$response->send();
