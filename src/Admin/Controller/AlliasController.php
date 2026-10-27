@@ -216,7 +216,9 @@ final class AlliasController extends BaseController
             $skinOptions = ['default' => 'default'];
         }
 
-        $success = '';
+        // 1. ФИКС: Берем success из GET-параметра (PRG)
+        $success = $request->query('saved') ? View::t('msg.saved') : '';
+
         if ($request->isPost()) {
             $csrfErr = $this->requireCsrf($request);
             if ($csrfErr !== null) {
@@ -225,7 +227,7 @@ final class AlliasController extends BaseController
 
             $data = $this->siteConfig->all();
 
-            // 1. Основные настройки
+            // Основные настройки
             $data['alliases_titles'][$domain][$allias] = (string) ($request->post['title'] ?? '');
             $data['alliases_available'][$domain][$allias] = isset($request->post['available']);
             $data['alliases_stubs'][$domain][$allias] = (string) ($request->post['stub'] ?? 'maintenance');
@@ -237,9 +239,8 @@ final class AlliasController extends BaseController
                 unset($data['alliases_stub_until'][$domain][$allias]);
             }
 
-            // 2. Контент (Скины)
+            // Скины
             $data['alliases_skins'][$domain][$allias] = (string) ($request->post['active_skin'] ?? 'default');
-
             $skinsAllowed = [];
             foreach (array_keys($skinOptions) as $s) {
                 if (isset($request->post['skin_' . $s])) {
@@ -248,7 +249,7 @@ final class AlliasController extends BaseController
             }
             $data['alliases_skins_allowed'][$domain][$allias] = $skinsAllowed;
 
-            // 3. Языки
+            // Языки
             $langs = [];
             if (isset($request->post['lang_ru'])) {
                 $langs[] = 'ru';
@@ -265,10 +266,12 @@ final class AlliasController extends BaseController
                 $this->paths->siteConfig(),
                 json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n",
             );
-            $success = View::t('msg.saved');
+
+            // 2. ФИКС: Редирект после сохранения (PRG), чтобы обновить данные и убить повторный POST
+            return $this->redirect('/admin/?p=allias:edit&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&saved=1');
         }
 
-        // Текущие значения
+        // --- РЕНДЕР ФОРМЫ (GET) ---
         $title = (string) $this->siteConfig->getByKey(['alliases_titles', $domain, $allias], '');
         $available = (bool) $this->siteConfig->getByKey(['alliases_available', $domain, $allias], true);
 
@@ -291,7 +294,6 @@ final class AlliasController extends BaseController
 
         $card = Builder::div('admin-card');
 
-        // Хлебные крошки
         $breadcrumbs = Builder::div('breadcrumbs');
         $breadcrumbs->append(Builder::a('/admin/?p=domain')->content(View::t('domain.bread_domains')));
         $breadcrumbs->append(Text::raw(' / '));
@@ -307,7 +309,6 @@ final class AlliasController extends BaseController
             $card->append(Message::success($success)->build());
         }
 
-        // Быстрые ссылки
         $card->append(Builder::h(2)->content(View::t('allias.quick_links')));
         $links = Builder::div('page-actions');
         $base = '/admin/?domain=' . urlencode($domain) . '&allias=' . urlencode($allias);
@@ -317,7 +318,6 @@ final class AlliasController extends BaseController
         $links->attrs()->styleAdd('margin-bottom: 30px;');
         $card->append($links);
 
-        // Основная форма
         $card->append(Builder::h(2)->content(View::t('allias.settings')));
 
         $form = Form::create('/admin/?p=allias:edit&domain=' . urlencode($domain) . '&allias=' . urlencode($allias), 'POST')
@@ -326,16 +326,12 @@ final class AlliasController extends BaseController
             ->add(Field::checkbox('available')->label(View::t('domain.avail_label'))->checked($available))
             ->add(Field::select('stub')->label(View::t('domain.stub_label'))->options($this->getStubOptions())->selected($stub))
             ->add(Field::datetime('until')->label(View::t('domain.until_label'))->hint(View::t('domain.until_hint'))->value($untilStr))
-
-            // Выбор активного скина
             ->add(Field::select('active_skin')->label('Активный скин (по умолчанию)')->options($skinOptions)->selected($currentSkin));
 
-        // Чекбоксы доступных скинов
         foreach ($skinOptions as $code => $label) {
             $form->add(Field::checkbox('skin_' . $code)->label('Разрешить скин: ' . $label)->checked(in_array($code, $currentSkinsAllowed, true)));
         }
 
-        // Чекбоксы языков
         $form->add(Field::checkbox('lang_ru')->label('Русский (RU)')->checked(in_array('ru', $currentLangs, true)))
              ->add(Field::checkbox('lang_en')->label('English (EN)')->checked(in_array('en', $currentLangs, true)))
              ->add(Field::checkbox('lang_zh')->label('中文 (ZH)')->checked(in_array('zh', $currentLangs, true)))
@@ -343,7 +339,6 @@ final class AlliasController extends BaseController
 
         $card->append($form->build());
 
-        // Зона опасности
         $hr = Builder::el('hr');
         $hr->attrs()->styleAdd('margin: 30px 0; border: 0; border-top: 1px solid #eee;');
         $card->append($hr);
