@@ -161,4 +161,10 @@ return [
     'admin.security.time_left' => 'Осталось',
     'admin.security.minutes_left' => '{mins} мин.',
     'admin.security.unban_all' => 'Разблокировать всё',
+
+    'admin.allias.title' => 'Алиас',
+    'admin.allias.settings' => 'Настройки алиаса',
+    'admin.allias.active' => 'Алиас активен',
+    'admin.allias.skin' => 'Скин',
+    'admin.allias.quick_links' => 'Управление контентом',
 ];

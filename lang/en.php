@@ -161,4 +161,10 @@ return [
     'admin.security.time_left' => 'Time left',
     'admin.security.minutes_left' => '{mins} min.',
     'admin.security.unban_all' => 'Unban all',
+
+    'admin.allias.title' => 'Alias',
+    'admin.allias.settings' => 'Alias settings',
+    'admin.allias.active' => 'Alias is active',
+    'admin.allias.skin' => 'Skin',
+    'admin.allias.quick_links' => 'Content management',
 ];

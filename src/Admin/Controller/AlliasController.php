@@ -199,23 +199,105 @@ final class AlliasController extends BaseController
             return $this->redirect('/admin/?p=domain');
         }
 
+        $success = '';
+        if ($request->isPost()) {
+            $csrfErr = $this->requireCsrf($request);
+            if ($csrfErr !== null) {
+                return $csrfErr;
+            }
+
+            $data = $this->siteConfig->all();
+
+            // Статус
+            $data['alliases_available'][$domain][$allias] = isset($request->post['available']);
+
+            // Скин
+            $skin = (string) ($request->post['skin'] ?? 'default');
+            $data['alliases_skins'][$domain][$allias] = $skin;
+
+            // Языки (собираем чекбоксы)
+            $langs = [];
+            if (isset($request->post['lang_ru'])) {
+                $langs[] = 'ru';
+            }
+            if (isset($request->post['lang_en'])) {
+                $langs[] = 'en';
+            }
+            if (isset($request->post['lang_zh'])) {
+                $langs[] = 'zh';
+            }
+            $data['alliases_langs'][$domain][$allias] = $langs;
+
+            Fs::writeAtomic(
+                $this->paths->siteConfig(),
+                json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n",
+            );
+            $success = View::t('msg.saved');
+        }
+
+        // Получаем текущие настройки
+        $available = (bool) $this->siteConfig->getByKey(['alliases_available', $domain, $allias], true);
+        $currentSkin = (string) $this->siteConfig->getByKey(['alliases_skins', $domain, $allias], 'default');
+        $currentLangs = $this->siteConfig->getByKey(['alliases_langs', $domain, $allias], ['ru']);
+        if (!is_array($currentLangs)) {
+            $currentLangs = ['ru'];
+        }
+
+        $skinsAllowed = $this->siteConfig->getByKey(['domains_skins_allowed', $domain], ['default']);
+        $skinOptions = [];
+        if (is_array($skinsAllowed)) {
+            foreach ($skinsAllowed as $s) {
+                $skinOptions[(string)$s] = (string)$s;
+            }
+        }
+        if ($skinOptions === []) {
+            $skinOptions = ['default' => 'default'];
+        }
+
         $card = Builder::div('admin-card');
 
+        // Хлебные крошки
         $breadcrumbs = Builder::div('breadcrumbs');
-        $breadcrumbs->append(Builder::a('/admin/?p=domain')->content('Домены'));
+        $breadcrumbs->append(Builder::a('/admin/?p=domain')->content(View::t('domain.bread_domains')));
         $breadcrumbs->append(Text::raw(' / '));
         $breadcrumbs->append(Builder::a('/admin/?p=domain:edit&domain=' . urlencode($domain))->content($domain));
         $breadcrumbs->append(Text::raw(' / '));
-        $breadcrumbs->append(Builder::a('/admin/?p=allias&domain=' . urlencode($domain))->content('Алиасы'));
+        $breadcrumbs->append(Builder::a('/admin/?p=allias&domain=' . urlencode($domain))->content(View::t('domain.tab_alliases')));
         $card->append($breadcrumbs);
 
-        $card->append(Builder::h(1)->content('Алиас: ' . View::esc($allias)));
+        $card->append(Builder::h(1)->content(View::t('allias.title') . ': ' . View::esc($allias)));
         $card->append(View::alliasTabs($domain, $allias, 'settings'));
 
-        $card->append(Message::info('Это заготовка дашборда алиаса. Здесь будут настройки skin, title и БД для конкретного алиаса.')->build());
+        if ($success !== '') {
+            $card->append(Message::success($success)->build());
+        }
 
-        $card->append(Builder::a('/admin/?p=page&domain=' . urlencode($domain) . '&allias=' . urlencode($allias), 'btn btn-primary')->content('Перейти к страницам'));
+        // Быстрые ссылки на контент
+        $card->append(Builder::h(2)->content(View::t('allias.quick_links')));
+        $links = Builder::div('page-actions');
+        $base = '/admin/?domain=' . urlencode($domain) . '&allias=' . urlencode($allias);
+        $links->append(Builder::a('/admin/?p=page' . $base, 'btn btn-outline')->content(View::t('domain.tab_pages')));
+        $links->append(Builder::a('/admin/?p=filler' . $base, 'btn btn-outline')->content(View::t('domain.tab_fillers')));
+        $links->append(Builder::a('/admin/?p=allias_scheme' . $base, 'btn btn-outline')->content(View::t('domain.tab_allias_schemes')));
+        $links->attrs()->styleAdd('margin-bottom: 30px;');
+        $card->append($links);
 
-        return Response::html($this->view->render($card, ['title' => 'Алиас: ' . $allias]));
+        // Форма настроек
+        $card->append(Builder::h(2)->content(View::t('allias.settings')));
+
+        $form = Form::create('/admin/?p=allias:edit&domain=' . urlencode($domain) . '&allias=' . urlencode($allias), 'POST')
+            ->csrf($this->csrf->field())
+            ->add(Field::checkbox('available')->label(View::t('allias.active'))->checked($available))
+            ->add(Field::select('skin')->label(View::t('allias.skin'))->options($skinOptions)->selected($currentSkin))
+
+            ->add(Field::checkbox('lang_ru')->label('Русский (RU)')->checked(in_array('ru', $currentLangs, true)))
+            ->add(Field::checkbox('lang_en')->label('English (EN)')->checked(in_array('en', $currentLangs, true)))
+            ->add(Field::checkbox('lang_zh')->label('中文 (ZH)')->checked(in_array('zh', $currentLangs, true)))
+
+            ->submit(View::t('domain.save'));
+
+        $card->append($form->build());
+
+        return Response::html($this->view->render($card, ['title' => View::t('allias.title') . ': ' . $allias]));
     }
 }

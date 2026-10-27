@@ -134,4 +134,10 @@ return [
     'admin.security.time_left' => '剩余时间',
     'admin.security.minutes_left' => '{mins} 分钟',
     'admin.security.unban_all' => '解封全部',
+
+    'admin.allias.title' => '别名',
+    'admin.allias.settings' => '别名设置',
+    'admin.allias.active' => '别名已激活',
+    'admin.allias.skin' => '皮肤',
+    'admin.allias.quick_links' => '内容管理',
 ];
