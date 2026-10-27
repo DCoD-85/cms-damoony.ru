@@ -1,72 +1,48 @@
---- НАЧАЛО ФАЙЛА _docrebuild/readme.md ---
+--- НАЧАЛО ФАЙЛА _doc/readme.md ---
 
-Damoony Engine
+markdown
+# Damoony Engine
+
 Легковесный PHP 8.4 движок для мультидоменных сайтов с собственной UI-моделью.
 
-Что это
+## Что это
 Damoony Engine — это переосмысление архитектуры SimplCMS. Он сохраняет философию старого проекта (домены как единица организации, UI как дерево, регионы как плагины, файловый роутинг), но реализован с нуля на современных стандартах.
 
-Стек
-PHP >= 8.4
+## Стек
+- PHP >= 8.4
+- Composer (PSR-4, PSR-3, PSR-11)
+- PHPUnit 10 (233 теста)
+- PHPStan (level 8)
+- **MariaDB / MySQL** (production) через PDO
+- Nginx + PHP-FPM (или Apache + mod_php)
 
-Composer (PSR-4, PSR-3, PSR-11)
+## Структура
+- `bin/cli.php` — точка входа CLI
+- `config/` — JSON-конфиги (`site.config`, `engine.config`, `admin.config`)
+- `src/` — исходный код (PSR-4, `Damoony\`)
+- `lang/` — файлы переводов (`ru.php`, `en.php`, `zh.php`)
+- `www/` — публичная директория (`index.php`, `admin/index.php`, `media/`)
+- `app/<domain>/` — пользовательские домены (например, `app/damoony.ru/`)
+- `migrations/` — SQL-миграции (для MariaDB)
+- `var/` — runtime (БД, логи, кэш, бан-листы)
+- `_dev/` — тесты, конфиги PHPUnit/PHPStan, инструменты
+- `_doc/` — документация
 
-PHPUnit 10
+## Принципы
+1. **Домен — единица организации.** Всё скоупится по домену и алиасу.
+2. **UI — это дерево.** Представление строится как типизированное дерево узлов (`Node`, `Element`, `Attrs`).
+3. **Регионы, Слоты и Filler.** Шаблон собирается из блоков (регионов), схемы используют слоты для их расстановки.
+4. **Управление из кода.** Страницы могут управлять регионами на лету (`disable`, `useGlobal`, `setContent`).
+5. **Роутинг — файловые правила.** Страницы ищутся по `.rules.json` в дереве `algoritm/`.
+6. **Один способ сделать что-то.** Один слой БД (PDO), один роутер, один автозагрузчик.
+7. **Explicit over implicit.** Нет `$GLOBALS`, статических кэшей, магии `__get`.
+8. **Контракт-first.** Публичный API — интерфейсы (`AuthInterface`, `RegionInterface` и др.).
+9. **CLI и Админка — равноправные интерфейсы.** Любое управление доступно и в консоли, и в UI.
+10. **Безопасность — основа.** Пароли через `password_hash`, CSRF на POST, HttpOnly куки, защита от брутфорса.
 
-PHPStan (level 8)
-
-SQLite (dev) / MySQL/MariaDB (prod) через PDO
-
-Nginx + PHP-FPM (или Apache + mod_php)
-
-Структура
-bin/cli.php — точка входа CLI
-
-config/ — JSON-конфиги (site.config, engine.config, admin.config)
-
-src/ — исходный код (PSR-4, Damoony\)
-
-www/ — публичная директория (index.php, admin/index.php, media/)
-
-app/<domain>/ — пользовательские домены (например, app/damoony.ru/)
-
-app/<domain>/<allias>/algoritm/ — страницы алиасов (www, doc, admin)
-
-app/<domain>/.alliasglobal/ — глобальные блоки домена (скрытая папка)
-
-app/<domain>/.alliasscheme/ — глобальные схемы домена (скрытая папка)
-
-migrations/ — SQL-миграции
-
-var/ — runtime (БД, логи, кэш, бан-листы)
-
-_dev/ — тесты, конфиги PHPUnit/PHPStan, инструменты
-
-_doc/ — документация
-
-Принципы
-Домен — единица организации. Всё скоупится по домену и алиасу.
-
-UI — это дерево. Представление строится как типизированное дерево узлов (Node, Element, Attrs), а не строковый шаблон.
-
-Регионы, Слоты и Filler. Шаблон собирается из блоков (регионов). Схемы используют слоты для их расстановки. Filler'ы позволяют переопределять блоки для конкретных алиасов.
-
-Управление из кода. Страницы могут управлять регионами на лету (disable, useGlobal, setContent), скрывая или подменяя блоки.
-
-Роутинг — файловые правила. Страницы ищутся по .rules.json в дереве algoritm/.
-
-Один способ сделать что-то. Один слой БД (PDO), один роутер, один автозагрузчик (Composer PSR-4).
-
-Explicit over implicit. Нет $GLOBALS, статических кэшей, магии __get.
-
-Контракт-first. Публичный API — интерфейсы (AuthInterface, RegionInterface и др.).
-
-CLI и Админка — равноправные интерфейсы. Любое управление доступно как в CLI, так и в визуальном интерфейсе (с использованием собственных UI-компонентов и встроенного редактора кода).
-
-Безопасность — основа. Пароли через password_hash, база данных для пользователей, CSRF на POST, HttpOnly куки, защита от брутфорса.
-
-Быстрый старт
-bash
+## Быстрый старт
+Убедись, что в `config/engine.config` прописаны доступы к MariaDB, затем выполни:
+```bash
 composer install
 php bin/cli.php db:migrate
 php bin/cli.php admin:passwd --name=admin --password=secret
@@ -83,10 +59,14 @@ php bin/cli.php user:new --login=admin --email=admin@example.com --password=secr
 ☑ UI-компоненты (Form, Field, Table, Button, Message)
 ☑ Регионы (Slots, Fillers, Runtime Region Manager)
 ☑ Auth (DbAuth, SessionAuth, CSRF, Login/Logout)
-☑ DB (PDO, MigrationRunner)
-☑ CLI (14 команд)
-☑ Admin (Древовидная навигация Домен/Алиас, CRUD, управление привязками хостов, медиа-менеджер, встроенный редактор кода)
-[~] I18n — LanguageNegotiator + Language{Path,Cookie}Middleware реализованы; файлы переводов и UI-переключатель — в работе.
+☑ DB (PDO, MigrationRunner) — MariaDB / MySQL
+☑ CLI (16 команд, включая trash:clear)
+☑ Admin: Красивая темная шапка, выпадающее меню профиля, встроенный редактор кода.
+☑ I18n (Админка): Полный перевод (RU / EN / ZH), динамический список языков из admin.config.
+☑ Профиль: Сводка, безопасность (смена пароля) и логирование входов (IP, время).
+☑ Skins: Автоподключение main.css/main.js активного скина через SkinManager.
+☑ CI: GitHub Actions (PHPUnit, PHPStan, PHP-CS-Fixer).
+[~] I18n (Фронтенд): инфраструктура заложена, но переключатель языка на самом сайте пока в разработке.
 
-[~] Skins — SkinCookieMiddleware реализован; SkinManager и автоподключение main.css/main.js — в работе.
---- КОНЕЦ ФАЙЛА _docrebuild/readme.md ---
+text
+--- КОНЕЦ ФАЙЛА _doc/readme.md ---
