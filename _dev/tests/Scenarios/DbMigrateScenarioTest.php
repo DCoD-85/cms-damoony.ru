@@ -20,7 +20,7 @@ final class DbMigrateScenarioTest extends TestCase
     protected function setUp(): void
     {
         $this->root = sys_get_temp_dir() . '/damoony_db_' . bin2hex(random_bytes(4));
-        mkdir($this->root . '/migrations', 0777, true);
+        mkdir($this->root . '/migrations', 0o777, true);
         $this->dbPath = $this->root . '/test.db';
 
         $migrations = [

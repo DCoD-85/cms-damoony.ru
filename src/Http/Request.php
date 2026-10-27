@@ -7,12 +7,12 @@ namespace Damoony\Http;
 final class Request
 {
     /**
-     * @param array<string, string>  $query
-     * @param array<string, mixed>   $post
-     * @param array<string, string>  $headers
-     * @param array<string, mixed>   $cookies
-     * @param array<string, mixed>   $files
-     * @param array<string, string>  $server
+     * @param array<string, string> $query
+     * @param array<string, mixed> $post
+     * @param array<string, string> $headers
+     * @param array<string, mixed> $cookies
+     * @param array<string, mixed> $files
+     * @param array<string, string> $server
      */
     public function __construct(
         public readonly string $method,
@@ -49,6 +49,7 @@ final class Request
 
     /**
      * @param array<string, mixed> $server
+     *
      * @return array<string, string>
      */
     private static function collectHeaders(array $server): array
@@ -73,7 +74,7 @@ final class Request
         return $headers;
     }
 
-	public function withPath(string $path): self
+    public function withPath(string $path): self
     {
         return new self(
             method: $this->method,

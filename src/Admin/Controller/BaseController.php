@@ -19,7 +19,7 @@ abstract class BaseController
     ) {
     }
 
-    public function requireAuth(): ?Response
+    final public function requireAuth(): ?Response
     {
         if (!$this->auth->isLoggedIn()) {
             return Response::redirect('/admin/?p=login', 302);
@@ -27,7 +27,7 @@ abstract class BaseController
         return null;
     }
 
-    public function requirePost(Request $request): ?Response
+    final public function requirePost(Request $request): ?Response
     {
         if (!$request->isPost()) {
             return Response::text('Method Not Allowed', 405);
@@ -35,7 +35,7 @@ abstract class BaseController
         return null;
     }
 
-    public function requireCsrf(Request $request): ?Response
+    final public function requireCsrf(Request $request): ?Response
     {
         if (!$this->csrf->check($request->post)) {
             return Response::text('CSRF token invalid', 403);
@@ -43,7 +43,7 @@ abstract class BaseController
         return null;
     }
 
-    public function redirect(string $url): Response
+    final public function redirect(string $url): Response
     {
         return Response::redirect($url, 302);
     }

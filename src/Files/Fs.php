@@ -13,7 +13,7 @@ final class Fs
         if (is_dir($path)) {
             return;
         }
-        if (!@mkdir($path, 0775, true) && !is_dir($path)) {
+        if (!@mkdir($path, 0o775, true) && !is_dir($path)) {
             throw new RuntimeException('Cannot create directory: ' . $path);
         }
     }

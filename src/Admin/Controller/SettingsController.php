@@ -29,7 +29,9 @@ final class SettingsController extends BaseController
     public function index(Request $request): Response
     {
         $auth = $this->requireAuth();
-        if ($auth !== null) return $auth;
+        if ($auth !== null) {
+            return $auth;
+        }
 
         $file = $this->root . '/config/site.config';
         $error = '';
@@ -40,7 +42,9 @@ final class SettingsController extends BaseController
 
         if ($request->isPost()) {
             $csrfErr = $this->requireCsrf($request);
-            if ($csrfErr !== null) return $csrfErr;
+            if ($csrfErr !== null) {
+                return $csrfErr;
+            }
 
             $title = (string) ($request->post['title'] ?? '');
             $lang = (string) ($request->post['language'] ?? 'ru-ru');
@@ -49,7 +53,7 @@ final class SettingsController extends BaseController
                 $data = $this->siteConfig->all();
                 $data['title'] = $title;
                 $data['language'] = $lang;
-                
+
                 Fs::writeAtomic($file, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
                 return $this->redirect('/admin/?p=settings&saved=1');
             } catch (\Throwable $e) {
@@ -70,13 +74,17 @@ final class SettingsController extends BaseController
         $card = Builder::div('admin-card');
         $card->append(Builder::h(1)->content('Глобальные настройки'));
 
-        if ($success !== '') $card->append(Message::success($success)->build());
-        if ($error !== '') $card->append(Message::error($error)->build());
+        if ($success !== '') {
+            $card->append(Message::success($success)->build());
+        }
+        if ($error !== '') {
+            $card->append(Message::error($error)->build());
+        }
 
         $card->append($form->build());
         $backBtn = Builder::a('/admin/?p=domain', 'btn btn-outline')->content('← Назад к доменам');
-		$backBtn->attrs()->styleAdd('margin-top: 20px;');
-		$card->append($backBtn);
+        $backBtn->attrs()->styleAdd('margin-top: 20px;');
+        $card->append($backBtn);
 
         return Response::html($this->view->render($card, ['title' => 'Настройки']));
     }

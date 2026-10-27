@@ -48,7 +48,7 @@ final class CliApplicationTest extends TestCase
 
     public function testCustomCommandRuns(): void
     {
-        $cmd = new class implements CommandInterface {
+        $cmd = new class () implements CommandInterface {
             public function name(): string
             {
                 return 'greet';
@@ -81,7 +81,7 @@ final class CliApplicationTest extends TestCase
 
     public function testCommandThrowableIsCaught(): void
     {
-        $cmd = new class implements CommandInterface {
+        $cmd = new class () implements CommandInterface {
             public function name(): string
             {
                 return 'boom';

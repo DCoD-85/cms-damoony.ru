@@ -12,9 +12,9 @@ final class Markdown
 
         $codeBlocks = [];
         $text = preg_replace_callback('/```([a-z]*)\n(.*?)\n```/s', function ($m) use (&$codeBlocks) {
-            $placeholder = "___CODE_BLOCK_" . count($codeBlocks) . "___";
-            $codeBlocks[$placeholder] = '<pre><code class="language-' . ($m[1] ?: 'text') . '">' 
-                . htmlspecialchars((string)$m[2], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') 
+            $placeholder = '___CODE_BLOCK_' . count($codeBlocks) . '___';
+            $codeBlocks[$placeholder] = '<pre><code class="language-' . ($m[1] ?: 'text') . '">'
+                . htmlspecialchars((string)$m[2], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
                 . '</code></pre>';
             return $placeholder;
         }, $text) ?? $text;

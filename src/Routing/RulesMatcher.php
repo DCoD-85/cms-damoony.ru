@@ -8,12 +8,14 @@ final class RulesMatcher
 {
     /**
      * @param array<string, mixed> $rules
+     *
      * @return array{0: string, 1: array<string, string>}|null
      */
-     /**
+    /**
      * @param array<string, mixed> $rules
+    *
      * @return array{0: string, 1: array<string, string>}|null
-     */
+    */
     public function matchSegment(string $segment, array $rules): ?array
     {
         $available = $rules['available'] ?? [];

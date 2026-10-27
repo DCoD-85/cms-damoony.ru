@@ -8,7 +8,6 @@ use Damoony\Admin\View;
 use Damoony\Cli\Commands\BlockNewCommand;
 use Damoony\Cli\Commands\BlockRemoveCommand;
 use Damoony\Cli\Context;
-use Damoony\Core\Config;
 use Damoony\Files\Paths;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
@@ -33,17 +32,23 @@ final class BlockController extends BaseController
     public function index(Request $request): Response
     {
         $auth = $this->requireAuth();
-        if ($auth !== null) return $auth;
+        if ($auth !== null) {
+            return $auth;
+        }
 
         $domain = (string) $request->query('domain', '');
-        if ($domain === '') return $this->redirect('/admin/?p=domain');
+        if ($domain === '') {
+            return $this->redirect('/admin/?p=domain');
+        }
 
         $blocksDir = $this->paths->domain($domain) . '/.alliasglobal';
         $blocks = [];
         if (is_dir($blocksDir)) {
             $items = scandir($blocksDir) ?: [];
             foreach ($items as $item) {
-                if ($item === '.' || $item === '..' || !is_dir($blocksDir . '/' . $item)) continue;
+                if ($item === '.' || $item === '..' || !is_dir($blocksDir . '/' . $item)) {
+                    continue;
+                }
                 $blocks[] = $item;
             }
         }
@@ -78,14 +83,14 @@ final class BlockController extends BaseController
             foreach ($blocks as $block) {
                 $editUrl = '/admin/?p=editor&domain=' . urlencode($domain) . '&file=' . urlencode('.alliasglobal/' . $block . '/' . $block . '.php');
                 $deleteUrl = '/admin/?p=block:remove&domain=' . urlencode($domain) . '&name=' . urlencode($block);
-                
+
                 $actionsHtml = Builder::div('table-actions');
                 $actionsHtml->append(Builder::a($editUrl, 'btn btn-outline')->content('Редактировать'));
                 $actionsHtml->append(Builder::a($deleteUrl, 'btn btn-danger')->content('Удалить'));
 
                 $table->row([
                     Text::raw('<b>' . View::esc($block) . '</b>'),
-                    $actionsHtml
+                    $actionsHtml,
                 ]);
             }
         }
@@ -97,21 +102,27 @@ final class BlockController extends BaseController
     public function new(Request $request): Response
     {
         $auth = $this->requireAuth();
-        if ($auth !== null) return $auth;
+        if ($auth !== null) {
+            return $auth;
+        }
 
         $domain = (string) $request->query('domain', '');
-        if ($domain === '') return $this->redirect('/admin/?p=domain');
+        if ($domain === '') {
+            return $this->redirect('/admin/?p=domain');
+        }
 
         $error = '';
         $nameVal = '';
 
         if ($request->isPost()) {
             $csrfErr = $this->requireCsrf($request);
-            if ($csrfErr !== null) return $csrfErr;
+            if ($csrfErr !== null) {
+                return $csrfErr;
+            }
 
             $nameVal = (string) ($request->post['name'] ?? '');
             $cmd = new BlockNewCommand($this->paths);
-            $res = $cmd->run(['domain' => $domain, 'name' => $nameVal], new Context(static fn() => null));
+            $res = $cmd->run(['domain' => $domain, 'name' => $nameVal], new Context(static fn () => null));
 
             if ($res->ok) {
                 return $this->redirect('/admin/?p=block&domain=' . urlencode($domain));
@@ -135,11 +146,11 @@ final class BlockController extends BaseController
 
         $card->append(Builder::h(1)->content('Создать блок'));
         $card->append(View::domainTabs($domain, 'blocks'));
-        
+
         if ($error !== '') {
             $card->append(Message::error($error)->build());
         }
-        
+
         $card->append($form->build());
 
         return Response::html($this->view->render($card, ['title' => 'Новый блок']));
@@ -148,14 +159,16 @@ final class BlockController extends BaseController
     public function remove(Request $request): Response
     {
         $auth = $this->requireAuth();
-        if ($auth !== null) return $auth;
+        if ($auth !== null) {
+            return $auth;
+        }
 
         $domain = (string) $request->query('domain', '');
         $name = (string) $request->query('name', '');
 
         if ($domain !== '' && $name !== '') {
             $cmd = new BlockRemoveCommand($this->paths);
-            $cmd->run(['domain' => $domain, 'name' => $name], new Context(static fn() => null));
+            $cmd->run(['domain' => $domain, 'name' => $name], new Context(static fn () => null));
         }
 
         return $this->redirect('/admin/?p=block&domain=' . urlencode($domain));

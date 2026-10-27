@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Damoony\Admin;
 
 use Damoony\Admin\Controller\BaseController;
+use Damoony\Error\ErrorPage;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
-use Damoony\Error\ErrorPage;
 
 final class AdminRouter
 {

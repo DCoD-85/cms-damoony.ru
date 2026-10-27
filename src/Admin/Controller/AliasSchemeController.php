@@ -15,14 +15,18 @@ final class AliasSchemeController extends BaseController
     public function index(Request $request): Response
     {
         $auth = $this->requireAuth();
-        if ($auth !== null) return $auth;
+        if ($auth !== null) {
+            return $auth;
+        }
 
         $domain = (string) $request->query('domain', '');
         $allias = (string) $request->query('allias', '');
-        if ($domain === '' || $allias === '') return $this->redirect('/admin/?p=domain');
+        if ($domain === '' || $allias === '') {
+            return $this->redirect('/admin/?p=domain');
+        }
 
         $card = Builder::div('admin-card');
-        
+
         $breadcrumbs = Builder::div('breadcrumbs');
         $breadcrumbs->append(Builder::a('/admin/?p=domain')->content('Домены'));
         $breadcrumbs->append(\Damoony\Ui\Text::raw(' / '));

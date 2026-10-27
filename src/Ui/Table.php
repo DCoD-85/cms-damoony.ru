@@ -8,7 +8,7 @@ final class Table extends Component
 {
     /** @var array<string> */
     private array $headers = [];
-    
+
     /** @var list<array{cells: list<Node|string>, class: string}> */
     private array $rows = [];
 

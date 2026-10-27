@@ -28,25 +28,29 @@ final class MediaController extends BaseController
     public function index(Request $request): Response
     {
         $auth = $this->requireAuth();
-        if ($auth !== null) return $auth;
+        if ($auth !== null) {
+            return $auth;
+        }
 
         $domain = (string) $request->query('domain', '');
         $dirName = $domain !== '' ? $domain : 'shared';
         $dir = $this->root . '/www/media/' . $dirName;
-        
+
         if (!is_dir($dir)) {
-            @mkdir($dir, 0775, true);
+            @mkdir($dir, 0o775, true);
         }
 
         $files = [];
         if (is_dir($dir)) {
             $items = scandir($dir) ?: [];
             foreach ($items as $item) {
-                if ($item === '.' || $item === '..' || is_dir($dir . '/' . $item)) continue;
+                if ($item === '.' || $item === '..' || is_dir($dir . '/' . $item)) {
+                    continue;
+                }
                 $files[] = [
                     'name' => $item,
                     'size' => filesize($dir . '/' . $item) ?: 0,
-                    'url' => '/media/' . $dirName . '/' . $item
+                    'url' => '/media/' . $dirName . '/' . $item,
                 ];
             }
         }
@@ -83,7 +87,7 @@ final class MediaController extends BaseController
             ->submit('Загрузить');
 
         $card->append($form->build());
-        
+
         // ИСПРАВЛЕНИЕ ОШИБКИ append(Attrs): разделяем создание hr и добавление стилей
         $hr = Builder::el('hr');
         $hr->attrs()->styleAdd('margin: 30px 0; border: 0; border-top: 1px solid #eee;');
@@ -97,25 +101,25 @@ final class MediaController extends BaseController
         } else {
             foreach ($files as $f) {
                 $sizeKb = round($f['size'] / 1024, 1) . ' KB';
-                
+
                 $actionsHtml = Builder::div('table-actions');
                 $openBtn = Builder::a($f['url'], 'btn btn-outline')->content('Открыть');
-				$openBtn->attrs()->add('target', '_blank');
-				$actionsHtml->append($openBtn);
-                
+                $openBtn->attrs()->add('target', '_blank');
+                $actionsHtml->append($openBtn);
+
                 // ИСПРАВЛЕНИЕ CSRF: Удаление через POST-форму, а не GET-ссылку
                 $delForm = Form::create('/admin/?p=media:delete&domain=' . urlencode($domain) . '&file=' . urlencode($f['name']), 'POST')
                     ->csrf($this->csrf->field())
                     ->submit('Удалить');
                 $delFormNode = $delForm->build();
                 $delFormNode->attrs()->styleAdd('display:inline-block; margin:0; border:none;');
-                
+
                 $actionsHtml->append($delFormNode);
 
                 $table->row([
                     Text::raw('<a href="' . View::esc($f['url']) . '" target="_blank">' . View::esc($f['name']) . '</a>'),
                     Text::raw($sizeKb),
-                    $actionsHtml
+                    $actionsHtml,
                 ]);
             }
         }
@@ -128,26 +132,32 @@ final class MediaController extends BaseController
     public function upload(Request $request): Response
     {
         $auth = $this->requireAuth();
-        if ($auth !== null) return $auth;
+        if ($auth !== null) {
+            return $auth;
+        }
 
         $csrfErr = $this->requireCsrf($request);
-        if ($csrfErr !== null) return $csrfErr;
+        if ($csrfErr !== null) {
+            return $csrfErr;
+        }
 
         $domain = (string) $request->query('domain', '');
         $dirName = $domain !== '' ? $domain : 'shared';
         $dir = $this->root . '/www/media/' . $dirName;
-        
-        if (!is_dir($dir)) @mkdir($dir, 0775, true);
+
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0o775, true);
+        }
 
         if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
             $rawName = $_FILES['file']['name'] ?? '';
-            
+
             // ИСПРАВЛЕНИЕ pathinfo: проверяем, что имя это строка
             if (is_string($rawName)) {
                 $name = basename($rawName);
                 $name = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $name) ?: 'file';
                 $dest = $dir . '/' . $name;
-                
+
                 // Защита от перезаписи
                 $i = 1;
                 while (is_file($dest)) {
@@ -157,7 +167,7 @@ final class MediaController extends BaseController
                     $dest = $dir . '/' . $filename . '_' . $i . $ext;
                     $i++;
                 }
-                
+
                 move_uploaded_file($_FILES['file']['tmp_name'], $dest);
             }
         }
@@ -168,22 +178,30 @@ final class MediaController extends BaseController
     public function delete(Request $request): Response
     {
         $auth = $this->requireAuth();
-        if ($auth !== null) return $auth;
+        if ($auth !== null) {
+            return $auth;
+        }
 
         // ИСПРАВЛЕНИЕ БЕЗОПАСНОСТИ: требуем POST
         $postErr = $this->requirePost($request);
-        if ($postErr !== null) return $postErr;
+        if ($postErr !== null) {
+            return $postErr;
+        }
 
         $csrfErr = $this->requireCsrf($request);
-        if ($csrfErr !== null) return $csrfErr;
+        if ($csrfErr !== null) {
+            return $csrfErr;
+        }
 
         $domain = (string) $request->query('domain', '');
         $file = (string) $request->query('file', '');
-        
+
         if ($file !== '') {
             $dirName = $domain !== '' ? $domain : 'shared';
             $path = $this->root . '/www/media/' . $dirName . '/' . basename($file);
-            if (is_file($path)) @unlink($path);
+            if (is_file($path)) {
+                @unlink($path);
+            }
         }
 
         return $this->redirect('/admin/?p=media&domain=' . urlencode($domain) . '&deleted=1');

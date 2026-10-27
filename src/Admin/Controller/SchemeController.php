@@ -31,10 +31,14 @@ final class SchemeController extends BaseController
     public function index(Request $request): Response
     {
         $auth = $this->requireAuth();
-        if ($auth !== null) return $auth;
+        if ($auth !== null) {
+            return $auth;
+        }
 
         $domain = (string) $request->query('domain', '');
-        if ($domain === '') return $this->redirect('/admin/?p=domain');
+        if ($domain === '') {
+            return $this->redirect('/admin/?p=domain');
+        }
 
         $manifestFile = $this->paths->domain($domain) . '/.alliasscheme/schemes.json';
         $manifest = is_file($manifestFile) ? json_decode((string) file_get_contents($manifestFile), true) : [];
@@ -52,7 +56,7 @@ final class SchemeController extends BaseController
         // Заголовок и кнопка
         $header = Builder::div('page-header');
         $header->append(Builder::h(1)->content('Схемы'));
-        
+
         $actions = Builder::div('page-actions');
         $actions->append(Builder::a('/admin/?p=scheme:new&domain=' . urlencode($domain), 'btn btn-primary')->content('+ Создать схему'));
         $header->append($actions);
@@ -66,8 +70,10 @@ final class SchemeController extends BaseController
 
         if ($schemes !== []) {
             foreach ($schemes as $s) {
-                if (!is_string($s)) continue;
-                
+                if (!is_string($s)) {
+                    continue;
+                }
+
                 $editFile = '.alliasscheme/' . $s . '.data.php';
                 $editUrl = '/admin/?p=editor&domain=' . urlencode($domain) . '&file=' . urlencode($editFile);
 
@@ -76,7 +82,7 @@ final class SchemeController extends BaseController
 
                 $table->row([
                     Text::raw('<b>' . View::esc($s) . '</b>'),
-                    $actionsHtml
+                    $actionsHtml,
                 ]);
             }
         } else {
@@ -91,21 +97,27 @@ final class SchemeController extends BaseController
     public function new(Request $request): Response
     {
         $auth = $this->requireAuth();
-        if ($auth !== null) return $auth;
+        if ($auth !== null) {
+            return $auth;
+        }
 
         $domain = (string) ($request->query('domain', '') ?: ($request->post['domain'] ?? ''));
-        if ($domain === '') return $this->redirect('/admin/?p=domain');
+        if ($domain === '') {
+            return $this->redirect('/admin/?p=domain');
+        }
 
         $error = '';
         $nameVal = '';
 
         if ($request->isPost()) {
             $csrfErr = $this->requireCsrf($request);
-            if ($csrfErr !== null) return $csrfErr;
+            if ($csrfErr !== null) {
+                return $csrfErr;
+            }
 
             $nameVal = (string) ($request->post['name'] ?? '');
             $cmd = new SchemeNewCommand($this->paths);
-            $res = $cmd->run(['domain' => $domain, 'name' => $nameVal], new Context(static fn() => null));
+            $res = $cmd->run(['domain' => $domain, 'name' => $nameVal], new Context(static fn () => null));
 
             if ($res->ok) {
                 return $this->redirect('/admin/?p=scheme&domain=' . urlencode($domain));

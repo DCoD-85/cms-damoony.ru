@@ -9,9 +9,9 @@
         "psr/container": "^2.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^10.5",
+        "friendsofphp/php-cs-fixer": "^3.75",
         "phpstan/phpstan": "^1.11",
-        "friendsofphp/php-cs-fixer": "^3.50"
+        "phpunit/phpunit": "^10.5"
     },
     "autoload": {
         "psr-4": {
@@ -20,14 +20,14 @@
     },
     "autoload-dev": {
         "psr-4": {
-        	"Damoony\\Tests\\": "_dev/tests/"
+            "Damoony\\Tests\\": "_dev/tests/"
         }
     },
     "scripts": {
         "test": "phpunit -c _dev/phpunit.xml",
         "stan": "phpstan analyse -c _dev/phpstan.neon --memory-limit=1G",
-        "cs": "php-cs-fixer fix --config=_dev/.php-cs-fixer.php --dry-run --diff",
-        "cs-fix": "php-cs-fixer fix --config=_dev/.php-cs-fixer.php",
+        "cs": "PHP_CS_FIXER_IGNORE_ENV=1 php-cs-fixer fix --config=_dev/.php-cs-fixer.php --dry-run --diff",
+        "cs-fix": "PHP_CS_FIXER_IGNORE_ENV=1 php-cs-fixer fix --config=_dev/.php-cs-fixer.php",
         "check": ["@stan", "@cs", "@test"]
     },
     "config": {

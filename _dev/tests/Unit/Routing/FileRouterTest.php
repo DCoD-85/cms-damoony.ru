@@ -16,7 +16,7 @@ final class FileRouterTest extends TestCase
     protected function setUp(): void
     {
         $this->root = sys_get_temp_dir() . '/damoony_router_' . bin2hex(random_bytes(4));
-        mkdir($this->root, 0777, true);
+        mkdir($this->root, 0o777, true);
     }
 
     protected function tearDown(): void
@@ -45,7 +45,7 @@ final class FileRouterTest extends TestCase
         $base = $this->root . '/app/' . $real . '/' . $allias . '/algoritm';
         $dir = $rel === '' ? $base : $base . '/' . $rel;
         if (!is_dir($dir)) {
-            mkdir($dir, 0777, true);
+            mkdir($dir, 0o777, true);
         }
         file_put_contents($dir . '/.rules.json', json_encode($rules));
         if ($withPhp) {
@@ -111,7 +111,7 @@ final class FileRouterTest extends TestCase
     public function testMissingRulesReturnsNotFound(): void
     {
         $base = $this->root . '/app/example.ru/www/algoritm';
-        mkdir($base, 0777, true);
+        mkdir($base, 0o777, true);
 
         $m = $this->router()->match('/', $this->ctx());
         self::assertFalse($m->found);

@@ -43,9 +43,18 @@ final class Document
         return $this->meta;
     }
 
-    public function html(): Element { return $this->html; }
-    public function head(): Element { return $this->head; }
-    public function body(): Element { return $this->body; }
+    public function html(): Element
+    {
+        return $this->html;
+    }
+    public function head(): Element
+    {
+        return $this->head;
+    }
+    public function body(): Element
+    {
+        return $this->body;
+    }
 
     public function release(): string
     {

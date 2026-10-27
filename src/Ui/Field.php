@@ -36,30 +36,112 @@ final class Field extends Component
         $this->type = $type;
     }
 
-    public static function text(string $name): self { return new self($name, 'text'); }
-    public static function password(string $name): self { return new self($name, 'password'); }
-	public static function datetime(string $name): self { return new self($name, 'datetime-local'); }
-    public static function email(string $name): self { return new self($name, 'email'); }
-    public static function hidden(string $name): self { return new self($name, 'hidden'); }
-    public static function file(string $name): self { return new self($name, 'file'); }
-    public static function textarea(string $name): self { return new self($name, 'textarea'); }
-    public static function select(string $name): self { return new self($name, 'select'); }
-    public static function checkbox(string $name): self { return new self($name, 'checkbox'); }
-    public static function radio(string $name): self { return new self($name, 'radio'); }
+    public static function text(string $name): self
+    {
+        return new self($name, 'text');
+    }
+    public static function password(string $name): self
+    {
+        return new self($name, 'password');
+    }
+    public static function datetime(string $name): self
+    {
+        return new self($name, 'datetime-local');
+    }
+    public static function email(string $name): self
+    {
+        return new self($name, 'email');
+    }
+    public static function hidden(string $name): self
+    {
+        return new self($name, 'hidden');
+    }
+    public static function file(string $name): self
+    {
+        return new self($name, 'file');
+    }
+    public static function textarea(string $name): self
+    {
+        return new self($name, 'textarea');
+    }
+    public static function select(string $name): self
+    {
+        return new self($name, 'select');
+    }
+    public static function checkbox(string $name): self
+    {
+        return new self($name, 'checkbox');
+    }
+    public static function radio(string $name): self
+    {
+        return new self($name, 'radio');
+    }
 
-    public function value(string $value): self { $this->value = $value; return $this; }
-    public function placeholder(string $text): self { $this->placeholder = $text; return $this; }
-    public function label(string $text): self { $this->label = $text; return $this; }
-    public function hint(string $text): self { $this->hint = $text; return $this; }
-    public function error(string $text): self { $this->error = $text; return $this; }
-    public function required(bool $state = true): self { $this->required = $state; return $this; }
-    public function readonly(bool $state = true): self { $this->readonly = $state; return $this; }
-    public function disabled(bool $state = true): self { $this->disabled = $state; return $this; }
-    public function checked(bool $state = true): self { $this->checked = $state; return $this; }
-    public function multiple(bool $state = true): self { $this->multiple = $state; return $this; }
-    public function rows(int $rows): self { $this->rows = $rows; return $this; }
-    public function cols(int $cols): self { $this->cols = $cols; return $this; }
-    public function accept(string $accept): self { $this->accept = $accept; return $this; }
+    public function value(string $value): self
+    {
+        $this->value = $value;
+        return $this;
+    }
+    public function placeholder(string $text): self
+    {
+        $this->placeholder = $text;
+        return $this;
+    }
+    public function label(string $text): self
+    {
+        $this->label = $text;
+        return $this;
+    }
+    public function hint(string $text): self
+    {
+        $this->hint = $text;
+        return $this;
+    }
+    public function error(string $text): self
+    {
+        $this->error = $text;
+        return $this;
+    }
+    public function required(bool $state = true): self
+    {
+        $this->required = $state;
+        return $this;
+    }
+    public function readonly(bool $state = true): self
+    {
+        $this->readonly = $state;
+        return $this;
+    }
+    public function disabled(bool $state = true): self
+    {
+        $this->disabled = $state;
+        return $this;
+    }
+    public function checked(bool $state = true): self
+    {
+        $this->checked = $state;
+        return $this;
+    }
+    public function multiple(bool $state = true): self
+    {
+        $this->multiple = $state;
+        return $this;
+    }
+    public function rows(int $rows): self
+    {
+        $this->rows = $rows;
+        return $this;
+    }
+    public function cols(int $cols): self
+    {
+        $this->cols = $cols;
+        return $this;
+    }
+    public function accept(string $accept): self
+    {
+        $this->accept = $accept;
+        return $this;
+    }
 
     /** @param array<string, string> $options */
     public function options(array $options): self
@@ -164,9 +246,15 @@ final class Field extends Component
             $input->attrs()->add('accept', $this->accept);
         }
 
-        if ($this->required) { $input->attrs()->add('required', 'required'); }
-        if ($this->readonly) { $input->attrs()->add('readonly', 'readonly'); }
-        if ($this->disabled) { $input->attrs()->add('disabled', 'disabled'); }
+        if ($this->required) {
+            $input->attrs()->add('required', 'required');
+        }
+        if ($this->readonly) {
+            $input->attrs()->add('readonly', 'readonly');
+        }
+        if ($this->disabled) {
+            $input->attrs()->add('disabled', 'disabled');
+        }
 
         return $input;
     }
@@ -181,9 +269,15 @@ final class Field extends Component
         if ($this->placeholder !== '') {
             $ta->attrs()->add('placeholder', $this->placeholder);
         }
-        if ($this->required) { $ta->attrs()->add('required', 'required'); }
-        if ($this->readonly) { $ta->attrs()->add('readonly', 'readonly'); }
-        if ($this->disabled) { $ta->attrs()->add('disabled', 'disabled'); }
+        if ($this->required) {
+            $ta->attrs()->add('required', 'required');
+        }
+        if ($this->readonly) {
+            $ta->attrs()->add('readonly', 'readonly');
+        }
+        if ($this->disabled) {
+            $ta->attrs()->add('disabled', 'disabled');
+        }
         $ta->content($this->value);
         return $ta;
     }
@@ -193,9 +287,15 @@ final class Field extends Component
         $sel = new Element('select');
         $sel->attrs()->add('id', 'field_' . $this->name);
         $sel->attrs()->add('name', $this->name . ($this->multiple ? '[]' : ''));
-        if ($this->multiple) { $sel->attrs()->add('multiple', 'multiple'); }
-        if ($this->required) { $sel->attrs()->add('required', 'required'); }
-        if ($this->disabled) { $sel->attrs()->add('disabled', 'disabled'); }
+        if ($this->multiple) {
+            $sel->attrs()->add('multiple', 'multiple');
+        }
+        if ($this->required) {
+            $sel->attrs()->add('required', 'required');
+        }
+        if ($this->disabled) {
+            $sel->attrs()->add('disabled', 'disabled');
+        }
 
         if ($this->placeholderOption !== '') {
             $opt = new Element('option');

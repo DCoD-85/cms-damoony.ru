@@ -62,7 +62,7 @@ final class ComponentTest extends TestCase
         self::assertStringNotContainsString('<button', $html);
     }
 
-	public function testFieldTextarea(): void
+    public function testFieldTextarea(): void
     {
         $f = Field::textarea('desc')->rows(5)->cols(30)->value('Hello');
         $html = $f->release();

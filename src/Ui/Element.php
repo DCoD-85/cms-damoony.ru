@@ -93,7 +93,7 @@ final class Element implements Node
     {
         return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
-	    /**
+    /**
      * @param array<string, mixed> $data
      */
     public static function fromArray(array $data): self
@@ -111,7 +111,7 @@ final class Element implements Node
                 }
             }
         }
-        
+
         if (isset($data['slot'])) {
             $el->append(new Slot((string) $data['slot']));
         }

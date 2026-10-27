@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Damoony\Tests\Unit\Admin;
 
 use Damoony\Admin\AdminRouter;
-use Damoony\Admin\Controller\BaseController;
 use Damoony\Admin\AuthInterface;
+use Damoony\Admin\Controller\BaseController;
 use Damoony\Admin\View;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
@@ -18,26 +18,56 @@ final class AdminRouterTest extends TestCase
 {
     private function stubController(string $responseBody): BaseController
     {
-        $session = new class implements SessionInterface {
+        $session = new class () implements SessionInterface {
             public array $data = [];
-            public function start(): void {}
-            public function isStarted(): bool { return true; }
-            public function get(string $key, mixed $default = null): mixed { return $this->data[$key] ?? $default; }
-            public function set(string $key, mixed $value): void { $this->data[$key] = $value; }
-            public function remove(string $key): void { unset($this->data[$key]); }
-            public function regenerate(): void {}
-            public function destroy(): void { $this->data = []; }
+            public function start(): void
+            {
+            }
+            public function isStarted(): bool
+            {
+                return true;
+            }
+            public function get(string $key, mixed $default = null): mixed
+            {
+                return $this->data[$key] ?? $default;
+            }
+            public function set(string $key, mixed $value): void
+            {
+                $this->data[$key] = $value;
+            }
+            public function remove(string $key): void
+            {
+                unset($this->data[$key]);
+            }
+            public function regenerate(): void
+            {
+            }
+            public function destroy(): void
+            {
+                $this->data = [];
+            }
         };
-        $auth = new class implements AuthInterface {
-            public function attempt(string $login, string $password): bool { return false; }
-            public function isLoggedIn(): bool { return true; }
-            public function login(): string { return 'admin'; }
-            public function logout(): void {}
+        $auth = new class () implements AuthInterface {
+            public function attempt(string $login, string $password): bool
+            {
+                return false;
+            }
+            public function isLoggedIn(): bool
+            {
+                return true;
+            }
+            public function login(): string
+            {
+                return 'admin';
+            }
+            public function logout(): void
+            {
+            }
         };
         $csrf = new Csrf($session);
         $view = new View();
 
-        return new class($auth, $csrf, $view, $responseBody) extends BaseController {
+        return new class ($auth, $csrf, $view, $responseBody) extends BaseController {
             public function __construct(AuthInterface $a, Csrf $c, View $v, private string $body)
             {
                 parent::__construct($a, $c, $v);

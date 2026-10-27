@@ -53,10 +53,10 @@ final class ConfigDomainResolver implements DomainResolverInterface
         }
 
         $available = (bool) $this->site->getByKey(['domains_available', $real], false);
-        
+
         // Проверяем статус самого алиаса
         $aliasAvailable = (bool) $this->site->getByKey(['alliases_available', $real, $allias], true);
-        
+
         $stub = null;
         if (!$available) {
             $stub = (string) $this->site->getByKey(['domains_stub', $real, 'current'], 'maintenance');

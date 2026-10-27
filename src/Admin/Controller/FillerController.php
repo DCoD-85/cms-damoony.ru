@@ -34,17 +34,19 @@ final class FillerController extends BaseController
     public function index(Request $request): Response
     {
         $auth = $this->requireAuth();
-        if ($auth !== null) return $auth;
+        if ($auth !== null) {
+            return $auth;
+        }
 
         $domain = (string) $request->query('domain', '');
         $allias = (string) $request->query('allias', '');
-        
+
         if ($domain === '' || $allias === '') {
             return $this->redirect('/admin/?p=domain');
         }
 
         $fillers = $this->siteConfig->getByKey(['fillers', $domain, $allias], []);
-        
+
         $card = Builder::div('admin-card');
 
         // Хлебные крошки
@@ -59,7 +61,7 @@ final class FillerController extends BaseController
         // Заголовок и действия
         $header = Builder::div('page-header');
         $header->append(Builder::h(1)->content('Блоки (Fillers): ' . View::esc($allias)));
-        
+
         $actions = Builder::div('page-actions');
         $actions->append(Builder::a('/admin/?p=filler:new&domain=' . urlencode($domain) . '&allias=' . urlencode($allias), 'btn btn-primary')->content('+ Создать filler'));
         $header->append($actions);
@@ -73,22 +75,22 @@ final class FillerController extends BaseController
 
         if (is_array($fillers) && $fillers !== []) {
             foreach ($fillers as $block => $enabled) {
-                $statusHtml = $enabled 
-                    ? '<span class="badge" style="background:#dcfce7; color:#166534;">Включен</span>' 
+                $statusHtml = $enabled
+                    ? '<span class="badge" style="background:#dcfce7; color:#166534;">Включен</span>'
                     : '<span class="badge" style="background:#fee2e2; color:#991b1b;">Выключен</span>';
-                
+
                 $toggleAction = $enabled ? '0' : '1';
                 $toggleLabel = $enabled ? 'Выключить' : 'Включить';
-                
+
                 $toggleUrl = '/admin/?p=filler:toggle&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&block=' . urlencode((string)$block) . '&value=' . $toggleAction;
 
                 $actionsHtml = Builder::div('table-actions');
                 $actionsHtml->append(Builder::a($toggleUrl, 'btn btn-outline')->content($toggleLabel));
-                
+
                 $table->row([
                     Text::raw('<b>' . View::esc((string)$block) . '</b>'),
                     Text::raw($statusHtml),
-                    $actionsHtml
+                    $actionsHtml,
                 ]);
             }
         } else {
@@ -103,22 +105,28 @@ final class FillerController extends BaseController
     public function new(Request $request): Response
     {
         $auth = $this->requireAuth();
-        if ($auth !== null) return $auth;
+        if ($auth !== null) {
+            return $auth;
+        }
 
         $domain = (string) $request->query('domain', '');
         $allias = (string) $request->query('allias', '');
-        if ($domain === '' || $allias === '') return $this->redirect('/admin/?p=domain');
+        if ($domain === '' || $allias === '') {
+            return $this->redirect('/admin/?p=domain');
+        }
 
         $error = '';
         $blockVal = '';
 
         if ($request->isPost()) {
             $csrfErr = $this->requireCsrf($request);
-            if ($csrfErr !== null) return $csrfErr;
+            if ($csrfErr !== null) {
+                return $csrfErr;
+            }
 
             $blockVal = (string) ($request->post['block'] ?? '');
             $cmd = new FillerNewCommand($this->paths);
-            $res = $cmd->run(['domain' => $domain, 'allias' => $allias, 'block' => $blockVal], new Context(static fn() => null));
+            $res = $cmd->run(['domain' => $domain, 'allias' => $allias, 'block' => $blockVal], new Context(static fn () => null));
 
             if ($res->ok) {
                 return $this->redirect('/admin/?p=filler&domain=' . urlencode($domain) . '&allias=' . urlencode($allias));
@@ -153,7 +161,9 @@ final class FillerController extends BaseController
     public function toggle(Request $request): Response
     {
         $auth = $this->requireAuth();
-        if ($auth !== null) return $auth;
+        if ($auth !== null) {
+            return $auth;
+        }
 
         $domain = (string) $request->query('domain', '');
         $allias = (string) $request->query('allias', '');
@@ -162,7 +172,7 @@ final class FillerController extends BaseController
 
         if ($domain !== '' && $allias !== '' && $block !== '') {
             $cmd = new FillerToggleCommand($this->paths);
-            $cmd->run(['domain' => $domain, 'allias' => $allias, 'block' => $block, 'value' => $value], new Context(static fn() => null));
+            $cmd->run(['domain' => $domain, 'allias' => $allias, 'block' => $block, 'value' => $value], new Context(static fn () => null));
         }
 
         return $this->redirect('/admin/?p=filler&domain=' . urlencode($domain) . '&allias=' . urlencode($allias));

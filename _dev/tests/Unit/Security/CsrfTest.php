@@ -12,7 +12,7 @@ final class CsrfTest extends TestCase
 {
     private function session(): SessionInterface
     {
-        return new class implements SessionInterface {
+        return new class () implements SessionInterface {
             /** @var array<string, mixed> */
             public array $data = [];
 

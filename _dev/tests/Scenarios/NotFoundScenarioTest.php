@@ -23,7 +23,7 @@ final class NotFoundScenarioTest extends TestCase
     protected function setUp(): void
     {
         $this->root = sys_get_temp_dir() . '/damoony_s12_' . bin2hex(random_bytes(4));
-        mkdir($this->root, 0777, true);
+        mkdir($this->root, 0o777, true);
     }
 
     protected function tearDown(): void

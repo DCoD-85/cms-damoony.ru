@@ -57,7 +57,7 @@ final class UserNewCommand implements CommandInterface
 
         $hash = password_hash($password, PASSWORD_DEFAULT);
         $stmt = $pdo->prepare(
-            'INSERT INTO users (login, email, password_hash, status) VALUES (?, ?, ?, ?)'
+            'INSERT INTO users (login, email, password_hash, status) VALUES (?, ?, ?, ?)',
         );
         $stmt->execute([$login, $email, $hash, 'active']);
 

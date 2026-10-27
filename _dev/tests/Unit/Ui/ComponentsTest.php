@@ -36,7 +36,7 @@ final class ComponentsTest extends TestCase
             ->headers('ID', 'Название')
             ->row(['1', 'Первая'])
             ->row(['2', 'Вторая']);
-        
+
         $html = $t->release();
         self::assertStringContainsString('<table class="table">', $html);
         self::assertStringContainsString('<th>ID</th>', $html);

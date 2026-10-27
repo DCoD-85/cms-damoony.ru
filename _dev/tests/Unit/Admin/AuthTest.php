@@ -16,13 +16,13 @@ final class AuthTest extends TestCase
     protected function setUp(): void
     {
         $dir = sys_get_temp_dir() . '/damoony_auth_' . bin2hex(random_bytes(4));
-        mkdir($dir, 0777, true);
+        mkdir($dir, 0o777, true);
         $this->failsFile = $dir . '/fails.json';
     }
 
     private function session(): SessionInterface
     {
-        return new class implements SessionInterface {
+        return new class () implements SessionInterface {
             /** @var array<string, mixed> */
             public array $data = [];
             public bool $started = false;

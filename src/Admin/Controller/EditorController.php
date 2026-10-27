@@ -25,7 +25,9 @@ final class EditorController extends BaseController
     public function index(Request $request): Response
     {
         $auth = $this->requireAuth();
-        if ($auth !== null) return $auth;
+        if ($auth !== null) {
+            return $auth;
+        }
 
         $domain = (string) $request->query('domain', '');
         $file = (string) $request->query('file', '');
@@ -35,7 +37,7 @@ final class EditorController extends BaseController
         }
 
         $path = $this->root . '/app/' . $domain . '/' . ltrim($file, '/');
-        
+
         if (!is_file($path)) {
             return Response::notFound('Файл не найден: ' . $file);
         }
@@ -45,7 +47,9 @@ final class EditorController extends BaseController
 
         if ($request->isPost()) {
             $csrfErr = $this->requireCsrf($request);
-            if ($csrfErr !== null) return $csrfErr;
+            if ($csrfErr !== null) {
+                return $csrfErr;
+            }
 
             $content = (string) ($request->post['content'] ?? '');
             try {
@@ -71,7 +75,7 @@ final class EditorController extends BaseController
         $card = Builder::div('admin-card');
         $card->append(Builder::a($backUrl)->content('← Назад'));
         $card->append(Builder::h(1)->content('Редактор: ' . View::esc($file)));
-        
+
         if ($success !== '') {
             $card->append(Message::success($success)->build());
         }

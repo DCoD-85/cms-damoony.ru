@@ -29,7 +29,7 @@ final class RateLimitMiddleware implements MiddlewareInterface
         $file = rtrim($this->storageDir, '/') . '/' . $key . '.json';
 
         if (!is_dir($this->storageDir)) {
-            @mkdir($this->storageDir, 0775, true);
+            @mkdir($this->storageDir, 0o775, true);
         }
 
         $now = time();

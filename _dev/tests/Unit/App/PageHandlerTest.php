@@ -19,7 +19,7 @@ final class PageHandlerTest extends TestCase
     protected function setUp(): void
     {
         $this->root = sys_get_temp_dir() . '/damoony_ph_' . bin2hex(random_bytes(4));
-        mkdir($this->root, 0777, true);
+        mkdir($this->root, 0o777, true);
     }
 
     protected function tearDown(): void
@@ -44,7 +44,7 @@ final class PageHandlerTest extends TestCase
 
     private function resolver(): DomainResolverInterface
     {
-        return new class implements DomainResolverInterface {
+        return new class () implements DomainResolverInterface {
             public function resolve(string $host): DomainContext
             {
                 throw new \LogicException('not used');
@@ -70,12 +70,12 @@ final class PageHandlerTest extends TestCase
     private function ctx(): RegionContext
     {
         $paths = new \Damoony\Files\Paths(sys_get_temp_dir());
-        
+
         return new RegionContext(
             new Request('GET', '/'),
             new DomainContext('example.ru', 'example.ru', 'www', 'alpha.0.0', 'default', 'ru-RU', true),
             null,
-            ['paths' => $paths]
+            ['paths' => $paths],
         );
     }
 
@@ -84,7 +84,7 @@ final class PageHandlerTest extends TestCase
         $dir = $this->root . '/app/example.ru/www/algoritm'
             . ($rel === '' ? '' : '/' . $rel);
         if (!is_dir($dir)) {
-            mkdir($dir, 0777, true);
+            mkdir($dir, 0o777, true);
         }
         file_put_contents($dir . '/' . $chain . '.php', $code);
     }
@@ -92,18 +92,18 @@ final class PageHandlerTest extends TestCase
     public function testRendersNodeViaDocument(): void
     {
         $this->writePage('ph_about', 'algoritm_ph_about', <<<'PHP'
-<?php
-namespace example\www;
-use Damoony\Algoritm\Algoritm;
-use Damoony\Http\Response;
-use Damoony\Ui\Builder;
-use Damoony\Ui\Node;
-final class algoritm_ph_about extends Algoritm {
-    public function default(): Node|Response|null {
-        return Builder::div('page')->content('about');
-    }
-}
-PHP);
+            <?php
+            namespace example\www;
+            use Damoony\Algoritm\Algoritm;
+            use Damoony\Http\Response;
+            use Damoony\Ui\Builder;
+            use Damoony\Ui\Node;
+            final class algoritm_ph_about extends Algoritm {
+                public function default(): Node|Response|null {
+                    return Builder::div('page')->content('about');
+                }
+            }
+            PHP);
 
         $h = new PageHandler($this->root, $this->resolver());
         $r = $h->handle(RouteMatch::found('algoritm_ph_about', 'ph_about'), $this->ctx());
@@ -115,17 +115,17 @@ PHP);
     public function testReturnsResponseDirectly(): void
     {
         $this->writePage('ph_api', 'algoritm_ph_api', <<<'PHP'
-<?php
-namespace example\www;
-use Damoony\Algoritm\Algoritm;
-use Damoony\Http\Response;
-use Damoony\Ui\Node;
-final class algoritm_ph_api extends Algoritm {
-    public function default(): Node|Response|null {
-        return Response::json(['ok' => true]);
-    }
-}
-PHP);
+            <?php
+            namespace example\www;
+            use Damoony\Algoritm\Algoritm;
+            use Damoony\Http\Response;
+            use Damoony\Ui\Node;
+            final class algoritm_ph_api extends Algoritm {
+                public function default(): Node|Response|null {
+                    return Response::json(['ok' => true]);
+                }
+            }
+            PHP);
 
         $h = new PageHandler($this->root, $this->resolver());
         $r = $h->handle(RouteMatch::found('algoritm_ph_api', 'ph_api'), $this->ctx());
@@ -144,12 +144,12 @@ PHP);
     public function testNullResultIsError(): void
     {
         $this->writePage('ph_nul', 'algoritm_ph_nul', <<<'PHP'
-<?php
-namespace example\www;
-use Damoony\Algoritm\Algoritm;
-final class algoritm_ph_nul extends Algoritm {
-}
-PHP);
+            <?php
+            namespace example\www;
+            use Damoony\Algoritm\Algoritm;
+            final class algoritm_ph_nul extends Algoritm {
+            }
+            PHP);
 
         $h = new PageHandler($this->root, $this->resolver());
         $r = $h->handle(RouteMatch::found('algoritm_ph_nul', 'ph_nul'), $this->ctx());

@@ -18,7 +18,7 @@ final class LoggerTest extends TestCase
         return [new Logger($stream, Env::Test), $stream];
     }
 
-    /** @param mixed $stream */
+    /**  */
     private function read(mixed $stream): array
     {
         assert(is_resource($stream));
@@ -65,7 +65,7 @@ final class LoggerTest extends TestCase
     public function testStringableMessage(): void
     {
         [$logger, $stream] = $this->make();
-        $msg = new class implements \Stringable {
+        $msg = new class () implements \Stringable {
             public function __toString(): string
             {
                 return 'obj';

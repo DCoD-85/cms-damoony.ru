@@ -18,15 +18,15 @@ final class FillerCommandsTest extends TestCase
     protected function setUp(): void
     {
         $this->root = sys_get_temp_dir() . '/damoony_fl_' . bin2hex(random_bytes(4));
-        mkdir($this->root . '/config', 0777, true);
+        mkdir($this->root . '/config', 0o777, true);
         file_put_contents($this->root . '/config/site.config', json_encode([
             'domains_real' => ['example.ru' => 'example.ru'],
             'domains_available' => ['example.ru' => true],
             'domains_namespace' => ['example.ru' => 'example'],
             'alliases_real' => ['example.ru' => ['www' => 'www']],
         ]));
-        mkdir($this->root . '/app/example.ru/www/algoritm', 0777, true);
-        mkdir($this->root . '/app/example.ru/.alliasglobal/top', 0777, true);
+        mkdir($this->root . '/app/example.ru/www/algoritm', 0o777, true);
+        mkdir($this->root . '/app/example.ru/.alliasglobal/top', 0o777, true);
     }
 
     protected function tearDown(): void

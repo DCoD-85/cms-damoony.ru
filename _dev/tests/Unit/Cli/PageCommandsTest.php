@@ -18,7 +18,7 @@ final class PageCommandsTest extends TestCase
     protected function setUp(): void
     {
         $this->root = sys_get_temp_dir() . '/damoony_pg_' . bin2hex(random_bytes(4));
-        mkdir($this->root . '/config', 0777, true);
+        mkdir($this->root . '/config', 0o777, true);
         file_put_contents($this->root . '/config/site.config', json_encode([
             'domains_real' => ['example.ru' => 'example.ru'],
             'domains_available' => ['example.ru' => true],
@@ -26,7 +26,7 @@ final class PageCommandsTest extends TestCase
             'alliases_real' => ['example.ru' => ['www' => 'www']],
         ]));
         $algoritm = $this->root . '/app/example.ru/www/algoritm';
-        mkdir($algoritm, 0777, true);
+        mkdir($algoritm, 0o777, true);
         file_put_contents($algoritm . '/.rules.json', json_encode(['available' => ['']]));
     }
 

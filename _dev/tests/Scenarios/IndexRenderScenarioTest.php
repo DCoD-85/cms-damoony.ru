@@ -6,7 +6,6 @@ namespace Damoony\Tests\Scenarios;
 
 use Damoony\App\FrontController;
 use Damoony\App\PageHandler;
-use Damoony\Auth\AuthInterface;
 use Damoony\Core\Config;
 use Damoony\Core\Container;
 use Damoony\Domain\ConfigDomainResolver;
@@ -26,64 +25,64 @@ final class IndexRenderScenarioTest extends TestCase
     {
         $this->root = sys_get_temp_dir() . '/damoony_s11_' . bin2hex(random_bytes(4));
         $dir = $this->root . '/app/damoony.test/www/algoritm';
-        mkdir($dir, 0777, true);
+        mkdir($dir, 0o777, true);
         file_put_contents($dir . '/.rules.json', json_encode(['available' => ['']]));
         file_put_contents($dir . '/algoritm.php', <<<'PHP'
-<?php
-namespace damoony_test\www;
-use Damoony\Demo\Page\HomePage;
-final class algoritm extends HomePage {}
-PHP);
+            <?php
+            namespace damoony_test\www;
+            use Damoony\Demo\Page\HomePage;
+            final class algoritm extends HomePage {}
+            PHP);
 
         $globalDir = $this->root . '/app/damoony.test/.alliasglobal';
-        mkdir($globalDir . '/hello', 0777, true);
-        mkdir($globalDir . '/footer', 0777, true);
+        mkdir($globalDir . '/hello', 0o777, true);
+        mkdir($globalDir . '/footer', 0o777, true);
 
         file_put_contents($globalDir . '/hello/hello.php', <<<'PHP'
-<?php
-namespace damoony_test;
-use Damoony\Region\RegionContext;
-use Damoony\Region\RegionInterface;
-use Damoony\Ui\Builder;
-use Damoony\Ui\Node;
-final class alliasglobal_hello implements RegionInterface {
-    public function name(): string { return 'hello'; }
-    public function enabled(): bool { return true; }
-    public function render(RegionContext $context): Node {
-        return Builder::div('hello')->content('Hello from test');
-    }
-}
-PHP);
+            <?php
+            namespace damoony_test;
+            use Damoony\Region\RegionContext;
+            use Damoony\Region\RegionInterface;
+            use Damoony\Ui\Builder;
+            use Damoony\Ui\Node;
+            final class alliasglobal_hello implements RegionInterface {
+                public function name(): string { return 'hello'; }
+                public function enabled(): bool { return true; }
+                public function render(RegionContext $context): Node {
+                    return Builder::div('hello')->content('Hello from test');
+                }
+            }
+            PHP);
 
         file_put_contents($globalDir . '/footer/footer.php', <<<'PHP'
-<?php
-namespace damoony_test;
-use Damoony\Region\RegionContext;
-use Damoony\Region\RegionInterface;
-use Damoony\Ui\Builder;
-use Damoony\Ui\Node;
-final class alliasglobal_footer implements RegionInterface {
-    public function name(): string { return 'footer'; }
-    public function enabled(): bool { return true; }
-    public function render(RegionContext $context): Node {
-        return Builder::div('footer')->content('Footer from test');
-    }
-}
-PHP);
+            <?php
+            namespace damoony_test;
+            use Damoony\Region\RegionContext;
+            use Damoony\Region\RegionInterface;
+            use Damoony\Ui\Builder;
+            use Damoony\Ui\Node;
+            final class alliasglobal_footer implements RegionInterface {
+                public function name(): string { return 'footer'; }
+                public function enabled(): bool { return true; }
+                public function render(RegionContext $context): Node {
+                    return Builder::div('footer')->content('Footer from test');
+                }
+            }
+            PHP);
 
         $schemeDir = $this->root . '/app/damoony.test/.alliasscheme';
-        mkdir($schemeDir, 0777, true);
+        mkdir($schemeDir, 0o777, true);
         file_put_contents($schemeDir . '/www.data.php', <<<'PHP'
-<?php
-return [
-    'tag' => 'div',
-    'class' => 'layout',
-    'children' => [
-        ['tag' => 'section', 'slot' => 'hello'],
-        ['tag' => 'footer', 'slot' => 'footer'],
-    ],
-];
-PHP);
+            <?php
+            return [
+                'tag' => 'div',
+                'class' => 'layout',
+                'children' => [
+                    ['tag' => 'section', 'slot' => 'hello'],
+                    ['tag' => 'footer', 'slot' => 'footer'],
+                ],
+            ];
+            PHP);
     }
 
     protected function tearDown(): void
@@ -118,29 +117,59 @@ PHP);
         $c = new Container();
         $c->setInstance(Paths::class, new Paths($this->root));
         $c->setInstance('site', $site);
-        
-        $session = new class implements \Damoony\Session\SessionInterface {
+
+        $session = new class () implements \Damoony\Session\SessionInterface {
             public array $data = [];
-            public function start(): void {}
-            public function isStarted(): bool { return true; }
-            public function get(string $key, mixed $default = null): mixed { return $this->data[$key] ?? $default; }
-            public function set(string $key, mixed $value): void { $this->data[$key] = $value; }
-            public function remove(string $key): void { unset($this->data[$key]); }
-            public function regenerate(): void {}
-            public function destroy(): void { $this->data = []; }
+            public function start(): void
+            {
+            }
+            public function isStarted(): bool
+            {
+                return true;
+            }
+            public function get(string $key, mixed $default = null): mixed
+            {
+                return $this->data[$key] ?? $default;
+            }
+            public function set(string $key, mixed $value): void
+            {
+                $this->data[$key] = $value;
+            }
+            public function remove(string $key): void
+            {
+                unset($this->data[$key]);
+            }
+            public function regenerate(): void
+            {
+            }
+            public function destroy(): void
+            {
+                $this->data = [];
+            }
         };
         $c->setInstance(\Damoony\Security\Csrf::class, new \Damoony\Security\Csrf($session));
 
-        $c->setInstance(\Damoony\Auth\AuthInterface::class, new class implements \Damoony\Auth\AuthInterface {
-            public function isAuthenticated(): bool { return true; }
-            public function user(): ?array { return null; }
-            public function login(string $login, string $password): bool { return false; }
-            public function logout(): void {}
+        $c->setInstance(\Damoony\Auth\AuthInterface::class, new class () implements \Damoony\Auth\AuthInterface {
+            public function isAuthenticated(): bool
+            {
+                return true;
+            }
+            public function user(): ?array
+            {
+                return null;
+            }
+            public function login(string $login, string $password): bool
+            {
+                return false;
+            }
+            public function logout(): void
+            {
+            }
         });
-        
+
         $c->setInstance(DomainResolverInterface::class, new ConfigDomainResolver($site));
         $c->setInstance(RouterInterface::class, new FileRouter($this->root, new RulesMatcher()));
-        
+
         $resolver = $c->get(DomainResolverInterface::class);
         assert($resolver instanceof DomainResolverInterface);
 

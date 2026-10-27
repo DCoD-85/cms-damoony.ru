@@ -32,7 +32,7 @@ final class MiddlewareStackTest extends TestCase
         $stack = new MiddlewareStack(new Container());
         $log = new \ArrayObject();
 
-        $mk = fn (string $name) => new class($name, $log) implements MiddlewareInterface {
+        $mk = fn (string $name) => new class ($name, $log) implements MiddlewareInterface {
             public function __construct(private string $name, private \ArrayObject $log)
             {
             }
@@ -59,7 +59,7 @@ final class MiddlewareStackTest extends TestCase
     public function testStringIsResolvedFromContainer(): void
     {
         $container = new Container();
-        $container->setInstance('mw', new class implements MiddlewareInterface {
+        $container->setInstance('mw', new class () implements MiddlewareInterface {
             public function process(Request $request, callable $next): Response
             {
                 return $next($request)->withHeader('x-mw', 'on');

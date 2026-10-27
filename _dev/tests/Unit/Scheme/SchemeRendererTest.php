@@ -18,11 +18,20 @@ final class SchemeRendererTest extends TestCase
 {
     private function region(string $name): RegionInterface
     {
-        return new class($name) implements RegionInterface {
-            public function __construct(private string $n) {}
-            public function name(): string { return $this->n; }
-            public function enabled(): bool { return true; }
-            public function render(RegionContext $context): Node {
+        return new class ($name) implements RegionInterface {
+            public function __construct(private string $n)
+            {
+            }
+            public function name(): string
+            {
+                return $this->n;
+            }
+            public function enabled(): bool
+            {
+                return true;
+            }
+            public function render(RegionContext $context): Node
+            {
                 $el = new Element('div');
                 $el->attrs()->classAdd('region-' . $this->n);
                 $el->content('content-' . $this->n);
@@ -73,8 +82,8 @@ final class SchemeRendererTest extends TestCase
             'tag' => 'div',
             'class' => 'layout',
             'children' => [
-                ['tag' => 'main', 'slot' => 'center']
-            ]
+                ['tag' => 'main', 'slot' => 'center'],
+            ],
         ];
 
         $html = $r->render($skeleton, $regions, $this->ctx())->release();
@@ -87,8 +96,8 @@ final class SchemeRendererTest extends TestCase
         $skeleton = [
             'tag' => 'div',
             'children' => [
-                ['tag' => 'main', 'slot' => 'ghost']
-            ]
+                ['tag' => 'main', 'slot' => 'ghost'],
+            ],
         ];
 
         $html = $r->render($skeleton, new RegionRegistry(), $this->ctx())->release();

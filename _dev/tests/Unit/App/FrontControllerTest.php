@@ -16,9 +16,9 @@ use Damoony\Http\Request;
 use Damoony\Routing\FileRouter;
 use Damoony\Routing\RouterInterface;
 use Damoony\Routing\RulesMatcher;
-use PHPUnit\Framework\TestCase;
-use Damoony\Session\SessionInterface;
 use Damoony\Security\Csrf;
+use Damoony\Session\SessionInterface;
+use PHPUnit\Framework\TestCase;
 
 final class FrontControllerTest extends TestCase
 {
@@ -27,7 +27,7 @@ final class FrontControllerTest extends TestCase
     protected function setUp(): void
     {
         $this->root = sys_get_temp_dir() . '/damoony_fc_' . bin2hex(random_bytes(4));
-        mkdir($this->root, 0777, true);
+        mkdir($this->root, 0o777, true);
     }
 
     protected function tearDown(): void
@@ -63,30 +63,60 @@ final class FrontControllerTest extends TestCase
         $c = new Container();
         $c->setInstance(Paths::class, new Paths($this->root));
         $c->setInstance('site', $site);
-        
-        $session = new class implements SessionInterface {
+
+        $session = new class () implements SessionInterface {
             public array $data = [];
-            public function start(): void {}
-            public function isStarted(): bool { return true; }
-            public function get(string $key, mixed $default = null): mixed { return $this->data[$key] ?? $default; }
-            public function set(string $key, mixed $value): void { $this->data[$key] = $value; }
-            public function remove(string $key): void { unset($this->data[$key]); }
-            public function regenerate(): void {}
-            public function destroy(): void { $this->data = []; }
+            public function start(): void
+            {
+            }
+            public function isStarted(): bool
+            {
+                return true;
+            }
+            public function get(string $key, mixed $default = null): mixed
+            {
+                return $this->data[$key] ?? $default;
+            }
+            public function set(string $key, mixed $value): void
+            {
+                $this->data[$key] = $value;
+            }
+            public function remove(string $key): void
+            {
+                unset($this->data[$key]);
+            }
+            public function regenerate(): void
+            {
+            }
+            public function destroy(): void
+            {
+                $this->data = [];
+            }
         };
         $c->setInstance(Csrf::class, new Csrf($session));
 
         // Мок авторизации
-        $c->setInstance(AuthInterface::class, new class implements AuthInterface {
-            public function isAuthenticated(): bool { return true; }
-            public function user(): ?array { return null; }
-            public function login(string $login, string $password): bool { return false; }
-            public function logout(): void {}
+        $c->setInstance(AuthInterface::class, new class () implements AuthInterface {
+            public function isAuthenticated(): bool
+            {
+                return true;
+            }
+            public function user(): ?array
+            {
+                return null;
+            }
+            public function login(string $login, string $password): bool
+            {
+                return false;
+            }
+            public function logout(): void
+            {
+            }
         });
-        
+
         $c->setInstance(DomainResolverInterface::class, new ConfigDomainResolver($site));
         $c->setInstance(RouterInterface::class, new FileRouter($this->root, new RulesMatcher()));
-        
+
         $resolver = $c->get(DomainResolverInterface::class);
         assert($resolver instanceof DomainResolverInterface);
 
@@ -111,22 +141,22 @@ final class FrontControllerTest extends TestCase
     public function testMatchedRouteRendersPage(): void
     {
         $base = $this->root . '/app/example.ru/www/algoritm';
-        mkdir($base . '/fc_home', 0777, true);
+        mkdir($base . '/fc_home', 0o777, true);
         file_put_contents($base . '/.rules.json', json_encode(['available' => ['fc_home']]));
         file_put_contents($base . '/fc_home/.rules.json', json_encode(['available' => ['']]));
         file_put_contents($base . '/fc_home/algoritm_fc_home.php', <<<'PHP'
-<?php
-namespace example\www;
-use Damoony\Algoritm\Algoritm;
-use Damoony\Http\Response;
-use Damoony\Ui\Builder;
-use Damoony\Ui\Node;
-final class algoritm_fc_home extends Algoritm {
-    public function default(): Node|Response|null {
-        return Builder::div('page')->content('home');
-    }
-}
-PHP);
+            <?php
+            namespace example\www;
+            use Damoony\Algoritm\Algoritm;
+            use Damoony\Http\Response;
+            use Damoony\Ui\Builder;
+            use Damoony\Ui\Node;
+            final class algoritm_fc_home extends Algoritm {
+                public function default(): Node|Response|null {
+                    return Builder::div('page')->content('home');
+                }
+            }
+            PHP);
 
         $r = $this->fc(true)->handle($this->req('/fc_home'));
         self::assertSame(200, $r->status);

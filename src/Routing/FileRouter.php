@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Damoony\Routing;
 
 use Damoony\Domain\DomainContext;
-use RuntimeException;
 
 final class FileRouter implements RouterInterface
 {
@@ -44,7 +43,7 @@ final class FileRouter implements RouterInterface
             $rules = $i === 0
                 ? $rootRules
                 : $this->loadRules($base . '/' . $pathRel . '/.rules.json');
-            
+
             if ($rules === null) {
                 return RouteMatch::notFound();
             }

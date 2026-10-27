@@ -33,7 +33,7 @@ final class View
         $doc->head()->append($css);
 
         $doc->body()->append($this->header());
-        
+
         $main = Builder::div('admin-main');
         $main->append($content instanceof Node ? $content : Text::raw($content));
         $doc->body()->append($main);
@@ -44,7 +44,7 @@ final class View
     public static function domainTabs(string $domain, string $active): Element
     {
         $tabs = Builder::div('nav-tabs');
-        
+
         $items = [
             'settings' => ['Настройки', '/admin/?p=domain:edit&domain=' . urlencode($domain)],
             'bindings' => ['Привязанные', '/admin/?p=domain:bindings&domain=' . urlencode($domain)],
@@ -57,7 +57,9 @@ final class View
         foreach ($items as $key => $item) {
             [$label, $url] = $item;
             $a = Builder::a($url, 'nav-tab');
-            if ($key === $active) $a->attrs()->classAdd('active');
+            if ($key === $active) {
+                $a->attrs()->classAdd('active');
+            }
             $a->content($label);
             $tabs->append($a);
         }
@@ -69,7 +71,7 @@ final class View
     {
         $tabs = Builder::div('nav-tabs');
         $baseUrl = '/admin/?domain=' . urlencode($domain) . '&allias=' . urlencode($allias);
-        
+
         $items = [
             'settings' => ['Настройки алиаса', '/admin/?p=allias:edit' . $baseUrl],
             'blocks' => ['Блоки (Fillers)', '/admin/?p=filler' . $baseUrl],
@@ -81,7 +83,9 @@ final class View
         foreach ($items as $key => $item) {
             [$label, $url] = $item;
             $a = Builder::a($url, 'nav-tab');
-            if ($key === $active) $a->attrs()->classAdd('active');
+            if ($key === $active) {
+                $a->attrs()->classAdd('active');
+            }
             $a->content($label);
             $tabs->append($a);
         }
@@ -92,22 +96,22 @@ final class View
     private function header(): Element
     {
         $header = Builder::div('admin-header');
-        
+
         $brand = Builder::div('brand');
         $brand->append(Builder::a('/admin/', 'logo')->content('Damoony'));
         $brand->append(Text::raw(' <span class="sub">/ admin</span>'));
         $header->append($brand);
 
         $p = $_GET['p'] ?? 'dashboard';
-        
+
         $nav = Builder::el('nav');
         $nav->attrs()->classAdd('admin-nav');
-        
+
         $nav->append(Builder::a('/admin/?p=domain', 'nav-link' . (str_starts_with($p, 'domain') ? ' active' : ''))->content('Домены'));
         $nav->append(Builder::a('/admin/?p=stub', 'nav-link' . (str_starts_with($p, 'stub') ? ' active' : ''))->content('Заглушки'));
         $nav->append(Builder::a('/admin/?p=security', 'nav-link' . (str_starts_with($p, 'security') ? ' active' : ''))->content('Безопасность'));
         $nav->append(Builder::a('/admin/?p=settings', 'nav-link' . (str_starts_with($p, 'settings') ? ' active' : ''))->content('Настройки'));
-        
+
         $header->append($nav);
 
         $user = Builder::div('user-panel');

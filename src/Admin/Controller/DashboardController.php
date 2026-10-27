@@ -9,8 +9,6 @@ use Damoony\Core\Config;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
 use Damoony\Ui\Builder;
-use Damoony\Ui\Table;
-use Damoony\Ui\Text;
 
 final class DashboardController extends BaseController
 {
@@ -26,7 +24,9 @@ final class DashboardController extends BaseController
     public function index(Request $request): Response
     {
         $auth = $this->requireAuth();
-        if ($auth !== null) return $auth;
+        if ($auth !== null) {
+            return $auth;
+        }
 
         $domains = $this->siteConfig->getByKey(['domains_real'], []);
         $count = is_array($domains) ? count($domains) : 0;

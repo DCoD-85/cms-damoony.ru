@@ -8,6 +8,7 @@ final class ArgvParser
 {
     /**
      * @param list<string> $argv
+     *
      * @return array{command: string, args: array<string, string>, flags: list<string>, positional: list<string>}
      */
     public function parse(array $argv): array

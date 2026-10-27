@@ -114,7 +114,7 @@ final class FillerNewCommand implements CommandInterface
         Fs::writeAtomic($dataFile, $data);
         $r->file(Fs::rel($dataFile, $this->paths->root()));
 
-        $site['fillers'][$domain][$allias][$block] = $site['fillers'][$domain][$allias][$block] ?? true;
+        $site['fillers'][$domain][$allias][$block] ??= true;
         Fs::writeAtomic($siteFile, json_encode($site, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
         $r->file(Fs::rel($siteFile, $this->paths->root()));
 

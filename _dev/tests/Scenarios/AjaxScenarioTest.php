@@ -28,16 +28,16 @@ final class AjaxScenarioTest extends TestCase
     {
         self::$root = sys_get_temp_dir() . '/damoony_s14_' . bin2hex(random_bytes(4));
         $dir = self::$root . '/app/damoony.test/www/algoritm';
-        mkdir($dir . '/ajax/mode', 0777, true);
+        mkdir($dir . '/ajax/mode', 0o777, true);
         file_put_contents($dir . '/.rules.json', json_encode(['available' => ['ajax']]));
         file_put_contents($dir . '/ajax/.rules.json', json_encode(['available' => ['([a-z]+)|mode']]));
         file_put_contents($dir . '/ajax/algoritm_ajax.php', "<?php\nnamespace damoony_test\\www;\nclass algoritm_ajax {}\n");
         file_put_contents($dir . '/ajax/mode/algoritm_ajax_mode.php', <<<'PHP'
-<?php
-namespace damoony_test\www;
-use Damoony\Demo\Page\AjaxPage;
-final class algoritm_ajax_mode extends AjaxPage {}
-PHP);
+            <?php
+            namespace damoony_test\www;
+            use Damoony\Demo\Page\AjaxPage;
+            final class algoritm_ajax_mode extends AjaxPage {}
+            PHP);
     }
 
     public static function tearDownAfterClass(): void
@@ -73,23 +73,53 @@ PHP);
         $c->setInstance(Paths::class, new Paths(self::$root));
         $c->setInstance('site', $site);
 
-        $session = new class implements SessionInterface {
+        $session = new class () implements SessionInterface {
             public array $data = [];
-            public function start(): void {}
-            public function isStarted(): bool { return true; }
-            public function get(string $key, mixed $default = null): mixed { return $this->data[$key] ?? $default; }
-            public function set(string $key, mixed $value): void { $this->data[$key] = $value; }
-            public function remove(string $key): void { unset($this->data[$key]); }
-            public function regenerate(): void {}
-            public function destroy(): void { $this->data = []; }
+            public function start(): void
+            {
+            }
+            public function isStarted(): bool
+            {
+                return true;
+            }
+            public function get(string $key, mixed $default = null): mixed
+            {
+                return $this->data[$key] ?? $default;
+            }
+            public function set(string $key, mixed $value): void
+            {
+                $this->data[$key] = $value;
+            }
+            public function remove(string $key): void
+            {
+                unset($this->data[$key]);
+            }
+            public function regenerate(): void
+            {
+            }
+            public function destroy(): void
+            {
+                $this->data = [];
+            }
         };
         $c->setInstance(Csrf::class, new Csrf($session));
 
-        $c->setInstance(AuthInterface::class, new class implements AuthInterface {
-            public function isAuthenticated(): bool { return true; }
-            public function user(): ?array { return null; }
-            public function login(string $login, string $password): bool { return false; }
-            public function logout(): void {}
+        $c->setInstance(AuthInterface::class, new class () implements AuthInterface {
+            public function isAuthenticated(): bool
+            {
+                return true;
+            }
+            public function user(): ?array
+            {
+                return null;
+            }
+            public function login(string $login, string $password): bool
+            {
+                return false;
+            }
+            public function logout(): void
+            {
+            }
         });
 
         $c->setInstance(DomainResolverInterface::class, new ConfigDomainResolver($site));

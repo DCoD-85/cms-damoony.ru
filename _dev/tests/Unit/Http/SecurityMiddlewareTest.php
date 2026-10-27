@@ -17,7 +17,7 @@ final class SecurityMiddlewareTest extends TestCase
     protected function setUp(): void
     {
         $this->dir = sys_get_temp_dir() . '/damoony_rl_' . bin2hex(random_bytes(4));
-        mkdir($this->dir, 0777, true);
+        mkdir($this->dir, 0o777, true);
     }
 
     protected function tearDown(): void

@@ -34,7 +34,7 @@ final class Container implements ContainerInterface
         }
 
         if (!array_key_exists($id, $this->factories)) {
-            throw new class("Service not found: {$id}") extends RuntimeException implements NotFoundExceptionInterface {
+            throw new class ("Service not found: {$id}") extends RuntimeException implements NotFoundExceptionInterface {
             };
         }
 

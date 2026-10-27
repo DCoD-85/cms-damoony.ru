@@ -18,14 +18,14 @@ final class BlockCommandsTest extends TestCase
     protected function setUp(): void
     {
         $this->root = sys_get_temp_dir() . '/damoony_bl_' . bin2hex(random_bytes(4));
-        mkdir($this->root . '/config', 0777, true);
+        mkdir($this->root . '/config', 0o777, true);
         file_put_contents($this->root . '/config/site.config', json_encode([
             'domains_real' => ['example.ru' => 'example.ru'],
             'domains_available' => ['example.ru' => true],
             'domains_namespace' => ['example.ru' => 'example'],
             'alliases_real' => ['example.ru' => ['www' => 'www']],
         ]));
-        mkdir($this->root . '/app/example.ru/.alliasglobal', 0777, true);
+        mkdir($this->root . '/app/example.ru/.alliasglobal', 0o777, true);
     }
 
     protected function tearDown(): void

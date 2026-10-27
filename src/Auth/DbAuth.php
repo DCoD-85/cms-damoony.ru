@@ -33,7 +33,7 @@ final class DbAuth implements AuthInterface
         }
 
         $stmt = $this->connection->pdo()->prepare(
-            'SELECT id, login, email, status, created_at FROM users WHERE id = ? AND status = ?'
+            'SELECT id, login, email, status, created_at FROM users WHERE id = ? AND status = ?',
         );
         $stmt->execute([$this->session->get(self::SESSION_KEY), 'active']);
         $user = $stmt->fetch();
@@ -44,7 +44,7 @@ final class DbAuth implements AuthInterface
     public function login(string $login, string $password): bool
     {
         $stmt = $this->connection->pdo()->prepare(
-            'SELECT id, password_hash, status FROM users WHERE login = ?'
+            'SELECT id, password_hash, status FROM users WHERE login = ?',
         );
         $stmt->execute([$login]);
         $user = $stmt->fetch();

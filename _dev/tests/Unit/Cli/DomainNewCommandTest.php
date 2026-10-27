@@ -17,7 +17,7 @@ final class DomainNewCommandTest extends TestCase
     protected function setUp(): void
     {
         $this->root = sys_get_temp_dir() . '/damoony_dn_' . bin2hex(random_bytes(4));
-        mkdir($this->root . '/config', 0777, true);
+        mkdir($this->root . '/config', 0o777, true);
         file_put_contents($this->root . '/config/site.config', json_encode([
             'domains_real' => [],
             'domains_available' => [],

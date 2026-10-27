@@ -42,7 +42,7 @@ final class SchemeRenderer
     private function replaceSlots(Element $el, RegionRegistry $regions, RegionContext $context): void
     {
         $newChildren = [];
-        
+
         foreach ($el->children() as $child) {
             if ($child instanceof Slot) {
                 $region = $regions->get($child->name());

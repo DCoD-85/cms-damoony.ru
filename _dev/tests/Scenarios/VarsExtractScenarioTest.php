@@ -19,29 +19,29 @@ final class VarsExtractScenarioTest extends TestCase
     {
         $this->root = sys_get_temp_dir() . '/damoony_vx_' . bin2hex(random_bytes(4));
         $this->algoritm = $this->root . '/app/example.ru/www/algoritm';
-        mkdir($this->algoritm . '/about', 0777, true);
+        mkdir($this->algoritm . '/about', 0o777, true);
 
         file_put_contents($this->algoritm . '/algoritm.php', <<<'PHP'
-<?php
-class algoritm
-{
-    public array $available = ['', 'about', 'docs'];
-    public bool $auth = false;
-    public bool $search = true;
-    public bool $default = false;
-}
-PHP);
+            <?php
+            class algoritm
+            {
+                public array $available = ['', 'about', 'docs'];
+                public bool $auth = false;
+                public bool $search = true;
+                public bool $default = false;
+            }
+            PHP);
 
         file_put_contents($this->algoritm . '/about/algoritm_about.php', <<<'PHP'
-<?php
-class algoritm_about
-{
-    public array $available = [''];
-    public bool $auth = true;
-    public bool $search = false;
-    public bool $default = true;
-}
-PHP);
+            <?php
+            class algoritm_about
+            {
+                public array $available = [''];
+                public bool $auth = true;
+                public bool $search = false;
+                public bool $default = true;
+            }
+            PHP);
     }
 
     protected function tearDown(): void

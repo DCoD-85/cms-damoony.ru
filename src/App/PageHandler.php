@@ -58,7 +58,7 @@ final class PageHandler implements PageHandlerInterface
 
         $loader = new RegionLoader(
             $paths,
-            $site instanceof Config ? $site : null
+            $site instanceof Config ? $site : null,
         );
         $regions = $loader->load($domain);
 

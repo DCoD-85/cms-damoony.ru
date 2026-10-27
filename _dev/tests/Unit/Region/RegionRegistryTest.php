@@ -17,7 +17,7 @@ final class RegionRegistryTest extends TestCase
 {
     private function region(string $name, bool $enabled = true): RegionInterface
     {
-        return new class($name, $enabled) implements RegionInterface {
+        return new class ($name, $enabled) implements RegionInterface {
             public function __construct(private string $n, private bool $e)
             {
             }
