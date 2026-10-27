@@ -15,7 +15,6 @@ final class DomainNewCommand implements CommandInterface
 {
     public function __construct(
         private readonly Paths $paths,
-        private readonly string $defaultLogic = 'alpha.0.0',
     ) {
     }
 
@@ -44,8 +43,6 @@ final class DomainNewCommand implements CommandInterface
             $r->error('Некорректный namespace');
             return $r;
         }
-
-        $logic = $args['logic'] ?? $this->defaultLogic;
 
         $siteFile = $this->paths->siteConfig();
         $site = is_file($siteFile)
