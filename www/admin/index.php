@@ -64,6 +64,7 @@ $auth = new Auth(
 );
 
 $view = new View('Damoony Admin');
+\Damoony\Admin\View::setLoggedIn($auth->isLoggedIn());
 $adminLangs = $adminConfig->get('domains_langs', ['ru']);
 if (!is_array($adminLangs) || $adminLangs === []) {
     $adminLangs = ['ru'];

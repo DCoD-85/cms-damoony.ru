@@ -14,11 +14,17 @@ use Damoony\Ui\Text;
 final class View
 {
     private static ?Translator $i18n = null;
+    private static bool $isLoggedIn = false;
 
     public function __construct(
         private readonly string $title = 'Damoony Admin',
         private readonly string $lang = 'ru-ru',
     ) {
+    }
+
+    public static function setLoggedIn(bool $state): void
+    {
+        self::$isLoggedIn = $state;
     }
 
     public static function setLang(?Translator $lang): void
@@ -125,28 +131,31 @@ final class View
         $brand->append(Text::raw(' <span class="sub">' . self::esc(self::t('brand.sub')) . '</span>'));
         $header->append($brand);
 
-        $p = $_GET['p'] ?? 'dashboard';
+        // Если пользователь НЕ залогинен, показываем только логотип и переключатель языка
+        if (self::$isLoggedIn) {
+            $p = $_GET['p'] ?? 'dashboard';
 
-        $nav = Builder::el('nav');
-        $nav->attrs()->classAdd('admin-nav');
+            $nav = Builder::el('nav');
+            $nav->attrs()->classAdd('admin-nav');
 
-        $navItems = [
-            'domain' => ['nav.domains', '/admin/?p=domain'],
-            'stub' => ['nav.stubs', '/admin/?p=stub'],
-            'security' => ['nav.security', '/admin/?p=security'],
-            'settings' => ['nav.settings', '/admin/?p=settings'],
-        ];
-        foreach ($navItems as $prefix => $item) {
-            [$labelKey, $url] = $item;
-            $cls = 'nav-link' . (str_starts_with((string) $p, $prefix) ? ' active' : '');
-            $nav->append(Builder::a($url, $cls)->content(self::t($labelKey)));
+            $navItems = [
+                'domain' => ['nav.domains', '/admin/?p=domain'],
+                'stub' => ['nav.stubs', '/admin/?p=stub'],
+                'security' => ['nav.security', '/admin/?p=security'],
+                'settings' => ['nav.settings', '/admin/?p=settings'],
+            ];
+            foreach ($navItems as $prefix => $item) {
+                [$labelKey, $url] = $item;
+                $cls = 'nav-link' . (str_starts_with((string) $p, $prefix) ? ' active' : '');
+                $nav->append(Builder::a($url, $cls)->content(self::t($labelKey)));
+            }
+            $header->append($nav);
         }
-        $header->append($nav);
 
-        // Правая панель: Язык + Меню пользователя
+        // Правая панель (Языки + Профиль)
         $rightPanel = Builder::div('user-panel');
 
-        // Переключатель языка (упрощенный)
+        // Переключатель языка
         $lang = self::currentLang();
         $uri = (string) ($_SERVER['REQUEST_URI'] ?? '/admin/');
         $query = [];
@@ -166,19 +175,22 @@ final class View
             }
         }
 
-        // Выпадающее меню пользователя
-        $dropdown = Builder::div('user-dropdown');
-        $trigger = Builder::div('user-trigger');
-        $trigger->append(Builder::div('user-avatar')->content('A')); // Берем первую букву логина
-        $trigger->append(Builder::span('user-name')->content('admin'));
-        $dropdown->append($trigger);
+        // Меню профиля (только если залогинен)
+        if (self::$isLoggedIn) {
+            $dropdown = Builder::div('user-dropdown');
+            $trigger = Builder::div('user-trigger');
+            $trigger->append(Builder::div('user-avatar')->content('A'));
+            $trigger->append(Builder::span('user-name')->content('admin'));
+            $dropdown->append($trigger);
 
-        $menu = Builder::div('dropdown-menu');
-        $menu->append(Builder::a('/admin/?p=profile', '')->content('Мой профиль'));
-        $menu->append(Builder::a('/admin/?p=logout', '')->content(self::t('nav.logout')));
-        $dropdown->append($menu);
+            $menu = Builder::div('dropdown-menu');
+            $menu->append(Builder::a('/admin/?p=profile', '')->content('Мой профиль'));
+            $menu->append(Builder::a('/admin/?p=logout', '')->content(self::t('nav.logout')));
+            $dropdown->append($menu);
 
-        $rightPanel->append($dropdown);
+            $rightPanel->append($dropdown);
+        }
+
         $header->append($rightPanel);
 
         return $header;
