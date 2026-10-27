@@ -58,7 +58,7 @@ $router->register('logout', new LogoutController($auth, $csrf, $view));
 $router->register('dashboard', new DashboardController($auth, $csrf, $view, $siteConfig));
 $router->register('domain', new DomainController($auth, $csrf, $view, $paths, $siteConfig));
 $router->register('allias', new AlliasController($auth, $csrf, $view, $paths, $siteConfig));
-$router->register('block', new \Damoony\Admin\Controller\BlockController($auth, $csrf, $view, $paths, $siteConfig));
+$router->register('block', new \Damoony\Admin\Controller\BlockController($auth, $csrf, $view, $paths));
 $router->register('page', new \Damoony\Admin\Controller\PageController($auth, $csrf, $view, $paths));
 $router->register('filler', new \Damoony\Admin\Controller\FillerController($auth, $csrf, $view, $paths, $siteConfig));
 $router->register('scheme', new \Damoony\Admin\Controller\SchemeController($auth, $csrf, $view, $paths));

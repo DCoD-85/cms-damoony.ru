@@ -8,12 +8,16 @@ use Damoony\Admin\View;
 use Damoony\Cli\Commands\BlockNewCommand;
 use Damoony\Cli\Commands\BlockRemoveCommand;
 use Damoony\Cli\Context;
-use Damoony\Cli\Result;
 use Damoony\Core\Config;
-use Damoony\Files\Fs;
 use Damoony\Files\Paths;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
+use Damoony\Ui\Builder;
+use Damoony\Ui\Field;
+use Damoony\Ui\Form;
+use Damoony\Ui\Message;
+use Damoony\Ui\Table;
+use Damoony\Ui\Text;
 
 final class BlockController extends BaseController
 {
@@ -34,29 +38,55 @@ final class BlockController extends BaseController
         $domain = (string) $request->query('domain', '');
         if ($domain === '') return $this->redirect('/admin/?p=domain');
 
-		$manifestFile = $this->paths->domain($domain) . '/.alliasglobal/blocks.json';
-        $manifest = is_file($manifestFile) ? json_decode((string) file_get_contents($manifestFile), true) : [];
-        $blocks = is_array($manifest) && isset($manifest['blocks']) ? array_keys($manifest['blocks']) : [];
-
-        $html = '<div class="admin-card"><h1>Блоки: ' . View::esc($domain) . '</h1>';
-        $html .= '<p><a href="/admin/?p=domain">&larr; Назад</a> | <a href="/admin/?p=block:new&domain=' . urlencode($domain) . '">+ Добавить блок</a></p>';
-        $html .= '<table style="width:100%; border-collapse:collapse; margin-top:16px;">';
-        $html .= '<tr><th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Имя</th><th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Действия</th></tr>';
-
-        foreach ($blocks as $b) {
-            if (!is_string($b)) continue;
-            $html .= '<tr><td style="padding:8px; border-bottom:1px solid #eee;">' . View::esc($b) . '</td>';
-            $html .= '<td style="padding:8px; border-bottom:1px solid #eee;">';
-            
-            // Ссылка на редактор
-            $editFile = 'alliasglobal/' . $b . '/' . $b . '.php';
-            $html .= '<a href="/admin/?p=editor&domain=' . urlencode($domain) . '&file=' . urlencode($editFile) . '">Редактировать</a> | ';
-            
-            $html .= '<a href="/admin/?p=block:remove&domain=' . urlencode($domain) . '&name=' . urlencode($b) . '" style="color:red;">Удалить</a></td></tr>';
+        $blocksDir = $this->paths->domain($domain) . '/.alliasglobal';
+        $blocks = [];
+        if (is_dir($blocksDir)) {
+            $items = scandir($blocksDir) ?: [];
+            foreach ($items as $item) {
+                if ($item === '.' || $item === '..' || !is_dir($blocksDir . '/' . $item)) continue;
+                $blocks[] = $item;
+            }
         }
-        $html .= '</table></div>';
+        sort($blocks);
 
-        return Response::html($this->view->render($html, ['title' => 'Блоки']));
+        // Заголовок
+        $header = Builder::div('page-header');
+        $header->append(Builder::h(1)->content('Блоки: ' . View::esc($domain)));
+        
+        $actions = Builder::div('page-actions');
+        $actions->append(Builder::a('/admin/?p=block:new&domain=' . urlencode($domain), 'btn btn-primary')->content('+ Создать блок'));
+        $header->append($actions);
+
+        // Таблица
+        $table = (new Table())->headers('Имя блока', 'Действия');
+
+        if ($blocks === []) {
+            $table->row([Text::raw('Блоков пока нет'), Text::raw('')]);
+        } else {
+            foreach ($blocks as $block) {
+                $editUrl = '/admin/?p=editor&domain=' . urlencode($domain) . '&file=' . urlencode('.alliasglobal/' . $block . '/' . $block . '.php');
+                $deleteUrl = '/admin/?p=block:remove&domain=' . urlencode($domain) . '&name=' . urlencode($block);
+                
+                $actionsHtml = Builder::div('table-actions');
+                $actionsHtml->append(Builder::a($editUrl, 'btn btn-outline')->content('Редактировать'));
+                $actionsHtml->append(Builder::a($deleteUrl, 'btn btn-danger')->content('Удалить'));
+
+                $table->row([
+                    Text::raw('<b>' . View::esc($block) . '</b>'),
+                    $actionsHtml
+                ]);
+            }
+        }
+
+        $card = Builder::div('admin-card');
+        $card->append($table->build());
+
+        $content = Builder::div();
+        $content->append(View::domainTabs($domain, 'blocks'));
+        $content->append($header);
+        $content->append($card);
+
+        return Response::html($this->view->render($content, ['title' => 'Блоки: ' . $domain]));
     }
 
     public function new(Request $request): Response
@@ -64,17 +94,19 @@ final class BlockController extends BaseController
         $auth = $this->requireAuth();
         if ($auth !== null) return $auth;
 
-        $domain = (string) ($request->query('domain', '') ?: ($request->post['domain'] ?? ''));
+        $domain = (string) $request->query('domain', '');
         if ($domain === '') return $this->redirect('/admin/?p=domain');
 
         $error = '';
+        $nameVal = '';
+
         if ($request->isPost()) {
             $csrfErr = $this->requireCsrf($request);
             if ($csrfErr !== null) return $csrfErr;
 
-            $name = (string) ($request->post['name'] ?? '');
+            $nameVal = (string) ($request->post['name'] ?? '');
             $cmd = new BlockNewCommand($this->paths);
-            $res = $cmd->run(['domain' => $domain, 'name' => $name], new Context(static fn() => null));
+            $res = $cmd->run(['domain' => $domain, 'name' => $nameVal], new Context(static fn() => null));
 
             if ($res->ok) {
                 return $this->redirect('/admin/?p=block&domain=' . urlencode($domain));
@@ -82,14 +114,22 @@ final class BlockController extends BaseController
             $error = implode('; ', $res->errors);
         }
 
-        $html = '<div class="admin-card"><h1>Новый блок: ' . View::esc($domain) . '</h1>';
-        if ($error !== '') $html .= '<div class="error">' . View::esc($error) . '</div>';
-        $html .= '<form method="post" class="admin-form">' . $this->csrf->field();
-        $html .= '<input type="hidden" name="domain" value="' . View::esc($domain) . '">';
-        $html .= '<label>Имя блока (латиница)<input type="text" name="name" required></label>';
-        $html .= '<button type="submit">Создать</button><a href="/admin/?p=block&domain=' . urlencode($domain) . '">Отмена</a></form></div>';
+        $form = Form::create('/admin/?p=block:new&domain=' . urlencode($domain), 'POST')
+            ->csrf($this->csrf->field())
+            ->add(Field::text('name')->label('Имя блока')->placeholder('top, footer, header')->required()->value($nameVal))
+            ->submit('Создать');
 
-        return Response::html($this->view->render($html, ['title' => 'Новый блок']));
+        $card = Builder::div('admin-card');
+        $card->append(Builder::a('/admin/?p=block&domain=' . urlencode($domain))->content('← Назад к списку'));
+        $card->append(Builder::h(1)->content('Создать блок для ' . View::esc($domain)));
+        
+        if ($error !== '') {
+            $card->append(Message::error($error)->build());
+        }
+        
+        $card->append($form->build());
+
+        return Response::html($this->view->render($card, ['title' => 'Новый блок']));
     }
 
     public function remove(Request $request): Response
