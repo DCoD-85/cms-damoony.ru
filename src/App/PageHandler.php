@@ -89,6 +89,8 @@ final class PageHandler implements PageHandlerInterface
         }
 
         if ($result instanceof Node) {
+            $this->applySkin($domain, $context);
+
             $doc = new Document($context->meta);
             $doc->lang($domain->language);
             $doc->body()->append($result);
@@ -96,5 +98,30 @@ final class PageHandler implements PageHandlerInterface
         }
 
         throw new RuntimeException('Page returned null; default() must return Node or Response');
+    }
+
+    private function applySkin(DomainContext $domain, RegionContext $context): void
+    {
+        $site = $context->service('site');
+        $allowed = [];
+        if ($site instanceof Config) {
+            $v = $site->getByKey(['domains_skins_allowed', $domain->real], []);
+            if (is_array($v)) {
+                $allowed = array_values(array_filter($v, 'is_string'));
+            }
+        }
+
+        $requested = (string) ($_COOKIE['skin'] ?? '');
+        $manager = new \Damoony\Skin\SkinManager(rtrim($this->appRoot, '/') . '/www/media');
+        $skin = $manager->resolve($domain->real, $requested, $allowed);
+
+        $css = $manager->cssUrl($domain->real, $skin);
+        if ($css !== null) {
+            $context->meta->addCss($css, 'skin-main');
+        }
+        $js = $manager->jsUrl($domain->real, $skin);
+        if ($js !== null) {
+            $context->meta->addJs($js, 'skin-main');
+        }
     }
 }

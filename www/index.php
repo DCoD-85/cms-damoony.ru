@@ -12,6 +12,7 @@ use Damoony\Http\Middleware\SecurityHeadersMiddleware;
 use Damoony\Http\MiddlewareStack;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
+use Damoony\Http\Middleware\SkinCookieMiddleware;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 

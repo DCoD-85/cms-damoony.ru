@@ -31,7 +31,7 @@ final class SkinCookieMiddleware implements MiddlewareInterface
         setcookie($this->cookieName, $skin, [
             'expires' => time() + 86400 * 365,
             'path' => '/',
-            'secure' => true,
+            'secure' => ($_SERVER['HTTPS'] ?? '') === 'on',
             'httponly' => false,
             'samesite' => 'Lax',
         ]);
