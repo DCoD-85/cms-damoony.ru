@@ -55,26 +55,26 @@ final class ProfileController extends BaseController
             $hash = (string) $this->adminConfig->get('password_hash', '');
 
             if (!password_verify($current, $hash)) {
-                $error = 'Текущий пароль указан неверно';
+                $error = View::t('profile.sec_err_current');
             } elseif (strlen($new) < 6) {
-                $error = 'Новый пароль должен быть не менее 6 символов';
+                $error = View::t('profile.sec_err_length');
             } elseif ($new !== $confirm) {
-                $error = 'Новый пароль и подтверждение не совпадают';
+                $error = View::t('profile.sec_err_match');
             } else {
                 $file = $this->root . '/config/admin.config';
                 $data = $this->adminConfig->all();
                 $data['password_hash'] = password_hash($new, PASSWORD_DEFAULT);
                 Fs::writeAtomic($file, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
-                $success = 'Пароль успешно изменен';
+                $success = View::t('profile.sec_success');
             }
         }
 
         $form = Form::create('/admin/?p=profile:security', 'POST')
             ->csrf($this->csrf->field())
-            ->add(Field::password('current_password')->label('Текущий пароль')->required())
-            ->add(Field::password('new_password')->label('Новый пароль')->required())
-            ->add(Field::password('confirm_password')->label('Повторите новый пароль')->required())
-            ->submit('Изменить пароль');
+            ->add(Field::password('current_password')->label(View::t('profile.sec_current'))->required())
+            ->add(Field::password('new_password')->label(View::t('profile.sec_new'))->required())
+            ->add(Field::password('confirm_password')->label(View::t('profile.sec_confirm'))->required())
+            ->submit(View::t('profile.sec_submit'));
 
         $content = Builder::div();
         if ($error !== '') {
@@ -96,15 +96,15 @@ final class ProfileController extends BaseController
         }
 
         $card = Builder::div('admin-card');
-        $card->append(Builder::h(1)->content('Профиль администратора'));
+        $card->append(Builder::h(1)->content(View::t('profile.title')));
 
         $grid = Builder::div('profile-grid');
 
         // Левое меню
         $nav = Builder::div('profile-nav');
-        $nav->append(Builder::a('/admin/?p=profile', $active === 'summary' ? 'active' : '')->content('Сводка'));
-        $nav->append(Builder::a('/admin/?p=profile:logs', $active === 'logs' ? 'active' : '')->content('Логирование'));
-        $nav->append(Builder::a('/admin/?p=profile:security', $active === 'security' ? 'active' : '')->content('Безопасность'));
+        $nav->append(Builder::a('/admin/?p=profile', $active === 'summary' ? 'active' : '')->content(View::t('profile.tab_summary')));
+        $nav->append(Builder::a('/admin/?p=profile:logs', $active === 'logs' ? 'active' : '')->content(View::t('profile.tab_logs')));
+        $nav->append(Builder::a('/admin/?p=profile:security', $active === 'security' ? 'active' : '')->content(View::t('profile.tab_security')));
         $grid->append($nav);
 
         // Правая часть
@@ -113,12 +113,12 @@ final class ProfileController extends BaseController
         if ($customContent !== null) {
             $contentBox->append($customContent);
         } elseif ($active === 'summary') {
-            $contentBox->append(Builder::h(2)->content('Сводка'));
-            $contentBox->append(Builder::p()->content('Логин: admin'));
-            $contentBox->append(Builder::p()->content('Роль: Суперадминистратор'));
-            $contentBox->append(Builder::p()->content('Доступ: Полный'));
+            $contentBox->append(Builder::h(2)->content(View::t('profile.tab_summary')));
+            $contentBox->append(Builder::p()->content(View::t('profile.login', ['login' => $this->auth->login()])));
+            $contentBox->append(Builder::p()->content(View::t('profile.role', ['role' => View::t('profile.role_super')])));
+            $contentBox->append(Builder::p()->content(View::t('profile.access', ['access' => View::t('profile.access_full')])));
         } elseif ($active === 'logs') {
-            $contentBox->append(Builder::h(2)->content('Последние входы'));
+            $contentBox->append(Builder::h(2)->content(View::t('profile.tab_logs')));
 
             $logFile = $this->root . '/var/admin_logs.json';
             $logs = is_file($logFile) ? json_decode((string) file_get_contents($logFile), true) : [];
@@ -127,21 +127,21 @@ final class ProfileController extends BaseController
             }
 
             if ($logs === []) {
-                $contentBox->append(Message::info('Журнал пуст. Логи появятся после успешного входа.')->build());
+                $contentBox->append(Message::info(View::t('profile.logs_empty'))->build());
             } else {
                 $table = Builder::el('table');
                 $table->attrs()->classAdd('log-table');
 
                 $thead = Builder::el('thead');
                 $tr = Builder::el('tr');
-                $tr->append(Builder::el('th')->content('Дата'));
-                $tr->append(Builder::el('th')->content('IP'));
-                $tr->append(Builder::el('th')->content('Статус'));
+                $tr->append(Builder::el('th')->content(View::t('profile.th_date')));
+                $tr->append(Builder::el('th')->content(View::t('profile.th_ip')));
+                $tr->append(Builder::el('th')->content(View::t('profile.th_status')));
                 $thead->append($tr);
                 $table->append($thead);
 
                 $tbody = Builder::el('tbody');
-                foreach (array_reverse(array_slice($logs, -50)) as $log) { // Последние 50
+                foreach (array_reverse(array_slice($logs, -50)) as $log) {
                     $row = Builder::el('tr');
                     $row->append(Builder::el('td')->content((string) ($log['time'] ?? '')));
                     $row->append(Builder::el('td')->content((string) ($log['ip'] ?? '')));
@@ -161,6 +161,6 @@ final class ProfileController extends BaseController
         $grid->append($contentBox);
         $card->append($grid);
 
-        return Response::html($this->view->render($card, ['title' => 'Профиль']));
+        return Response::html($this->view->render($card, ['title' => View::t('profile.title')]));
     }
 }
