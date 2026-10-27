@@ -41,7 +41,7 @@ final class ProfileController extends BaseController
     public function security(Request $request): Response
     {
         $error = '';
-        $success = '';
+        $success = $request->query('saved') ? View::t('profile.sec_success') : '';
 
         if ($request->isPost()) {
             $csrfErr = $this->requireCsrf($request);
@@ -66,7 +66,7 @@ final class ProfileController extends BaseController
                 $data = $this->adminConfig->all();
                 $data['password_hash'] = password_hash($new, PASSWORD_DEFAULT);
                 Fs::writeAtomic($file, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
-                $success = View::t('profile.sec_success');
+                return $this->redirect('/admin/?p=profile:security&saved=1');
             }
         }
 
