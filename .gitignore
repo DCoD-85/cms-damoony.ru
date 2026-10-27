@@ -41,12 +41,20 @@ env.php
 /tests/fixtures/scenarios/**/actual/
 /tests/fixtures/scenarios/**/diff/
 
-/_doc/start_new_agent.md
-
 # временное
 /tmp/
-*.tmp/_doc/_audit-snapshot.txt
+*.tmp
+
+# аудит-снапшот
+/_doc/_audit-snapshot.txt
+
 # dev-маркер (локально)
-/.dev/config/admin.config
+/.dev
+
+# прод-специфика: конфиги с секретами и пользовательский media
+/config/admin.config
 /config/site.config
 /www/media/damoony.ru/skin/
+
+# личный briefing (пути, IP, git-workflow)
+/_doc/start_new_agent.md

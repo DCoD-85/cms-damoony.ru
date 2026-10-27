@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    fail-fast: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, json, libxml, tokenizer, xml, xmlwriter, pdo_sqlite, sqlite3, fileinfo, openssl
+          tools: composer:v2
+          ini-values: memory_limit=512M
+
+      - name: Validate composer.json
+        run: composer validate --no-check-publish
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress --no-audit
+
+      - name: Prepare runtime dirs
+        run: mkdir -p var _dev/var && touch var/.gitkeep
+
+      - name: PHPUnit
+        run: php vendor/bin/phpunit -c _dev/phpunit.xml
+
+      - name: PHPStan
+        run: php vendor/bin/phpstan analyse -c _dev/phpstan.neon --memory-limit=1G --no-progress
+
+      - name: PHP-CS-Fixer (dry-run)
+        env:
+          PHP_CS_FIXER_IGNORE_ENV: '1'
+        run: php vendor/bin/php-cs-fixer fix --config=_dev/.php-cs-fixer.php --dry-run --diff
