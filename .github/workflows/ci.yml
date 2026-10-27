@@ -36,7 +36,7 @@ jobs:
             ${{ runner.os }}-php-
 
       - name: Install dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress --no-audit
+        run: composer install --no-interaction --prefer-dist --no-progress
 
       - name: Prepare runtime dirs
         run: mkdir -p var _dev/var && touch var/.gitkeep
