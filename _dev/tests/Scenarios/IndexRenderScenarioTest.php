@@ -108,7 +108,7 @@ final class IndexRenderScenarioTest extends TestCase
     private function fc(): FrontController
     {
         $site = Config::fromArray([
-            'language' => 'ru-ru',
+            'language' => 'ru', // ИЗМЕНЕНО: ru вместо ru-ru
             'domains_real' => ['damoony.test' => 'damoony.test'],
             'domains_available' => ['damoony.test' => true],
             'alliases_real' => ['damoony.test' => ['www' => 'www']],
@@ -182,7 +182,7 @@ final class IndexRenderScenarioTest extends TestCase
 
         self::assertSame(200, $r->status);
         self::assertStringContainsString('<!DOCTYPE html>', $r->body);
-        self::assertStringContainsString('lang="ru-ru"', $r->body);
+        self::assertStringContainsString('lang="ru"', $r->body); // ИЗМЕНЕНО: lang="ru" вместо lang="ru-ru"
         self::assertStringContainsString('<div class="hello">Hello from test</div>', $r->body);
         self::assertStringContainsString('<div class="footer">Footer from test</div>', $r->body);
     }
