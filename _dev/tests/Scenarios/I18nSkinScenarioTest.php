@@ -57,7 +57,7 @@ final class I18nSkinScenarioTest extends TestCase
         };
     }
 
-    private function domain(string $lang = 'ru-ru'): DomainContext
+    private function domain(string $lang = 'ru'): DomainContext
     {
         return new DomainContext('example.ru', 'example.ru', 'www', 'alpha.0.0', 'default', $lang, true);
     }
@@ -65,29 +65,29 @@ final class I18nSkinScenarioTest extends TestCase
     public function testNegotiatorUrlPriority(): void
     {
         $n = new LanguageNegotiator();
-        $req = new Request('GET', '/en-en/about', cookies: ['lang' => 'ch-ch']);
-        self::assertSame('en-en', $n->resolve($req, $this->domain('ru-ru')));
+        $req = new Request('GET', '/en/about', cookies: ['lang' => 'ch']);
+        self::assertSame('en', $n->resolve($req, $this->domain('ru')));
     }
 
     public function testNegotiatorCookieFallback(): void
     {
         $n = new LanguageNegotiator();
-        $req = new Request('GET', '/about', cookies: ['lang' => 'ch-ch']);
-        self::assertSame('ch-ch', $n->resolve($req, $this->domain('ru-ru')));
+        $req = new Request('GET', '/about', cookies: ['lang' => 'ch']);
+        self::assertSame('ch', $n->resolve($req, $this->domain('ru')));
     }
 
     public function testNegotiatorDomainFallback(): void
     {
         $n = new LanguageNegotiator();
         $req = new Request('GET', '/about');
-        self::assertSame('en-en', $n->resolve($req, $this->domain('en-en')));
+        self::assertSame('en', $n->resolve($req, $this->domain('en')));
     }
 
     public function testStripLangPrefix(): void
     {
         $n = new LanguageNegotiator();
-        self::assertSame('/about', $n->stripLangPrefix('/en-en/about'));
-        self::assertSame('/', $n->stripLangPrefix('/ru-ru'));
+        self::assertSame('/about', $n->stripLangPrefix('/en/about'));
+        self::assertSame('/', $n->stripLangPrefix('/ru'));
         self::assertSame('/about', $n->stripLangPrefix('/about'));
     }
 
@@ -100,7 +100,7 @@ final class I18nSkinScenarioTest extends TestCase
             return Response::text('ok');
         };
 
-        $r = $mw->process(new Request('GET', '/ru-ru/about'), $next);
+        $r = $mw->process(new Request('GET', '/ru/about'), $next);
         self::assertSame(200, $r->status);
         self::assertSame('/about', $captured);
     }
@@ -110,12 +110,12 @@ final class I18nSkinScenarioTest extends TestCase
         $s = $this->session();
         $mw = new LanguageCookieMiddleware($s);
 
-        $req = new Request('GET', '/about', query: ['lang' => 'en-en']);
+        $req = new Request('GET', '/about', query: ['lang' => 'en']);
         $r = $mw->process($req, fn (): Response => Response::text('should not reach'));
 
         self::assertSame(307, $r->status);
         self::assertSame('/about', $r->headers['location']);
-        self::assertSame('en-en', $s->get('lang'));
+        self::assertSame('en', $s->get('lang'));
     }
 
     public function testS17InvalidLangPassesThrough(): void
