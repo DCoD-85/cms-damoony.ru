@@ -52,6 +52,7 @@ $registry->add(new AdminPasswdCommand($paths));
 // use Damoony\Db\Connection;
 $db = new Connection(['driver' => 'sqlite', 'path' => $root . '/var/damoony.db']);
 $registry->add(new UserNewCommand($db));
+$registry->add(new \Damoony\Cli\Commands\TrashClearCommand($paths));
 
 $app = new Application($registry, new ArgvParser(), new Renderer());
 exit($app->run($_SERVER['argv']));
