@@ -127,4 +127,20 @@ return [
 
 	'admin.profile.logs_clear' => 'Очистить',
     'admin.profile.logs_archive' => 'В архив',
+
+	'admin.stub.title' => 'Библиотека заглушек',
+    'admin.stub.add' => '+ Создать заглушку',
+    'admin.stub.th_name' => 'Имя файла',
+    'admin.stub.th_actions' => 'Действия',
+    'admin.stub.edit' => 'Редактировать',
+    'admin.stub.delete' => 'Удалить',
+    'admin.stub.back' => '← Назад к доменам',
+    'admin.stub.empty' => 'Заглушек пока нет.',
+    'admin.stub.new_title' => 'Новая заглушка',
+    'admin.stub.name_label' => 'Имя (латиница, без .html)',
+    'admin.stub.create' => 'Создать',
+    'admin.stub.err_name' => 'Некорректное имя',
+    'admin.stub.err_exists' => 'Уже существует',
+    'admin.stub.edit_title' => 'Редактирование',
+    'admin.stub.save' => 'Сохранить HTML',
 ];

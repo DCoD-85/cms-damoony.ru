@@ -127,4 +127,20 @@ return [
 
     'admin.profile.logs_clear' => 'Clear',
     'admin.profile.logs_archive' => 'Archive',
+
+    'admin.stub.title' => 'Stub Library',
+    'admin.stub.add' => '+ Create Stub',
+    'admin.stub.th_name' => 'Filename',
+    'admin.stub.th_actions' => 'Actions',
+    'admin.stub.edit' => 'Edit',
+    'admin.stub.delete' => 'Delete',
+    'admin.stub.back' => '← Back to domains',
+    'admin.stub.empty' => 'No stubs.',
+    'admin.stub.new_title' => 'New Stub',
+    'admin.stub.name_label' => 'Name (latin, no .html)',
+    'admin.stub.create' => 'Create',
+    'admin.stub.err_name' => 'Invalid name',
+    'admin.stub.err_exists' => 'Already exists',
+    'admin.stub.edit_title' => 'Edit',
+    'admin.stub.save' => 'Save HTML',
 ];

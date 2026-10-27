@@ -47,6 +47,8 @@ final class DomainController extends BaseController
             }
         }
 
+        $card = Builder::div('admin-card');
+
         $header = Builder::div('page-header');
         $header->append(Builder::h(1)->content(View::t('domain.title')));
 
@@ -54,6 +56,8 @@ final class DomainController extends BaseController
         $actions->append(Builder::a('/admin/?p=stub', 'btn btn-outline')->content(View::t('domain.stub_lib')));
         $actions->append(Builder::a('/admin/?p=domain:new', 'btn btn-primary')->content(View::t('domain.add')));
         $header->append($actions);
+
+        $card->append($header);
 
         $table = (new Table())->headers(View::t('domain.th_status'), View::t('domain.th_domain'), View::t('domain.th_ns'), View::t('domain.th_files'), View::t('domain.th_aliases'));
 
@@ -97,15 +101,12 @@ final class DomainController extends BaseController
             $table->row($row, $rowClass);
         }
 
-        $card = Builder::div('admin-card');
         $card->append($table->build());
 
-        $content = Builder::div();
-        $content->append($header);
-        $content->append($card);
-
-        return Response::html($this->view->render($content, ['title' => View::t('domain.title')]));
+        return Response::html($this->view->render($card, ['title' => View::t('domain.title')]));
     }
+
+    // ... остальные методы (toggle, bindings, new, attach, detach, setPrimary, saveComment, edit) остаются без изменений
 
     public function toggle(Request $request): Response
     {
@@ -634,10 +635,7 @@ final class DomainController extends BaseController
             ->csrf($this->csrf->field())
             ->add(Field::text('title')->label(View::t('domain.title_label'))->value($title))
             ->add(Field::checkbox('available')->label(View::t('domain.avail_label'))->checked($available))
-            ->add(Field::select('stub')->label(View::t('domain.stub_label'))->options([
-                'maintenance' => View::t('domain.stub_maint'),
-                'coming_soon' => View::t('domain.stub_soon'),
-            ])->selected($stub))
+            ->add(Field::select('stub')->label(View::t('domain.stub_label'))->options($this->getStubOptions())->selected($stub))
             ->add(Field::datetime('until')->label(View::t('domain.until_label'))->hint(View::t('domain.until_hint'))->value($untilStr))
             ->submit(View::t('domain.save'));
 
@@ -672,5 +670,19 @@ final class DomainController extends BaseController
         $card->append($dangerZone);
 
         return Response::html($this->view->render($card, ['title' => View::t('domain.settings_title') . ': ' . $domain]));
+    }
+
+    /** @return array<string, string> */
+    private function getStubOptions(): array
+    {
+        $dir = $this->paths->root() . '/stubs';
+        $files = is_dir($dir) ? glob($dir . '/*.html') : [];
+        $options = [];
+        if ($files) {
+            foreach ($files as $file) {
+                $options[basename($file, '.html')] = basename($file, '.html');
+            }
+        }
+        return $options ?: ['maintenance' => 'maintenance'];
     }
 }

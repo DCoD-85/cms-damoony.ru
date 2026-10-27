@@ -41,6 +41,16 @@ final class FrontController
         }
 
         if (!$domain->available && !str_starts_with($request->path, '/admin')) {
+            $paths = $this->container->has(Paths::class) ? $this->container->get(Paths::class) : null;
+
+            if ($paths instanceof Paths) {
+                $stubName = $domain->stub ?: 'maintenance';
+                $stubFile = rtrim($paths->root(), '/') . '/stubs/' . $stubName . '.html';
+
+                if (is_file($stubFile)) {
+                    return Response::html((string) file_get_contents($stubFile), 503);
+                }
+            }
             return ErrorPage::maintenance($domain->language);
         }
 

@@ -123,7 +123,7 @@ $router->register('domain_db', new class($auth, $csrf, $view) extends BaseContro
 
 $router->register('allias_scheme', new AliasSchemeController($auth, $csrf, $view));
 $router->register('allias_db', new AliasDbController($auth, $csrf, $view));
-$router->register('stub', new StubController($auth, $csrf, $view));
+$router->register('stub', new StubController($auth, $csrf, $view, $paths));
 $router->register('security', new SecurityController($auth, $csrf, $view));
 
 $router->register('profile', new ProfileController($auth, $csrf, $view, $adminConfig, $root));

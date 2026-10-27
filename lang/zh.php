@@ -100,4 +100,20 @@ return [
 
     'admin.profile.logs_clear' => '清除',
     'admin.profile.logs_archive' => '存档',
+
+    'admin.stub.title' => '存根库',
+    'admin.stub.add' => '+ 创建存根',
+    'admin.stub.th_name' => '文件名',
+    'admin.stub.th_actions' => '操作',
+    'admin.stub.edit' => '编辑',
+    'admin.stub.delete' => '删除',
+    'admin.stub.back' => '← 返回域名',
+    'admin.stub.empty' => '无存根。',
+    'admin.stub.new_title' => '新建存根',
+    'admin.stub.name_label' => '名称 (英文, 无 .html)',
+    'admin.stub.create' => '创建',
+    'admin.stub.err_name' => '无效名称',
+    'admin.stub.err_exists' => '已存在',
+    'admin.stub.edit_title' => '编辑',
+    'admin.stub.save' => '保存 HTML',
 ];

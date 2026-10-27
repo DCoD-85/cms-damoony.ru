@@ -61,7 +61,10 @@ final class ConfigDomainResolver implements DomainResolverInterface
             $stub = (string) $this->site->getByKey(['domains_stub', $real, 'current'], 'maintenance');
         } elseif (!$aliasAvailable) {
             $available = false;
-            $stub = (string) $this->site->getByKey(['domains_stub', $real, 'current'], 'maintenance');
+            $stub = (string) $this->site->getByKey(
+                ['alliases_stub', $real, $allias, 'current'],
+                (string) $this->site->getByKey(['domains_stub', $real, 'current'], 'maintenance'),
+            );
         }
 
         // Определяем язык по умолчанию для этого алиаса (или домена)
