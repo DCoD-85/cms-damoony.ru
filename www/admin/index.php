@@ -127,6 +127,8 @@ $router->register('stub', new StubController($auth, $csrf, $view));
 $router->register('security', new SecurityController($auth, $csrf, $view));
 
 $router->register('profile', new ProfileController($auth, $csrf, $view, $adminConfig, $root));
+$router->register('profile_clearLogs', new ProfileController($auth, $csrf, $view, $adminConfig, $root));
+$router->register('profile_archiveLogs', new ProfileController($auth, $csrf, $view, $adminConfig, $root));
 
 // Middleware stack
 $loopback = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];

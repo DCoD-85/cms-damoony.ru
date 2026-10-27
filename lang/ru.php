@@ -124,4 +124,7 @@ return [
     'admin.profile.sec_err_length' => 'Новый пароль должен быть не менее 6 символов',
     'admin.profile.sec_err_match' => 'Новый пароль и подтверждение не совпадают',
     'admin.profile.sec_success' => 'Пароль успешно изменен',
+
+	'admin.profile.logs_clear' => 'Очистить',
+    'admin.profile.logs_archive' => 'В архив',
 ];

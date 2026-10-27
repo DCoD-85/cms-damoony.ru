@@ -71,6 +71,10 @@ final class View
         $css->attrs()->add('href', '/media/admin/admin.css');
         $doc->head()->append($css);
 
+        $js = new Element('script');
+        $js->attrs()->add('src', '/media/admin/admin.js');
+        $doc->head()->append($js);
+
         $doc->body()->append($this->header());
 
         $main = Builder::div('admin-main');

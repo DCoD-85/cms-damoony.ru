@@ -97,4 +97,7 @@ return [
     'admin.profile.sec_err_length' => '新密码必须至少为6个字符',
     'admin.profile.sec_err_match' => '新密码和确认密码不匹配',
     'admin.profile.sec_success' => '密码修改成功',
+
+    'admin.profile.logs_clear' => '清除',
+    'admin.profile.logs_archive' => '存档',
 ];

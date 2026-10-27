@@ -124,4 +124,7 @@ return [
     'admin.profile.sec_err_length' => 'New password must be at least 6 characters',
     'admin.profile.sec_err_match' => 'New password and confirmation do not match',
     'admin.profile.sec_success' => 'Password changed successfully',
+
+    'admin.profile.logs_clear' => 'Clear',
+    'admin.profile.logs_archive' => 'Archive',
 ];
