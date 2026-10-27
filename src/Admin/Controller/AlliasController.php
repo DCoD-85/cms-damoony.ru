@@ -309,15 +309,6 @@ final class AlliasController extends BaseController
             $card->append(Message::success($success)->build());
         }
 
-        $card->append(Builder::h(2)->content(View::t('allias.quick_links')));
-        $links = Builder::div('page-actions');
-        $base = '/admin/?domain=' . urlencode($domain) . '&allias=' . urlencode($allias);
-        $links->append(Builder::a('/admin/?p=page' . $base, 'btn btn-outline')->content(View::t('tab.pages')));
-        $links->append(Builder::a('/admin/?p=filler' . $base, 'btn btn-outline')->content(View::t('tab.fillers')));
-        $links->append(Builder::a('/admin/?p=allias_scheme' . $base, 'btn btn-outline')->content(View::t('tab.allias_schemes')));
-        $links->attrs()->styleAdd('margin-bottom: 30px;');
-        $card->append($links);
-
         $card->append(Builder::h(2)->content(View::t('allias.settings')));
 
         $form = Form::create('/admin/?p=allias:edit&domain=' . urlencode($domain) . '&allias=' . urlencode($allias), 'POST')
