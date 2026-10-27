@@ -99,7 +99,9 @@ final class MediaController extends BaseController
                 $sizeKb = round($f['size'] / 1024, 1) . ' KB';
                 
                 $actionsHtml = Builder::div('table-actions');
-                $actionsHtml->append(Builder::a($f['url'], 'btn btn-outline')->content('Открыть')->attrs()->add('target', '_blank'));
+                $openBtn = Builder::a($f['url'], 'btn btn-outline')->content('Открыть');
+				$openBtn->attrs()->add('target', '_blank');
+				$actionsHtml->append($openBtn);
                 
                 // ИСПРАВЛЕНИЕ CSRF: Удаление через POST-форму, а не GET-ссылку
                 $delForm = Form::create('/admin/?p=media:delete&domain=' . urlencode($domain) . '&file=' . urlencode($f['name']), 'POST')
@@ -150,7 +152,7 @@ final class MediaController extends BaseController
                 $i = 1;
                 while (is_file($dest)) {
                     $pathInfo = pathinfo($name);
-                    $filename = $pathInfo['filename'] ?? 'file';
+                    $filename = $pathInfo['filename'];
                     $ext = isset($pathInfo['extension']) ? '.' . $pathInfo['extension'] : '';
                     $dest = $dir . '/' . $filename . '_' . $i . $ext;
                     $i++;
