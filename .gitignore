@@ -41,6 +41,8 @@ env.php
 /tests/fixtures/scenarios/**/actual/
 /tests/fixtures/scenarios/**/diff/
 
+/_doc/start_new_agent.md
+
 # временное
 /tmp/
 *.tmp/_doc/_audit-snapshot.txt

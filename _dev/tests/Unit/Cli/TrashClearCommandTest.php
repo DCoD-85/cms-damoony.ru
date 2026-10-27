@@ -75,15 +75,15 @@ final class TrashClearCommandTest extends TestCase
         self::assertTrue(is_dir($b));
     }
 
-	public function testInvalidOlderFormat(): void
-	{
-		$cmd = new TrashClearCommand(new Paths($this->root));
-		$r = $cmd->run(['older' => 'abc'], $this->ctx());
+    public function testInvalidOlderFormat(): void
+    {
+        $cmd = new TrashClearCommand(new Paths($this->root));
+        $r = $cmd->run(['older' => 'abc'], $this->ctx());
 
-		self::assertFalse($r->ok);
-		self::assertNotEmpty($r->errors);
-		self::assertStringContainsString('older', $r->errors[0]);
-	}
+        self::assertFalse($r->ok);
+        self::assertNotEmpty($r->errors);
+        self::assertStringContainsString('older', $r->errors[0]);
+    }
 
     private function ctx(): Context
     {
