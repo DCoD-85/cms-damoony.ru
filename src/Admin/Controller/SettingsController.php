@@ -9,6 +9,10 @@ use Damoony\Core\Config;
 use Damoony\Files\Fs;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
+use Damoony\Ui\Builder;
+use Damoony\Ui\Field;
+use Damoony\Ui\Form;
+use Damoony\Ui\Message;
 
 final class SettingsController extends BaseController
 {
@@ -28,35 +32,50 @@ final class SettingsController extends BaseController
         if ($auth !== null) return $auth;
 
         $file = $this->root . '/config/site.config';
-        $success = $request->query('saved') ? '<div class="success">Сохранено</div>' : '';
+        $error = '';
+        $success = $request->query('saved') ? 'Настройки сохранены' : '';
+
+        $title = (string) $this->siteConfig->get('title', 'Damoony');
+        $lang = (string) $this->siteConfig->get('language', 'ru-ru');
 
         if ($request->isPost()) {
             $csrfErr = $this->requireCsrf($request);
             if ($csrfErr !== null) return $csrfErr;
 
-            $title = (string) $request->post['title'];
-            $lang = (string) $request->post['language'];
+            $title = (string) ($request->post['title'] ?? '');
+            $lang = (string) ($request->post['language'] ?? 'ru-ru');
 
-            $data = $this->siteConfig->all();
-            $data['title'] = $title;
-            $data['language'] = $lang;
-
-            Fs::writeAtomic($file, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
-            return $this->redirect('/admin/?p=settings&saved=1');
+            try {
+                $data = $this->siteConfig->all();
+                $data['title'] = $title;
+                $data['language'] = $lang;
+                
+                Fs::writeAtomic($file, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
+                return $this->redirect('/admin/?p=settings&saved=1');
+            } catch (\Throwable $e) {
+                $error = 'Ошибка сохранения: ' . $e->getMessage();
+            }
         }
 
-        $title = (string) $this->siteConfig->get('title', 'Damoony');
-        $lang = (string) $this->siteConfig->get('language', 'ru-ru');
+        $form = Form::create('/admin/?p=settings', 'POST')
+            ->csrf($this->csrf->field())
+            ->add(Field::text('title')->label('Название сайта')->value($title))
+            ->add(Field::select('language')->label('Язык по умолчанию')->options([
+                'ru-ru' => 'Русский (ru-ru)',
+                'en-en' => 'English (en-en)',
+                'ch-ch' => '中文 (ch-ch)',
+            ])->selected($lang))
+            ->submit('Сохранить');
 
-        $html = '<div class="admin-card"><h1>Настройки сайта</h1>' . $success;
-        $html .= '<form method="post" class="admin-form">' . $this->csrf->field();
-        $html .= '<label>Название сайта<input type="text" name="title" value="' . View::esc($title) . '" required></label>';
-        $html .= '<label>Язык по умолчанию<select name="language" style="padding:8px; border:1px solid #d2d2d7; border-radius:6px;">';
-        $html .= '<option value="ru-ru" ' . ($lang === 'ru-ru' ? 'selected' : '') . '>ru-ru</option>';
-        $html .= '<option value="en-en" ' . ($lang === 'en-en' ? 'selected' : '') . '>en-en</option>';
-        $html .= '</select></label>';
-        $html .= '<button type="submit">Сохранить</button></form></div>';
+        $card = Builder::div('admin-card');
+        $card->append(Builder::h(1)->content('Глобальные настройки'));
 
-        return Response::html($this->view->render($html, ['title' => 'Настройки']));
+        if ($success !== '') $card->append(Message::success($success)->build());
+        if ($error !== '') $card->append(Message::error($error)->build());
+
+        $card->append($form->build());
+        $card->append(Builder::a('/admin/?p=domain', 'btn btn-outline')->content('← Назад к доменам')->attrs()->styleAdd('margin-top: 20px;'));
+
+        return Response::html($this->view->render($card, ['title' => 'Настройки']));
     }
 }
