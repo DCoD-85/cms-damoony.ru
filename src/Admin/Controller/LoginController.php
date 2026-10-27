@@ -9,6 +9,10 @@ use Damoony\Admin\View;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
 use Damoony\Security\Csrf;
+use Damoony\Ui\Builder;
+use Damoony\Ui\Field;
+use Damoony\Ui\Form;
+use Damoony\Ui\Message;
 
 final class LoginController extends BaseController
 {
@@ -43,17 +47,21 @@ final class LoginController extends BaseController
             $error = View::t('login.error');
         }
 
-        $html = '<div class="admin-card"><h1>' . View::esc(View::t('login.title')) . '</h1>';
-        if ($error !== '') {
-            $html .= '<div class="error">' . View::esc($error) . '</div>';
-        }
-        $html .= '<form method="post" class="admin-form">';
-        $html .= $this->csrf->field();
-        $html .= '<label>' . View::esc(View::t('login.login')) . '<input type="text" name="login" autocomplete="username" required></label>';
-        $html .= '<label>' . View::esc(View::t('login.password')) . '<input type="password" name="password" autocomplete="current-password" required></label>';
-        $html .= '<button type="submit">' . View::esc(View::t('login.submit')) . '</button>';
-        $html .= '</form></div>';
+        $form = Form::create('/admin/?p=login', 'POST')
+            ->csrf($this->csrf->field())
+            ->add(Field::text('login')->label(View::t('login.login'))->required()->value((string)($request->post['login'] ?? '')))
+            ->add(Field::password('password')->label(View::t('login.password'))->required())
+            ->submit(View::t('login.submit'));
 
-        return Response::html($this->view->render($html, ['title' => View::t('login.title')]));
+        $card = Builder::div('admin-card');
+        $card->append(Builder::h(1)->content(View::t('login.title')));
+
+        if ($error !== '') {
+            $card->append(Message::error($error)->build());
+        }
+
+        $card->append($form->build());
+
+        return Response::html($this->view->render($card, ['title' => View::t('login.title')]));
     }
 }
