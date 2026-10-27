@@ -143,12 +143,41 @@ final class View
         }
         $header->append($nav);
 
-        $header->append($this->langSwitcher());
+        // Правая панель: Язык + Меню пользователя
+        $rightPanel = Builder::div('user-panel');
 
-        $user = Builder::div('user-panel');
-        $user->append(Builder::span('user-name')->content('admin'));
-        $user->append(Builder::a('/admin/?p=logout', 'btn-logout')->content(self::t('nav.logout')));
-        $header->append($user);
+        // Переключатель языка (упрощенный)
+        $lang = self::currentLang();
+        $uri = (string) ($_SERVER['REQUEST_URI'] ?? '/admin/');
+        $query = [];
+        $qs = parse_url($uri, PHP_URL_QUERY);
+        if (is_string($qs)) {
+            parse_str($qs, $query);
+        }
+        unset($query['lang']);
+
+        foreach (['ru' => 'RU', 'en' => 'EN'] as $code => $label) {
+            if ($lang !== $code) {
+                $query['lang'] = $code;
+                $rightPanel->append(Builder::a('/admin/?' . http_build_query($query), 'nav-link')->content($label)->attrs()->styleAdd('margin-right:10px; font-size:12px;'));
+                break;
+            }
+        }
+
+        // Выпадающее меню пользователя
+        $dropdown = Builder::div('user-dropdown');
+        $trigger = Builder::div('user-trigger');
+        $trigger->append(Builder::div('user-avatar')->content('A')); // Берем первую букву логина
+        $trigger->append(Builder::span('user-name')->content('admin'));
+        $dropdown->append($trigger);
+
+        $menu = Builder::div('dropdown-menu');
+        $menu->append(Builder::a('/admin/?p=profile', '')->content('Мой профиль'));
+        $menu->append(Builder::a('/admin/?p=logout', '')->content(self::t('nav.logout')));
+        $dropdown->append($menu);
+
+        $rightPanel->append($dropdown);
+        $header->append($rightPanel);
 
         return $header;
     }

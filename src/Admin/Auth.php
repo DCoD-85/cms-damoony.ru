@@ -19,6 +19,7 @@ final class Auth implements AuthInterface
         private readonly Config $adminConfig,
         private readonly SessionInterface $session,
         private readonly string $failsFile,
+        private readonly string $logsFile,
         private readonly string $ip,
     ) {
     }
@@ -26,6 +27,7 @@ final class Auth implements AuthInterface
     public function attempt(string $login, string $password): bool
     {
         if ($this->isBanned()) {
+            $this->writeLog($login, 'banned');
             return false;
         }
 
@@ -38,6 +40,7 @@ final class Auth implements AuthInterface
 
         if (!$ok) {
             $this->recordFail();
+            $this->writeLog($login, 'fail');
             if ($this->failsCount() >= self::DELAY_AFTER) {
                 usleep(500_000);
             }
@@ -45,6 +48,7 @@ final class Auth implements AuthInterface
         }
 
         $this->resetFails();
+        $this->writeLog($login, 'success');
 
         if (!$this->session->isStarted()) {
             $this->session->start();
@@ -79,6 +83,32 @@ final class Auth implements AuthInterface
             $this->session->start();
         }
         $this->session->remove(self::SESSION_KEY);
+    }
+
+    private function writeLog(string $login, string $status): void
+    {
+        $logs = [];
+        if (Fs::isFile($this->logsFile)) {
+            $raw = @file_get_contents($this->logsFile);
+            $decoded = $raw !== false ? json_decode($raw, true) : null;
+            if (is_array($decoded)) {
+                $logs = $decoded;
+            }
+        }
+
+        $logs[] = [
+            'time' => date('Y-m-d H:i:s'),
+            'ip' => $this->ip,
+            'login' => $login,
+            'status' => $status,
+        ];
+
+        // Оставляем только последние 100 записей
+        if (count($logs) > 100) {
+            $logs = array_slice($logs, -100);
+        }
+
+        Fs::writeAtomic($this->logsFile, json_encode($logs, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
     }
 
     /** @return array<string, array{count: int, last: int, banned_until: int}> */

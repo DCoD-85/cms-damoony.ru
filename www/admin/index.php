@@ -27,6 +27,7 @@ use Damoony\Http\MiddlewareStack;
 use Damoony\Http\Request;
 use Damoony\Security\Csrf;
 use Damoony\Session\NativeSession;
+use Damoony\Admin\Controller\ProfileController;
 
 $root = dirname(__DIR__, 2);
 if (is_file($root . '/.dev')) {
@@ -58,6 +59,7 @@ $auth = new Auth(
     adminConfig: $adminConfig,
     session: $session,
     failsFile: $root . '/var/admin_fails.json',
+    logsFile: $root . '/var/admin_logs.json',
     ip: (string) ($_SERVER['REMOTE_ADDR'] ?? ''),
 );
 
@@ -121,6 +123,8 @@ $router->register('allias_scheme', new AliasSchemeController($auth, $csrf, $view
 $router->register('allias_db', new AliasDbController($auth, $csrf, $view));
 $router->register('stub', new StubController($auth, $csrf, $view));
 $router->register('security', new SecurityController($auth, $csrf, $view));
+
+$router->register('profile', new ProfileController($auth, $csrf, $view, $adminConfig, $root));
 
 // Middleware stack
 $loopback = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
