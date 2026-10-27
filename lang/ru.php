@@ -95,4 +95,10 @@ return [
     'admin.domain.det_new_folder' => 'Имя новой папки (если выбран шаблон или копия)',
     'admin.domain.det_submit' => 'Отвязать',
     'admin.domain.back' => 'Назад',
+
+	'site.home' => 'Главная',
+    'site.about' => 'О нас',
+    'site.docs' => 'Документация',
+    'site.login' => 'Войти',
+    'site.logout' => 'Выйти',
 ];

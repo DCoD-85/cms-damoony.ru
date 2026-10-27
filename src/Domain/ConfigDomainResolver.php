@@ -12,7 +12,7 @@ final class ConfigDomainResolver implements DomainResolverInterface
         private readonly Config $site,
         private readonly string $defaultLogic = 'alpha.0.0',
         private readonly string $defaultSkin = 'default',
-        private readonly string $defaultLanguage = 'ru-ru',
+        private readonly string $defaultLanguage = 'ru',
     ) {
     }
 
@@ -40,6 +40,7 @@ final class ConfigDomainResolver implements DomainResolverInterface
             }
         }
 
+        // Если домен не найден в конфиге — отдаем "пустой" контекст для 404
         if ($real === null) {
             return new DomainContext(
                 domain: $host,
@@ -53,18 +54,22 @@ final class ConfigDomainResolver implements DomainResolverInterface
         }
 
         $available = (bool) $this->site->getByKey(['domains_available', $real], false);
-
-        // Проверяем статус самого алиаса
         $aliasAvailable = (bool) $this->site->getByKey(['alliases_available', $real, $allias], true);
 
         $stub = null;
         if (!$available) {
             $stub = (string) $this->site->getByKey(['domains_stub', $real, 'current'], 'maintenance');
         } elseif (!$aliasAvailable) {
-            // Если домен включен, но алиас выключен — тоже показываем заглушку
             $available = false;
             $stub = (string) $this->site->getByKey(['domains_stub', $real, 'current'], 'maintenance');
         }
+
+        // Определяем язык по умолчанию для этого алиаса (или домена)
+        $langs = $this->site->getByKey(['alliases_langs', $real, $allias]);
+        if (!is_array($langs) || $langs === []) {
+            $langs = $this->site->getByKey(['domains_langs', $real], [$this->defaultLanguage]);
+        }
+        $lang = is_array($langs) && $langs !== [] ? (string) reset($langs) : $this->defaultLanguage;
 
         return new DomainContext(
             domain: $host,
@@ -72,7 +77,7 @@ final class ConfigDomainResolver implements DomainResolverInterface
             allias: $allias,
             logic: (string) $this->site->getByKey(['domains_logic', $real], $this->defaultLogic),
             skin: (string) $this->site->getByKey(['domains_skins', $real], $this->defaultSkin),
-            language: (string) $this->site->get('language', $this->defaultLanguage),
+            language: $lang,
             available: $available,
             stub: $stub,
             namespace: (string) $this->site->getByKey(['domains_namespace', $real], str_replace('.', '_', $real)),

@@ -11,6 +11,8 @@ use Damoony\Error\ErrorPage;
 use Damoony\Files\Paths;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
+use Damoony\I18n\LanguageNegotiator;
+use Damoony\I18n\Translator;
 use Damoony\Region\RegionContext;
 use Damoony\Routing\RouterInterface;
 use Damoony\Security\Csrf;
@@ -32,6 +34,11 @@ final class FrontController
 
         $host = (string) ($request->header('host') ?? $request->server['SERVER_NAME'] ?? '');
         $domain = $resolver->resolve($host);
+
+        // O12: Если домен/поддомен не зарегистрирован в конфиге -> 404
+        if ($domain->real === $host && $domain->allias === '') {
+            return ErrorPage::notFound($domain->language);
+        }
 
         if (!$domain->available && !str_starts_with($request->path, '/admin')) {
             return ErrorPage::maintenance($domain->language);
@@ -63,12 +70,18 @@ final class FrontController
         $site = $this->container->get('site');
         assert($site instanceof Config);
 
+        // O11: Определяем язык (URL -> Cookie -> Конфиг)
+        $negotiator = new LanguageNegotiator();
+        $lang = $negotiator->resolve($request, $domain);
+        $translator = new Translator($lang, 'ru');
+
         $meta = new Meta();
         $context = new RegionContext($request, $domain, $meta, [
             'paths' => $paths,
             'site' => $site,
             'auth' => $auth,
             'csrf' => $csrf,
+            'i18n' => $translator,
         ]);
 
         return $this->pages->handle($match, $context);

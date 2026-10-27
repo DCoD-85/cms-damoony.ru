@@ -40,20 +40,20 @@ final class LoginController extends BaseController
             if ($this->auth->attempt($login, $password)) {
                 return $this->redirect('/admin/');
             }
-            $error = 'Неверный логин или пароль';
+            $error = View::t('login.error');
         }
 
-        $html = '<div class="admin-card"><h1>Вход</h1>';
+        $html = '<div class="admin-card"><h1>' . View::esc(View::t('login.title')) . '</h1>';
         if ($error !== '') {
             $html .= '<div class="error">' . View::esc($error) . '</div>';
         }
         $html .= '<form method="post" class="admin-form">';
         $html .= $this->csrf->field();
-        $html .= '<label>Логин<input type="text" name="login" autocomplete="username" required></label>';
-        $html .= '<label>Пароль<input type="password" name="password" autocomplete="current-password" required></label>';
-        $html .= '<button type="submit">Войти</button>';
+        $html .= '<label>' . View::esc(View::t('login.login')) . '<input type="text" name="login" autocomplete="username" required></label>';
+        $html .= '<label>' . View::esc(View::t('login.password')) . '<input type="password" name="password" autocomplete="current-password" required></label>';
+        $html .= '<button type="submit">' . View::esc(View::t('login.submit')) . '</button>';
         $html .= '</form></div>';
 
-        return Response::html($this->view->render($html, ['title' => 'Вход']));
+        return Response::html($this->view->render($html, ['title' => View::t('login.title')]));
     }
 }

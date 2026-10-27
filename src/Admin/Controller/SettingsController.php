@@ -35,7 +35,7 @@ final class SettingsController extends BaseController
 
         $file = $this->root . '/config/site.config';
         $error = '';
-        $success = $request->query('saved') ? 'Настройки сохранены' : '';
+        $success = $request->query('saved') ? View::t('msg.saved') : '';
 
         $title = (string) $this->siteConfig->get('title', 'Damoony');
         $lang = (string) $this->siteConfig->get('language', 'ru-ru');
@@ -57,22 +57,22 @@ final class SettingsController extends BaseController
                 Fs::writeAtomic($file, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
                 return $this->redirect('/admin/?p=settings&saved=1');
             } catch (\Throwable $e) {
-                $error = 'Ошибка сохранения: ' . $e->getMessage();
+                $error = View::t('msg.error', ['msg' => $e->getMessage()]);
             }
         }
 
         $form = Form::create('/admin/?p=settings', 'POST')
             ->csrf($this->csrf->field())
-            ->add(Field::text('title')->label('Название сайта')->value($title))
-            ->add(Field::select('language')->label('Язык по умолчанию')->options([
+            ->add(Field::text('title')->label(View::t('settings.name'))->value($title))
+            ->add(Field::select('language')->label(View::t('settings.lang'))->options([
                 'ru-ru' => 'Русский (ru-ru)',
                 'en-en' => 'English (en-en)',
                 'ch-ch' => '中文 (ch-ch)',
             ])->selected($lang))
-            ->submit('Сохранить');
+            ->submit(View::t('domain.save'));
 
         $card = Builder::div('admin-card');
-        $card->append(Builder::h(1)->content('Глобальные настройки'));
+        $card->append(Builder::h(1)->content(View::t('settings.title')));
 
         if ($success !== '') {
             $card->append(Message::success($success)->build());
@@ -82,10 +82,10 @@ final class SettingsController extends BaseController
         }
 
         $card->append($form->build());
-        $backBtn = Builder::a('/admin/?p=domain', 'btn btn-outline')->content('← Назад к доменам');
+        $backBtn = Builder::a('/admin/?p=domain', 'btn btn-outline')->content(View::t('settings.back'));
         $backBtn->attrs()->styleAdd('margin-top: 20px;');
         $card->append($backBtn);
 
-        return Response::html($this->view->render($card, ['title' => 'Настройки']));
+        return Response::html($this->view->render($card, ['title' => View::t('settings.title')]));
     }
 }

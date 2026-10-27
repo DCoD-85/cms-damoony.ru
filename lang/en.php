@@ -75,7 +75,7 @@ return [
     'admin.msg.saved' => 'Changes saved',
     'admin.msg.error' => 'Save error: {msg}',
 
-	    'admin.domain.new_title' => 'Add domain',
+	'admin.domain.new_title' => 'Add domain',
     'admin.domain.new_domain' => 'Domain',
     'admin.domain.new_ns' => 'Namespace (optional)',
     'admin.domain.new_submit' => 'Create',
@@ -95,4 +95,10 @@ return [
     'admin.domain.det_new_folder' => 'New folder name (if template or copy is selected)',
     'admin.domain.det_submit' => 'Detach',
     'admin.domain.back' => 'Back',
+	
+	'site.home' => 'Home',
+    'site.about' => 'About',
+    'site.docs' => 'Documentation',
+    'site.login' => 'Sign in',
+    'site.logout' => 'Sign out',
 ];

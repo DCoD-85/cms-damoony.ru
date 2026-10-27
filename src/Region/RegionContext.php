@@ -6,6 +6,7 @@ namespace Damoony\Region;
 
 use Damoony\Domain\DomainContext;
 use Damoony\Http\Request;
+use Damoony\I18n\Translator;
 use Damoony\Ui\Meta;
 
 final class RegionContext
@@ -25,5 +26,15 @@ final class RegionContext
     public function service(string $name): mixed
     {
         return $this->services[$name] ?? null;
+    }
+
+    /** @param array<string, string|int> $params */
+    public function lang(string $key, array $params = []): string
+    {
+        $t = $this->service('i18n');
+        if ($t instanceof Translator) {
+            return $t->t('site.' . $key, $params);
+        }
+        return $key;
     }
 }
