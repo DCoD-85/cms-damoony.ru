@@ -45,6 +45,28 @@ $stack->add(new RateLimitMiddleware(
     whitelist: $rlWhitelist,
 ));
 
+$siteCfg = $container->get('site');
+assert($siteCfg instanceof \Damoony\Core\Config);
+$skinsAllowedMap = $siteCfg->getByKey(['domains_skins_allowed'], []);
+$skinsFlat = [];
+if (is_array($skinsAllowedMap)) {
+    foreach ($skinsAllowedMap as $list) {
+        if (is_array($list)) {
+            foreach ($list as $s) {
+                if (is_string($s) && $s !== '') {
+                    $skinsFlat[$s] = true;
+                }
+            }
+        }
+    }
+}
+$skinsFlat = array_keys($skinsFlat) ?: ['default'];
+
+$stack->add(new SkinCookieMiddleware(
+    cookieName: 'skin',
+    allowed: $skinsFlat,
+));
+
 $handler = static fn (Request $r) => $stack->dispatch($r, static fn (Request $r2) => $fc->handle($r2));
 
 $kernel = new Kernel($handler, $app->logger(), $app->env());
@@ -54,7 +76,7 @@ $response = $kernel->handle(Request::fromGlobals());
 $time = round((microtime(true) - $start) * 1000, 2);
 $contentType = (string) ($response->headers['content-type'] ?? '');
 
-if (str_contains($contentType, 'text/html') && $app->env()->isDev()) {
+if (str_contains($contentType, 'text/html') && ($app->env()->isDev() || isset($_GET['debug']))) {
     $badge = sprintf(
         '<div style="position:fixed; bottom:12px; right:12px; background:rgba(29,29,31,0.85); color:#fff; padding:6px 12px; border-radius:6px; font-family:monospace; font-size:12px; z-index:99999; box-shadow:0 2px 10px rgba(0,0,0,0.2); pointer-events:none; backdrop-filter: blur(4px);">⚡ %s ms</div>',
         $time
