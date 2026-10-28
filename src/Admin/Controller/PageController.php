@@ -8,9 +8,12 @@ use Damoony\Admin\View;
 use Damoony\Cli\Commands\PageNewCommand;
 use Damoony\Cli\Commands\PageToggleCommand;
 use Damoony\Cli\Context;
+use Damoony\Core\Config;
+use Damoony\Files\Fs;
 use Damoony\Files\Paths;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
+use Damoony\Page\PageCompiler;
 use Damoony\Ui\Builder;
 use Damoony\Ui\Element;
 use Damoony\Ui\Field;
@@ -104,7 +107,6 @@ final class PageController extends BaseController
                 $newPath = $path === '' ? $page : $path . '/' . $page;
                 $pageDir = $baseDir . '/' . $page;
 
-                // Читаем .rules.json для флагов
                 $rulesFile = $pageDir . '/.rules.json';
                 $rules = is_file($rulesFile) ? json_decode((string)file_get_contents($rulesFile), true) : [];
                 if (!is_array($rules)) {
@@ -113,11 +115,9 @@ final class PageController extends BaseController
                 $isAuth = (bool)($rules['auth'] ?? false);
                 $isSearch = (bool)($rules['search'] ?? true);
 
-                // Ссылка
                 $folderUrl = '/admin/?p=page&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&path=' . urlencode($newPath);
                 $pageLink = Builder::a($folderUrl, 'domain-link')->content('/' . View::esc($newPath));
 
-                // Генератор форм для переключения
                 $makeToggle = function (string $key, bool $val) use ($domain, $allias, $newPath) {
                     $form = Form::create('/admin/?p=page:toggle&domain=' . urlencode($domain) . '&allias=' . urlencode($allias), 'POST')
                         ->csrf($this->csrf->field())
@@ -139,10 +139,15 @@ final class PageController extends BaseController
                 $authBtn = $makeToggle('auth', $isAuth);
                 $searchBtn = $makeToggle('search', $isSearch);
 
-                // Кнопка редактирования
+                $actionsHtml = Builder::div('table-actions');
+
+                // Ссылка на визуальный редактор
+                $visualUrl = '/admin/?p=page:edit&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&path=' . urlencode($newPath);
+                $actionsHtml->append(Builder::a($visualUrl, 'btn btn-primary')->content(View::t('page.visual_editor')));
+
+                // Ссылка на код
                 $phpFile = 'algoritm/' . ($path === '' ? '' : $path . '/') . $page . '/algoritm_' . str_replace('/', '_', $newPath) . '.php';
                 $editUrl = '/admin/?p=editor&domain=' . urlencode($domain) . '&file=' . urlencode($phpFile);
-                $actionsHtml = Builder::div('table-actions');
                 $actionsHtml->append(Builder::a($editUrl, 'btn btn-outline')->content(View::t('page.edit')));
 
                 $table->row([
@@ -156,6 +161,145 @@ final class PageController extends BaseController
         $card->append($table->build());
 
         return Response::html($this->view->render($card, ['title' => View::t('page.title')]));
+    }
+
+    public function edit(Request $request): Response
+    {
+        $auth = $this->requireAuth();
+        if ($auth !== null) {
+            return $auth;
+        }
+
+        $domain = (string) $request->query('domain', '');
+        $allias = (string) $request->query('allias', 'www');
+        $path = (string) $request->query('path', '');
+
+        if ($domain === '' || $path === '') {
+            return $this->redirect('/admin/?p=domain');
+        }
+
+        $baseDir = $this->paths->algoritm($domain, $allias) . '/' . $path;
+        if (!is_dir($baseDir)) {
+            return $this->redirect('/admin/?p=page&domain=' . urlencode($domain) . '&allias=' . urlencode($allias));
+        }
+
+        $editFile = $baseDir . '/.edit.json';
+        $data = is_file($editFile) ? json_decode((string) file_get_contents($editFile), true) : [];
+        $blocks = is_array($data) && isset($data['blocks']) ? $data['blocks'] : [];
+
+        $card = Builder::div('admin-card');
+
+        $breadcrumbs = Builder::div('breadcrumbs');
+        $breadcrumbs->append(Builder::a('/admin/?p=domain')->content(View::t('domain.bread_domains')));
+        $breadcrumbs->append(Text::raw(' / '));
+        $breadcrumbs->append(Builder::a('/admin/?p=page&domain=' . urlencode($domain) . '&allias=' . urlencode($allias))->content(View::t('page.title')));
+        $card->append($breadcrumbs);
+
+        $card->append(Builder::h(1)->content('Визуальный редактор: /' . View::esc($path)));
+        $card->append(View::alliasTabs($domain, $allias, 'pages'));
+
+        $form = '<form method="post" action="/admin/?p=page:save&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&path=' . urlencode($path) . '" class="editor-form">';
+        $form .= $this->csrf->field();
+
+        $form .= '<div id="blocks-container">';
+        if ($blocks === []) {
+            $blocks = [['type' => 'text', 'content' => '']]; // Один блок по умолчанию
+        }
+        foreach ($blocks as $i => $block) {
+            $form .= $this->renderBlockRow($i, $block);
+        }
+        $form .= '</div>';
+
+        $form .= '<div style="margin-top: 15px; display:flex; gap:10px;">';
+        $form .= '<button type="button" id="add-block-btn" class="btn btn-outline">' . View::t('page.add_block') . '</button>';
+        $form .= '<button type="submit" class="btn btn-primary">' . View::t('domain.save') . '</button>';
+        $form .= '</div>';
+        $form .= '</form>';
+
+        $card->append(Text::raw($form));
+
+        return Response::html($this->view->render($card, ['title' => 'Визуальный редактор']));
+    }
+
+    /**
+     * @param array<string, mixed> $block
+     */
+    private function renderBlockRow(int $index, array $block): string
+    {
+        $type = $block['type'] ?? 'text';
+        $content = htmlspecialchars((string)($block['content'] ?? ''), ENT_QUOTES);
+
+        $html = '<div class="block-row" style="display:flex; gap:10px; margin-bottom:10px; padding:10px; border:1px solid #ddd; border-radius:8px; background:#fafafa;">';
+
+        $html .= '<select name="blocks[' . $index . '][type]" style="width: 200px; padding:8px; border-radius:6px; border:1px solid #ccc;">';
+        $html .= '<option value="h1"' . ($type === 'h1' ? ' selected' : '') . '>' . View::t('page.type_h1') . '</option>';
+        $html .= '<option value="h2"' . ($type === 'h2' ? ' selected' : '') . '>' . View::t('page.type_h2') . '</option>';
+        $html .= '<option value="text"' . ($type === 'text' ? ' selected' : '') . '>' . View::t('page.type_text') . '</option>';
+        $html .= '<option value="img"' . ($type === 'img' ? ' selected' : '') . '>' . View::t('page.type_img') . '</option>';
+        $html .= '</select>';
+
+        $html .= '<input type="text" name="blocks[' . $index . '][content]" value="' . $content . '" placeholder="' . View::t('page.block_content') . '" style="flex-grow:1; padding:8px; border-radius:6px; border:1px solid #ccc;">';
+
+        $html .= '<button type="button" class="btn btn-danger remove-block-btn" style="padding: 0 15px;">✕</button>';
+
+        $html .= '</div>';
+
+        return $html;
+    }
+
+    public function save(Request $request): Response
+    {
+        $auth = $this->requireAuth();
+        if ($auth !== null) {
+            return $auth;
+        }
+
+        $csrfErr = $this->requireCsrf($request);
+        if ($csrfErr !== null) {
+            return $csrfErr;
+        }
+
+        $domain = (string) $request->query('domain', '');
+        $allias = (string) $request->query('allias', 'www');
+        $path = (string) $request->query('path', '');
+
+        $baseDir = $this->paths->algoritm($domain, $allias) . '/' . $path;
+        if (!is_dir($baseDir)) {
+            return $this->redirect('/admin/?p=page&domain=' . urlencode($domain));
+        }
+
+        $blocks = $request->post['blocks'] ?? [];
+        if (!is_array($blocks)) {
+            $blocks = [];
+        }
+
+        $cleanBlocks = [];
+        foreach ($blocks as $b) {
+            if (isset($b['type'], $b['content']) && trim((string)$b['content']) !== '') {
+                $cleanBlocks[] = [
+                    'type' => (string)$b['type'],
+                    'content' => (string)$b['content'],
+                ];
+            }
+        }
+
+        $editFile = $baseDir . '/.edit.json';
+        Fs::writeAtomic($editFile, json_encode(['blocks' => $cleanBlocks], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
+
+        // Компилируем в PHP
+        $siteFile = $this->paths->siteConfig();
+        $site = Config::fromFile($siteFile)->all();
+        $realDomain = (string) $site['domains_real'][$domain];
+        $namespace = (string) ($site['domains_namespace'][$realDomain] ?? str_replace(['.', '-'], '_', $realDomain));
+
+        $classChain = 'algoritm_' . str_replace('/', '_', $path);
+        $compiler = new PageCompiler();
+        $php = $compiler->compile($namespace, $allias, $classChain, $cleanBlocks);
+
+        $phpFile = $baseDir . '/' . $classChain . '.php';
+        Fs::writeAtomic($phpFile, $php);
+
+        return $this->redirect('/admin/?p=page:edit&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&path=' . urlencode($path) . '&saved=1');
     }
 
     public function new(Request $request): Response
