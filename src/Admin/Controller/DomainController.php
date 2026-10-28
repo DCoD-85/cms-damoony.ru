@@ -82,8 +82,11 @@ final class DomainController extends BaseController
         }
 
         if ($hasErrors) {
-            $errorHtml = '<b>Обнаружены проблемы в структуре:</b><br>' . implode('<br>', array_map([View::class, 'esc'], $errorMessages));
-            $card->append(Message::error($errorHtml)->build());
+            $errorText = "Обнаружены проблемы в структуре:\n";
+            foreach ($errorMessages as $msg) {
+                $errorText .= '- ' . $msg . "\n";
+            }
+            $card->append(Message::error($errorText)->build());
         }
         // ---------------------------
 
