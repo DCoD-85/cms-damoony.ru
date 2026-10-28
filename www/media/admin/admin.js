@@ -23,13 +23,13 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (strength <= 2) {
                 indicator.style.width = '33%';
-                indicator.style.background = '#ef4444'; // Красный
+                indicator.style.background = '#ef4444';
             } else if (strength <= 4) {
                 indicator.style.width = '66%';
-                indicator.style.background = '#f59e0b'; // Желтый
+                indicator.style.background = '#f59e0b';
             } else {
                 indicator.style.width = '100%';
-                indicator.style.background = '#10b981'; // Зеленый
+                indicator.style.background = '#10b981';
             }
         });
     }
@@ -50,42 +50,10 @@ document.addEventListener('DOMContentLoaded', () => {
             height: "auto"
         });
         
-        // Устанавливаем высоту редактора
         editor.setSize(null, 600);
     }
 
-    // 3. Визуальный редактор страниц (добавление/удаление блоков)
-    const blocksContainer = document.getElementById('blocks-container');
-    const addBlockBtn = document.getElementById('add-block-btn');
-
-    if (blocksContainer && addBlockBtn) {
-        let blockIndex = blocksContainer.children.length;
-
-        addBlockBtn.addEventListener('click', () => {
-            const html = `
-                <div class="block-row" style="display:flex; gap:10px; margin-bottom:10px; padding:10px; border:1px solid #ddd; border-radius:8px; background:#fafafa;">
-                    <select name="blocks[${blockIndex}][type]" style="width: 200px; padding:8px; border-radius:6px; border:1px solid #ccc;">
-                        <option value="h1">Заголовок H1</option>
-                        <option value="h2">Заголовок H2</option>
-                        <option value="text">Текст</option>
-                        <option value="img">Картинка (URL)</option>
-                    </select>
-                    <input type="text" name="blocks[${blockIndex}][content]" placeholder="Содержимое" style="flex-grow:1; padding:8px; border-radius:6px; border:1px solid #ccc;">
-                    <button type="button" class="btn btn-danger remove-block-btn" style="padding: 0 15px;">✕</button>
-                </div>
-            `;
-            blocksContainer.insertAdjacentHTML('beforeend', html);
-            blockIndex++;
-        });
-
-        blocksContainer.addEventListener('click', (e) => {
-            if (e.target.classList.contains('remove-block-btn')) {
-                e.target.closest('.block-row').remove();
-            }
-        });
-    }
-
-    // 4. Визуальный редактор схем (добавление/удаление слотов)
+    // 3. Визуальный редактор схем (добавление/удаление слотов)
     const slotsContainer = document.getElementById('slots-container');
     const addSlotBtn = document.getElementById('add-slot-btn');
 
@@ -94,8 +62,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         addSlotBtn.addEventListener('click', () => {
             const html = `
-                <div class="block-row" style="display:flex; gap:10px; margin-bottom:10px; padding:10px; border:1px solid #ddd; border-radius:8px; background:#fafafa; align-items:center;">
-                    <select name="slots[${slotIndex}][name]" style="width: 150px; padding:8px; border-radius:6px; border:1px solid #ccc;">
+                <div class="editor-row">
+                    <div class="move-buttons">
+                        <button type="button" class="btn btn-outline move-up-btn">▲</button>
+                        <button type="button" class="btn btn-outline move-down-btn">▼</button>
+                    </div>
+                    <select name="slots[${slotIndex}][name]" class="type-select">
                         <option value="center">center</option>
                         <option value="top">top</option>
                         <option value="left">left</option>
@@ -103,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <option value="bottom">bottom</option>
                         <option value="footer">footer</option>
                     </select>
-                    <select name="slots[${slotIndex}][tag]" style="width: 120px; padding:8px; border-radius:6px; border:1px solid #ccc;">
+                    <select name="slots[${slotIndex}][tag]" class="tag-select">
                         <option value="div">&lt;div&gt;</option>
                         <option value="header">&lt;header&gt;</option>
                         <option value="main">&lt;main&gt;</option>
@@ -111,8 +83,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         <option value="aside">&lt;aside&gt;</option>
                         <option value="section">&lt;section&gt;</option>
                     </select>
-                    <input type="text" name="slots[${slotIndex}][class]" placeholder="CSS класс (например, main-wrap)" style="flex-grow:1; padding:8px; border-radius:6px; border:1px solid #ccc;">
-                    <button type="button" class="btn btn-danger remove-slot-btn" style="padding: 0 15px;">✕</button>
+                    <input type="text" name="slots[${slotIndex}][class]" placeholder="CSS класс" class="content-input">
+                    <button type="button" class="btn btn-danger remove-slot-btn remove-btn">✕</button>
                 </div>
             `;
             slotsContainer.insertAdjacentHTML('beforeend', html);
@@ -121,23 +93,68 @@ document.addEventListener('DOMContentLoaded', () => {
 
         slotsContainer.addEventListener('click', (e) => {
             if (e.target.classList.contains('remove-slot-btn')) {
-                e.target.closest('.block-row').remove();
+                e.target.closest('.editor-row').remove();
             }
         });
     }
-	    // Сортировка слотов (Вверх/Вниз) для схем и страниц
+
+    // 4. Сортировка (Вверх/Вниз) — работает для схем и страниц
     document.addEventListener('click', function(e) {
         if (e.target.closest('.move-up-btn')) {
-            const row = e.target.closest('.block-row');
+            const row = e.target.closest('.editor-row');
             if (row && row.previousElementSibling) {
                 row.parentNode.insertBefore(row, row.previousElementSibling);
             }
         }
         if (e.target.closest('.move-down-btn')) {
-            const row = e.target.closest('.block-row');
+            const row = e.target.closest('.editor-row');
             if (row && row.nextElementSibling) {
                 row.parentNode.insertBefore(row.nextElementSibling, row);
             }
+        }
+    });
+
+    // 5. Удаление блоков (в любом контейнере)
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-block-btn')) {
+            e.target.closest('.editor-row').remove();
+        }
+    });
+
+    // 6. Переключение статуса слота (disabled/global/local) в редакторе страниц
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('slot-status-select')) {
+            const card = e.target.closest('.editor-card');
+            const body = card ? card.querySelector('.slot-body') : null;
+            if (body) {
+                body.style.display = (e.target.value === 'local') ? 'block' : 'none';
+            }
+        }
+    });
+
+    // 7. Добавление блока внутри конкретного слота (когда статус = local)
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('add-slot-block-btn')) {
+            const btn = e.target;
+            const prefix = btn.dataset.prefix;
+            const container = btn.previousElementSibling;
+            
+            if (!container) return;
+            
+            const index = container.children.length;
+            const html = `
+                <div class="editor-row">
+                    <select name="${prefix}[${index}][type]" class="type-select">
+                        <option value="text">Текст</option>
+                        <option value="h1">Заголовок H1</option>
+                        <option value="h2">Заголовок H2</option>
+                        <option value="img">Картинка (URL)</option>
+                    </select>
+                    <input type="text" name="${prefix}[${index}][content]" placeholder="Содержимое" class="content-input">
+                    <button type="button" class="btn btn-danger remove-block-btn remove-btn">✕</button>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
         }
     });
 });
