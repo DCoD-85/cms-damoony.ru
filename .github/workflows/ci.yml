@@ -66,6 +66,15 @@ jobs:
           EOF
           php bin/cli.php db:migrate
 
+      - name: Create Test Admin
+        run: |
+          php bin/cli.php admin:passwd --name=admin --password=secret
+
+      - name: Start PHP Dev Server
+        run: |
+          php -S 127.0.0.1:8080 -t www/ > /tmp/server.log 2>&1 &
+          sleep 2
+
       - name: PHPUnit
         run: php vendor/bin/phpunit -c _dev/phpunit.xml
 
