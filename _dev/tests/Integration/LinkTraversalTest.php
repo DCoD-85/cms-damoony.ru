@@ -17,7 +17,7 @@ final class LinkTraversalTest extends TestCase
     protected function setUp(): void
     {
         $this->cookieFile = sys_get_temp_dir() . '/cookies_' . uniqid('', true) . '.txt';
-        
+
         $ch = curl_init($this->baseUrl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 2);
@@ -42,12 +42,12 @@ final class LinkTraversalTest extends TestCase
         // 1. Получаем CSRF-токен со страницы логина
         $loginPage = $this->request('/admin/?p=login');
         $csrfToken = $this->extractCsrf($loginPage);
-        
+
         // 2. Авторизуемся
         $postData = http_build_query([
             'login' => 'admin',
             'password' => 'secret',
-            '_csrf' => $csrfToken
+            '_csrf' => $csrfToken,
         ]);
         $this->request('/admin/?p=login', 'POST', $postData);
 
@@ -57,7 +57,7 @@ final class LinkTraversalTest extends TestCase
 
         while (count($queue) > 0 && count($crawled) < 30) {
             $url = array_shift($queue);
-            
+
             if (isset($crawled[$url])) {
                 continue;
             }
@@ -65,7 +65,7 @@ final class LinkTraversalTest extends TestCase
 
             $html = $this->request($url);
             $this->assertNotFalse($html, "Страница не загрузилась: {$url}");
-            
+
             // Извлекаем все ссылки
             $links = $this->extractLinks($html);
             foreach ($links as $link) {
@@ -75,7 +75,7 @@ final class LinkTraversalTest extends TestCase
             }
         }
 
-        // На пустой базе CI краулер найдет только Dashboard, Domain и New Domain. 
+        // На пустой базе CI краулер найдет только Dashboard, Domain и New Domain.
         // Требуем хотя бы 3 страницы, чтобы тест не падал на пустой БД.
         $this->assertGreaterThanOrEqual(3, count($crawled), 'Краулер прошел слишком мало страниц.');
     }
@@ -87,7 +87,7 @@ final class LinkTraversalTest extends TestCase
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
         curl_setopt($ch, CURLOPT_COOKIEJAR, $this->cookieFile);
         curl_setopt($ch, CURLOPT_COOKIEFILE, $this->cookieFile);
-        
+
         if ($method === 'POST') {
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
@@ -114,7 +114,7 @@ final class LinkTraversalTest extends TestCase
         @$dom->loadHTML($html);
         $xpath = new \DOMXPath($dom);
         $nodes = $xpath->query('//a/@href');
-        
+
         $links = [];
         foreach ($nodes as $node) {
             $links[] = $node->nodeValue;
