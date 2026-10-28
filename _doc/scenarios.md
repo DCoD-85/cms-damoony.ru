@@ -11,7 +11,7 @@
 
 🔴 — сломан/не реализован на момент аудита (P0/P1).
 
-Тесты: _dev/tests/Unit/ и _dev/tests/Scenarios/. Заявленные 235 методов не верифицированы; в файловой системе — около 39 тестовых файлов. Запуск: php vendor/bin/phpunit -c _dev/phpunit.xml.
+Тесты: _dev/tests/Unit/ и _dev/tests/Scenarios/. 245 тестов, 542 assertions, 48 файлов (верифицировано). Запуск: php vendor/bin/phpunit -c _dev/phpunit.xml.
 
 Сценарии управления структурой (CLI и файловая система)
 S01. Создание домена — ✅
@@ -66,7 +66,7 @@ php bin/cli.php scheme:new --domain=example.ru --name=default
 
 Фактически: ✅ создаётся.
 
-Оговорка: SchemeCompiler (используется при визуальном сохранении схем) ломается на строках со скобками (MANIFEST.md §7.1 п.5, P0). Через CLI — корректно.
+Оговорка: ✅ Закрыто (stage-1): SchemeCompiler использует чистый var_export без str_replace. Строки со скобками сохраняются. Регрессия покрыта SchemeCompilerTest.
 
 S07. Очистка карантина — ✅
 text
@@ -137,7 +137,7 @@ S15. Защита от CSRF — ✅
 
 Фактически: ✅ работает.
 
-Оговорка: Destructive GET — SchemeController::delete/copy, BlockController::remove — не защищены CSRF (MANIFEST.md §7.1 п.1, P0). Это не этот сценарий, но связанный.
+Оговорка: destructive-эндпоинты (SchemeController::delete/copy, BlockController::remove, StubController::remove) теперь тоже требуют POST+CSRF (stage-2b). GET → 405, POST без токена → 403.
 
 S16. Управление привязками доменов — ✅
 Вход: в админке добавить example.online → example.ru.
@@ -168,7 +168,7 @@ S18. Ответ в формате JSON (Ajax Layout) — ✅
 Фактически: ✅ работает.
 
 Сценарии Low-Code и Админки
-S19. Визуальное редактирование страницы — 🔴
+S19. Визуальное редактирование страницы — 🟡
 Вход: «Визуально» у страницы, выбрать слот center (статус local), добавить блок H1, «Сохранить».
 
 Шаги: PageController::save() → .edit.json ({slots}) → PageCompiler.
@@ -208,12 +208,12 @@ S23. Визуальное сохранение схемы с вложеннос�
 
 Фактически: 🔴 схема схлопывается в плоский div.layout (§6.15, P1). Вложенность теряется без предупреждения.
 
-S24. Визуальное сохранение страницы со старым .edit.json — 🔴
+S24. Визуальное сохранение страницы со старым .edit.json — ✅ (defensive, no direct test)
 Вход: about/.edit.json содержит {"blocks": [...]} (старый формат), открыть «Визуально», сохранить.
 
 Ожидание: контент сохранён.
 
-Фактически: ✅ закрыто (stage-2a): `PageController::edit()` и `save()` блокируют legacy `{blocks}` с предупреждением; `about/.edit.json` удалён. Визуальное сохранение не может затереть ручной PHP. Миграция `{blocks} → {slots}` не автоматизирована.
+Фактически: ✅ закрыто (stage-2a): PageController::edit() и save() блокируют legacy {blocks} с предупреждением; about/.edit.json удалён. Визуальное сохранение не может затереть ручной PHP. Автомиграция {blocks} → {slots} не реализована.
 
 S25. default(): null — 🔴
 Вход: ручная страница возвращает null из default().
@@ -222,12 +222,12 @@ S25. default(): null — 🔴
 
 Фактически: 🔴 RuntimeException → 500 (§6.18, P1). Контракт разрешает null, runtime ломает.
 
-S26. CSRF-атака на удаление схемы — 🔴
+S26. CSRF-атака на удаление схемы — ✅ (defensive, no direct test)
 Вход: залогиненный админ открывает сторонний сайт, тот делает GET /admin/?p=scheme:delete&domain=example.ru&name=www.
 
 Ожидание: операция отклонена (CSRF).
 
-Фактически: 🔴 схема удаляется — SchemeController::delete() через GET без CSRF (§7.1 п.1, P0). То же для ::copy и BlockController::remove.
+Фактически: ✅ закрыто (stage-2b): SchemeController::delete/copy и BlockController::remove требуют POST+CSRF. GET → 405, POST без токена → 403. StubController::remove также защищён (валидация имени).
 
 Покрытие тестами
 Сценарий	Покрыт	Где
@@ -238,31 +238,28 @@ S17–S18	✅	_dev/tests/Unit/Response/
 S19	🟡	нет прямого теста PageController::save()
 S20	🟡	нет StructureCheckerTest
 S21	✅	_dev/tests/Unit/Admin/
-S22–S26	🔴	нет тестов — добавить
+S22–S23, S25	🔴	нет тестов — добавить
+S24, S26	✅ (defensive)	нет прямого теста; защита через review
 Пробелы в тестах (P1, MANIFEST.md §7.3 п.10):
-
-PageCompilerTest — контент с ', \, \n, $, (, ).
-
-RegionCompilerTest — то же.
-
-SchemeCompilerTest — CSS-класс со скобкой (sm (mobile)).
 
 StructureCheckerTest — «сироты» в schemes.json, legacy .edit.json.
 
 PageHandlerTest — схема по умолчанию, default(): null.
 
-ConfigDomainResolverTest — порт, trailing-dot.
+ConfigDomainResolverTest — порт, trailing-dot (частично покрыт; расширить).
 
-Эти тесты — обязательное условие закрытия P0/P1: без них фиксы вернутся.
+✅ PageCompilerTest, RegionCompilerTest, SchemeCompilerTest — закрыты в stage-1 (контент с ', \, \n, $, (, )).
+
+Эти тесты — обязательное условие закрытия P1: без них фиксы вернутся.
 
 Итог
-Работает как задумано (✅): 17 из 21 исходных сценариев.
+Работает как задумано (✅): 19 из 26 сценариев.
 
-Частично (🟡): 2 (S19, S20).
+Частично (🟡): 4 (S05, S19, S20, S22).
 
-Сломано (🔴): 2 из 21 исходных (S19, S20) + все 5 новых (S22–S26) — это реальные сценарии, которые сейчас ломаются.
+Сломано (🔴): 3 (S23, S25 — реальные, S22 — при порте).
 
-Это отражает общий статус проекта: архитектура сильная, «последняя миля» — в P0. После закрытия P0 (≈2.5 дня) — S22–S26 станут ✅, и общий статус — 85–90%.
+Stage-1+2a+2b закрыли S06, S24, S26 (было 🔴/🟡). Осталось stage-3: Host (§6.17), getMessage (§7.1 п.3). После stage-3 и P1 — 90%+.
 
 Подробнее — MANIFEST.md §7 (P0/P1/P2). О командах — cli.md. Об админке — admin.md.
 

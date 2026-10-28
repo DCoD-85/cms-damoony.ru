@@ -48,7 +48,7 @@ scheme: string — имя схемы; используется в PageCompiler/H
 
 Ограничения (P0/P1):
 
-Порт и trailing-dot не нормализуются (§6.17): 192.168.1.10:8080 не матчится с 192.168.1.10. Критично для IP-деплоя с портом.
+Порт и trailing-dot не нормализуются (§6.17): 192.168.1.10:8080 не матчится с 192.168.1.10. Критично для IP-деплоя с портом. — **открыт, stage-3.**
 
 domains_real[$domain] работает только при self-mapping ("example.ru": "example.ru"). Свежий домен без self-mapping → Undefined array key (§6.4, P2).
 
@@ -192,7 +192,7 @@ SchemeRenderer::render(array $manifest, RegionRegistry $regions, RegionContext $
 
 Ограничения:
 
-SchemeCompiler::compile() использует var_export + str_replace('array (', '['). Ломается на любом тексте/классе со скобкой (§7.1 п.5, P0). Требуется round-trip тест.
+~~SchemeCompiler::compile() использует var_export + str_replace('array (', '[').~~ ✅ Закрыто (stage-1): str_replace удалён, var_export как есть. Round-trip тест в SchemeCompilerTest.
 
 SchemeController::edit() схлопывает вложенные схемы в плоский div.layout (§6.15, P1). Вложенность сохраняется только при редактировании через CodeMirror.
 
@@ -219,7 +219,9 @@ Csrf: field(), check()
 
 Флаг auth: true в .rules.json автоматически перенаправляет гостя на /login.
 
-Нарушение (P0, §7.1 п.1): Destructive GET — SchemeController::delete/copy, BlockController::remove изменяют данные через GET без CSRF. Инвариант «destructive — только POST» нарушен. MANIFEST.md §8.2 п.1.
+~~Нарушение (P0, §7.1 п.1): Destructive GET — SchemeController::delete/copy, BlockController::remove изменяют данные через GET без CSRF.~~ ✅ Закрыто (stage-2b): SchemeController::copy/delete, BlockController::remove, StubController::remove требуют requirePost + requireCsrf. StubController::remove дополнительно валидирует имя (path traversal). UI переведён на POST-формы.
+
+⚠️ AliasSchemeController::delete — requireCsrf есть, requirePost нет (403 вместо 405). Атака невозможна, но поведение нестандартное. P1.
 
 Админка использует отдельную авторизацию (config/admin.config), независимую от пользователей сайта.
 
@@ -274,7 +276,7 @@ PageCompiler: JSON-дерево страницы → PHP-класс (algoritm_*.
 
 RegionCompiler: JSON-дерево блока → PHP-класс (alliasglobal_*.php).
 
-SchemeCompiler: массив схемы → .data.php (с str_replace — см. §Scheme).
+SchemeCompiler: массив схемы → .data.php (var_export, без str_replace с stage-1).
 
 Инварианты:
 
@@ -282,11 +284,9 @@ SchemeCompiler: массив схемы → .data.php (с str_replace — см. 
 
 На выходе — быстрый PHP с вызовами Builder, без парсинга JSON на лету.
 
-Нарушения (P0):
+~~Нарушения (P0): PageCompiler/RegionCompiler используют addslashes()~~ ✅ Закрыто (stage-1): используют var_export($content, true). Регрессия покрыта тестами.
 
-PageCompiler/RegionCompiler используют addslashes() — ломается на ', \, $, \n (§7.1 п.2). Нужен var_export($content, true).
-
-Два формата .edit.json ({blocks} старый, {slots} новый) не мигрированы (§7.1 п.4). Первое визуальное сохранение старой страницы затрёт контент.
+~~Два формата .edit.json ({blocks} старый, {slots} новый) не мигрированы.~~ ✅ Частично закрыто (stage-2a): PageController::edit() и save() блокируют legacy {blocks}. Автомиграция {blocks} → {slots} не реализована — требуется ручное удаление.
 
 Генерируемый PageCompiler код сам вызывает SchemeLoader + SchemeRenderer — это компенсирует §6.1 для визуальных страниц, но усиливает разницу с ручными.
 
@@ -316,7 +316,7 @@ CLI и Админка
 
 CLI: 17 команд, возвращают Result. Включает диагностику и обслуживание. Идемпотентен.
 
-Admin: UI-компоненты, CodeMirror (локальный), мультиязычность (RU/EN/ZH), профиль, менеджер заглушек, дашборд безопасности. POST защищены CSRF, PRG. Destructive GET — не защищены (P0).
+Admin: UI-компоненты, CodeMirror (локальный), мультиязычность (RU/EN/ZH), профиль, менеджер заглушек, дашборд безопасности. POST защищены CSRF, PRG. Destructive — POST+CSRF (stage-2b).
 
 Инварианты:
 

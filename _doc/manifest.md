@@ -51,13 +51,13 @@ Low-Code: PageCompiler, RegionCompiler, .edit.json рядом с .php, стат�
 
 CLI (17 команд): help, domain:new, allias:new, allias:remove, block:new, block:remove, filler:new, filler:toggle, page:new, page:toggle, scheme:new, db:migrate, vars:extract, admin:passwd, user:new, trash:clear, structure:check.
 
-Качество: PHPUnit (около 39 тестовых файлов; заявленные 235 методов — не проверено физически), PHPStan level 8, PHP-CS-Fixer, GitHub Actions CI.
+Качество: PHPUnit (48 тестовых файлов, 245 тестов, 542 assertions — верифицировано), PHPStan level 8 (0 errors), PHP-CS-Fixer (0 issues), GitHub Actions CI.
 
 4. Частично реализовано (🟡)
 Фича	Что есть	Что нужно для ✅
 I18n фронтенда	Middleware, DomainContext->language	UI-переключатель на сайте, ключи site.*, hreflang
 Skins	SkinManager, автоподключение CSS/JS	UI-менеджер в админке, переключатель на фронте
-.edit.json	Два формата ({blocks} старый, {slots} новый)	Миграция старого → новый
+.edit.json	Два формата ({blocks} старый, {slots} новый); edit()/save() блокируют legacy (stage-2a)	Автоматическая миграция старого → новый (сейчас — ручная)
 StructureChecker	Наличие файлов, стыковка филлер↔слот	Проверка .edit.json ↔ PHP, legacy .edit.json, blocks.json ↔ папки
 blocks.json	Записывается CLI	Не читается RegionLoader (источник — папки)
 5. Не реализовано (❌)
@@ -147,18 +147,18 @@ WYSIWYG (свободная вёрстка), Headless/REST/GraphQL API, Sitemap,
 Статус: P2. Либо задокументировать назначение и использовать, либо удалить.
 
 7. Известные баги (требуют исправления)
-7.1. P0 — Блокируют production (3 из 6 закрыто: stage-1 — компиляторы, stage-2a — legacy .edit.json)
-CSRF на destructive GET. SchemeController::delete/copy, BlockController::remove изменяют данные через GET без CSRF-токена.
+7.1. P0 — Блокируют production (4 из 6 закрыто: stage-1 — компиляторы, stage-2a — legacy .edit.json, stage-2b — CSRF на destructive GET)
+~~CSRF на destructive GET.~~ ✅ Закрыто (stage-2b): requirePost + requireCsrf в SchemeController::copy/delete, BlockController::remove, StubController::remove. UI переведён на POST-формы. StubController::remove — добавлена валидация имени (path traversal).
 
-~~addslashes в компиляторах.~~ ✅ Закрыто (stage-1).         $table = (new Table())->headers('Имя блока', View::t('block.th_type'), View::t('domain.bind_th_act'));PageCompiler        $table = (new Table())->headers('Имя блока', View::t('block.th_type'), View::t('domain.bind_th_act'));/        $table = (new Table())->headers('Имя блока', View::t('block.th_type'), View::t('domain.bind_th_act'));RegionCompiler        $table = (new Table())->headers('Имя блока', View::t('block.th_type'), View::t('domain.bind_th_act')); используют         $table = (new Table())->headers('Имя блока', View::t('block.th_type'), View::t('domain.bind_th_act'));var_export($content, true)        $table = (new Table())->headers('Имя блока', View::t('block.th_type'), View::t('domain.bind_th_act'));. Регрессия закрыта:         $table = (new Table())->headers('Имя блока', View::t('block.th_type'), View::t('domain.bind_th_act'));_dev/tests/Unit/Page/PageCompilerTest.php        $table = (new Table())->headers('Имя блока', View::t('block.th_type'), View::t('domain.bind_th_act'));,         $table = (new Table())->headers('Имя блока', View::t('block.th_type'), View::t('domain.bind_th_act'));_dev/tests/Unit/Region/RegionCompilerTest.php        $table = (new Table())->headers('Имя блока', View::t('block.th_type'), View::t('domain.bind_th_act'));.
+~~addslashes в компиляторах.~~ ✅ Закрыто (stage-1): PageCompiler/RegionCompiler используют var_export($content, true). Регрессия закрыта: _dev/tests/Unit/Page/PageCompilerTest.php, _dev/tests/Unit/Region/RegionCompilerTest.php.
 
-Response::internalError($e->getMessage()) в PageHandler. Утечка путей и классов в prod. (Не ErrorPage:: — Response::.)
+Response::internalError($e->getMessage()) в PageHandler. Утечка путей и классов в prod. (Не ErrorPage:: — Response::.) — **открыт, stage-3.**
 
-~~Два формата .edit.json без миграции.~~ ✅ Закрыто (stage-2a): `PageController::edit()` и `save()` блокируют legacy `{blocks}` с понятным сообщением; `about/.edit.json` удалён. Миграция `{blocks} → {slots}` не автоматизирована — legacy-файлы нужно удалить вручную.
+~~Два формата .edit.json без миграции.~~ ✅ Закрыто (stage-2a): PageController::edit() и save() блокируют legacy {blocks} с понятным сообщением; about/.edit.json удалён. Автоматическая миграция {blocks} → {slots} не реализована — legacy-файлы нужно удалить вручную.
 
-~~SchemeCompiler::str_replace('array (', '[').~~ ✅ Закрыто (stage-1). str_replace удалён, var_export как есть. Round-trip тест добавлен: _dev/tests/Unit/Scheme/SchemeCompilerTest.php (включая строки с (, ), array (, [x]).
+~~SchemeCompiler::str_replace('array (', '[').~~ ✅ Закрыто (stage-1): str_replace удалён, var_export как есть. Round-trip тест добавлен: _dev/tests/Unit/Scheme/SchemeCompilerTest.php (включая строки с (, ), array (, [x]).
 
-Нормализация Host (§6.17). 192.168.1.10:8080 не матчится. Критично для IP-деплоя.
+Нормализация Host (§6.17). 192.168.1.10:8080 не матчится. Критично для IP-деплоя. — **открыт, stage-3.**
 
 7.2. P1 — Надёжность и безопасность
 Document::release() не идемпотентен. Повторный вызов дублирует <title>/<link>/<script>.
@@ -194,7 +194,7 @@ Translator/LanguageNegotiator через контейнер (§6.19).
 
 PageHandler::applySkin — не читать $_COOKIE напрямую (§6.20).
 
-Тесты: PageCompilerTest, RegionCompilerTest, StructureCheckerTest, PageHandlerTest (схема по умолчанию).
+Тесты: StructureCheckerTest, PageHandlerTest (схема по умолчанию). PageCompilerTest, RegionCompilerTest, SchemeCompilerTest — ✅ закрыты в stage-1.
 
 Фронтенд I18n, Skins (§4).
 
@@ -216,10 +216,12 @@ FileRouter не рендерит ошибки.
 
 Kernel ловит Throwable, белых экранов нет.
 
-8.2. Нарушаются (баги из §7)
-Destructive операции — только POST (§7.1 п.1).
+Destructive операции — только POST+CSRF (stage-2b).
 
-Один формат .edit.json (§7.1 п.4).
+8.2. Нарушаются (баги из §7)
+~~Destructive операции — только POST (§7.1 п.1).~~ ✅ Соблюдается с stage-2b.
+
+~~Один формат .edit.json (§7.1 п.4).~~ ✅ Legacy блокируется с stage-2a (автомиграции нет, но регрессии нет).
 
 Document::release() идемпотентен (§7.2 п.1).
 
@@ -244,13 +246,18 @@ _doc/ — производная документация.
 При расхождении п.1 и п.2 — это баг (см. §7 и §10).
 
 10. Bug Backlog (по приоритетам)
-**Закрыто в stage-1:** addslashes → var_export (PageCompiler, RegionCompiler); SchemeCompiler::str_replace удалён. Покрыто тестами.
+Закрыто в stage-1: addslashes → var_export (PageCompiler, RegionCompiler); SchemeCompiler::str_replace удалён. Покрыто тестами.
+
+Закрыто в stage-2a: legacy {blocks} .edit.json блокируется в PageController::edit()/save(); about/.edit.json удалён.
+
+Закрыто в stage-2b: CSRF на destructive GET (SchemeController::copy/delete, BlockController::remove, StubController::remove); UI переведён на POST-формы; StubController::remove валидирует имя (path traversal).
+
 P0 — блокируют production
-CSRF на GET-delete/copy.
+~~CSRF на GET-delete/copy.~~ ✅ Закрыто (stage-2b).
 
 Response::internalError($e->getMessage()) → generic сообщение + лог.
 
-~~Миграция .edit.json на новый формат + StructureChecker ловит legacy.~~ ✅ Частично (stage-2a): `edit()`/`save()` блокируют legacy. StructureChecker-проверка — P1.
+~~Миграция .edit.json на новый формат.~~ ✅ Частично (stage-2a): edit()/save() блокируют legacy. Автомиграция — P1.
 
 Нормализация Host (порт, trailing dot, lowercase) в ConfigDomainResolver.
 
@@ -259,7 +266,7 @@ Document::release() — идемпотентность.
 
 Attrs::release() — валидация имён атрибутов.
 
-StructureChecker — расширить проверки (schemes.json ↔ файлы, .edit.json ↔ PHP).
+StructureChecker — расширить проверки (schemes.json ↔ файлы, .edit.json ↔ PHP, legacy .edit.json).
 
 SchemeLoader — проверка Env::isDev().
 
@@ -268,6 +275,8 @@ SchemeController::edit() — сохранение вложенности.
 PageController::edit() — резолв входящего хоста.
 
 Algoritm::default(): null — убрать из интерфейса или трактовать как 204.
+
+Автомиграция .edit.json {blocks} → {slots}.
 
 P2 — техдолг
 domains_real[$domain] → ConfigDomainResolver::real().
@@ -288,28 +297,28 @@ Translator/LanguageNegotiator через контейнер.
 
 PageHandler::applySkin — не читать $_COOKIE напрямую.
 
-Тесты для компиляторов и PageHandler.
+Тесты для StructureChecker и PageHandler.
 
 11. Позиция архитектора (финальная)
 Принято из аудита: баги из §7.1 и §7.2 — реальные. §6.1, §6.3, §6.5, §6.15, §6.16, §6.17, §6.18 — переклассифицированы в дефекты. §6.4 — работает при self-mapping, ограничение зафиксировано.
 
 Отвергнуто как «баги»: §6.2, §6.6, §6.7, §6.19, §6.20, §6.21 — осознанные решения или улучшения (P2).
 
-Текущее состояние: 70% production-ready.
+Текущее состояние: ~80% production-ready.
 
-3 P0-блокера (утечка путей, CSRF, порт). Закрыты: stage-1 — компиляторы, stage-2a — legacy .edit.json.
+2 P0-блокера (утечка путей через getMessage, порт в Host). Закрыты: stage-1 — компиляторы, stage-2a — legacy .edit.json, stage-2b — CSRF.
 
-~2.5 дня работы до деплоя.
+~0.5 дня работы до деплоя.
 
-Оценка 6.8/10.
+Оценка 7.5/10.
 
-После P0 (≈2.5 дня): 7.8/10, 80%.
-После P0+P1: 8.2/10, 85%.
+После P0 (stage-3): 8.2/10, 85%.
+После P0+P1: 8.8/10, 90%.
 Как AI-платформа: 9/10.
 Как архитектурный эксперимент: 9/10.
 
 12. Видение (6–12 месяцев)
-Low-Code: визуальный редактор безопасен для контент-менеджера — сохранение не теряет данные, вложенные схемы сохраняются, legacy .edit.json мигрирован. WYSIWYG — не цель; цель — надёжный конструктор блоков.
+Low-Code: визуальный редактор безопасен для контент-менеджера — сохранение не теряет данные, вложенные схемы сохраняются, legacy .edit.json мигрирован автоматически. WYSIWYG — не цель; цель — надёжный конструктор блоков.
 
 AI-платформа: REST API (read-only) для внешних агентов, structure:check покрывает .edit.json ↔ PHP и schemes.json ↔ файлы. Плагины — не цель; цель — предсказуемый CLI.
 
