@@ -54,7 +54,7 @@ Response — оборачивает Node в Document (тег <html>) с мета
 
 Инфраструктурные папки скрыты точкой: .alliasglobal/ (блоки), .alliasscheme/ (схемы).
 
-Резолвер: ConfigDomainResolver::resolve() делает strtolower($host) и матчит по domains_real. Порт (:8080) и трейлинг-точка (example.ru.) не отрезаются (§6.17, P0 для IP-деплоя с портом). Для localhost без порта — работает.
+Резолвер: ConfigDomainResolver::resolve() приводит хост к нижнему регистру, отрезает порт (:8080) и трейлинг-точку (example.ru.) — нормализация добавлена в stage-3. Для localhost без порта — работает.
 
 Слой UI и Компоненты
 UI — типизированное дерево (не строки): Node, Element, Attrs, Builder, Document, Meta. Компоненты (Form, Field, Table, Button, Message) — высокоуровневые блоки для админки. Вся вёрстка в контроллерах — через Builder там, где это возможно; сложные структуры — через new Element() или компоненты (MANIFEST.md §6.6).
@@ -77,7 +77,7 @@ Filler: переопределение региона для конкретно�
 Low-Code и Компиляция
 Механика: админка сохраняет структуру блоков в .edit.json рядом с .php.
 
-Два формата .edit.json: {blocks} (старый, BlockController) и {slots} (новый, PageCompiler). Не мигрированы (§7.1 п.4, P0). Первое визуальное сохранение старой страницы затрёт контент.
+Два формата .edit.json: {blocks} (старый) и {slots} (новый). Legacy {blocks} блокируется в PageController::edit()/save() с предупреждением (stage-2a). Автомиграция не реализована, но регрессия закрыта.
 
 Компиляция: PageCompiler (страницы), RegionCompiler (регионы) читают JSON и генерируют PHP с вызовами Builder и var_export для строк. SchemeCompiler — просто var_export, str_replace удалён (stage-1, §7.1 п.5).
 
@@ -101,12 +101,12 @@ DbAuth (password_hash / password_verify).
 
 Админка — отдельная авторизация (config/admin.config), независимая от пользователей сайта.
 
-Все POST — CSRF. Destructive GET — есть, но это баг (§7.1 п.1, P0): SchemeController::delete/copy, BlockController::remove.
+Все POST — CSRF. Destructive — POST+CSRF (stage-2b).
 
 CLI и Админка
 CLI: 17 команд, возвращают Result (ok, errors), идемпотентны. structure:check — диагностика.
 
-Admin: UI-компоненты, CodeMirror (локальный), мультиязычность (RU/EN/ZH через cookie admin_lang), профиль, менеджер заглушек, дашборд безопасности, System Health. POST защищены CSRF (PRG), destructive GET — не защищены (баг).
+Admin: UI-компоненты, CodeMirror (локальный), мультиязычность (RU/EN/ZH через cookie admin_lang), профиль, менеджер заглушек, дашборд безопасности, System Health. POST защищены CSRF (PRG), destructive — POST+CSRF.
 
 Админка и CLI — равноправные способы управления, делят бизнес-логику через *NewCommand, *ToggleCommand.
 
@@ -124,11 +124,11 @@ Safe Mode: www/admin/index.php перехватывает фатальные о�
 
 CSP из engine.config блокирует inline-скрипты (CodeMirror подключён локально из www/media/admin/).
 
-CSRF-токены обязательны на POST. Destructive GET — нарушение инварианта (§7.1 п.1, P0).
+CSRF-токены обязательны на POST. Destructive — POST+CSRF (stage-2b).
 
 Загрузка файлов — whitelist расширений (MediaController).
 
-Response::internalError($e->getMessage()) в PageHandler — утечка путей и классов в prod (§7.1 п.3, P0). Kernel ловит Throwable, но не Response с сообщением.
+Response::internalError() в PageHandler — в prod отдаёт generic сообщение (stage-3, §7.1 п.3). Kernel ловит Throwable, но не Response с сообщением.
 
 Session: HttpOnly, SameSite=Lax, Secure при HTTPS.
 

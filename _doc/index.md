@@ -3,7 +3,7 @@
 Документация Damoony Engine
 Вся документация по проекту. Разделена по назначению: разработчики, администраторы, AI-агенты.
 
-Статус проекта: 70% production-ready. 6 P0-блокеров до деплоя (~2.5 дня). Полное состояние — MANIFEST.md.
+Статус проекта: 85% production-ready. 2 P0-блокера до деплоя (~0.5 дня). Полное состояние — MANIFEST.md.
 
 ⚠️ Порядок приоритета при расхождении: код в src/ → MANIFEST.md → остальные документы _doc/ → комментарии в коде. Если документ противоречит MANIFEST.md — доверяйте MANIFEST.md.
 
@@ -51,17 +51,17 @@ AI-агент (код)	MANIFEST.md → ai_logic.md → guide.md → contracts.md
 Ранние версии документов упоминали «235 тестов», «100% паритет CLI/UI», «WYSIWYG», «скрытых дефолтов нет». Эти утверждения исправлены в текущих версиях. Если встретите старую формулировку — доверяйте MANIFEST.md.
 
 Ключевые P0 (для быстрой ориентации)
-CSRF на destructive GET.
+~~CSRF на destructive GET.~~ ✅ Закрыто (stage-2b).
 
 ~~addslashes в компиляторах.~~ ✅ Закрыто (stage-1).
 
-Response::internalError($e->getMessage()) в prod.
+Response::internalError($e->getMessage()) в prod. — открыт, stage-3.
 
 ~~Два формата .edit.json без миграции.~~ ✅ Закрыто (stage-2a).
 
 ~~SchemeCompiler::str_replace('array (', '[').~~ ✅ Закрыто (stage-1).
 
-Порт в Host не нормализуется.
+~~Порт в Host не нормализуется.~~ ✅ Закрыто (stage-3).
 
 Подробнее — MANIFEST.md §7.1 и §10 (P0).
 

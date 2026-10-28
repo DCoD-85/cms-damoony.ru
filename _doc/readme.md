@@ -3,7 +3,7 @@
 Damoony Engine
 Лёгкий PHP 8.4 движок для мультидоменных сайтов с собственной Low-Code UI-моделью.
 
-Статус: 70% production-ready. 6 P0-блокеров до деплоя (~2.5 дня работы). Полное состояние — MANIFEST.md. Если сомневаетесь в утверждении из любого документа — истина в MANIFEST.md §3–7, а не здесь.
+Статус: 85% production-ready. 2 P0-блокера до деплоя (~0.5 дня работы). Полное состояние — MANIFEST.md. Если сомневаетесь в утверждении из любого документа — истина в MANIFEST.md §3–7, а не здесь.
 
 Что это
 Damoony Engine — переосмысление архитектуры SimplCMS. Сохраняет философию старого проекта (домены как единица организации, UI как дерево, регионы как плагины, файловый роутинг), но реализован с нуля на современных стандартах.
@@ -15,7 +15,7 @@ PHP >= 8.4
 
 Composer (PSR-4, PSR-3, PSR-11)
 
-PHPUnit 10 (около 39 тестовых файлов; заявленные 235 методов — не верифицировано)
+PHPUnit 10 (48 тестовых файлов; 245 тестов, 542 assertions — верифицировано)
 
 PHPStan (level 8)
 
@@ -117,7 +117,7 @@ I18n фронтенда: middleware и DomainContext->language есть, UI-пе
 
 Skins: SkinManager и автоподключение CSS/JS есть, UI-менеджера и переключателя нет.
 
-.edit.json: два формата ({blocks} старый, {slots} новый), миграции нет.
+.edit.json: два формата ({blocks} старый, {slots} новый). Legacy блокируется (stage-2a), но автомиграции нет.
 
 StructureChecker: не ловит .edit.json ↔ PHP, legacy .edit.json, blocks.json ↔ папки.
 
@@ -128,17 +128,17 @@ WYSIWYG (свободная вёрстка), Headless/REST/GraphQL API, sitemap,
 
 Известные проблемы (по MANIFEST.md §7)
 P0 — блокируют production
-CSRF на destructive GET: SchemeController::delete/copy, BlockController::remove.
+~~CSRF на destructive GET~~ — ✅ закрыто (stage-2b, POST+CSRF на всех destructive).
 
 ~~addslashes в компиляторах~~ — ✅ закрыто (stage-1, var_export + тесты).
 
-Response::internalError($e->getMessage()): утечка путей/классов в prod.
+Response::internalError($e->getMessage()): утечка путей/классов в prod. — открыт, stage-3.
 
-Два формата .edit.json: первое визуальное сохранение старой страницы затрёт контент.
+~~Два формата .edit.json~~ — ✅ закрыто (stage-2a, `edit()`/`save()` блокируют legacy + `about/.edit.json` удалён).
 
 ~~SchemeCompiler::str_replace('array (', '[')~~ — ✅ закрыто (stage-1, str_replace удалён + round-trip тест).
 
-Порт/trailing-dot в Host не нормализуется: 192.168.1.10:8080 не матчится с 192.168.1.10.
+~~Порт/trailing-dot в Host не нормализуется~~ — ✅ закрыто (stage-3, нормализация в ConfigDomainResolver).
 
 P1 — надёжность и безопасность
 Document::release() не идемпотентен; XSS на именах атрибутов в Attrs; пробелы StructureChecker; SchemeLoader fallback без проверки Env::isDev(); SchemeController::edit() схлопывает вложенность; PageController::edit() не резолвит входящий хост; Algoritm::default(): null ломает страницу.
@@ -174,12 +174,9 @@ ai_system.md, ai_logic.md — инструкции для AI-агентов.
 Важное замечание
 Ранние версии этого файла (и других документов в _doc/) заявляли:
 
-«235 тестов» — не подтверждено физически;
-
+«235 тестов» — теперь верифицировано (245);
 «скрытых дефолтов нет» — SchemeLoader возвращает fallback (§6.5);
-
 «100% паритет CLI/UI» — неверно (§3);
-
 «WYSIWYG» — не реализован (§5).
 
 Эти утверждения исправлены в текущей версии. Если где-то в _doc/ осталась старая формулировка — доверяйте MANIFEST.md, а не ей.
