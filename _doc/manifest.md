@@ -147,14 +147,14 @@ WYSIWYG (свободная вёрстка), Headless/REST/GraphQL API, Sitemap,
 Статус: P2. Либо задокументировать назначение и использовать, либо удалить.
 
 7. Известные баги (требуют исправления)
-7.1. P0 — Блокируют production (2 из 6 закрыто в stage-1)
+7.1. P0 — Блокируют production (3 из 6 закрыто: stage-1 — компиляторы, stage-2a — legacy .edit.json)
 CSRF на destructive GET. SchemeController::delete/copy, BlockController::remove изменяют данные через GET без CSRF-токена.
 
 ~~addslashes в компиляторах.~~ ✅ Закрыто (stage-1).         $table = (new Table())->headers('Имя блока', View::t('block.th_type'), View::t('domain.bind_th_act'));PageCompiler        $table = (new Table())->headers('Имя блока', View::t('block.th_type'), View::t('domain.bind_th_act'));/        $table = (new Table())->headers('Имя блока', View::t('block.th_type'), View::t('domain.bind_th_act'));RegionCompiler        $table = (new Table())->headers('Имя блока', View::t('block.th_type'), View::t('domain.bind_th_act')); используют         $table = (new Table())->headers('Имя блока', View::t('block.th_type'), View::t('domain.bind_th_act'));var_export($content, true)        $table = (new Table())->headers('Имя блока', View::t('block.th_type'), View::t('domain.bind_th_act'));. Регрессия закрыта:         $table = (new Table())->headers('Имя блока', View::t('block.th_type'), View::t('domain.bind_th_act'));_dev/tests/Unit/Page/PageCompilerTest.php        $table = (new Table())->headers('Имя блока', View::t('block.th_type'), View::t('domain.bind_th_act'));,         $table = (new Table())->headers('Имя блока', View::t('block.th_type'), View::t('domain.bind_th_act'));_dev/tests/Unit/Region/RegionCompilerTest.php        $table = (new Table())->headers('Имя блока', View::t('block.th_type'), View::t('domain.bind_th_act'));.
 
 Response::internalError($e->getMessage()) в PageHandler. Утечка путей и классов в prod. (Не ErrorPage:: — Response::.)
 
-Два формата .edit.json без миграции. Первое сохранение старой страницы через визуальный редактор затрёт контент.
+~~Два формата .edit.json без миграции.~~ ✅ Закрыто (stage-2a): `PageController::edit()` и `save()` блокируют legacy `{blocks}` с понятным сообщением; `about/.edit.json` удалён. Миграция `{blocks} → {slots}` не автоматизирована — legacy-файлы нужно удалить вручную.
 
 ~~SchemeCompiler::str_replace('array (', '[').~~ ✅ Закрыто (stage-1). str_replace удалён, var_export как есть. Round-trip тест добавлен: _dev/tests/Unit/Scheme/SchemeCompilerTest.php (включая строки с (, ), array (, [x]).
 
@@ -250,7 +250,7 @@ CSRF на GET-delete/copy.
 
 Response::internalError($e->getMessage()) → generic сообщение + лог.
 
-Миграция .edit.json на новый формат + StructureChecker ловит legacy.
+~~Миграция .edit.json на новый формат + StructureChecker ловит legacy.~~ ✅ Частично (stage-2a): `edit()`/`save()` блокируют legacy. StructureChecker-проверка — P1.
 
 Нормализация Host (порт, trailing dot, lowercase) в ConfigDomainResolver.
 
@@ -297,7 +297,7 @@ PageHandler::applySkin — не читать $_COOKIE напрямую.
 
 Текущее состояние: 70% production-ready.
 
-4 P0-блокера (потеря данных, утечка путей, CSRF, порт). Два закрыты в stage-1 (компиляторы).
+3 P0-блокера (утечка путей, CSRF, порт). Закрыты: stage-1 — компиляторы, stage-2a — legacy .edit.json.
 
 ~2.5 дня работы до деплоя.
 

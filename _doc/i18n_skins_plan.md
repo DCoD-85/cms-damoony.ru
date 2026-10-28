@@ -1,52 +1,62 @@
---- НАЧАЛО ФАЙЛА _docrebuild/i18n_skins_plan.md ---
-План разработки: Мультиязычность (I18n) и Скины (Skins)
+--- НАЧАЛО ДОКУМЕНТА ---
 
-Статус (2026-10-27): частично реализовано.
-Есть в коде: src/I18n/LanguageNegotiator.php, LanguagePathMiddleware,
-LanguageCookieMiddleware, SkinCookieMiddleware.
-Нет: SkinManager, автоподключение CSS/JS, UI-переключатели языка и скина,
-локализация текстов админки.
+I18n и Skins — статус
+Этот документ больше не является источником истины. Актуальный статус I18n и скинов — в MANIFEST.md §4 (🟡). Ниже — краткая выжимка и ссылки, чтобы не дублировать.
 
-Данный документ фиксирует архитектурные решения для будущей интеграции поддержки нескольких языков и визуальных тем (скинов) в движок Damoony.
+I18n (мультиязычность)
+Статус: 🟡 частично (MANIFEST.md §4).
 
-1. Мультиязычность (I18n)
-Архитектура:
+Что есть:
 
-Конфиг: Список доступных языков задаётся на уровне домена в site.config (ключ domains_langs, например ["ru-ru", "en-en"]).
+LanguageNegotiator (URL → Cookie → Конфиг).
 
-URL: Язык передаётся первым сегментом URL (например, /ru-ru/about или /en-en/about). Это оптимально для SEO.
+LanguagePathMiddleware (первый сегмент URL), LanguageCookieMiddleware.
 
-Middleware: LanguagePathMiddleware отрезает первый сегмент URL, если он есть в списке доступных языков, и сохраняет его в DomainContext->language.
+DomainContext->language.
 
-Приоритет выбора: URL → Cookie (lang) → Конфиг домена → Дефолт (ru-ru).
+Админка: RU/EN/ZH, cookie admin_lang, Translator с fallback.
 
-Хранилище: Файлы переводов language/<lang>.inc (или JSON) на уровне домена.
+Чего нет (для ✅):
 
-Доступ в коде: $this->context->lang->get('KEY', 'Default').
+UI-переключателя языка на сайте.
 
-Админка: Аналогично, но список языков в admin.config, переключение через GET-параметр или cookie.
+Ключей site.* в lang/{ru,en,zh}.php для контента.
 
-2. Скины (Skins)
-Архитектура:
+hreflang (SEO).
 
-Конфиг: Список доступных скинов в site.config (ключ domains_skins, например ["default", "dark"]).
+Где смотреть: src/I18n/, lang/, MANIFEST.md §4.
 
-Хранение: Физические папки в www/media/<domain>/skin/<skin_name>/ (содержат css/, js/, images/).
+Skins (визуальные темы)
+Статус: 🟡 частично (MANIFEST.md §4).
 
-Middleware: SkinCookieMiddleware читает cookie skin. Если скин невалиден или отсутствует, берётся default.
+Что есть:
 
-Автоподгрузка: При инициализации Document/Meta движок автоматически подключает main.css и main.js из папки активного скина. Разработчику не нужно прописывать это вручную в каждой странице.
+SkinManager (сканирует www/media/<domain>/skin/).
 
-Переключатель: GET-параметр ?skin=dark меняет cookie и редиректит обратно на ту же страницу (или используется AJAX).
+SkinCookieMiddleware.
 
-3. План внедрения (оставшиеся шаги)
-Реализовать SkinManager (сканер скинов, валидация cookie).
+Автоподключение main.css/main.js активного скина в PageHandler::applySkin().
 
-Автоподключение main.css/main.js из активного скина в Document.
+Валидация через domains_skins_allowed в site.config.
 
-Создать файлы переводов и класс LanguageLoader.
+Чего нет (для ✅):
 
-Создать UI-компоненты (селекторы языка и скина) для фронтенда и админки.
+UI-менеджера скинов в админке.
 
-Перевести все тексты админки на использование I18n.
---- КОНЕЦ ФАЙЛА _docrebuild/i18n_skins_plan.md ---
+Переключателя скинов на фронте.
+
+Ограничение: PageHandler::applySkin() читает $_COOKIE['skin'] напрямую, минуя SkinCookieMiddleware (MANIFEST.md §6.20, P2). Валидация дублируется.
+
+Где смотреть: src/Skin/, www/media/<domain>/skin/, MANIFEST.md §4.
+
+Roadmap
+Цели — в MANIFEST.md §12 «Видение»:
+
+I18n: UI-переключатель, site.*, hreflang.
+
+Skins: UI-менеджер в админке, переключатель на фронте.
+
+Почему этот документ сокращён
+Раньше здесь был подробный план (архитектура, middleware, приоритеты). Но он дублировал MANIFEST.md §4 и §12 и устаревал быстрее, чем обновлялся. Теперь истина — в MANIFEST.md. Этот файл оставлен как краткая выжимка для тех, кто ищет именно I18n/Skins и не хочет читать весь MANIFEST.
+
+--- КОНЕЦ ДОКУМЕНТА ---
