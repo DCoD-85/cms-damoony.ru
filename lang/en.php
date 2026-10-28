@@ -172,4 +172,16 @@ return [
     'admin.allias.empty' => 'No aliases',
     'admin.allias.new_title' => 'Add alias',
     'admin.allias.name_label' => 'Alias name',
+
+    'admin.filler.title' => 'Blocks (Fillers)',
+    'admin.filler.add' => '+ Create Filler',
+    'admin.filler.th_block' => 'Block',
+    'admin.filler.th_status' => 'Status',
+    'admin.filler.empty' => 'No fillers yet.',
+    'admin.filler.enabled' => 'Enabled',
+    'admin.filler.disabled' => 'Disabled',
+    'admin.filler.enable' => 'Enable',
+    'admin.filler.disable' => 'Disable',
+    'admin.filler.new_title' => 'Create Filler',
+    'admin.filler.block_label' => 'Block name (e.g., top, bottom)',
 ];

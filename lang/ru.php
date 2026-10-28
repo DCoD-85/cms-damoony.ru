@@ -172,4 +172,16 @@ return [
     'admin.allias.empty' => 'Алиасов нет',
     'admin.allias.new_title' => 'Добавить алиас',
     'admin.allias.name_label' => 'Имя алиаса',
+
+	'admin.filler.title' => 'Блоки (Fillers)',
+    'admin.filler.add' => '+ Создать Filler',
+    'admin.filler.th_block' => 'Блок',
+    'admin.filler.th_status' => 'Статус',
+    'admin.filler.empty' => 'Filler\'ов пока нет.',
+    'admin.filler.enabled' => 'Включен',
+    'admin.filler.disabled' => 'Выключен',
+    'admin.filler.enable' => 'Включить',
+    'admin.filler.disable' => 'Выключить',
+    'admin.filler.new_title' => 'Создать Filler',
+    'admin.filler.block_label' => 'Имя блока (например, top, bottom)',
 ];

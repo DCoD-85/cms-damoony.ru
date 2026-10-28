@@ -145,4 +145,16 @@ return [
     'admin.allias.empty' => '无别名',
     'admin.allias.new_title' => '添加别名',
     'admin.allias.name_label' => '别名名称',
+
+    'admin.filler.title' => '区块 (填充)',
+    'admin.filler.add' => '+ 创建填充',
+    'admin.filler.th_block' => '区块',
+    'admin.filler.th_status' => '状态',
+    'admin.filler.empty' => '暂无填充。',
+    'admin.filler.enabled' => '已启用',
+    'admin.filler.disabled' => '已禁用',
+    'admin.filler.enable' => '启用',
+    'admin.filler.disable' => '禁用',
+    'admin.filler.new_title' => '创建填充',
+    'admin.filler.block_label' => '区块名称 (例如 top, bottom)',
 ];

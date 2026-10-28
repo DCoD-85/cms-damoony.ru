@@ -13,6 +13,7 @@ use Damoony\Files\Paths;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
 use Damoony\Ui\Builder;
+use Damoony\Ui\Element;
 use Damoony\Ui\Field;
 use Damoony\Ui\Form;
 use Damoony\Ui\Message;
@@ -49,57 +50,60 @@ final class FillerController extends BaseController
 
         $card = Builder::div('admin-card');
 
-        // Хлебные крошки
         $breadcrumbs = Builder::div('breadcrumbs');
-        $breadcrumbs->append(Builder::a('/admin/?p=domain')->content('Домены'));
+        $breadcrumbs->append(Builder::a('/admin/?p=domain')->content(View::t('domain.bread_domains')));
         $breadcrumbs->append(Text::raw(' / '));
         $breadcrumbs->append(Builder::a('/admin/?p=domain:edit&domain=' . urlencode($domain))->content($domain));
         $breadcrumbs->append(Text::raw(' / '));
-        $breadcrumbs->append(Builder::a('/admin/?p=allias&domain=' . urlencode($domain))->content('Алиасы'));
+        $breadcrumbs->append(Builder::a('/admin/?p=allias&domain=' . urlencode($domain))->content(View::t('tab.alliases')));
         $card->append($breadcrumbs);
 
-        // Заголовок и действия
         $header = Builder::div('page-header');
-        $header->append(Builder::h(1)->content('Блоки (Fillers): ' . View::esc($allias)));
+        $header->append(Builder::h(1)->content(View::t('filler.title') . ': ' . View::esc($allias)));
 
         $actions = Builder::div('page-actions');
-        $actions->append(Builder::a('/admin/?p=filler:new&domain=' . urlencode($domain) . '&allias=' . urlencode($allias), 'btn btn-primary')->content('+ Создать filler'));
+        $actions->append(Builder::a('/admin/?p=filler:new&domain=' . urlencode($domain) . '&allias=' . urlencode($allias), 'btn btn-primary')->content(View::t('filler.add')));
         $header->append($actions);
         $card->append($header);
 
-        // Табы алиаса
         $card->append(View::alliasTabs($domain, $allias, 'blocks'));
 
-        // Таблица
-        $table = (new Table())->headers('Блок', 'Статус', 'Действия');
+        $table = (new Table())->headers(View::t('filler.th_block'), View::t('filler.th_status'), View::t('domain.bind_th_act'));
 
         if (is_array($fillers) && $fillers !== []) {
             foreach ($fillers as $block => $enabled) {
                 $statusHtml = $enabled
-                    ? '<span class="badge" style="background:#dcfce7; color:#166534;">Включен</span>'
-                    : '<span class="badge" style="background:#fee2e2; color:#991b1b;">Выключен</span>';
+                    ? '<span class="badge" style="background:#dcfce7; color:#166534;">' . View::t('filler.enabled') . '</span>'
+                    : '<span class="badge" style="background:#fee2e2; color:#991b1b;">' . View::t('filler.disabled') . '</span>';
 
-                $toggleAction = $enabled ? '0' : '1';
-                $toggleLabel = $enabled ? 'Выключить' : 'Включить';
+                // Форма для переключения (POST + CSRF)
+                $form = Form::create('/admin/?p=filler:toggle&domain=' . urlencode($domain) . '&allias=' . urlencode($allias), 'POST')
+                    ->csrf($this->csrf->field())
+                    ->add(Field::hidden('block')->value((string)$block))
+                    ->add(Field::hidden('value')->value($enabled ? '0' : '1'))
+                    ->submit($enabled ? View::t('filler.disable') : View::t('filler.enable'));
 
-                $toggleUrl = '/admin/?p=filler:toggle&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&block=' . urlencode((string)$block) . '&value=' . $toggleAction;
-
-                $actionsHtml = Builder::div('table-actions');
-                $actionsHtml->append(Builder::a($toggleUrl, 'btn btn-outline')->content($toggleLabel));
+                $toggleBtn = $form->build();
+                foreach ($toggleBtn->children() as $child) {
+                    if ($child instanceof Element && $child->tag() === 'button') {
+                        $child->attrs()->classAdd('btn ' . ($enabled ? 'btn-danger' : 'btn-outline'));
+                        $child->attrs()->styleAdd('padding: 6px 12px; font-size: 13px;');
+                    }
+                }
 
                 $table->row([
                     Text::raw('<b>' . View::esc((string)$block) . '</b>'),
                     Text::raw($statusHtml),
-                    $actionsHtml,
+                    $toggleBtn,
                 ]);
             }
         } else {
-            $table->row([Text::raw('Filler\'ов пока нет'), Text::raw(''), Text::raw('')]);
+            $table->row([Text::raw(View::t('filler.empty')), Text::raw(''), Text::raw('')]);
         }
 
         $card->append($table->build());
 
-        return Response::html($this->view->render($card, ['title' => 'Fillers: ' . $allias]));
+        return Response::html($this->view->render($card, ['title' => View::t('filler.title')]));
     }
 
     public function new(Request $request): Response
@@ -136,12 +140,11 @@ final class FillerController extends BaseController
 
         $card = Builder::div('admin-card');
 
-        // Хлебные крошки
         $breadcrumbs = Builder::div('breadcrumbs');
-        $breadcrumbs->append(Builder::a('/admin/?p=filler&domain=' . urlencode($domain) . '&allias=' . urlencode($allias))->content('← Назад'));
+        $breadcrumbs->append(Builder::a('/admin/?p=filler&domain=' . urlencode($domain) . '&allias=' . urlencode($allias))->content(View::t('domain.bind_back')));
         $card->append($breadcrumbs);
 
-        $card->append(Builder::h(1)->content('Создать filler для ' . View::esc($allias)));
+        $card->append(Builder::h(1)->content(View::t('filler.new_title') . ' (' . View::esc($allias) . ')'));
         $card->append(View::alliasTabs($domain, $allias, 'blocks'));
 
         if ($error !== '') {
@@ -150,12 +153,12 @@ final class FillerController extends BaseController
 
         $form = Form::create('/admin/?p=filler:new&domain=' . urlencode($domain) . '&allias=' . urlencode($allias), 'POST')
             ->csrf($this->csrf->field())
-            ->add(Field::text('block')->label('Имя блока (например, top)')->required()->value($blockVal))
-            ->submit('Создать');
+            ->add(Field::text('block')->label(View::t('filler.block_label'))->required()->value($blockVal))
+            ->submit(View::t('domain.new_submit'));
 
         $card->append($form->build());
 
-        return Response::html($this->view->render($card, ['title' => 'Новый filler']));
+        return Response::html($this->view->render($card, ['title' => View::t('filler.new_title')]));
     }
 
     public function toggle(Request $request): Response
@@ -165,10 +168,20 @@ final class FillerController extends BaseController
             return $auth;
         }
 
+        // ОБЯЗАТЕЛЬНО POST
+        if (!$request->isPost()) {
+            return $this->redirect('/admin/?p=domain');
+        }
+
+        $csrfErr = $this->requireCsrf($request);
+        if ($csrfErr !== null) {
+            return $csrfErr;
+        }
+
         $domain = (string) $request->query('domain', '');
         $allias = (string) $request->query('allias', '');
-        $block = (string) $request->query('block', '');
-        $value = (string) $request->query('value', '1');
+        $block = (string) ($request->post['block'] ?? '');
+        $value = (string) ($request->post['value'] ?? '1');
 
         if ($domain !== '' && $allias !== '' && $block !== '') {
             $cmd = new FillerToggleCommand($this->paths);
