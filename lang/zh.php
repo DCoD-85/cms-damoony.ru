@@ -199,4 +199,11 @@ return [
     'admin.db.test_ok' => '数据库连接成功！',
     'admin.db.note_title' => '数据库架构',
     'admin.db.note_text' => 'Damoony Engine 为所有域名和别名使用单一数据库。这确保了高性能、数据完整性和简化的备份。无需为每个别名单独建立数据库。',
+
+    'admin.editor.title' => '编辑器',
+    'admin.editor.back' => '← 返回',
+    'admin.editor.file_saved' => '文件已保存',
+    'admin.editor.save_error' => '保存错误: {msg}',
+    'admin.editor.save' => '保存',
+    'admin.editor.not_found' => '未找到文件: {file}',
 ];

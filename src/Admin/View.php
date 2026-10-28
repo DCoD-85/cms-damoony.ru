@@ -71,6 +71,30 @@ final class View
         $css->attrs()->add('href', '/media/admin/admin.css');
         $doc->head()->append($css);
 
+        // Подключение CodeMirror CSS
+        $cmCss = new Element('link', true);
+        $cmCss->attrs()->add('rel', 'stylesheet');
+        $cmCss->attrs()->add('href', 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css');
+        $doc->head()->append($cmCss);
+
+        $cmTheme = new Element('link', true);
+        $cmTheme->attrs()->add('rel', 'stylesheet');
+        $cmTheme->attrs()->add('href', 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css');
+        $doc->head()->append($cmTheme);
+
+        // Подключение CodeMirror JS
+        $cmJs = new Element('script');
+        $cmJs->attrs()->add('src', 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js');
+        $doc->head()->append($cmJs);
+
+        // Подключение режимов (PHP, HTML, CSS, JS)
+        $modes = ['xml', 'javascript', 'css', 'htmlmixed', 'clike', 'php'];
+        foreach ($modes as $m) {
+            $s = new Element('script');
+            $s->attrs()->add('src', "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/{$m}/{$m}.min.js");
+            $doc->head()->append($s);
+        }
+
         $js = new Element('script');
         $js->attrs()->add('src', '/media/admin/admin.js');
         $doc->head()->append($js);

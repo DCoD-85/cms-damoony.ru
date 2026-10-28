@@ -226,4 +226,11 @@ return [
     'admin.db.test_ok' => 'Соединение с БД успешно установлено!',
     'admin.db.note_title' => 'Архитектура баз данных',
     'admin.db.note_text' => 'Damoony Engine использует единую базу данных для всех доменов и алиасов. Это обеспечивает высокую скорость, целостность данных и упрощает резервное копирование. Разделение баз на уровне алиасов не требуется.',
+
+    'admin.editor.title' => 'Редактор',
+    'admin.editor.back' => '← Назад',
+    'admin.editor.file_saved' => 'Файл сохранён',
+    'admin.editor.save_error' => 'Ошибка сохранения: {msg}',
+    'admin.editor.save' => 'Сохранить',
+    'admin.editor.not_found' => 'Файл не найден: {file}',
 ];

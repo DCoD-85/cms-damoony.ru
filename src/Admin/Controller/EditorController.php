@@ -10,6 +10,7 @@ use Damoony\Http\Request;
 use Damoony\Http\Response;
 use Damoony\Ui\Builder;
 use Damoony\Ui\Message;
+use Damoony\Ui\Text;
 
 final class EditorController extends BaseController
 {
@@ -39,11 +40,11 @@ final class EditorController extends BaseController
         $path = $this->root . '/app/' . $domain . '/' . ltrim($file, '/');
 
         if (!is_file($path)) {
-            return Response::notFound('Файл не найден: ' . $file);
+            return Response::html(View::t('editor.not_found', ['file' => View::esc($file)]), 404);
         }
 
         $error = '';
-        $success = $request->query('saved') ? 'Файл сохранён' : '';
+        $success = $request->query('saved') ? View::t('editor.file_saved') : '';
 
         if ($request->isPost()) {
             $csrfErr = $this->requireCsrf($request);
@@ -56,14 +57,24 @@ final class EditorController extends BaseController
                 Fs::writeAtomic($path, $content);
                 return $this->redirect('/admin/?p=editor&domain=' . urlencode($domain) . '&file=' . urlencode($file) . '&saved=1');
             } catch (\Throwable $e) {
-                $error = 'Ошибка сохранения: ' . $e->getMessage();
+                $error = View::t('editor.save_error', ['msg' => $e->getMessage()]);
             }
         }
 
         $content = (string) file_get_contents($path);
-        $backUrl = '/admin/?p=domain';
 
-        // Определяем, куда вернуться
+        // Определяем режим подсветки по расширению
+        $ext = pathinfo($path, PATHINFO_EXTENSION);
+        $mode = match ($ext) {
+            'php' => 'application/x-httpd-php',
+            'js' => 'text/javascript',
+            'css' => 'text/css',
+            'html' => 'text/html',
+            'json' => 'application/json',
+            default => 'text/plain'
+        };
+
+        $backUrl = '/admin/?p=domain';
         if (str_starts_with($file, '.alliasglobal/')) {
             $backUrl = '/admin/?p=block&domain=' . urlencode($domain);
         } elseif (str_starts_with($file, '.alliasscheme/')) {
@@ -73,8 +84,8 @@ final class EditorController extends BaseController
         }
 
         $card = Builder::div('admin-card');
-        $card->append(Builder::a($backUrl)->content('← Назад'));
-        $card->append(Builder::h(1)->content('Редактор: ' . View::esc($file)));
+        $card->append(Builder::a($backUrl)->content(View::t('editor.back')));
+        $card->append(Builder::h(1)->content(View::t('editor.title') . ': ' . View::esc($file)));
 
         if ($success !== '') {
             $card->append(Message::success($success)->build());
@@ -85,12 +96,32 @@ final class EditorController extends BaseController
 
         $form = '<form method="post" class="editor-form">';
         $form .= $this->csrf->field();
-        $form .= '<textarea name="content" class="code-editor" spellcheck="false">' . htmlspecialchars($content, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</textarea>';
-        $form .= '<div class="editor-actions"><button type="submit" class="btn btn-primary">Сохранить</button></div>';
+        $form .= '<textarea id="code-editor" name="content" spellcheck="false">' . htmlspecialchars($content, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</textarea>';
+        $form .= '<div class="editor-actions" style="margin-top: 15px;"><button type="submit" class="btn btn-primary">' . View::t('editor.save') . '</button></div>';
         $form .= '</form>';
 
-        $card->append(\Damoony\Ui\Text::raw($form));
+        // Скрипт инициализации CodeMirror
+        $script = <<<JS
+            <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                var editor = CodeMirror.fromTextArea(document.getElementById("code-editor"), {
+                    lineNumbers: true,
+                    mode: "{$mode}",
+                    theme: "dracula",
+                    indentUnit: 4,
+                    matchBrackets: true,
+                    autoCloseBrackets: true,
+                    lineWrapping: true,
+                    height: "auto"
+                });
+                editor.setSize(null, 600);
+            });
+            </script>
+            JS;
 
-        return Response::html($this->view->render($card, ['title' => 'Редактор']));
+        $card->append(Text::raw($form));
+        $card->append(Text::raw($script));
+
+        return Response::html($this->view->render($card, ['title' => View::t('editor.title')]));
     }
 }

@@ -226,4 +226,11 @@ return [
     'admin.db.test_ok' => 'Database connection is successful!',
     'admin.db.note_title' => 'Database Architecture',
     'admin.db.note_text' => 'Damoony Engine uses a single database for all domains and aliases. This ensures high performance, data integrity, and simplifies backups. Per-alias databases are not required.',
+
+    'admin.editor.title' => 'Editor',
+    'admin.editor.back' => '← Back',
+    'admin.editor.file_saved' => 'File saved',
+    'admin.editor.save_error' => 'Save error: {msg}',
+    'admin.editor.save' => 'Save',
+    'admin.editor.not_found' => 'File not found: {file}',
 ];
