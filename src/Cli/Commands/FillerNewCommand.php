@@ -77,7 +77,10 @@ final class FillerNewCommand implements CommandInterface
 
         $className = 'alliasglobal_' . $block . '_' . $allias;
         $fillerPhp = $blockDir . '/' . $block . '_' . $allias . '.php';
-        if (Fs::isFile($fillerPhp)) {
+        $dataFile = $blockDir . '/' . $block . '_' . $allias . '.data.php';
+
+        // ИСПРАВЛЕНИЕ: Проверяем наличие ОБОИХ файлов
+        if (Fs::isFile($fillerPhp) && Fs::isFile($dataFile)) {
             $r->error('Filler уже существует');
             return $r;
         }
@@ -110,7 +113,6 @@ final class FillerNewCommand implements CommandInterface
         $r->file(Fs::rel($fillerPhp, $this->paths->root()));
 
         $data = "<?php\n\nreturn [\n    'wrapper' => ['tag' => 'div', 'attrs' => ['class' => '{$block}-{$allias}']],\n    'sections' => [],\n];\n";
-        $dataFile = $blockDir . '/' . $block . '_' . $allias . '.data.php';
         Fs::writeAtomic($dataFile, $data);
         $r->file(Fs::rel($dataFile, $this->paths->root()));
 
