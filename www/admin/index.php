@@ -122,7 +122,7 @@ try {
         }
     });
 
-    $router->register('allias_scheme', new AliasSchemeController($auth, $csrf, $view));
+    $router->register('allias_scheme', new AliasSchemeController($auth, $csrf, $view, $paths, $siteConfig));
     $router->register('allias_db', new AliasDbController($auth, $csrf, $view));
     $router->register('stub', new StubController($auth, $csrf, $view, $paths));
     $router->register('security', new SecurityController($auth, $csrf, $view, $paths, $engineConfig));
@@ -131,7 +131,7 @@ try {
     $router->register('profile_clearLogs', new ProfileController($auth, $csrf, $view, $adminConfig, $root));
     $router->register('profile_archiveLogs', new ProfileController($auth, $csrf, $view, $adminConfig, $root));
 	$router->register('allias_scheme', new AliasSchemeController($auth, $csrf, $view, $paths, $siteConfig));
-	
+
     $loopback = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
     $rlWhitelist = $env->isDev() ? $loopback : [];
 
