@@ -12,6 +12,7 @@ use Damoony\Files\Paths;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
 use Damoony\Ui\Builder;
+use Damoony\Ui\Element;
 use Damoony\Ui\Field;
 use Damoony\Ui\Form;
 use Damoony\Ui\Message;
@@ -38,7 +39,7 @@ final class PageController extends BaseController
 
         $domain = (string) $request->query('domain', '');
         $allias = (string) $request->query('allias', 'www');
-        $path = (string) $request->query('path', ''); // relative path inside algoritm
+        $path = (string) $request->query('path', '');
 
         if ($domain === '') {
             return $this->redirect('/admin/?p=domain');
@@ -46,7 +47,6 @@ final class PageController extends BaseController
 
         $baseDir = $this->paths->algoritm($domain, $allias) . ($path === '' ? '' : '/' . $path);
 
-        // Собираем страницы (папки) в текущей директории
         $pages = [];
         if (is_dir($baseDir)) {
             $items = scandir($baseDir) ?: [];
@@ -61,67 +61,101 @@ final class PageController extends BaseController
 
         $card = Builder::div('admin-card');
 
-        // Хлебные крошки
         $breadcrumbs = Builder::div('breadcrumbs');
-        $breadcrumbs->append(Builder::a('/admin/?p=domain')->content('Домены'));
+        $breadcrumbs->append(Builder::a('/admin/?p=domain')->content(View::t('domain.bread_domains')));
         $breadcrumbs->append(Text::raw(' / '));
         $breadcrumbs->append(Builder::a('/admin/?p=domain:edit&domain=' . urlencode($domain))->content($domain));
+        $breadcrumbs->append(Text::raw(' / '));
+        $breadcrumbs->append(Builder::a('/admin/?p=allias&domain=' . urlencode($domain))->content(View::t('tab.alliases')));
         $card->append($breadcrumbs);
 
-        // Заголовок и кнопка
         $header = Builder::div('page-header');
-        $header->append(Builder::h(1)->content('Страницы: ' . View::esc($allias)));
+        $header->append(Builder::h(1)->content(View::t('page.title') . ': ' . View::esc($allias)));
 
         $actions = Builder::div('page-actions');
-        // Кнопка "На уровень выше" (если не в корне)
         if ($path !== '') {
             $parentPath = dirname($path);
             $upUrl = '/admin/?p=page&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . ($parentPath === '.' ? '' : '&path=' . urlencode($parentPath));
-            $actions->append(Builder::a($upUrl, 'btn btn-outline')->content('&larr; Наверх'));
+            $actions->append(Builder::a($upUrl, 'btn btn-outline')->content(View::t('page.up')));
         }
-        $actions->append(Builder::a('/admin/?p=page:new&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&parent=' . urlencode($path), 'btn btn-primary')->content('+ Создать страницу'));
+        $actions->append(Builder::a('/admin/?p=page:new&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&parent=' . urlencode($path), 'btn btn-primary')->content(View::t('domain.add')));
         $header->append($actions);
         $card->append($header);
 
-        // Табы
         $card->append(View::alliasTabs($domain, $allias, 'pages'));
 
-        // Текущий путь
         if ($path !== '') {
-            $pathInfo = Builder::p('text-muted')->content('Текущий путь: /' . View::esc($path));
+            $pathInfo = Builder::p('text-muted')->content(View::t('page.current_path', ['path' => View::esc($path)]));
             $pathInfo->attrs()->styleAdd('margin-bottom: 16px;');
             $card->append($pathInfo);
         }
 
-        // Таблица
-        $table = (new Table())->headers('Страница', 'Действия');
+        $table = (new Table())->headers(
+            View::t('page.th_page'),
+            View::t('page.th_auth'),
+            View::t('page.th_search'),
+            View::t('page.th_actions'),
+        );
 
         if ($pages === []) {
-            $table->row([Text::raw('Страниц пока нет'), Text::raw('')]);
+            $table->row([Text::raw(View::t('page.empty')), Text::raw(''), Text::raw(''), Text::raw('')]);
         } else {
             foreach ($pages as $page) {
                 $newPath = $path === '' ? $page : $path . '/' . $page;
+                $pageDir = $baseDir . '/' . $page;
 
-                // Ссылка на вход внутрь папки
+                // Читаем .rules.json для флагов
+                $rulesFile = $pageDir . '/.rules.json';
+                $rules = is_file($rulesFile) ? json_decode((string)file_get_contents($rulesFile), true) : [];
+                if (!is_array($rules)) {
+                    $rules = [];
+                }
+                $isAuth = (bool)($rules['auth'] ?? false);
+                $isSearch = (bool)($rules['search'] ?? true);
+
+                // Ссылка
                 $folderUrl = '/admin/?p=page&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&path=' . urlencode($newPath);
                 $pageLink = Builder::a($folderUrl, 'domain-link')->content('/' . View::esc($newPath));
 
-                // Кнопка редактирования PHP-файла
+                // Генератор форм для переключения
+                $makeToggle = function (string $key, bool $val) use ($domain, $allias, $newPath) {
+                    $form = Form::create('/admin/?p=page:toggle&domain=' . urlencode($domain) . '&allias=' . urlencode($allias), 'POST')
+                        ->csrf($this->csrf->field())
+                        ->add(Field::hidden('path')->value($newPath))
+                        ->add(Field::hidden('key')->value($key))
+                        ->add(Field::hidden('value')->value($val ? '0' : '1'))
+                        ->submit($val ? View::t('page.on') : View::t('page.off'));
+
+                    $btn = $form->build();
+                    foreach ($btn->children() as $child) {
+                        if ($child instanceof Element && $child->tag() === 'button') {
+                            $child->attrs()->classAdd('btn ' . ($val ? 'btn-outline' : 'btn-danger'));
+                            $child->attrs()->styleAdd('padding: 4px 10px; font-size: 12px; min-width: 50px;');
+                        }
+                    }
+                    return $btn;
+                };
+
+                $authBtn = $makeToggle('auth', $isAuth);
+                $searchBtn = $makeToggle('search', $isSearch);
+
+                // Кнопка редактирования
                 $phpFile = 'algoritm/' . ($path === '' ? '' : $path . '/') . $page . '/algoritm_' . str_replace('/', '_', $newPath) . '.php';
                 $editUrl = '/admin/?p=editor&domain=' . urlencode($domain) . '&file=' . urlencode($phpFile);
-
                 $actionsHtml = Builder::div('table-actions');
-                $actionsHtml->append(Builder::a($editUrl, 'btn btn-outline')->content('Редактировать'));
+                $actionsHtml->append(Builder::a($editUrl, 'btn btn-outline')->content(View::t('page.edit')));
 
                 $table->row([
                     Text::raw('<div style="display:flex; align-items:center; gap:8px;">📁 ' . $pageLink->release() . '</div>'),
+                    $authBtn,
+                    $searchBtn,
                     $actionsHtml,
                 ]);
             }
         }
         $card->append($table->build());
 
-        return Response::html($this->view->render($card, ['title' => 'Страницы: ' . $domain]));
+        return Response::html($this->view->render($card, ['title' => View::t('page.title')]));
     }
 
     public function new(Request $request): Response
@@ -160,20 +194,17 @@ final class PageController extends BaseController
 
         $form = Form::create('/admin/?p=page:new&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&parent=' . urlencode($parent), 'POST')
             ->csrf($this->csrf->field())
-            ->add(Field::text('name')->label('Имя страницы')->placeholder('about, contacts')->required()->value($nameVal))
-            ->submit('Создать');
+            ->add(Field::text('name')->label(View::t('page.name_label'))->placeholder('about, contacts')->required()->value($nameVal))
+            ->submit(View::t('domain.new_submit'));
 
         $card = Builder::div('admin-card');
 
-        // Хлебные крошки
         $breadcrumbs = Builder::div('breadcrumbs');
-        $breadcrumbs->append(Builder::a('/admin/?p=domain')->content('Домены'));
-        $breadcrumbs->append(Text::raw(' / '));
-        $breadcrumbs->append(Builder::a('/admin/?p=domain:edit&domain=' . urlencode($domain))->content($domain));
+        $breadcrumbs->append(Builder::a('/admin/?p=page&domain=' . urlencode($domain) . '&allias=' . urlencode($allias))->content(View::t('domain.bind_back')));
         $card->append($breadcrumbs);
 
-        $card->append(Builder::h(1)->content('Создать страницу'));
-        $card->append(View::domainTabs($domain, 'pages'));
+        $card->append(Builder::h(1)->content(View::t('page.new_title')));
+        $card->append(View::alliasTabs($domain, $allias, 'pages'));
 
         if ($parent !== '') {
             $card->append(Builder::p()->content('Родительская папка: /' . View::esc($parent)));
@@ -185,7 +216,7 @@ final class PageController extends BaseController
 
         $card->append($form->build());
 
-        return Response::html($this->view->render($card, ['title' => 'Новая страница']));
+        return Response::html($this->view->render($card, ['title' => View::t('page.new_title')]));
     }
 
     public function toggle(Request $request): Response
@@ -195,11 +226,20 @@ final class PageController extends BaseController
             return $auth;
         }
 
+        if (!$request->isPost()) {
+            return $this->redirect('/admin/?p=domain');
+        }
+
+        $csrfErr = $this->requireCsrf($request);
+        if ($csrfErr !== null) {
+            return $csrfErr;
+        }
+
         $domain = (string) $request->query('domain', '');
         $allias = (string) $request->query('allias', 'www');
-        $path = (string) $request->query('path', '');
-        $key = (string) $request->query('key', 'auth');
-        $value = (string) $request->query('value', '1');
+        $path = (string) ($request->post['path'] ?? '');
+        $key = (string) ($request->post['key'] ?? 'auth');
+        $value = (string) ($request->post['value'] ?? '1');
 
         if ($domain !== '') {
             $cmd = new PageToggleCommand($this->paths);

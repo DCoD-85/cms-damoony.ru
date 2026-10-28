@@ -184,4 +184,22 @@ return [
     'admin.filler.disable' => 'Выключить',
     'admin.filler.new_title' => 'Создать Filler',
     'admin.filler.block_label' => 'Имя блока (например, top, bottom)',
+
+    'admin.filler.sync' => 'Синхронизировать',
+    'admin.filler.sync_success' => 'Синхронизировано блоков: {count}',
+    'admin.filler.sync_empty' => 'Все глобальные блоки уже добавлены.',
+
+    'admin.page.title' => 'Страницы',
+    'admin.page.th_page' => 'Страница',
+    'admin.page.th_auth' => 'Авторизация',
+    'admin.page.th_search' => 'Индексация',
+    'admin.page.th_actions' => 'Действия',
+    'admin.page.empty' => 'Страниц пока нет.',
+    'admin.page.up' => '← Наверх',
+    'admin.page.current_path' => 'Текущий путь: /{path}',
+    'admin.page.new_title' => 'Создать страницу',
+    'admin.page.name_label' => 'Имя страницы (латиница)',
+    'admin.page.edit' => 'Редактировать',
+    'admin.page.on' => 'Вкл',
+    'admin.page.off' => 'Выкл',
 ];

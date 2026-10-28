@@ -184,4 +184,22 @@ return [
     'admin.filler.disable' => 'Disable',
     'admin.filler.new_title' => 'Create Filler',
     'admin.filler.block_label' => 'Block name (e.g., top, bottom)',
+
+    'admin.filler.sync' => 'Sync',
+    'admin.filler.sync_success' => 'Blocks synced: {count}',
+    'admin.filler.sync_empty' => 'All global blocks are already added.',
+
+    'admin.page.title' => 'Pages',
+    'admin.page.th_page' => 'Page',
+    'admin.page.th_auth' => 'Auth',
+    'admin.page.th_search' => 'Search',
+    'admin.page.th_actions' => 'Actions',
+    'admin.page.empty' => 'No pages yet.',
+    'admin.page.up' => '← Up',
+    'admin.page.current_path' => 'Current path: /{path}',
+    'admin.page.new_title' => 'Create page',
+    'admin.page.name_label' => 'Page name (latin)',
+    'admin.page.edit' => 'Edit',
+    'admin.page.on' => 'On',
+    'admin.page.off' => 'Off',
 ];

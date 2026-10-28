@@ -157,4 +157,22 @@ return [
     'admin.filler.disable' => '禁用',
     'admin.filler.new_title' => '创建填充',
     'admin.filler.block_label' => '区块名称 (例如 top, bottom)',
+
+    'admin.filler.sync' => '同步',
+    'admin.filler.sync_success' => '已同步区块: {count}',
+    'admin.filler.sync_empty' => '所有全局区块均已添加。',
+
+    'admin.page.title' => '页面',
+    'admin.page.th_page' => '页面',
+    'admin.page.th_auth' => '授权',
+    'admin.page.th_search' => '索引',
+    'admin.page.th_actions' => '操作',
+    'admin.page.empty' => '暂无页面。',
+    'admin.page.up' => '← 上一级',
+    'admin.page.current_path' => '当前路径: /{path}',
+    'admin.page.new_title' => '创建页面',
+    'admin.page.name_label' => '页面名称 (英文)',
+    'admin.page.edit' => '编辑',
+    'admin.page.on' => '开',
+    'admin.page.off' => '关',
 ];
