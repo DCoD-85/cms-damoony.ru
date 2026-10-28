@@ -137,4 +137,25 @@ final class ConfigDomainResolverTest extends TestCase
         self::assertSame('damoony.ru', $this->mappedResolver()->real('damoony.online'));
         self::assertSame('damoony.ru', $this->mappedResolver()->real('damoony3.ru'));
     }
+
+    public function testHostIsNormalized(): void
+    {
+        $resolver = $this->resolver();
+
+        // 1. Порт отрезается
+        $ctx1 = $resolver->resolve('example.ru:8080');
+        self::assertSame('example.ru', $ctx1->domain, 'Port was not stripped');
+
+        // 2. Trailing-dot отрезается
+        $ctx2 = $resolver->resolve('example.ru.');
+        self::assertSame('example.ru', $ctx2->domain, 'Trailing dot was not stripped');
+
+        // 3. Uppercase приводится к нижнему регистру
+        $ctx3 = $resolver->resolve('EXAMPLE.RU');
+        self::assertSame('example.ru', $ctx3->domain, 'Uppercase was not lowercased');
+
+        // 4. Комбинация (UPPER + port + dot)
+        $ctx4 = $resolver->resolve('EXAMPLE.RU.:8080');
+        self::assertSame('example.ru', $ctx4->domain, 'Combined normalization failed');
+    }
 }

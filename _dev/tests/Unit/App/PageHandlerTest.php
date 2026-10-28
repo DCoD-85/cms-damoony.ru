@@ -155,4 +155,70 @@ final class PageHandlerTest extends TestCase
         $r = $h->handle(RouteMatch::found('algoritm_ph_nul', 'ph_nul'), $this->ctx());
         self::assertSame(500, $r->status);
     }
+
+    public function testProdHidesExceptionMessage(): void
+    {
+        // Создаём фейковую страницу, которая бросает исключение
+        $dir = $this->root . '/app/example.ru/www/algoritm/test';
+        mkdir($dir, 0777, true);
+        $php = <<<'PHP'
+<?php
+declare(strict_types=1);
+namespace example\www;
+use Damoony\Algoritm\Algoritm;
+use Damoony\Ui\Node;
+use Damoony\Http\Response;
+final class algoritm_test extends Algoritm {
+    public function default(): Node|Response|null {
+        throw new \RuntimeException('SUPER_SECRET_ERROR_MESSAGE');
+    }
+}
+PHP;
+        file_put_contents($dir . '/algoritm_test.php', $php);
+
+        $handler = new PageHandler($this->root, $this->resolver());
+        
+        // Мокаем Request и RouteMatch
+        $match = new RouteMatch('algoritm_test', 'test', true, []);
+        
+        // Мокаем RegionContext (нужен для handle())
+        // В реальном коде он создаётся FrontController'ом, здесь можно использовать мок или создать стаб.
+        // Если конструктор RegionContext сложный, мы можем замокать только вызов handle, 
+        // но давай посмотрим, как это сделано в других тестах PageHandlerTest.
+        
+        $context = $this->createMock(RegionContext::class);
+        $context->method('service')->willReturnMap([
+            ['paths', new \Damoony\Files\Paths($this->root)],
+            ['site', new \Damoony\Core\Config([])],
+        ]);
+        $context->domain = new DomainContext(
+            domain: 'example.ru',
+            real: 'example.ru',
+            allias: 'www',
+            logic: 'alpha.0.0',
+            skin: 'default',
+            language: 'ru',
+            available: true,
+            stub: null,
+            namespace: 'example',
+            scheme: 'www'
+        );
+
+        // 1. PROD: сообщение скрыто
+        putenv('APP_ENV=prod');
+        $_ENV['APP_ENV'] = 'prod';
+        $response = $handler->handle($match, $context);
+        self::assertStringNotContainsString('SUPER_SECRET_ERROR_MESSAGE', $response->body());
+        self::assertStringContainsString('Internal Server Error', $response->body());
+
+        // 2. DEV: сообщение видно
+        putenv('APP_ENV=dev');
+        $_ENV['APP_ENV'] = 'dev';
+        $response = $handler->handle($match, $context);
+        self::assertStringContainsString('SUPER_SECRET_ERROR_MESSAGE', $response->body());
+
+        // Очистка
+        putenv('APP_ENV'); 
+        unset($_ENV['APP_ENV']);
+    }
 }
