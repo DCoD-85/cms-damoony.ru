@@ -123,7 +123,7 @@ try {
     });
 
     $router->register('allias_scheme', new AliasSchemeController($auth, $csrf, $view, $paths, $siteConfig));
-    $router->register('allias_db', new AliasDbController($auth, $csrf, $view));
+	$router->register('allias_db', new AliasDbController($auth, $csrf, $view, $engineConfig, $db));
     $router->register('stub', new StubController($auth, $csrf, $view, $paths));
     $router->register('security', new SecurityController($auth, $csrf, $view, $paths, $engineConfig));
 
