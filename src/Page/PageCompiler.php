@@ -40,16 +40,16 @@ final class PageCompiler
                 $code .= "        \${$varName} = Builder::div('page-slot-{$slotName}');\n";
                 foreach ($blocks as $block) {
                     $type = $block['type'];
-                    $content = addslashes($block['content']);
+                    $content = var_export($block['content'], true);
 
                     if ($type === 'h1') {
-                        $code .= "        \${$varName}->append(Builder::h(1)->content('{$content}'));\n";
+                        $code .= "        \${$varName}->append(Builder::h(1)->content({$content}));\n";
                     } elseif ($type === 'h2') {
-                        $code .= "        \${$varName}->append(Builder::h(2)->content('{$content}'));\n";
+                        $code .= "        \${$varName}->append(Builder::h(2)->content({$content}));\n";
                     } elseif ($type === 'text') {
-                        $code .= "        \${$varName}->append(Builder::p()->content('{$content}'));\n";
+                        $code .= "        \${$varName}->append(Builder::p()->content({$content}));\n";
                     } elseif ($type === 'img') {
-                        $code .= "        \${$varName}->append(Builder::img('{$content}', 'Image'));\n";
+                        $code .= "        \${$varName}->append(Builder::img({$content}, 'Image'));\n";
                     }
                 }
                 $code .= "        \$this->setContent('{$slotName}', \${$varName});\n";

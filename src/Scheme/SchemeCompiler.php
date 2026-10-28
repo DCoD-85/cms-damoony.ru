@@ -11,11 +11,6 @@ final class SchemeCompiler
      */
     public function compile(array $data): string
     {
-        $code = "<?php\n\nreturn " . var_export($data, true) . ";\n";
-
-        // Меняем array() на [] для современного вида
-        $code = str_replace(['array (', ')'], ['[', ']'], $code);
-
-        return $code;
+        return "<?php\n\nreturn " . var_export($data, true) . ";\n";
     }
 }

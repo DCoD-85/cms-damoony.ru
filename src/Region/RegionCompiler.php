@@ -27,16 +27,16 @@ final class RegionCompiler
 
         foreach ($blocks as $block) {
             $type = $block['type'];
-            $content = addslashes($block['content']);
+            $content = var_export($block['content'], true);
 
             if ($type === 'h1') {
-                $code .= "        \$wrap->append(Builder::h(1)->content('{$content}'));\n";
+                $code .= "        \$wrap->append(Builder::h(1)->content({$content}));\n";
             } elseif ($type === 'h2') {
-                $code .= "        \$wrap->append(Builder::h(2)->content('{$content}'));\n";
+                $code .= "        \$wrap->append(Builder::h(2)->content({$content}));\n";
             } elseif ($type === 'text') {
-                $code .= "        \$wrap->append(Builder::p()->content('{$content}'));\n";
+                $code .= "        \$wrap->append(Builder::p()->content({$content}));\n";
             } elseif ($type === 'img') {
-                $code .= "        \$wrap->append(Builder::img('{$content}', 'Image'));\n";
+                $code .= "        \$wrap->append(Builder::img({$content}, 'Image'));\n";
             }
         }
 
