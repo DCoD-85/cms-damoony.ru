@@ -202,4 +202,12 @@ return [
     'admin.page.edit' => 'Редактировать',
     'admin.page.on' => 'Вкл',
     'admin.page.off' => 'Выкл',
+
+    'admin.scheme.title' => 'Схемы алиаса',
+    'admin.scheme.current' => 'Текущая схема',
+    'admin.scheme.global_active' => 'Активна глобальная схема',
+    'admin.scheme.local_active' => 'Активна локальная схема',
+    'admin.scheme.create_local' => 'Создать локальную схему',
+    'admin.scheme.delete_local' => 'Удалить локальную схему',
+    'admin.scheme.local_exists' => 'Локальная схема для этого алиаса уже существует.',
 ];

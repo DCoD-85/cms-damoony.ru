@@ -202,4 +202,12 @@ return [
     'admin.page.edit' => 'Edit',
     'admin.page.on' => 'On',
     'admin.page.off' => 'Off',
+
+    'admin.scheme.title' => 'Alias Schemes',
+    'admin.scheme.current' => 'Current scheme',
+    'admin.scheme.global_active' => 'Global scheme is active',
+    'admin.scheme.local_active' => 'Local scheme is active',
+    'admin.scheme.create_local' => 'Create local scheme',
+    'admin.scheme.delete_local' => 'Delete local scheme',
+    'admin.scheme.local_exists' => 'Local scheme for this alias already exists.',
 ];

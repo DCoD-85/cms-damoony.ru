@@ -175,4 +175,12 @@ return [
     'admin.page.edit' => '编辑',
     'admin.page.on' => '开',
     'admin.page.off' => '关',
+
+    'admin.scheme.title' => '别名方案',
+    'admin.scheme.current' => '当前方案',
+    'admin.scheme.global_active' => '全局方案已激活',
+    'admin.scheme.local_active' => '本地方案已激活',
+    'admin.scheme.create_local' => '创建本地方案',
+    'admin.scheme.delete_local' => '删除本地方案',
+    'admin.scheme.local_exists' => '此别名的本地方案已存在。',
 ];
