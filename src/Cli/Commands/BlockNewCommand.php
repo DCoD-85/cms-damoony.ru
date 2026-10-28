@@ -24,7 +24,7 @@ final class BlockNewCommand implements CommandInterface
 
     public function description(): string
     {
-        return 'Создать блок alliasglobal';
+        return 'Создать блок alliasglobal (--type=logic|ui|mixed)';
     }
 
     public function run(array $args, Context $context): Result
@@ -33,6 +33,12 @@ final class BlockNewCommand implements CommandInterface
 
         $domain = $args['domain'] ?? '';
         $name = $args['name'] ?? '';
+        $type = (string)($args['type'] ?? 'mixed');
+
+        if (!in_array($type, ['logic', 'ui', 'mixed'], true)) {
+            $r->error('Некорректный тип блока (logic, ui, mixed)');
+            return $r;
+        }
 
         if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain)) {
             $r->error('Некорректный домен');
@@ -69,30 +75,36 @@ final class BlockNewCommand implements CommandInterface
         Fs::mkdir($blockDir);
         $r->file(Fs::rel($blockDir, $this->paths->root()));
 
-        $php = "<?php\n\n"
-            . "declare(strict_types=1);\n\n"
-            . "namespace {$namespace};\n\n"
-            . "use Damoony\\Region\\RegionContext;\n"
-            . "use Damoony\\Region\\RegionInterface;\n"
-            . "use Damoony\\Ui\\Builder;\n"
-            . "use Damoony\\Ui\\Node;\n\n"
-            . "final class alliasglobal_{$name} implements RegionInterface\n"
-            . "{\n"
-            . "    public function name(): string\n"
-            . "    {\n"
-            . "        return '{$name}';\n"
-            . "    }\n\n"
-            . "    public function enabled(): bool\n"
-            . "    {\n"
-            . "        return true;\n"
-            . "    }\n\n"
-            . "    public function render(RegionContext \$context): Node\n"
-            . "    {\n"
-            . "        \$wrap = Builder::div('{$name}');\n"
-            . "        \$wrap->append(Builder::p()->content('Блок {$name}'));\n"
-            . "        return \$wrap;\n"
-            . "    }\n"
-            . "}\n";
+        if ($type === 'logic') {
+            $php = "<?php\n\n"
+                . "declare(strict_types=1);\n\n"
+                . "namespace {$namespace};\n\n"
+                . "final class alliasglobal_{$name}_logic\n"
+                . "{\n"
+                . "    /** @return array<string, mixed> */\n"
+                . "    public function run(): array\n"
+                . "    {\n"
+                . "        return ['status' => 'ok'];\n"
+                . "    }\n"
+                . "}\n";
+        } else {
+            $php = "<?php\n\n"
+                . "declare(strict_types=1);\n\n"
+                . "namespace {$namespace};\n\n"
+                . "use Damoony\\Region\\RegionContext;\n"
+                . "use Damoony\\Region\\RegionInterface;\n"
+                . "use Damoony\\Ui\\Builder;\n"
+                . "use Damoony\\Ui\\Node;\n\n"
+                . "final class alliasglobal_{$name} implements RegionInterface\n"
+                . "{\n"
+                . "    public function name(): string\n    {\n        return '{$name}';\n    }\n\n"
+                . "    public function enabled(): bool\n    {\n        return true;\n    }\n\n"
+                . "    public function render(RegionContext \$context): Node\n    {\n"
+                . "        \$wrap = Builder::div('{$name}');\n"
+                . "        \$wrap->append(Builder::p()->content('Блок {$name} ({$type})'));\n"
+                . "        return \$wrap;\n    }\n"
+                . "}\n";
+        }
         Fs::writeAtomic($blockDir . '/' . $name . '.php', $php);
         $r->file(Fs::rel($blockDir . '/' . $name . '.php', $this->paths->root()));
 
@@ -107,11 +119,11 @@ final class BlockNewCommand implements CommandInterface
         if (!is_array($manifest)) {
             $manifest = [];
         }
-        $manifest['blocks'][$name] = ['enabled' => true];
+        $manifest['blocks'][$name] = ['enabled' => true, 'type' => $type];
         Fs::writeAtomic($manifestFile, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
         $r->file(Fs::rel($manifestFile, $this->paths->root()));
 
-        $context->step('Блок создан', true, $name);
+        $context->step("Блок создан ({$type})", true, $name);
 
         return $r;
     }
