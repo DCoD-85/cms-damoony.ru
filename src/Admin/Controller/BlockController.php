@@ -93,10 +93,10 @@ final class BlockController extends BaseController
         // Табы фильтрации
         $tabs = Builder::div('nav-tabs');
         $types = [
-            'all' => 'Все',
-            'ui' => 'Визуализация',
-            'logic' => 'Скрипты',
-            'mixed' => 'Реализация',
+            'all' => View::t('block.all'),
+            'ui' => View::t('block.type_ui'),
+            'logic' => View::t('block.type_logic'),
+            'mixed' => View::t('block.type_mixed'),
         ];
         foreach ($types as $code => $label) {
             $url = '/admin/?p=block&domain=' . urlencode($domain) . '&type=' . $code;
@@ -109,7 +109,7 @@ final class BlockController extends BaseController
         }
         $card->append($tabs);
 
-        $table = (new Table())->headers('Имя блока', 'Тип', View::t('domain.bind_th_act'));
+        $table = (new Table())->headers(View::t('block.th_name'), View::t('block.th_type'), View::t('domain.bind_th_act'));
 
         if ($blocks === []) {
             $table->row([Text::raw(View::t('stub.empty')), Text::raw(''), Text::raw('')]);
@@ -124,10 +124,9 @@ final class BlockController extends BaseController
 
                 $actionsHtml = Builder::div('table-actions');
 
-                // Визуальный редактор только для ui и mixed
                 if ($type !== 'logic') {
                     $visualUrl = '/admin/?p=block:edit&domain=' . urlencode($domain) . '&name=' . urlencode($name);
-                    $actionsHtml->append(Builder::a($visualUrl, 'btn btn-primary')->content('Визуально'));
+                    $actionsHtml->append(Builder::a($visualUrl, 'btn btn-primary')->content(View::t('block.visual_editor')));
                 }
 
                 $actionsHtml->append(Builder::a($codeUrl, 'btn btn-outline')->content(View::t('page.edit')));
@@ -142,7 +141,7 @@ final class BlockController extends BaseController
         }
         $card->append($table->build());
 
-        return Response::html($this->view->render($card, ['title' => 'Блоки: ' . $domain]));
+        return Response::html($this->view->render($card, ['title' => View::t('tab.blocks') . ': ' . $domain]));
     }
 
     public function new(Request $request): Response
@@ -181,27 +180,26 @@ final class BlockController extends BaseController
 
         $form = Form::create('/admin/?p=block:new&domain=' . urlencode($domain), 'POST')
             ->csrf($this->csrf->field())
-            ->add(Field::text('name')->label('Имя блока')->placeholder('top, footer, header')->required()->value($nameVal))
-            ->add(Field::select('type')->label('Тип блока')->options([
-                'ui' => 'Визуализация (только верстка)',
-                'logic' => 'Скрипт (только данные)',
-                'mixed' => 'Реализация (данные + верстка)',
+            ->add(Field::text('name')->label(View::t('filler.block_label'))->placeholder('top, footer, header')->required()->value($nameVal))
+            ->add(Field::select('type')->label(View::t('block.type_label'))->options([
+                'ui' => View::t('block.opt_ui'),
+                'logic' => View::t('block.opt_logic'),
+                'mixed' => View::t('block.opt_mixed'),
             ])->selected($typeVal))
-            ->submit('Создать');
+            ->submit(View::t('domain.new_submit'));
 
         $card = Builder::div('admin-card');
-        $card->append(Builder::h(1)->content('Создать блок'));
+        $card->append(Builder::h(1)->content(View::t('block.create_title')));
         if ($error !== '') {
             $card->append(Message::error($error)->build());
         }
         $card->append($form->build());
 
-        return Response::html($this->view->render($card, ['title' => 'Новый блок']));
+        return Response::html($this->view->render($card, ['title' => View::t('block.create_title')]));
     }
 
     public function edit(Request $request): Response
     {
-        // ... (оставляем без изменений, это визуальный редактор содержимого)
         $auth = $this->requireAuth();
         if ($auth !== null) {
             return $auth;
@@ -225,32 +223,51 @@ final class BlockController extends BaseController
 
         $card = Builder::div('admin-card');
         $card->append(Builder::a('/admin/?p=block&domain=' . urlencode($domain))->content(View::t('domain.bind_back')));
-        $card->append(Builder::h(1)->content('Визуальный редактор блока: ' . View::esc($name)));
+        $card->append(Builder::h(1)->content(View::t('block.edit_title') . ': ' . View::esc($name)));
 
-        $form = '<form method="post" action="/admin/?p=block:save&domain=' . urlencode($domain) . '&name=' . urlencode($name) . '" class="editor-form">';
-        $form .= $this->csrf->field();
-        $form .= '<div id="blocks-container">';
+        // Сборка формы через Builder
+        $form = Builder::el('form');
+        $form->attrs()->add('method', 'post');
+        $form->attrs()->add('action', '/admin/?p=block:save&domain=' . urlencode($domain) . '&name=' . urlencode($name));
+        $form->attrs()->classAdd('editor-form');
+        $form->append(Text::raw($this->csrf->field()));
+
+        $blocksContainer = Builder::div();
+        $blocksContainer->attrs()->add('id', 'blocks-container');
 
         if ($blocks === []) {
             $blocks = [['type' => 'text', 'content' => '']];
         }
         foreach ($blocks as $i => $block) {
-            $form .= VisualEditorRenderer::renderBlockRow($i, $block);
+            // Рендерер возвращает строку, поэтому оборачиваем в Text::raw
+            $blocksContainer->append(Text::raw(VisualEditorRenderer::renderBlockRow($i, $block)));
         }
-        $form .= '</div>';
+        $form->append($blocksContainer);
 
-        $form .= '<div style="margin-top: 15px; display:flex; gap:10px;">';
-        $form .= '<button type="button" id="add-block-btn" class="btn btn-outline">' . View::t('page.add_block') . '</button>';
-        $form .= '<button type="submit" class="btn btn-primary">' . View::t('domain.save') . '</button>';
-        $form .= '</div></form>';
+        $actionsDiv = Builder::div();
+        $actionsDiv->attrs()->styleAdd('margin-top: 15px; display: flex; gap: 10px;');
 
-        $card->append(Text::raw($form));
-        return Response::html($this->view->render($card, ['title' => 'Блок: ' . $name]));
+        $addBtn = Builder::el('button');
+        $addBtn->attrs()->add('type', 'button');
+        $addBtn->attrs()->add('id', 'add-block-btn');
+        $addBtn->attrs()->classAdd('btn btn-outline');
+        $addBtn->content(View::t('page.add_block'));
+        $actionsDiv->append($addBtn);
+
+        $saveBtn = Builder::el('button');
+        $saveBtn->attrs()->add('type', 'submit');
+        $saveBtn->attrs()->classAdd('btn btn-primary');
+        $saveBtn->content(View::t('domain.save'));
+        $actionsDiv->append($saveBtn);
+
+        $form->append($actionsDiv);
+        $card->append($form);
+
+        return Response::html($this->view->render($card, ['title' => View::t('block.edit_title')]));
     }
 
     public function save(Request $request): Response
     {
-        // ... (оставляем без изменений)
         $auth = $this->requireAuth();
         if ($auth !== null) {
             return $auth;
@@ -298,7 +315,6 @@ final class BlockController extends BaseController
 
     public function remove(Request $request): Response
     {
-        // ... (оставляем без изменений)
         $auth = $this->requireAuth();
         if ($auth !== null) {
             return $auth;
