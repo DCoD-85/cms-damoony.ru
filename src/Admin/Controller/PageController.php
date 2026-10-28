@@ -184,8 +184,35 @@ final class PageController extends BaseController
         }
 
         $editFile = $baseDir . '/.edit.json';
-        $data = is_file($editFile) ? json_decode((string) file_get_contents($editFile), true) : [];
-        $pageSlots = is_array($data) && isset($data['slots']) ? $data['slots'] : [];
+		$data = is_file($editFile) ? json_decode((string) file_get_contents($editFile), true) : [];
+
+		// Защита от legacy-формата {blocks}: визуальное сохранение затрёт ручной PHP.
+		// Не открываем редактор — показываем предупреждение.
+		if (is_array($data) && isset($data['blocks']) && !isset($data['slots'])) {
+			$card = Builder::div('admin-card');
+			$card->append(Builder::h(1)->content('Визуальный редактор: /' . View::esc($path)));
+			$card->append(View::alliasTabs($domain, $allias, 'pages'));
+
+			$warning = Builder::div('admin-warning')->content(
+				'Файл .edit.json содержит устаревший формат {blocks}. '
+				. 'Визуальное сохранение затрёт ручной PHP. Удалите .edit.json вручную '
+				. 'или перепишите содержимое в формат {slots}.'
+			);
+			$warning->attrs()->styleAdd('padding:16px;border-left:4px solid #d9534f;background:#fdf2f2;margin-bottom:16px;');
+			$card->append($warning);
+
+			$phpFile = $allias . '/algoritm/' . $path . '/algoritm_' . str_replace('/', '_', $path) . '.php';
+			$card->append(
+				Builder::a(
+					'/admin/?p=editor&domain=' . urlencode($domain) . '&file=' . urlencode($phpFile),
+					'btn btn-outline'
+				)->content('Открыть PHP в редакторе')
+			);
+
+			return Response::html($this->view->render($card, ['title' => 'Визуальный редактор']));
+		}
+
+		$pageSlots = is_array($data) && isset($data['slots']) ? $data['slots'] : [];
 
         // Получаем слоты из схемы
         $site = \Damoony\Core\Config::fromFile($this->paths->siteConfig())->all();
@@ -243,6 +270,20 @@ final class PageController extends BaseController
         $baseDir = $this->paths->algoritm($domain, $allias) . '/' . $path;
         if (!is_dir($baseDir)) {
             return $this->redirect('/admin/?p=page&domain=' . urlencode($domain));
+        }
+
+        // Defence-in-depth: если legacy-формат всё же дошёл до save() (прямой POST),
+        // не перезаписываем PHP — уводим пользователя на edit() с предупреждением.
+        $existingEdit = $baseDir . '/.edit.json';
+        if (is_file($existingEdit)) {
+            $existing = json_decode((string) file_get_contents($existingEdit), true);
+            if (is_array($existing) && isset($existing['blocks']) && !isset($existing['slots'])) {
+                return $this->redirect(
+                    '/admin/?p=page:edit&domain=' . urlencode($domain)
+                    . '&allias=' . urlencode($allias)
+                    . '&path=' . urlencode($path)
+                );
+            }
         }
 
         $slotsData = $request->post['slots'] ?? [];
