@@ -39,7 +39,6 @@ final class DomainController extends BaseController
         }
 
         $domains = $this->siteConfig->getByKey(['domains_real'], []);
-
         $grouped = [];
         if (is_array($domains)) {
             foreach ($domains as $incoming => $real) {
@@ -58,6 +57,35 @@ final class DomainController extends BaseController
         $header->append($actions);
 
         $card->append($header);
+
+        // --- ПРОВЕРКА СТРУКТУРЫ ---
+        $checker = new \Damoony\Diagnostics\StructureChecker($this->paths, $this->siteConfig);
+        $hasErrors = false;
+        $errorMessages = [];
+
+        foreach ($grouped as $real => $incomingDomains) {
+            $aliases = $this->siteConfig->getByKey(['alliases_real', $real], []);
+            if (is_array($aliases)) {
+                foreach ($aliases as $alias => $mapped) {
+                    if ($alias === '') {
+                        continue;
+                    }
+                    $issues = $checker->checkAllias($real, (string)$alias);
+                    if ($issues !== []) {
+                        $hasErrors = true;
+                        foreach ($issues as $issue) {
+                            $errorMessages[] = "Домен {$real}, алиас {$alias}: " . $issue['message'];
+                        }
+                    }
+                }
+            }
+        }
+
+        if ($hasErrors) {
+            $errorHtml = '<b>Обнаружены проблемы в структуре:</b><br>' . implode('<br>', array_map([View::class, 'esc'], $errorMessages));
+            $card->append(Message::error($errorHtml)->build());
+        }
+        // ---------------------------
 
         $table = (new Table())->headers(View::t('domain.th_status'), View::t('domain.th_domain'), View::t('domain.th_ns'), View::t('domain.th_files'), View::t('domain.th_aliases'));
 
@@ -86,7 +114,6 @@ final class DomainController extends BaseController
                 : '<a href="' . $statusUrl . '" class="status-toggle off" title="' . View::t('domain.avail_label') . '"></a>';
 
             $filesHtml = $hasFiles ? '✓' : '✗';
-
             $domainLink = Builder::a('/admin/?p=domain:edit&domain=' . urlencode($real), 'domain-link')->content(View::esc($real));
 
             $row = [

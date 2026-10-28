@@ -25,6 +25,7 @@ use Damoony\Files\Paths;
 use Damoony\Db\Connection;
 use Damoony\Cli\Commands\UserNewCommand;
 use Damoony\Core\Config;
+use Damoony\Cli\Commands\StructureCheckCommand;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -64,6 +65,12 @@ $registry->add(new AdminPasswdCommand($paths));
 $db = new Connection($dbConfig);
 $registry->add(new UserNewCommand($db));
 $registry->add(new \Damoony\Cli\Commands\TrashClearCommand($paths));
+$registry->add(new StructureCheckCommand($paths, $engineConfig));
+// ВНИМАНИЕ: site.config нужно загрузить в CLI!
+// Найди где загружается engineConfig и добавь:
+$siteConfigFile = $root . '/config/site.config';
+$siteConfig = is_file($siteConfigFile) ? Config::fromFile($siteConfigFile) : Config::fromArray([]);
+$registry->add(new StructureCheckCommand($paths, $siteConfig));
 
 $app = new Application($registry, new ArgvParser(), new Renderer());
 exit($app->run($_SERVER['argv']));
