@@ -6,6 +6,7 @@ namespace Damoony\App;
 
 use Damoony\Algoritm\AlgoritmInterface;
 use Damoony\Core\Config;
+use Damoony\Core\Env;
 use Damoony\Domain\DomainContext;
 use Damoony\Domain\DomainResolverInterface;
 use Damoony\Files\Paths;
@@ -69,7 +70,10 @@ final class PageHandler implements PageHandlerInterface
 
             return $this->toResponse($result, $domain, $context);
         } catch (\Throwable $e) {
-            return Response::internalError($e->getMessage());
+            $message = Env::fromServer()->isDev()
+                ? $e->getMessage()
+                : 'Internal Server Error';
+            return Response::internalError($message);
         }
     }
 
