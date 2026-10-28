@@ -71,29 +71,28 @@ final class View
         $css->attrs()->add('href', '/media/admin/admin.css');
         $doc->head()->append($css);
 
-        // Подключение CodeMirror CSS
+        // --- ПОДКЛЮЧЕНИЕ CODEMIRROR (ЛОКАЛЬНО) ---
         $cmCss = new Element('link', true);
         $cmCss->attrs()->add('rel', 'stylesheet');
-        $cmCss->attrs()->add('href', 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css');
+        $cmCss->attrs()->add('href', '/media/admin/codemirror/lib/codemirror.css');
         $doc->head()->append($cmCss);
 
         $cmTheme = new Element('link', true);
         $cmTheme->attrs()->add('rel', 'stylesheet');
-        $cmTheme->attrs()->add('href', 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css');
+        $cmTheme->attrs()->add('href', '/media/admin/codemirror/theme/dracula.css');
         $doc->head()->append($cmTheme);
 
-        // Подключение CodeMirror JS
         $cmJs = new Element('script');
-        $cmJs->attrs()->add('src', 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js');
+        $cmJs->attrs()->add('src', '/media/admin/codemirror/lib/codemirror.js');
         $doc->head()->append($cmJs);
 
-        // Подключение режимов (PHP, HTML, CSS, JS)
         $modes = ['xml', 'javascript', 'css', 'htmlmixed', 'clike', 'php'];
         foreach ($modes as $m) {
             $s = new Element('script');
-            $s->attrs()->add('src', "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/{$m}/{$m}.min.js");
+            $s->attrs()->add('src', "/media/admin/codemirror/mode/{$m}/{$m}.js"); // <--- ОБРАТИ ВНИМАНИЕ НА ПУТЬ
             $doc->head()->append($s);
         }
+        // ------------------------------------------
 
         $js = new Element('script');
         $js->attrs()->add('src', '/media/admin/admin.js');
@@ -118,7 +117,7 @@ final class View
             'allias' => ['tab.alliases', '/admin/?p=allias&domain=' . urlencode($domain)],
             'blocks' => ['tab.blocks', '/admin/?p=block&domain=' . urlencode($domain)],
             'schemes' => ['tab.schemes', '/admin/?p=scheme&domain=' . urlencode($domain)],
-            'db' => ['tab.db', '/admin/?p=domain:db&domain=' . urlencode($domain)],
+            'db' => ['tab.db', '/admin/?p=domain_db&domain=' . urlencode($domain)],
         ];
 
         foreach ($items as $key => $item) {

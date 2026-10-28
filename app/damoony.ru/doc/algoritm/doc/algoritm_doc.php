@@ -62,7 +62,7 @@ class algoritm_doc extends Algoritm
         // --- УПРАВЛЕНИЕ РЕГИОНАМИ ИЗ КОДА ---
         
         // 1. Отключаем шапку на этой странице (если она не отключена в конфиге)
-        $this->regions()->disable('top');
+        # $this->regions()->disable('top');
         
         // 2. Подменяем регион center на наш контейнер
         $this->setContent('center', $container);

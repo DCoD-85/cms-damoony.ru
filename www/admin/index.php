@@ -144,6 +144,10 @@ try {
     $router->register('profile_clearLogs', new ProfileController($auth, $csrf, $view, $adminConfig, $root));
     $router->register('profile_archiveLogs', new ProfileController($auth, $csrf, $view, $adminConfig, $root));
 
+	$router->register('page_save', new \Damoony\Admin\Controller\PageController($auth, $csrf, $view, $paths));
+
+
+	
     $loopback = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
     $rlWhitelist = $env->isDev() ? $loopback : [];
 

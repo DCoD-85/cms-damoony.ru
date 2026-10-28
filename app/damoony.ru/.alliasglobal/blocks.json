@@ -2,6 +2,18 @@
     "blocks": {
         "top": {
             "enabled": true
+        },
+        "left": {
+            "enabled": true
+        },
+        "right": {
+            "enabled": true
+        },
+        "bottom": {
+            "enabled": true
+        },
+        "policy": {
+            "enabled": true
         }
     }
 }

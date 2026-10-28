@@ -23,9 +23,8 @@ final class alliasglobal_top_doc implements RegionInterface
 
     public function render(RegionContext $context): Node
     {
-        $wrap = Builder::div('top-wrapper');
-        $wrap->append(Builder::h(1)->content('Damoony Docs'));
-        $wrap->append(Builder::p()->content('Это шапка для документации (филлер top_doc)'));
+        $wrap = Builder::div('top-doc');
+        $wrap->append(Builder::p()->content('Filler top для алиаса doc'));
         return $wrap;
     }
 }

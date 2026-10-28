@@ -53,4 +53,35 @@ document.addEventListener('DOMContentLoaded', () => {
         // Устанавливаем высоту редактора
         editor.setSize(null, 600);
     }
+
+	// Визуальный редактор страниц (добавление/удаление блоков)
+    const blocksContainer = document.getElementById('blocks-container');
+    const addBlockBtn = document.getElementById('add-block-btn');
+
+    if (blocksContainer && addBlockBtn) {
+        let blockIndex = blocksContainer.children.length;
+
+        addBlockBtn.addEventListener('click', () => {
+            const html = `
+                <div class="block-row" style="display:flex; gap:10px; margin-bottom:10px; padding:10px; border:1px solid #ddd; border-radius:8px; background:#fafafa;">
+                    <select name="blocks[${blockIndex}][type]" style="width: 200px; padding:8px; border-radius:6px; border:1px solid #ccc;">
+                        <option value="h1">Заголовок H1</option>
+                        <option value="h2">Заголовок H2</option>
+                        <option value="text">Текст</option>
+                        <option value="img">Картинка (URL)</option>
+                    </select>
+                    <input type="text" name="blocks[${blockIndex}][content]" placeholder="Содержимое" style="flex-grow:1; padding:8px; border-radius:6px; border:1px solid #ccc;">
+                    <button type="button" class="btn btn-danger remove-block-btn" style="padding: 0 15px;">✕</button>
+                </div>
+            `;
+            blocksContainer.insertAdjacentHTML('beforeend', html);
+            blockIndex++;
+        });
+
+        blocksContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-block-btn')) {
+                e.target.closest('.block-row').remove();
+            }
+        });
+    }
 });

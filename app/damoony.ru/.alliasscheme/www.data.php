@@ -1,16 +1,44 @@
 <?php
 
 return [
-    'meta' => [
-        'css' => [
-            '/media/damoony.ru/skin/default/css/doc.css'
-        ]
+  'tag' => 'div',
+  'class' => 'layout',
+  'children' => 
+  [
+    0 => 
+    [
+      'tag' => 'div',
+      'slot' => 'top',
     ],
-    'tag' => 'div',
-    'class' => 'layout',
-    'children' => [
-        ['tag' => 'header', 'slot' => 'top'],
-        ['tag' => 'main', 'slot' => 'center'],
-        ['tag' => 'footer', 'slot' => 'bottom'],
+    1 => 
+    [
+      'tag' => 'div',
+      'slot' => 'left',
     ],
+    2 => 
+    [
+      'tag' => 'div',
+      'slot' => 'center',
+    ],
+    3 => 
+    [
+      'tag' => 'div',
+      'slot' => 'right',
+    ],
+    4 => 
+    [
+      'tag' => 'div',
+      'slot' => 'bottom',
+    ],
+    5 => 
+    [
+      'tag' => 'div',
+      'slot' => 'policy',
+    ],
+    6 => 
+    [
+      'tag' => 'div',
+      'slot' => 'footer',
+    ]
+  ],
 ];

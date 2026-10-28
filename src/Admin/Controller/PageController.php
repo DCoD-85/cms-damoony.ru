@@ -146,7 +146,7 @@ final class PageController extends BaseController
                 $actionsHtml->append(Builder::a($visualUrl, 'btn btn-primary')->content(View::t('page.visual_editor')));
 
                 // Ссылка на код
-                $phpFile = 'algoritm/' . ($path === '' ? '' : $path . '/') . $page . '/algoritm_' . str_replace('/', '_', $newPath) . '.php';
+                $phpFile = $allias . '/algoritm/' . ($path === '' ? '' : $path . '/') . $page . '/algoritm_' . str_replace('/', '_', $newPath) . '.php';
                 $editUrl = '/admin/?p=editor&domain=' . urlencode($domain) . '&file=' . urlencode($phpFile);
                 $actionsHtml->append(Builder::a($editUrl, 'btn btn-outline')->content(View::t('page.edit')));
 
