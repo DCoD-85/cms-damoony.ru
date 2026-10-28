@@ -6,6 +6,7 @@ namespace Damoony\Admin\Support;
 
 use Damoony\Admin\View;
 use Damoony\Ui\Builder;
+use Damoony\Ui\Text;
 
 final class VisualEditorRenderer
 {
@@ -139,5 +140,104 @@ final class VisualEditorRenderer
         $row->append($btn);
 
         return $row->release();
+    }
+
+    /**
+     * Рендерит полную форму визуального редактора страницы
+     *
+     * @param list<array{type: string, content: string}> $blocks
+     * @param list<string> $hiddenSlots
+     * @param list<string> $availableSlots
+     */
+    public static function renderPageForm(string $action, string $csrfField, array $blocks, array $hiddenSlots, string $contentSlot, array $availableSlots): string
+    {
+        $form = Builder::el('form');
+        $form->attrs()->add('method', 'post');
+        $form->attrs()->add('action', $action);
+        $form->attrs()->classAdd('editor-form');
+        $form->append(Text::raw($csrfField));
+
+        // 1. Настройки контента (слот + скрытие)
+        $settingsBox = Builder::div('editor-row');
+        $settingsBox->attrs()->styleAdd('flex-wrap: wrap;');
+
+        // Слот
+        $slotGroup = Builder::div();
+        $slotGroup->attrs()->styleAdd('display:flex; flex-direction:column; gap:5px;');
+        $slotGroup->append(Builder::el('label')->content('Куда вставлять контент'));
+        $slotSelect = Builder::el('select');
+        $slotSelect->attrs()->add('name', 'content_slot');
+        $slotSelect->attrs()->classAdd('type-select');
+        foreach ($availableSlots as $slot) {
+            $opt = Builder::el('option');
+            $opt->attrs()->add('value', $slot);
+            if ($contentSlot === $slot) {
+                $opt->attrs()->add('selected', 'selected');
+            }
+            $opt->content($slot);
+            $slotSelect->append($opt);
+        }
+        $slotGroup->append($slotSelect);
+        $settingsBox->append($slotGroup);
+
+        // Скрытие блоков
+        if ($availableSlots !== []) {
+            $hiddenGroup = Builder::div();
+            $hiddenGroup->attrs()->styleAdd('display:flex; flex-direction:column; gap:5px; margin-left: 20px;');
+            $hiddenGroup->append(Builder::el('label')->content('Скрыть блоки'));
+            $hiddenWrap = Builder::div();
+            $hiddenWrap->attrs()->styleAdd('display:flex; gap:15px;');
+
+            foreach ($availableSlots as $slot) {
+                $label = Builder::el('label');
+                $label->attrs()->styleAdd('display:flex; align-items:center; gap:5px; cursor:pointer;');
+                $cb = Builder::el('input', true);
+                $cb->attrs()->add('type', 'checkbox');
+                $cb->attrs()->add('name', 'hidden_slots[]');
+                $cb->attrs()->add('value', $slot);
+                if (in_array($slot, $hiddenSlots, true)) {
+                    $cb->attrs()->add('checked', 'checked');
+                }
+                $label->append($cb);
+                $label->append(Text::raw(' ' . $slot));
+                $hiddenWrap->append($label);
+            }
+            $hiddenGroup->append($hiddenWrap);
+            $settingsBox->append($hiddenGroup);
+        }
+        $form->append($settingsBox);
+
+        // 2. Контейнер для блоков
+        $form->append(Builder::h(3)->content('Контент'));
+
+        $blocksContainer = Builder::div('blocks-container');
+        if ($blocks === []) {
+            $blocks = [['type' => 'text', 'content' => '']];
+        }
+        foreach ($blocks as $i => $block) {
+            $blocksContainer->append(Text::raw(self::renderBlockRow($i, $block)));
+        }
+        $form->append($blocksContainer);
+
+        // 3. Кнопки
+        $actions = Builder::div();
+        $actions->attrs()->styleAdd('margin-top: 15px; display: flex; gap: 10px;');
+
+        $addBtn = Builder::el('button');
+        $addBtn->attrs()->add('type', 'button');
+        $addBtn->attrs()->add('id', 'add-block-btn');
+        $addBtn->attrs()->classAdd('btn btn-outline');
+        $addBtn->content(View::t('page.add_block'));
+        $actions->append($addBtn);
+
+        $saveBtn = Builder::el('button');
+        $saveBtn->attrs()->add('type', 'submit');
+        $saveBtn->attrs()->classAdd('btn btn-primary');
+        $saveBtn->content(View::t('domain.save'));
+        $actions->append($saveBtn);
+
+        $form->append($actions);
+
+        return $form->release();
     }
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Damoony\Admin\Controller;
 
-use Damoony\Admin\Support\VisualEditorRenderer;
 use Damoony\Admin\View;
 use Damoony\Cli\Commands\PageNewCommand;
 use Damoony\Cli\Commands\PageToggleCommand;
@@ -187,6 +186,22 @@ final class PageController extends BaseController
         $editFile = $baseDir . '/.edit.json';
         $data = is_file($editFile) ? json_decode((string) file_get_contents($editFile), true) : [];
         $blocks = is_array($data) && isset($data['blocks']) ? $data['blocks'] : [];
+        $hiddenSlots = is_array($data) && isset($data['hidden_slots']) ? $data['hidden_slots'] : [];
+        $contentSlot = is_array($data) && isset($data['content_slot']) ? (string) $data['content_slot'] : 'center';
+
+        // Получаем слоты из схемы
+        $site = \Damoony\Core\Config::fromFile($this->paths->siteConfig())->all();
+        $schemeName = (string) ($site['domains_scheme'][$domain] ?? 'www');
+        $schemeFile = $this->paths->domain($domain) . '/.alliasscheme/' . $schemeName . '.data.php';
+        $availableSlots = ['center'];
+        if (is_file($schemeFile)) {
+            $schemeData = require $schemeFile;
+            $slots = [];
+            $this->collectSlots($schemeData, $slots);
+            if ($slots !== []) {
+                $availableSlots = array_map('strval', array_keys($slots));
+            }
+        }
 
         $card = Builder::div('admin-card');
 
@@ -199,25 +214,17 @@ final class PageController extends BaseController
         $card->append(Builder::h(1)->content('Визуальный редактор: /' . View::esc($path)));
         $card->append(View::alliasTabs($domain, $allias, 'pages'));
 
-        $form = '<form method="post" action="/admin/?p=page:save&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&path=' . urlencode($path) . '" class="editor-form">';
-        $form .= $this->csrf->field();
+        $action = '/admin/?p=page:save&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&path=' . urlencode($path);
+        $formHtml = \Damoony\Admin\Support\VisualEditorRenderer::renderPageForm(
+            $action,
+            $this->csrf->field(),
+            $blocks,
+            $hiddenSlots,
+            $contentSlot,
+            $availableSlots,
+        );
 
-        $form .= '<div id="blocks-container">';
-        if ($blocks === []) {
-            $blocks = [['type' => 'text', 'content' => '']]; // Один блок по умолчанию
-        }
-        foreach ($blocks as $i => $block) {
-            $form .= VisualEditorRenderer::renderBlockRow($i, $block);
-        }
-        $form .= '</div>';
-
-        $form .= '<div style="margin-top: 15px; display:flex; gap:10px;">';
-        $form .= '<button type="button" id="add-block-btn" class="btn btn-outline">' . View::t('page.add_block') . '</button>';
-        $form .= '<button type="submit" class="btn btn-primary">' . View::t('domain.save') . '</button>';
-        $form .= '</div>';
-        $form .= '</form>';
-
-        $card->append(Text::raw($form));
+        $card->append(Text::raw($formHtml));
 
         return Response::html($this->view->render($card, ['title' => 'Визуальный редактор']));
     }
@@ -244,8 +251,14 @@ final class PageController extends BaseController
         }
 
         $blocks = $request->post['blocks'] ?? [];
+        $hiddenSlots = $request->post['hidden_slots'] ?? [];
+        $contentSlot = (string) ($request->post['content_slot'] ?? 'center');
+
         if (!is_array($blocks)) {
             $blocks = [];
+        }
+        if (!is_array($hiddenSlots)) {
+            $hiddenSlots = [];
         }
 
         $cleanBlocks = [];
@@ -258,8 +271,13 @@ final class PageController extends BaseController
             }
         }
 
-        $editFile = $baseDir . '/.edit.json';
-        Fs::writeAtomic($editFile, json_encode(['blocks' => $cleanBlocks], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
+        // Сохраняем JSON
+        $editData = [
+            'content_slot' => $contentSlot,
+            'hidden_slots' => $hiddenSlots,
+            'blocks' => $cleanBlocks,
+        ];
+        Fs::writeAtomic($baseDir . '/.edit.json', json_encode($editData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
 
         // Компилируем в PHP
         $siteFile = $this->paths->siteConfig();
@@ -269,12 +287,29 @@ final class PageController extends BaseController
 
         $classChain = 'algoritm_' . str_replace('/', '_', $path);
         $compiler = new PageCompiler();
-        $php = $compiler->compile($namespace, $allias, $classChain, $cleanBlocks);
+        $php = $compiler->compile($namespace, $allias, $classChain, $cleanBlocks, $hiddenSlots, $contentSlot);
 
-        $phpFile = $baseDir . '/' . $classChain . '.php';
-        Fs::writeAtomic($phpFile, $php);
+        Fs::writeAtomic($baseDir . '/' . $classChain . '.php', $php);
 
         return $this->redirect('/admin/?p=page:edit&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&path=' . urlencode($path) . '&saved=1');
+    }
+
+    /**
+     * @param array<string, mixed> $node
+     * @param array<string, bool> $slots
+     */
+    private function collectSlots(array $node, array &$slots): void
+    {
+        if (isset($node['slot']) && is_string($node['slot'])) {
+            $slots[$node['slot']] = true;
+        }
+        if (isset($node['children']) && is_array($node['children'])) {
+            foreach ($node['children'] as $child) {
+                if (is_array($child)) {
+                    $this->collectSlots($child, $slots);
+                }
+            }
+        }
     }
 
     public function new(Request $request): Response
