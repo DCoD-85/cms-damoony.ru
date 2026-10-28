@@ -48,6 +48,14 @@ final class FillerController extends BaseController
 
         $fillers = $this->siteConfig->getByKey(['fillers', $domain, $allias], []);
 
+        $success = '';
+        if ($request->query('synced')) {
+            $count = (int) $request->query('synced');
+            $success = $count > 0
+                ? View::t('filler.sync_success', ['count' => $count])
+                : View::t('filler.sync_empty');
+        }
+
         $card = Builder::div('admin-card');
 
         $breadcrumbs = Builder::div('breadcrumbs');
@@ -62,11 +70,29 @@ final class FillerController extends BaseController
         $header->append(Builder::h(1)->content(View::t('filler.title') . ': ' . View::esc($allias)));
 
         $actions = Builder::div('page-actions');
+
+        // Форма синхронизации (POST)
+        $syncForm = Form::create('/admin/?p=filler:sync&domain=' . urlencode($domain) . '&allias=' . urlencode($allias), 'POST')
+            ->csrf($this->csrf->field())
+            ->submit(View::t('filler.sync'));
+
+        $syncBtn = $syncForm->build();
+        foreach ($syncBtn->children() as $child) {
+            if ($child instanceof Element && $child->tag() === 'button') {
+                $child->attrs()->classAdd('btn btn-outline');
+            }
+        }
+
+        $actions->append($syncBtn);
         $actions->append(Builder::a('/admin/?p=filler:new&domain=' . urlencode($domain) . '&allias=' . urlencode($allias), 'btn btn-primary')->content(View::t('filler.add')));
         $header->append($actions);
         $card->append($header);
 
         $card->append(View::alliasTabs($domain, $allias, 'blocks'));
+
+        if ($success !== '') {
+            $card->append(Message::success($success)->build());
+        }
 
         $table = (new Table())->headers(View::t('filler.th_block'), View::t('filler.th_status'), View::t('domain.bind_th_act'));
 
@@ -76,7 +102,6 @@ final class FillerController extends BaseController
                     ? '<span class="badge" style="background:#dcfce7; color:#166534;">' . View::t('filler.enabled') . '</span>'
                     : '<span class="badge" style="background:#fee2e2; color:#991b1b;">' . View::t('filler.disabled') . '</span>';
 
-                // Форма для переключения (POST + CSRF)
                 $form = Form::create('/admin/?p=filler:toggle&domain=' . urlencode($domain) . '&allias=' . urlencode($allias), 'POST')
                     ->csrf($this->csrf->field())
                     ->add(Field::hidden('block')->value((string)$block))
@@ -104,6 +129,49 @@ final class FillerController extends BaseController
         $card->append($table->build());
 
         return Response::html($this->view->render($card, ['title' => View::t('filler.title')]));
+    }
+
+    public function sync(Request $request): Response
+    {
+        $auth = $this->requireAuth();
+        if ($auth !== null) {
+            return $auth;
+        }
+
+        if (!$request->isPost()) {
+            return $this->redirect('/admin/?p=domain');
+        }
+
+        $csrfErr = $this->requireCsrf($request);
+        if ($csrfErr !== null) {
+            return $csrfErr;
+        }
+
+        $domain = (string) $request->query('domain', '');
+        $allias = (string) $request->query('allias', '');
+
+        $globalDir = $this->paths->domain($domain) . '/.alliasglobal';
+        $blocks = is_dir($globalDir) ? glob($globalDir . '/*', GLOB_ONLYDIR) : [];
+
+        $syncedCount = 0;
+        $cmd = new FillerNewCommand($this->paths);
+
+        if ($blocks) {
+            foreach ($blocks as $blockPath) {
+                $blockName = basename($blockPath);
+
+                // Пытаемся создать для каждого блока.
+                // Если файл уже есть, FillerNewCommand вернет ошибку 'Filler уже существует'.
+                $res = $cmd->run(['domain' => $domain, 'allias' => $allias, 'block' => $blockName], new Context(static fn () => null));
+
+                // Если команда отработала успешно — значит, создала новый файл
+                if ($res->ok) {
+                    $syncedCount++;
+                }
+            }
+        }
+
+        return $this->redirect('/admin/?p=filler&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&synced=' . $syncedCount);
     }
 
     public function new(Request $request): Response
@@ -168,7 +236,6 @@ final class FillerController extends BaseController
             return $auth;
         }
 
-        // ОБЯЗАТЕЛЬНО POST
         if (!$request->isPost()) {
             return $this->redirect('/admin/?p=domain');
         }
