@@ -113,7 +113,7 @@ final class View
     public static function alliasTabs(string $domain, string $allias, string $active): Element
     {
         $tabs = Builder::div('nav-tabs');
-        $baseUrl = '/admin/?domain=' . urlencode($domain) . '&allias=' . urlencode($allias);
+        $baseUrl = '&domain=' . urlencode($domain) . '&allias=' . urlencode($allias);
 
         $items = [
             'settings' => ['tab.allias_settings', '/admin/?p=allias:edit' . $baseUrl],
