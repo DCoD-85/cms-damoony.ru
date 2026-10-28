@@ -232,4 +232,6 @@ return [
     'admin.overview.title' => '系统概览',
     'admin.overview.subtitle' => '所有域名和别名的总体状态。此处显示方案、区块和页面的问题。',
     'admin.overview.nav' => '概览',
+
+    'scheme.global_not_found' => '未找到全局方案。请先在域级别创建它。',
 ];

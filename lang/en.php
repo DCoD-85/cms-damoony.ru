@@ -259,4 +259,6 @@ return [
     'admin.overview.title' => 'System Overview',
     'admin.overview.subtitle' => 'General status of all domains and aliases. Issues with schemes, blocks, and pages are displayed here.',
     'admin.overview.nav' => 'Overview',
+
+    'scheme.global_not_found' => 'Global scheme not found. Create it at the domain level first.',
 ];

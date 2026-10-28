@@ -87,7 +87,7 @@ final class AliasSchemeController extends BaseController
                     ->submit(View::t('scheme.create_local'));
                 $card->append($form->build());
             } else {
-                $card->append(Message::error('Глобальная схема не найдена. Создайте её сначала на уровне домена.')->build());
+				$card->append(Message::error(View::t('scheme.global_not_found'))->build());
             }
         }
 
@@ -129,7 +129,10 @@ final class AliasSchemeController extends BaseController
         if ($auth !== null) {
             return $auth;
         }
-
+        $postErr = $this->requirePost($request);
+        if ($postErr !== null) {
+            return $postErr;
+        }
         $csrfErr = $this->requireCsrf($request);
         if ($csrfErr !== null) {
             return $csrfErr;
