@@ -18,8 +18,8 @@ final class ConfigDomainResolver implements DomainResolverInterface
 
     public function resolve(string $host): DomainContext
     {
-        $host = strtolower(rtrim($host, '.'));
         $host = preg_replace('/:\d+$/', '', $host) ?? $host;
+        $host = strtolower(rtrim($host, '.'));
         $real = null;
         $allias = '';
 
