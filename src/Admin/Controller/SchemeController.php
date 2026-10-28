@@ -14,6 +14,7 @@ use Damoony\Http\Request;
 use Damoony\Http\Response;
 use Damoony\Scheme\SchemeCompiler;
 use Damoony\Ui\Builder;
+use Damoony\Ui\Element;
 use Damoony\Ui\Field;
 use Damoony\Ui\Form;
 use Damoony\Ui\Message;
@@ -81,15 +82,31 @@ final class SchemeController extends BaseController
                 $actionsHtml->append(Builder::a($editUrl, 'btn btn-primary')->content('Визуально'));
                 $actionsHtml->append(Builder::a($codeUrl, 'btn btn-outline')->content(View::t('page.edit')));
 
-                // Кнопка копирования (через GET с подтверждением)
                 $copyUrl = '/admin/?p=scheme:copy&domain=' . urlencode($domain) . '&name=' . urlencode($s);
-                $actionsHtml->append(Builder::a($copyUrl, 'btn btn-outline')->content('Копировать'));
+                $copyForm = Form::create($copyUrl, 'POST')
+                    ->csrf($this->csrf->field())
+                    ->submit('Копировать');
+                $copyBtn = $copyForm->build();
+                foreach ($copyBtn->children() as $child) {
+                    if ($child instanceof Element && $child->tag() === 'button') {
+                        $child->attrs()->classAdd('btn btn-outline');
+                        $child->attrs()->styleAdd('padding:4px 10px;font-size:12px;');
+                    }
+                }
+                $actionsHtml->append($copyBtn);
 
-                // Кнопка удаления (через GET с JS-подтверждением)
                 $delUrl = '/admin/?p=scheme:delete&domain=' . urlencode($domain) . '&name=' . urlencode($s);
-                $delLink = Builder::a($delUrl, 'btn btn-danger')->content('Удалить');
-                $delLink->attrs()->add('onclick', "return confirm('Вы уверены, что хотите удалить схему?');");
-                $actionsHtml->append($delLink);
+                $delForm = Form::create($delUrl, 'POST')
+                    ->csrf($this->csrf->field())
+                    ->submit('Удалить');
+                $delBtn = $delForm->build();
+                foreach ($delBtn->children() as $child) {
+                    if ($child instanceof Element && $child->tag() === 'button') {
+                        $child->attrs()->classAdd('btn btn-danger');
+                        $child->attrs()->styleAdd('padding:4px 10px;font-size:12px;');
+                    }
+                }
+                $actionsHtml->append($delBtn);
 
                 $table->row([
                     Text::raw('<b>' . View::esc($s) . '</b>'),
@@ -263,6 +280,14 @@ final class SchemeController extends BaseController
         if ($auth !== null) {
             return $auth;
         }
+        $postErr = $this->requirePost($request);
+        if ($postErr !== null) {
+            return $postErr;
+        }
+        $csrfErr = $this->requireCsrf($request);
+        if ($csrfErr !== null) {
+            return $csrfErr;
+        }
 
         $domain = (string) $request->query('domain', '');
         $name = (string) $request->query('name', '');
@@ -301,6 +326,14 @@ final class SchemeController extends BaseController
         $auth = $this->requireAuth();
         if ($auth !== null) {
             return $auth;
+        }
+        $postErr = $this->requirePost($request);
+        if ($postErr !== null) {
+            return $postErr;
+        }
+        $csrfErr = $this->requireCsrf($request);
+        if ($csrfErr !== null) {
+            return $csrfErr;
         }
 
         $domain = (string) $request->query('domain', '');

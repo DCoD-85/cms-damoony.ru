@@ -10,6 +10,7 @@ use Damoony\Files\Paths;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
 use Damoony\Ui\Builder;
+use Damoony\Ui\Element;
 use Damoony\Ui\Field;
 use Damoony\Ui\Form;
 use Damoony\Ui\Message;
@@ -53,7 +54,19 @@ final class StubController extends BaseController
                 $name = basename($file, '.html');
                 $actionsHtml = Builder::div('table-actions');
                 $actionsHtml->append(Builder::a('/admin/?p=stub:edit&name=' . urlencode($name), 'btn btn-outline')->content(View::t('stub.edit')));
-                $actionsHtml->append(Builder::a('/admin/?p=stub:remove&name=' . urlencode($name), 'btn btn-danger')->content(View::t('stub.delete')));
+
+                $delUrl = '/admin/?p=stub:remove&name=' . urlencode($name);
+                $delForm = Form::create($delUrl, 'POST')
+                    ->csrf($this->csrf->field())
+                    ->submit(View::t('stub.delete'));
+                $delBtn = $delForm->build();
+                foreach ($delBtn->children() as $child) {
+                    if ($child instanceof Element && $child->tag() === 'button') {
+                        $child->attrs()->classAdd('btn btn-danger');
+                        $child->attrs()->styleAdd('padding:4px 10px;font-size:12px;');
+                    }
+                }
+                $actionsHtml->append($delBtn);
                 $table->row([Text::raw('<b>' . View::esc($name) . '</b>'), $actionsHtml]);
             }
             $card->append($table->build());
@@ -160,9 +173,20 @@ final class StubController extends BaseController
         if ($auth !== null) {
             return $auth;
         }
+        $postErr = $this->requirePost($request);
+        if ($postErr !== null) {
+            return $postErr;
+        }
+        $csrfErr = $this->requireCsrf($request);
+        if ($csrfErr !== null) {
+            return $csrfErr;
+        }
         $name = (string) $request->query('name', '');
+        if ($name === '' || !preg_match('/^[a-z0-9_\-]+$/i', $name)) {
+            return $this->redirect('/admin/?p=stub');
+        }
         $file = $this->paths->root() . '/stubs/' . $name . '.html';
-        if ($name !== '' && is_file($file)) {
+        if (is_file($file)) {
             unlink($file);
         }
         return $this->redirect('/admin/?p=stub');

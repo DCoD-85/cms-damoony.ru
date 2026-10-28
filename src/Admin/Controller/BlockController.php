@@ -16,6 +16,7 @@ use Damoony\Http\Request;
 use Damoony\Http\Response;
 use Damoony\Region\RegionCompiler;
 use Damoony\Ui\Builder;
+use Damoony\Ui\Element;
 use Damoony\Ui\Field;
 use Damoony\Ui\Form;
 use Damoony\Ui\Message;
@@ -130,7 +131,18 @@ final class BlockController extends BaseController
                 }
 
                 $actionsHtml->append(Builder::a($codeUrl, 'btn btn-outline')->content(View::t('page.edit')));
-                $actionsHtml->append(Builder::a($deleteUrl, 'btn btn-danger')->content(View::t('stub.delete')));
+
+                $delForm = Form::create($deleteUrl, 'POST')
+                    ->csrf($this->csrf->field())
+                    ->submit(View::t('stub.delete'));
+                $delBtn = $delForm->build();
+                foreach ($delBtn->children() as $child) {
+                    if ($child instanceof Element && $child->tag() === 'button') {
+                        $child->attrs()->classAdd('btn btn-danger');
+                        $child->attrs()->styleAdd('padding:4px 10px;font-size:12px;');
+                    }
+                }
+                $actionsHtml->append($delBtn);
 
                 $table->row([
                     Text::raw('<b>' . View::esc($name) . '</b>'),
@@ -318,6 +330,14 @@ final class BlockController extends BaseController
         $auth = $this->requireAuth();
         if ($auth !== null) {
             return $auth;
+        }
+        $postErr = $this->requirePost($request);
+        if ($postErr !== null) {
+            return $postErr;
+        }
+        $csrfErr = $this->requireCsrf($request);
+        if ($csrfErr !== null) {
+            return $csrfErr;
         }
 
         $domain = (string) $request->query('domain', '');
