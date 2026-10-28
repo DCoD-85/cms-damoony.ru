@@ -244,4 +244,19 @@ return [
     'admin.page.type_img' => 'Картинка (URL)',
 
 	'admin.page.add' => '+ Добавить страницу',
+
+    'admin.block.all' => 'Все',
+    'admin.block.type_ui' => 'Визуализация',
+    'admin.block.type_logic' => 'Скрипты',
+    'admin.block.type_mixed' => 'Реализация',
+    'admin.block.th_type' => 'Тип',
+    'admin.block.create_title' => 'Создать блок',
+    'admin.block.type_label' => 'Тип блока',
+    'admin.block.opt_ui' => 'Визуализация (только верстка)',
+    'admin.block.opt_logic' => 'Скрипт (только данные)',
+    'admin.block.opt_mixed' => 'Реализация (данные + верстка)',
+
+    'admin.overview.title' => 'Обзор системы',
+    'admin.overview.subtitle' => 'Общий статус всех доменов и алиасов. Здесь отображаются проблемы со схемами, блоками и страницами.',
+    'admin.overview.nav' => 'Обзор',
 ];

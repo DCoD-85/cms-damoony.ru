@@ -244,4 +244,19 @@ return [
     'admin.page.type_img' => 'Image (URL)',
 
 	'admin.page.add' => '+ Add page',
+
+    'admin.block.all' => 'All',
+    'admin.block.type_ui' => 'UI',
+    'admin.block.type_logic' => 'Logic',
+    'admin.block.type_mixed' => 'Mixed',
+    'admin.block.th_type' => 'Type',
+    'admin.block.create_title' => 'Create block',
+    'admin.block.type_label' => 'Block type',
+    'admin.block.opt_ui' => 'UI (layout only)',
+    'admin.block.opt_logic' => 'Logic (data only)',
+    'admin.block.opt_mixed' => 'Mixed (data + layout)',
+
+    'admin.overview.title' => 'System Overview',
+    'admin.overview.subtitle' => 'General status of all domains and aliases. Issues with schemes, blocks, and pages are displayed here.',
+    'admin.overview.nav' => 'Overview',
 ];

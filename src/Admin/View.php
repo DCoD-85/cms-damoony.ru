@@ -175,6 +175,7 @@ final class View
             $nav->attrs()->classAdd('admin-nav');
 
             $navItems = [
+                'overview' => ['overview.nav', '/admin/?p=overview'],
                 'domain' => ['nav.domains', '/admin/?p=domain'],
                 'stub' => ['nav.stubs', '/admin/?p=stub'],
                 'security' => ['nav.security', '/admin/?p=security'],
