@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // 1. Индикатор надежности пароля (в профиле)
     const pwdInput = document.querySelector('input[name="new_password"]');
     const indicator = document.getElementById('pwd-strength');
     
@@ -31,5 +32,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 indicator.style.background = '#10b981'; // Зеленый
             }
         });
+    }
+
+    // 2. Инициализация редактора кода (CodeMirror)
+    const editorTextarea = document.getElementById('code-editor');
+    if (editorTextarea && typeof CodeMirror !== 'undefined') {
+        const mode = editorTextarea.dataset.mode || 'text/plain';
+        
+        const editor = CodeMirror.fromTextArea(editorTextarea, {
+            lineNumbers: true,
+            mode: mode,
+            theme: "dracula",
+            indentUnit: 4,
+            matchBrackets: true,
+            autoCloseBrackets: true,
+            lineWrapping: true,
+            height: "auto"
+        });
+        
+        // Устанавливаем высоту редактора
+        editor.setSize(null, 600);
     }
 });

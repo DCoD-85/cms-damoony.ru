@@ -63,7 +63,6 @@ final class EditorController extends BaseController
 
         $content = (string) file_get_contents($path);
 
-        // Определяем режим подсветки по расширению
         $ext = pathinfo($path, PATHINFO_EXTENSION);
         $mode = match ($ext) {
             'php' => 'application/x-httpd-php',
@@ -96,31 +95,11 @@ final class EditorController extends BaseController
 
         $form = '<form method="post" class="editor-form">';
         $form .= $this->csrf->field();
-        $form .= '<textarea id="code-editor" name="content" spellcheck="false">' . htmlspecialchars($content, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</textarea>';
+        $form .= '<textarea id="code-editor" name="content" data-mode="' . htmlspecialchars($mode, ENT_QUOTES) . '" spellcheck="false">' . htmlspecialchars($content, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</textarea>';
         $form .= '<div class="editor-actions" style="margin-top: 15px;"><button type="submit" class="btn btn-primary">' . View::t('editor.save') . '</button></div>';
         $form .= '</form>';
 
-        // Скрипт инициализации CodeMirror
-        $script = <<<JS
-            <script>
-            document.addEventListener("DOMContentLoaded", function() {
-                var editor = CodeMirror.fromTextArea(document.getElementById("code-editor"), {
-                    lineNumbers: true,
-                    mode: "{$mode}",
-                    theme: "dracula",
-                    indentUnit: 4,
-                    matchBrackets: true,
-                    autoCloseBrackets: true,
-                    lineWrapping: true,
-                    height: "auto"
-                });
-                editor.setSize(null, 600);
-            });
-            </script>
-            JS;
-
         $card->append(Text::raw($form));
-        $card->append(Text::raw($script));
 
         return Response::html($this->view->render($card, ['title' => View::t('editor.title')]));
     }
