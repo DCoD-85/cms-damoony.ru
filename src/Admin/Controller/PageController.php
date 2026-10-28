@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Admin\Controller;
 
+use Damoony\Admin\Support\VisualEditorRenderer;
 use Damoony\Admin\View;
 use Damoony\Cli\Commands\PageNewCommand;
 use Damoony\Cli\Commands\PageToggleCommand;
@@ -206,7 +207,7 @@ final class PageController extends BaseController
             $blocks = [['type' => 'text', 'content' => '']]; // Один блок по умолчанию
         }
         foreach ($blocks as $i => $block) {
-            $form .= $this->renderBlockRow($i, $block);
+            $form .= VisualEditorRenderer::renderBlockRow($i, $block);
         }
         $form .= '</div>';
 
@@ -219,32 +220,6 @@ final class PageController extends BaseController
         $card->append(Text::raw($form));
 
         return Response::html($this->view->render($card, ['title' => 'Визуальный редактор']));
-    }
-
-    /**
-     * @param array<string, mixed> $block
-     */
-    private function renderBlockRow(int $index, array $block): string
-    {
-        $type = $block['type'] ?? 'text';
-        $content = htmlspecialchars((string)($block['content'] ?? ''), ENT_QUOTES);
-
-        $html = '<div class="block-row" style="display:flex; gap:10px; margin-bottom:10px; padding:10px; border:1px solid #ddd; border-radius:8px; background:#fafafa;">';
-
-        $html .= '<select name="blocks[' . $index . '][type]" style="width: 200px; padding:8px; border-radius:6px; border:1px solid #ccc;">';
-        $html .= '<option value="h1"' . ($type === 'h1' ? ' selected' : '') . '>' . View::t('page.type_h1') . '</option>';
-        $html .= '<option value="h2"' . ($type === 'h2' ? ' selected' : '') . '>' . View::t('page.type_h2') . '</option>';
-        $html .= '<option value="text"' . ($type === 'text' ? ' selected' : '') . '>' . View::t('page.type_text') . '</option>';
-        $html .= '<option value="img"' . ($type === 'img' ? ' selected' : '') . '>' . View::t('page.type_img') . '</option>';
-        $html .= '</select>';
-
-        $html .= '<input type="text" name="blocks[' . $index . '][content]" value="' . $content . '" placeholder="' . View::t('page.block_content') . '" style="flex-grow:1; padding:8px; border-radius:6px; border:1px solid #ccc;">';
-
-        $html .= '<button type="button" class="btn btn-danger remove-block-btn" style="padding: 0 15px;">✕</button>';
-
-        $html .= '</div>';
-
-        return $html;
     }
 
     public function save(Request $request): Response

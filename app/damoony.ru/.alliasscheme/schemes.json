@@ -2,6 +2,9 @@
     "schemes": {
         "www": {
             "enabled": true
+        },
+        "test": {
+            "enabled": true
         }
     }
 }

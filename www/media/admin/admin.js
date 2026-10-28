@@ -125,4 +125,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+	    // Сортировка слотов (Вверх/Вниз) для схем и страниц
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.move-up-btn')) {
+            const row = e.target.closest('.block-row');
+            if (row && row.previousElementSibling) {
+                row.parentNode.insertBefore(row, row.previousElementSibling);
+            }
+        }
+        if (e.target.closest('.move-down-btn')) {
+            const row = e.target.closest('.block-row');
+            if (row && row.nextElementSibling) {
+                row.parentNode.insertBefore(row.nextElementSibling, row);
+            }
+        }
+    });
 });

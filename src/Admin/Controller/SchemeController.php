@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Admin\Controller;
 
+use Damoony\Admin\Support\VisualEditorRenderer;
 use Damoony\Admin\View;
 use Damoony\Cli\Commands\SchemeNewCommand;
 use Damoony\Cli\Context;
@@ -218,7 +219,7 @@ final class SchemeController extends BaseController
         }
 
         foreach ($currentSlots as $i => $item) {
-            $form .= $this->renderSlotRow($i, $item, $availableSlots);
+            $form .= VisualEditorRenderer::renderSlotRow($i, $item, $availableSlots);
         }
 
         $form .= '</div>';
@@ -232,45 +233,6 @@ final class SchemeController extends BaseController
         $card->append(Text::raw($form));
 
         return Response::html($this->view->render($card, ['title' => 'Визуальный редактор схем']));
-    }
-
-    /**
-     * @param array<string, mixed> $item
-     * @param list<string> $availableSlots
-     */
-    private function renderSlotRow(int $index, array $item, array $availableSlots): string
-    {
-        $slotName = (string)($item['slot'] ?? 'center');
-        $tag = (string)($item['tag'] ?? 'div');
-        $class = (string)($item['class'] ?? '');
-
-        $html = '<div class="block-row" style="display:flex; gap:10px; margin-bottom:10px; padding:10px; border:1px solid #ddd; border-radius:8px; background:#fafafa; align-items:center;">';
-
-        // Название слота
-        $html .= '<select name="slots[' . $index . '][name]" style="width: 150px; padding:8px; border-radius:6px; border:1px solid #ccc;">';
-        foreach ($availableSlots as $as) {
-            $sel = ($slotName === $as) ? ' selected' : '';
-            $html .= '<option value="' . htmlspecialchars($as) . '"' . $sel . '>' . htmlspecialchars($as) . '</option>';
-        }
-        $html .= '</select>';
-
-        // HTML тег
-        $html .= '<select name="slots[' . $index . '][tag]" style="width: 120px; padding:8px; border-radius:6px; border:1px solid #ccc;">';
-        foreach (['div', 'header', 'main', 'footer', 'aside', 'section', 'article'] as $t) {
-            $sel = ($tag === $t) ? ' selected' : '';
-            $html .= '<option value="' . $t . '"' . $sel . '>&lt;' . $t . '&gt;</option>';
-        }
-        $html .= '</select>';
-
-        // CSS класс
-        $html .= '<input type="text" name="slots[' . $index . '][class]" value="' . htmlspecialchars($class) . '" placeholder="CSS класс (например, main-wrap)" style="flex-grow:1; padding:8px; border-radius:6px; border:1px solid #ccc;">';
-
-        // Кнопка удаления
-        $html .= '<button type="button" class="btn btn-danger remove-slot-btn" style="padding: 0 15px;">✕</button>';
-
-        $html .= '</div>';
-
-        return $html;
     }
 
     /**
