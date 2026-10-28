@@ -185,9 +185,7 @@ final class PageController extends BaseController
 
         $editFile = $baseDir . '/.edit.json';
         $data = is_file($editFile) ? json_decode((string) file_get_contents($editFile), true) : [];
-        $blocks = is_array($data) && isset($data['blocks']) ? $data['blocks'] : [];
-        $hiddenSlots = is_array($data) && isset($data['hidden_slots']) ? $data['hidden_slots'] : [];
-        $contentSlot = is_array($data) && isset($data['content_slot']) ? (string) $data['content_slot'] : 'center';
+        $pageSlots = is_array($data) && isset($data['slots']) ? $data['slots'] : [];
 
         // Получаем слоты из схемы
         $site = \Damoony\Core\Config::fromFile($this->paths->siteConfig())->all();
@@ -204,7 +202,6 @@ final class PageController extends BaseController
         }
 
         $card = Builder::div('admin-card');
-
         $breadcrumbs = Builder::div('breadcrumbs');
         $breadcrumbs->append(Builder::a('/admin/?p=domain')->content(View::t('domain.bread_domains')));
         $breadcrumbs->append(Text::raw(' / '));
@@ -215,17 +212,16 @@ final class PageController extends BaseController
         $card->append(View::alliasTabs($domain, $allias, 'pages'));
 
         $action = '/admin/?p=page:save&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&path=' . urlencode($path);
-        $formHtml = \Damoony\Admin\Support\VisualEditorRenderer::renderPageForm(
+
+        // ИСПОЛЬЗУЕМ НОВЫЙ МЕТОД renderPageSlotsForm
+        $formHtml = \Damoony\Admin\Support\VisualEditorRenderer::renderPageSlotsForm(
             $action,
             $this->csrf->field(),
-            $blocks,
-            $hiddenSlots,
-            $contentSlot,
+            $pageSlots,
             $availableSlots,
         );
 
         $card->append(Text::raw($formHtml));
-
         return Response::html($this->view->render($card, ['title' => 'Визуальный редактор']));
     }
 
@@ -235,7 +231,6 @@ final class PageController extends BaseController
         if ($auth !== null) {
             return $auth;
         }
-
         $csrfErr = $this->requireCsrf($request);
         if ($csrfErr !== null) {
             return $csrfErr;
@@ -250,36 +245,36 @@ final class PageController extends BaseController
             return $this->redirect('/admin/?p=page&domain=' . urlencode($domain));
         }
 
-        $blocks = $request->post['blocks'] ?? [];
-        $hiddenSlots = $request->post['hidden_slots'] ?? [];
-        $contentSlot = (string) ($request->post['content_slot'] ?? 'center');
-
-        if (!is_array($blocks)) {
-            $blocks = [];
-        }
-        if (!is_array($hiddenSlots)) {
-            $hiddenSlots = [];
+        $slotsData = $request->post['slots'] ?? [];
+        if (!is_array($slotsData)) {
+            $slotsData = [];
         }
 
-        $cleanBlocks = [];
-        foreach ($blocks as $b) {
-            if (isset($b['type'], $b['content']) && trim((string)$b['content']) !== '') {
-                $cleanBlocks[] = [
-                    'type' => (string)$b['type'],
-                    'content' => (string)$b['content'],
-                ];
+        $cleanSlots = [];
+        foreach ($slotsData as $slotName => $config) {
+            if (!is_array($config)) {
+                continue;
             }
+
+            $status = (string)($config['status'] ?? 'global');
+            $blocks = [];
+
+            if ($status === 'local' && isset($config['blocks']) && is_array($config['blocks'])) {
+                foreach ($config['blocks'] as $b) {
+                    if (isset($b['type'], $b['content']) && trim((string)$b['content']) !== '') {
+                        $blocks[] = ['type' => (string)$b['type'], 'content' => (string)$b['content']];
+                    }
+                }
+            }
+
+            $cleanSlots[$slotName] = [
+                'status' => $status,
+                'blocks' => $blocks,
+            ];
         }
 
-        // Сохраняем JSON
-        $editData = [
-            'content_slot' => $contentSlot,
-            'hidden_slots' => $hiddenSlots,
-            'blocks' => $cleanBlocks,
-        ];
-        Fs::writeAtomic($baseDir . '/.edit.json', json_encode($editData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
+        Fs::writeAtomic($baseDir . '/.edit.json', json_encode(['slots' => $cleanSlots], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
 
-        // Компилируем в PHP
         $siteFile = $this->paths->siteConfig();
         $site = Config::fromFile($siteFile)->all();
         $realDomain = (string) $site['domains_real'][$domain];
@@ -287,7 +282,9 @@ final class PageController extends BaseController
 
         $classChain = 'algoritm_' . str_replace('/', '_', $path);
         $compiler = new PageCompiler();
-        $php = $compiler->compile($namespace, $allias, $classChain, $cleanBlocks, $hiddenSlots, $contentSlot);
+
+        // ИСПОЛЬЗУЕМ НОВУЮ СИГНАТУРУ (передаем только $cleanSlots)
+        $php = $compiler->compile($namespace, $allias, $classChain, $cleanSlots);
 
         Fs::writeAtomic($baseDir . '/' . $classChain . '.php', $php);
 
