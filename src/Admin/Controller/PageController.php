@@ -81,7 +81,7 @@ final class PageController extends BaseController
             $upUrl = '/admin/?p=page&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . ($parentPath === '.' ? '' : '&path=' . urlencode($parentPath));
             $actions->append(Builder::a($upUrl, 'btn btn-outline')->content(View::t('page.up')));
         }
-        $actions->append(Builder::a('/admin/?p=page:new&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&parent=' . urlencode($path), 'btn btn-primary')->content(View::t('domain.add')));
+        $actions->append(Builder::a('/admin/?p=page:new&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&parent=' . urlencode($path), 'btn btn-primary')->content(View::t('page.add')));
         $header->append($actions);
         $card->append($header);
 

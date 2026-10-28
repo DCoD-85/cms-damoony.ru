@@ -233,4 +233,15 @@ return [
     'admin.editor.save_error' => 'Ошибка сохранения: {msg}',
     'admin.editor.save' => 'Сохранить',
     'admin.editor.not_found' => 'Файл не найден: {file}',
+
+    'admin.page.visual_editor' => 'Визуально',
+    'admin.page.add_block' => '+ Добавить блок',
+    'admin.page.block_type' => 'Тип блока',
+    'admin.page.block_content' => 'Содержимое',
+    'admin.page.type_h1' => 'Заголовок H1',
+    'admin.page.type_h2' => 'Заголовок H2',
+    'admin.page.type_text' => 'Текст',
+    'admin.page.type_img' => 'Картинка (URL)',
+
+	'admin.page.add' => '+ Добавить страницу',
 ];

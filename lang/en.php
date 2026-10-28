@@ -233,4 +233,15 @@ return [
     'admin.editor.save_error' => 'Save error: {msg}',
     'admin.editor.save' => 'Save',
     'admin.editor.not_found' => 'File not found: {file}',
+
+    'admin.page.visual_editor' => 'Visual',
+    'admin.page.add_block' => '+ Add block',
+    'admin.page.block_type' => 'Block type',
+    'admin.page.block_content' => 'Content',
+    'admin.page.type_h1' => 'Heading H1',
+    'admin.page.type_h2' => 'Heading H2',
+    'admin.page.type_text' => 'Text',
+    'admin.page.type_img' => 'Image (URL)',
+
+	'admin.page.add' => '+ Add page',
 ];

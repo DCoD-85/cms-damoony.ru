@@ -206,4 +206,15 @@ return [
     'admin.editor.save_error' => '保存错误: {msg}',
     'admin.editor.save' => '保存',
     'admin.editor.not_found' => '未找到文件: {file}',
+
+    'admin.page.visual_editor' => '可视化',
+    'admin.page.add_block' => '+ 添加区块',
+    'admin.page.block_type' => '区块类型',
+    'admin.page.block_content' => '内容',
+    'admin.page.type_h1' => '标题 H1',
+    'admin.page.type_h2' => '标题 H2',
+    'admin.page.type_text' => '文本',
+    'admin.page.type_img' => '图片 (URL)',
+
+	'admin.page.add' => '+ 添加页面',
 ];
