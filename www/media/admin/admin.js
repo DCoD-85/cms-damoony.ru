@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
         editor.setSize(null, 600);
     }
 
-	// Визуальный редактор страниц (добавление/удаление блоков)
+    // 3. Визуальный редактор страниц (добавление/удаление блоков)
     const blocksContainer = document.getElementById('blocks-container');
     const addBlockBtn = document.getElementById('add-block-btn');
 
@@ -80,6 +80,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
         blocksContainer.addEventListener('click', (e) => {
             if (e.target.classList.contains('remove-block-btn')) {
+                e.target.closest('.block-row').remove();
+            }
+        });
+    }
+
+    // 4. Визуальный редактор схем (добавление/удаление слотов)
+    const slotsContainer = document.getElementById('slots-container');
+    const addSlotBtn = document.getElementById('add-slot-btn');
+
+    if (slotsContainer && addSlotBtn) {
+        let slotIndex = slotsContainer.children.length;
+
+        addSlotBtn.addEventListener('click', () => {
+            const html = `
+                <div class="block-row" style="display:flex; gap:10px; margin-bottom:10px; padding:10px; border:1px solid #ddd; border-radius:8px; background:#fafafa; align-items:center;">
+                    <select name="slots[${slotIndex}][name]" style="width: 150px; padding:8px; border-radius:6px; border:1px solid #ccc;">
+                        <option value="center">center</option>
+                        <option value="top">top</option>
+                        <option value="left">left</option>
+                        <option value="right">right</option>
+                        <option value="bottom">bottom</option>
+                        <option value="footer">footer</option>
+                    </select>
+                    <select name="slots[${slotIndex}][tag]" style="width: 120px; padding:8px; border-radius:6px; border:1px solid #ccc;">
+                        <option value="div">&lt;div&gt;</option>
+                        <option value="header">&lt;header&gt;</option>
+                        <option value="main">&lt;main&gt;</option>
+                        <option value="footer">&lt;footer&gt;</option>
+                        <option value="aside">&lt;aside&gt;</option>
+                        <option value="section">&lt;section&gt;</option>
+                    </select>
+                    <input type="text" name="slots[${slotIndex}][class]" placeholder="CSS класс (например, main-wrap)" style="flex-grow:1; padding:8px; border-radius:6px; border:1px solid #ccc;">
+                    <button type="button" class="btn btn-danger remove-slot-btn" style="padding: 0 15px;">✕</button>
+                </div>
+            `;
+            slotsContainer.insertAdjacentHTML('beforeend', html);
+            slotIndex++;
+        });
+
+        slotsContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-slot-btn')) {
                 e.target.closest('.block-row').remove();
             }
         });

@@ -64,7 +64,7 @@ final class SchemeController extends BaseController
 
         $card->append(View::domainTabs($domain, 'schemes'));
 
-        $table = (new Table())->headers(View::t('filler.th_block'), View::t('domain.bind_th_act'));
+        $table = (new Table())->headers('Схема', View::t('domain.bind_th_act'));
 
         if ($schemes !== []) {
             foreach ($schemes as $s) {
@@ -72,16 +72,23 @@ final class SchemeController extends BaseController
                     continue;
                 }
 
-                // Новая ссылка на визуальный редактор
                 $editUrl = '/admin/?p=scheme:edit&domain=' . urlencode($domain) . '&name=' . urlencode($s);
-
-                // Старая ссылка на код
                 $codeFile = '.alliasscheme/' . $s . '.data.php';
                 $codeUrl = '/admin/?p=editor&domain=' . urlencode($domain) . '&file=' . urlencode($codeFile);
 
                 $actionsHtml = Builder::div('table-actions');
                 $actionsHtml->append(Builder::a($editUrl, 'btn btn-primary')->content('Визуально'));
                 $actionsHtml->append(Builder::a($codeUrl, 'btn btn-outline')->content(View::t('page.edit')));
+
+                // Кнопка копирования (через GET с подтверждением)
+                $copyUrl = '/admin/?p=scheme:copy&domain=' . urlencode($domain) . '&name=' . urlencode($s);
+                $actionsHtml->append(Builder::a($copyUrl, 'btn btn-outline')->content('Копировать'));
+
+                // Кнопка удаления (через GET с JS-подтверждением)
+                $delUrl = '/admin/?p=scheme:delete&domain=' . urlencode($domain) . '&name=' . urlencode($s);
+                $delLink = Builder::a($delUrl, 'btn btn-danger')->content('Удалить');
+                $delLink->attrs()->add('onclick', "return confirm('Вы уверены, что хотите удалить схему?');");
+                $actionsHtml->append($delLink);
 
                 $table->row([
                     Text::raw('<b>' . View::esc($s) . '</b>'),
@@ -133,8 +140,9 @@ final class SchemeController extends BaseController
                 }
             }
         }
+        sort($availableSlots);
 
-        // Собираем текущие слоты из схемы
+        // Собираем текущие слоты из схемы (с их тегами и классами)
         $currentSlots = [];
         $this->collectSlots($data, $currentSlots);
 
@@ -144,15 +152,31 @@ final class SchemeController extends BaseController
                 return $csrfErr;
             }
 
-            $selected = $request->post['slots'] ?? ['center'];
-            if (!is_array($selected)) {
-                $selected = ['center'];
+            $slotsData = $request->post['slots'] ?? [];
+            if (!is_array($slotsData)) {
+                $slotsData = [];
             }
 
-            // Формируем новую структуру схемы (простой вертикальный стек)
             $children = [];
-            foreach ($selected as $slotName) {
-                $children[] = ['tag' => 'div', 'slot' => $slotName];
+            foreach ($slotsData as $slotItem) {
+                if (!isset($slotItem['name']) || !in_array($slotItem['name'], $availableSlots, true)) {
+                    continue;
+                }
+
+                $tag = (string)($slotItem['tag'] ?? 'div');
+                $class = (string)($slotItem['class'] ?? '');
+
+                // Разрешаем только безопасные теги
+                if (!in_array($tag, ['div', 'header', 'main', 'footer', 'aside', 'section', 'article'], true)) {
+                    $tag = 'div';
+                }
+
+                $node = ['tag' => $tag];
+                if ($class !== '') {
+                    $node['class'] = $class;
+                }
+                $node['slot'] = $slotItem['name'];
+                $children[] = $node;
             }
 
             $newData = [
@@ -182,36 +206,162 @@ final class SchemeController extends BaseController
             $card->append(Message::success($success)->build());
         }
 
-        $form = Form::create('/admin/?p=scheme:edit&domain=' . urlencode($domain) . '&name=' . urlencode($name), 'POST')
-            ->csrf($this->csrf->field());
+        // Строим форму вручную для гибкости
+        $form = '<form method="post" action="/admin/?p=scheme:edit&domain=' . urlencode($domain) . '&name=' . urlencode($name) . '" class="editor-form">';
+        $form .= $this->csrf->field();
 
-        // Генерируем чекбоксы для слотов
-        foreach ($availableSlots as $slot) {
-            $checked = in_array($slot, $currentSlots, true);
-            $form->add(Field::checkbox('slots[]')->label('Слот: ' . strtoupper($slot))->value($slot)->checked($checked));
+        $form .= '<div id="slots-container">';
+
+        if ($currentSlots === []) {
+            // Если пусто, показываем один слот по умолчанию
+            $currentSlots[] = ['slot' => 'center', 'tag' => 'div', 'class' => ''];
         }
 
-        $form->submit(View::t('domain.save'));
+        foreach ($currentSlots as $i => $item) {
+            $form .= $this->renderSlotRow($i, $item, $availableSlots);
+        }
 
-        $card->append($form->build());
+        $form .= '</div>';
+
+        $form .= '<div style="margin-top: 15px; display:flex; gap:10px;">';
+        $form .= '<button type="button" id="add-slot-btn" class="btn btn-outline">+ Добавить слот</button>';
+        $form .= '<button type="submit" class="btn btn-primary">' . View::t('domain.save') . '</button>';
+        $form .= '</div>';
+        $form .= '</form>';
+
+        $card->append(Text::raw($form));
 
         return Response::html($this->view->render($card, ['title' => 'Визуальный редактор схем']));
     }
 
     /**
+     * @param array<string, mixed> $item
+     * @param list<string> $availableSlots
+     */
+    private function renderSlotRow(int $index, array $item, array $availableSlots): string
+    {
+        $slotName = (string)($item['slot'] ?? 'center');
+        $tag = (string)($item['tag'] ?? 'div');
+        $class = (string)($item['class'] ?? '');
+
+        $html = '<div class="block-row" style="display:flex; gap:10px; margin-bottom:10px; padding:10px; border:1px solid #ddd; border-radius:8px; background:#fafafa; align-items:center;">';
+
+        // Название слота
+        $html .= '<select name="slots[' . $index . '][name]" style="width: 150px; padding:8px; border-radius:6px; border:1px solid #ccc;">';
+        foreach ($availableSlots as $as) {
+            $sel = ($slotName === $as) ? ' selected' : '';
+            $html .= '<option value="' . htmlspecialchars($as) . '"' . $sel . '>' . htmlspecialchars($as) . '</option>';
+        }
+        $html .= '</select>';
+
+        // HTML тег
+        $html .= '<select name="slots[' . $index . '][tag]" style="width: 120px; padding:8px; border-radius:6px; border:1px solid #ccc;">';
+        foreach (['div', 'header', 'main', 'footer', 'aside', 'section', 'article'] as $t) {
+            $sel = ($tag === $t) ? ' selected' : '';
+            $html .= '<option value="' . $t . '"' . $sel . '>&lt;' . $t . '&gt;</option>';
+        }
+        $html .= '</select>';
+
+        // CSS класс
+        $html .= '<input type="text" name="slots[' . $index . '][class]" value="' . htmlspecialchars($class) . '" placeholder="CSS класс (например, main-wrap)" style="flex-grow:1; padding:8px; border-radius:6px; border:1px solid #ccc;">';
+
+        // Кнопка удаления
+        $html .= '<button type="button" class="btn btn-danger remove-slot-btn" style="padding: 0 15px;">✕</button>';
+
+        $html .= '</div>';
+
+        return $html;
+    }
+
+    /**
      * @param array<string, mixed> $node
-     * @param list<string> $slots
+     * @param list<array{slot: string, tag: string, class: string}> $slots
      */
     private function collectSlots(array $node, array &$slots): void
     {
         if (isset($node['slot']) && is_string($node['slot'])) {
-            $slots[] = $node['slot'];
+            $slots[] = [
+                'slot' => $node['slot'],
+                'tag' => (string)($node['tag'] ?? 'div'),
+                'class' => (string)($node['class'] ?? ''),
+            ];
         }
         if (isset($node['children']) && is_array($node['children'])) {
             foreach ($node['children'] as $child) {
-                $this->collectSlots($child, $slots);
+                if (is_array($child)) {
+                    $this->collectSlots($child, $slots);
+                }
             }
         }
+    }
+
+    public function copy(Request $request): Response
+    {
+        $auth = $this->requireAuth();
+        if ($auth !== null) {
+            return $auth;
+        }
+
+        $domain = (string) $request->query('domain', '');
+        $name = (string) $request->query('name', '');
+
+        if ($domain === '' || $name === '') {
+            return $this->redirect('/admin/?p=domain');
+        }
+
+        $newName = $name . '_copy';
+        $i = 1;
+        while (is_file($this->paths->domain($domain) . '/.alliasscheme/' . $newName . '.data.php')) {
+            $newName = $name . '_copy_' . $i++;
+        }
+
+        $srcFile = $this->paths->domain($domain) . '/.alliasscheme/' . $name . '.data.php';
+        $dstFile = $this->paths->domain($domain) . '/.alliasscheme/' . $newName . '.data.php';
+
+        if (is_file($srcFile)) {
+            copy($srcFile, $dstFile);
+
+            // Обновляем schemes.json
+            $manifestFile = $this->paths->domain($domain) . '/.alliasscheme/schemes.json';
+            $manifest = is_file($manifestFile) ? json_decode((string)file_get_contents($manifestFile), true) : [];
+            if (!is_array($manifest)) {
+                $manifest = ['schemes' => []];
+            }
+            $manifest['schemes'][$newName] = ['enabled' => true];
+            Fs::writeAtomic($manifestFile, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
+        }
+
+        return $this->redirect('/admin/?p=scheme&domain=' . urlencode($domain));
+    }
+
+    public function delete(Request $request): Response
+    {
+        $auth = $this->requireAuth();
+        if ($auth !== null) {
+            return $auth;
+        }
+
+        $domain = (string) $request->query('domain', '');
+        $name = (string) $request->query('name', '');
+
+        if ($domain === '' || $name === '') {
+            return $this->redirect('/admin/?p=domain');
+        }
+
+        $file = $this->paths->domain($domain) . '/.alliasscheme/' . $name . '.data.php';
+        if (is_file($file)) {
+            unlink($file);
+
+            // Обновляем schemes.json
+            $manifestFile = $this->paths->domain($domain) . '/.alliasscheme/schemes.json';
+            $manifest = is_file($manifestFile) ? json_decode((string)file_get_contents($manifestFile), true) : [];
+            if (is_array($manifest) && isset($manifest['schemes'][$name])) {
+                unset($manifest['schemes'][$name]);
+                Fs::writeAtomic($manifestFile, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
+            }
+        }
+
+        return $this->redirect('/admin/?p=scheme&domain=' . urlencode($domain));
     }
 
     public function new(Request $request): Response
