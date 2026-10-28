@@ -97,6 +97,19 @@ try {
 
     $paths = new Paths($root);
 
+    // --- ИНИЦИАЛИЗАЦИЯ БД ДЛЯ АДМИНКИ ---
+    $dbConfig = $engineConfig->getByKey(['db'], []);
+    if (!is_array($dbConfig) || $dbConfig === []) {
+        $dbConfig = ['driver' => 'sqlite', 'path' => $root . '/var/damoony.db'];
+    } elseif (($dbConfig['driver'] ?? '') === 'sqlite' && isset($dbConfig['path'])) {
+        $path = (string) $dbConfig['path'];
+        if (!str_starts_with($path, '/') && !preg_match('/^[a-zA-Z]:[\\\\\/]/', $path)) {
+            $dbConfig['path'] = $root . '/' . ltrim($path, '/\\');
+        }
+    }
+    $db = new \Damoony\Db\Connection($dbConfig);
+    // ------------------------------------
+
     $router = new AdminRouter();
     $router->register('login', new LoginController($auth, $csrf, $view));
     $router->register('logout', new LogoutController($auth, $csrf, $view));
