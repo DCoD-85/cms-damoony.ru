@@ -65,7 +65,7 @@ final class SchemeController extends BaseController
 
         $card->append(View::domainTabs($domain, 'schemes'));
 
-        $table = (new Table())->headers(View::t('admin.scheme.col_name'), View::t('domain.bind_th_act'));
+        $table = (new Table())->headers(View::t('scheme.col_name'), View::t('domain.bind_th_act'));
 
         if ($schemes !== []) {
             foreach ($schemes as $s) {
@@ -78,13 +78,13 @@ final class SchemeController extends BaseController
                 $codeUrl = '/admin/?p=editor&domain=' . urlencode($domain) . '&file=' . urlencode($codeFile);
 
                 $actionsHtml = Builder::div('table-actions');
-                $actionsHtml->append(Builder::a($editUrl, 'btn btn-primary')->content(View::t('admin.page.visual_editor')));
+                $actionsHtml->append(Builder::a($editUrl, 'btn btn-primary')->content(View::t('page.visual_editor')));
                 $actionsHtml->append(Builder::a($codeUrl, 'btn btn-outline')->content(View::t('page.edit')));
 
                 $copyUrl = '/admin/?p=scheme:copy&domain=' . urlencode($domain) . '&name=' . urlencode($s);
                 $copyForm = Form::create($copyUrl, 'POST')
                     ->csrf($this->csrf->field())
-                    ->submit(View::t('admin.scheme.btn_copy'));
+                    ->submit(View::t('scheme.btn_copy'));
                 $copyBtn = $copyForm->build();
                 foreach ($copyBtn->children() as $child) {
                     if ($child instanceof Element && $child->tag() === 'button') {
@@ -97,7 +97,7 @@ final class SchemeController extends BaseController
                 $delUrl = '/admin/?p=scheme:delete&domain=' . urlencode($domain) . '&name=' . urlencode($s);
                 $delForm = Form::create($delUrl, 'POST')
                     ->csrf($this->csrf->field())
-                    ->submit(View::t('admin.scheme.btn_delete'));
+                    ->submit(View::t('scheme.btn_delete'));
                 $delBtn = $delForm->build();
                 foreach ($delBtn->children() as $child) {
                     if ($child instanceof Element && $child->tag() === 'button') {

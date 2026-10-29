@@ -122,7 +122,7 @@ final class FillerController extends BaseController
                 }
 
                 $codeUrl = '/admin/?p=editor&domain=' . urlencode($domain) . '&file=' . urlencode('.alliasglobal/' . $block . '/' . $block . '_' . $allias . '.php');
-                $codeBtn = Builder::a($codeUrl, 'btn btn-outline')->content(View::t('admin.filler.col_code'));
+                $codeBtn = Builder::a($codeUrl, 'btn btn-outline')->content(View::t('filler.col_code'));
 
                 $actionsCell = Builder::div('table-actions');
                 $actionsCell->append($codeBtn);

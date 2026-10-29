@@ -73,7 +73,7 @@ final class DomainController extends BaseController
                     if ($issues !== []) {
                         $hasErrors = true;
                         foreach ($issues as $issue) {
-                            $errorMessages[] = View::t('admin.domain.structure_issue', ['domain' => $real, 'alias' => $alias, 'message' => $issue['message']]);
+                            $errorMessages[] = View::t('domain.structure_issue', ['domain' => $real, 'alias' => $alias, 'message' => $issue['message']]);
                         }
                     }
                 }
@@ -81,7 +81,7 @@ final class DomainController extends BaseController
         }
 
         if ($hasErrors) {
-            $errorText = View::t('admin.domain.structure_problems') . "\n";
+            $errorText = View::t('domain.structure_problems') . "\n";
             foreach ($errorMessages as $msg) {
                 $errorText .= '- ' . $msg . "\n";
             }
