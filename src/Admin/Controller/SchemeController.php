@@ -146,8 +146,9 @@ final class SchemeController extends BaseController
         }
 
         $success = $request->query('saved') ? View::t('msg.saved') : '';
+        $allowedTags = ['div', 'header', 'main', 'footer', 'aside', 'section', 'article'];
 
-        // Получаем доступные слоты (из глобальных блоков)
+        // Доступные слоты (из глобальных блоков)
         $blocksDir = $this->paths->domain($domain) . '/.alliasglobal';
         $availableSlots = ['center'];
         if (is_dir($blocksDir)) {
@@ -160,9 +161,17 @@ final class SchemeController extends BaseController
         }
         sort($availableSlots);
 
-        // Собираем текущие слоты из схемы (с их тегами и классами)
+        // Корневые поля и плоский список строк
+        $rootTag = (string)($data['tag'] ?? 'div');
+        $rootClass = (string)($data['class'] ?? 'layout');
+        $rootChildren = is_array($data['children'] ?? null) ? $data['children'] : [];
+
         $currentSlots = [];
-        $this->collectSlots($data, $currentSlots);
+        foreach ($rootChildren as $child) {
+            if (is_array($child)) {
+                $this->flattenTree($child, $currentSlots, null);
+            }
+        }
 
         if ($request->isPost()) {
             $csrfErr = $this->requireCsrf($request);
@@ -170,38 +179,24 @@ final class SchemeController extends BaseController
                 return $csrfErr;
             }
 
-            $slotsData = $request->post['slots'] ?? [];
-            if (!is_array($slotsData)) {
-                $slotsData = [];
+            $rowsData = $request->post['slots'] ?? [];
+            if (!is_array($rowsData)) {
+                $rowsData = [];
             }
 
-            $children = [];
-            foreach ($slotsData as $slotItem) {
-                if (!isset($slotItem['name']) || !in_array($slotItem['name'], $availableSlots, true)) {
-                    continue;
-                }
+            $newChildren = $this->rebuildTree($rowsData, $availableSlots, $allowedTags);
 
-                $tag = (string)($slotItem['tag'] ?? 'div');
-                $class = (string)($slotItem['class'] ?? '');
-
-                // Разрешаем только безопасные теги
-                if (!in_array($tag, ['div', 'header', 'main', 'footer', 'aside', 'section', 'article'], true)) {
-                    $tag = 'div';
-                }
-
-                $node = ['tag' => $tag];
-                if ($class !== '') {
-                    $node['class'] = $class;
-                }
-                $node['slot'] = $slotItem['name'];
-                $children[] = $node;
+            $newRootTag = (string)($request->post['root_tag'] ?? 'div');
+            if (!in_array($newRootTag, $allowedTags, true)) {
+                $newRootTag = 'div';
             }
+            $newRootClass = trim((string)($request->post['root_class'] ?? 'layout'));
 
-            $newData = [
-                'tag' => 'div',
-                'class' => 'layout',
-                'children' => $children,
-            ];
+            $newData = ['tag' => $newRootTag];
+            if ($newRootClass !== '') {
+                $newData['class'] = $newRootClass;
+            }
+            $newData['children'] = $newChildren;
 
             $compiler = new SchemeCompiler();
             Fs::writeAtomic($file, $compiler->compile($newData));
@@ -209,8 +204,8 @@ final class SchemeController extends BaseController
             return $this->redirect('/admin/?p=scheme:edit&domain=' . urlencode($domain) . '&name=' . urlencode($name) . '&saved=1');
         }
 
+        // Рендер формы
         $card = Builder::div('admin-card');
-
         $breadcrumbs = Builder::div('breadcrumbs');
         $breadcrumbs->append(Builder::a('/admin/?p=domain')->content(View::t('domain.bread_domains')));
         $breadcrumbs->append(Text::raw(' / '));
@@ -218,31 +213,50 @@ final class SchemeController extends BaseController
         $card->append($breadcrumbs);
 
         $card->append(Builder::h(1)->content('Схема: ' . View::esc($name)));
-        $card->append(Message::info('Выберите слоты, которые должны быть на странице, в нужном порядке.')->build());
+        $card->append(Message::info('Слоты и контейнеры. Вкладывайте строки друг в друга через «в #» для вложенных схем.')->build());
 
         if ($success !== '') {
             $card->append(Message::success($success)->build());
         }
 
-        // Строим форму вручную для гибкости
-        $form = '<form method="post" action="/admin/?p=scheme:edit&domain=' . urlencode($domain) . '&name=' . urlencode($name) . '" class="editor-form">';
+        if ($currentSlots === []) {
+            $currentSlots[] = ['id' => 0, 'parent' => null, 'tag' => 'div', 'class' => '', 'layout' => '', 'slot' => 'center'];
+        }
+
+        $containers = [];
+        foreach ($currentSlots as $idx => $item) {
+            if ($item['slot'] === '') {
+                $label = $item['tag'];
+                if ($item['class'] !== '') {
+                    $label .= '.' . $item['class'];
+                }
+                $containers[] = ['id' => $item['id'], 'label' => $label];
+            }
+        }
+
+        $action = '/admin/?p=scheme:edit&domain=' . urlencode($domain) . '&name=' . urlencode($name);
+        $form = '<form method="post" action="' . $action . '" class="editor-form">';
         $form .= $this->csrf->field();
 
-        $form .= '<div id="slots-container">';
-
-        if ($currentSlots === []) {
-            // Если пусто, показываем один слот по умолчанию
-            $currentSlots[] = ['slot' => 'center', 'tag' => 'div', 'class' => ''];
+        $form .= '<div class="editor-row editor-root-row" style="margin-bottom:10px;padding:10px;background:#f5f5f5;">';
+        $form .= '<strong style="margin-right:10px;">Корень:</strong>';
+        $form .= '<select name="root_tag" class="tag-select">';
+        foreach ($allowedTags as $t) {
+            $sel = $rootTag === $t ? ' selected' : '';
+            $form .= '<option value="' . htmlspecialchars($t) . '"' . $sel . '>&lt;' . htmlspecialchars($t) . '&gt;</option>';
         }
-
-        foreach ($currentSlots as $i => $item) {
-            $form .= VisualEditorRenderer::renderSlotRow($i, $item, $availableSlots);
-        }
-
+        $form .= '</select> ';
+        $form .= '<input type="text" name="root_class" class="content-input" value="' . htmlspecialchars($rootClass) . '" placeholder="CSS класс" />';
         $form .= '</div>';
 
-        $form .= '<div style="margin-top: 15px; display:flex; gap:10px;">';
-        $form .= '<button type="button" id="add-slot-btn" class="btn btn-outline">+ Добавить слот</button>';
+        $form .= '<div id="slots-container">';
+        foreach ($currentSlots as $i => $item) {
+            $form .= VisualEditorRenderer::renderSlotRow($i, $item, $availableSlots, $containers);
+        }
+        $form .= '</div>';
+
+        $form .= '<div style="margin-top:15px;display:flex;gap:10px;">';
+        $form .= '<button type="button" id="add-slot-btn" class="btn btn-outline">+ Добавить строку</button>';
         $form .= '<button type="submit" class="btn btn-primary">' . View::t('domain.save') . '</button>';
         $form .= '</div>';
         $form .= '</form>';
@@ -254,24 +268,113 @@ final class SchemeController extends BaseController
 
     /**
      * @param array<string, mixed> $node
-     * @param list<array{slot: string, tag: string, class: string}> $slots
+     * @param list<array{id:int, parent:?int, tag:string, class:string, layout:string, slot:string}> $rows
      */
-    private function collectSlots(array $node, array &$slots): void
+    private function flattenTree(array $node, array &$rows, ?int $parentId = null): int
     {
-        if (isset($node['slot']) && is_string($node['slot'])) {
-            $slots[] = [
-                'slot' => $node['slot'],
-                'tag' => (string)($node['tag'] ?? 'div'),
-                'class' => (string)($node['class'] ?? ''),
-            ];
-        }
-        if (isset($node['children']) && is_array($node['children'])) {
+        $id = count($rows);
+        $rows[] = [
+            'id' => $id,
+            'parent' => $parentId,
+            'tag' => (string)($node['tag'] ?? 'div'),
+            'class' => (string)($node['class'] ?? ''),
+            'layout' => (string)($node['layout'] ?? ''),
+            'slot' => (string)($node['slot'] ?? ''),
+        ];
+
+        if (!empty($node['children']) && is_array($node['children'])) {
             foreach ($node['children'] as $child) {
                 if (is_array($child)) {
-                    $this->collectSlots($child, $slots);
+                    $this->flattenTree($child, $rows, $id);
                 }
             }
         }
+        return $id;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $rows
+     * @param list<string> $availableSlots
+     * @param list<string> $allowedTags
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function rebuildTree(array $rows, array $availableSlots, array $allowedTags): array
+    {
+        $nodes = [];
+        $parents = [];
+
+        foreach ($rows as $formIdx => $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $realId = (int)($row['id'] ?? $formIdx);
+            $slotName = (string)($row['name'] ?? '');
+            $tag = (string)($row['tag'] ?? 'div');
+            if (!in_array($tag, $allowedTags, true)) {
+                $tag = 'div';
+            }
+            $class = trim((string)($row['class'] ?? ''));
+            $layout = (string)($row['layout'] ?? '');
+            $parentRaw = $row['parent'] ?? '';
+            $parentId = ($parentRaw === '' || $parentRaw === null) ? null : (int)$parentRaw;
+
+            if ($slotName === '') {
+                $node = ['tag' => $tag];
+                if ($class !== '') {
+                    $node['class'] = $class;
+                }
+                if (in_array($layout, ['vertical', 'horizontal'], true)) {
+                    $node['layout'] = $layout;
+                }
+            } else {
+                if (!in_array($slotName, $availableSlots, true)) {
+                    continue;
+                }
+                $node = ['tag' => $tag];
+                if ($class !== '') {
+                    $node['class'] = $class;
+                }
+                $node['slot'] = $slotName;
+            }
+
+            $nodes[$realId] = $node;
+            $parents[$realId] = $parentId;
+        }
+
+        $childrenOf = [];
+        $roots = [];
+        foreach ($nodes as $id => $_) {
+            $p = $parents[$id];
+            if ($p === null || $p === $id || !isset($nodes[$p]) || isset($nodes[$p]['slot'])) {
+                $roots[] = $id;
+            } else {
+                $childrenOf[$p][] = $id;
+            }
+        }
+
+        $visited = [];
+        $build = function (int $id) use (&$build, &$visited, $nodes, $childrenOf): array {
+            $node = $nodes[$id];
+            if (isset($visited[$id])) {
+                return $node;
+            }
+            $visited[$id] = true;
+            if (!empty($childrenOf[$id])) {
+                $node['children'] = [];
+                foreach ($childrenOf[$id] as $childId) {
+                    $node['children'][] = $build($childId);
+                }
+            }
+            unset($visited[$id]);
+            return $node;
+        };
+
+        $result = [];
+        foreach ($roots as $r) {
+            $result[] = $build($r);
+        }
+        return $result;
     }
 
     public function copy(Request $request): Response

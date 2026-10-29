@@ -64,11 +64,19 @@ final class VisualEditorRenderer
      * @param array<string, mixed> $item
      * @param list<string> $availableSlots
      */
-    public static function renderSlotRow(int $index, array $item, array $availableSlots): string
+    /**
+     * @param array{id?:int, parent?:?int, tag?:string, class?:string, layout?:string, slot?:string} $item
+     * @param list<string> $availableSlots
+     * @param list<array{id:int, label:string}> $containers
+     */
+    public static function renderSlotRow(int $index, array $item, array $availableSlots, array $containers = []): string
     {
-        $slotName = (string)($item['slot'] ?? 'center');
+        $rowId = (int)($item['id'] ?? $index);
+        $slotName = (string)($item['slot'] ?? '');
         $tag = (string)($item['tag'] ?? 'div');
         $class = (string)($item['class'] ?? '');
+        $layout = (string)($item['layout'] ?? '');
+        $parentId = $item['parent'] ?? null;
 
         $row = Builder::div('editor-row');
 
@@ -85,15 +93,53 @@ final class VisualEditorRenderer
         $moveDiv->append($downBtn);
         $row->append($moveDiv);
 
+        $inputId = Builder::el('input', true);
+        $inputId->attrs()->add('type', 'hidden');
+        $inputId->attrs()->add('name', "slots[{$index}][id]");
+        $inputId->attrs()->add('value', (string)$rowId);
+        $row->append($inputId);
+
+        $selectParent = Builder::el('select');
+        $selectParent->attrs()->classAdd('parent-select');
+        $selectParent->attrs()->add('name', "slots[{$index}][parent]");
+        $optRoot = Builder::el('option');
+        $optRoot->attrs()->add('value', '');
+        if ($parentId === null) {
+            $optRoot->attrs()->add('selected', 'selected');
+        }
+        $optRoot->content('Корень');
+        $selectParent->append($optRoot);
+        foreach ($containers as $c) {
+            if ($c['id'] === $rowId) {
+                continue;
+            }
+            $opt = Builder::el('option');
+            $opt->attrs()->add('value', (string)$c['id']);
+            if ($parentId === $c['id']) {
+                $opt->attrs()->add('selected', 'selected');
+            }
+            $opt->content('в #' . $c['id'] . ' ' . $c['label']);
+            $selectParent->append($opt);
+        }
+        $row->append($selectParent);
+
         $selectSlot = Builder::el('select');
         $selectSlot->attrs()->classAdd('type-select');
         $selectSlot->attrs()->add('name', "slots[{$index}][name]");
+        $optNone = Builder::el('option');
+        $optNone->attrs()->add('value', '');
+        if ($slotName === '') {
+            $optNone->attrs()->add('selected', 'selected');
+        }
+        $optNone->content('— Контейнер (без слота) —');
+        $selectSlot->append($optNone);
         foreach ($availableSlots as $as) {
             $opt = Builder::el('option');
             $opt->attrs()->add('value', $as);
             if ($slotName === $as) {
                 $opt->attrs()->add('selected', 'selected');
-            } $opt->content($as);
+            }
+            $opt->content($as);
             $selectSlot->append($opt);
         }
         $row->append($selectSlot);
@@ -106,7 +152,8 @@ final class VisualEditorRenderer
             $opt->attrs()->add('value', $t);
             if ($tag === $t) {
                 $opt->attrs()->add('selected', 'selected');
-            } $opt->content('<' . $t . '>');
+            }
+            $opt->content('<' . $t . '>');
             $selectTag->append($opt);
         }
         $row->append($selectTag);
@@ -118,6 +165,27 @@ final class VisualEditorRenderer
         $inputClass->attrs()->add('value', $class);
         $inputClass->attrs()->add('placeholder', 'CSS класс');
         $row->append($inputClass);
+
+        $selectLayout = Builder::el('select');
+        $selectLayout->attrs()->classAdd('layout-select');
+        $selectLayout->attrs()->add('name', "slots[{$index}][layout]");
+        $optNone = Builder::el('option');
+        $optNone->attrs()->add('value', '');
+        if ($layout === '') {
+            $optNone->attrs()->add('selected', 'selected');
+        }
+        $optNone->content('layout: —');
+        $selectLayout->append($optNone);
+        foreach (['vertical', 'horizontal'] as $l) {
+            $opt = Builder::el('option');
+            $opt->attrs()->add('value', $l);
+            if ($layout === $l) {
+                $opt->attrs()->add('selected', 'selected');
+            }
+            $opt->content('layout: ' . $l);
+            $selectLayout->append($opt);
+        }
+        $row->append($selectLayout);
 
         $btn = Builder::el('button');
         $btn->attrs()->classAdd('btn btn-danger remove-slot-btn remove-btn');
