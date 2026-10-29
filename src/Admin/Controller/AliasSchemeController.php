@@ -87,7 +87,7 @@ final class AliasSchemeController extends BaseController
                     ->submit(View::t('scheme.create_local'));
                 $card->append($form->build());
             } else {
-				$card->append(Message::error(View::t('scheme.global_not_found'))->build());
+                $card->append(Message::error(View::t('scheme.global_not_found'))->build());
             }
         }
 
