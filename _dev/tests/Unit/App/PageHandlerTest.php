@@ -73,7 +73,7 @@ final class PageHandlerTest extends TestCase
 
         return new RegionContext(
             new Request('GET', '/'),
-            new DomainContext('example.ru', 'example.ru', 'www', 'alpha.0.0', 'default', 'ru-RU', true),
+            new DomainContext('example.ru', 'example.ru', 'www', 'default', 'ru-RU', true),
             null,
             ['paths' => $paths],
         );

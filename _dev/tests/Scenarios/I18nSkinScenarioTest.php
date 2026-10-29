@@ -59,7 +59,7 @@ final class I18nSkinScenarioTest extends TestCase
 
     private function domain(string $lang = 'ru'): DomainContext
     {
-        return new DomainContext('example.ru', 'example.ru', 'www', 'alpha.0.0', 'default', $lang, true);
+        return new DomainContext('example.ru', 'example.ru', 'www', 'default', $lang, true);
     }
 
     public function testNegotiatorUrlPriority(): void

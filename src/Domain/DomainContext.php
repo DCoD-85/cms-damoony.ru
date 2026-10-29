@@ -10,7 +10,6 @@ final class DomainContext
         public readonly string $domain,
         public readonly string $real,
         public readonly string $allias,
-        public readonly string $logic,
         public readonly string $skin,
         public readonly string $language,
         public readonly bool $available,

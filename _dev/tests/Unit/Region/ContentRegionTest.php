@@ -20,7 +20,7 @@ final class ContentRegionTest extends TestCase
 
         $context = new RegionContext(
             new Request('GET', '/'),
-            new DomainContext('example.ru', 'example.ru', 'www', 'alpha.0.0', 'default', 'ru-ru', true),
+            new DomainContext('example.ru', 'example.ru', 'www', 'default', 'ru-ru', true),
         );
 
         self::assertSame('center', $region->name());

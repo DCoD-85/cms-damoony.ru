@@ -44,7 +44,7 @@ final class SchemeRendererTest extends TestCase
     {
         return new RegionContext(
             new Request('GET', '/'),
-            new DomainContext('example.ru', 'example.ru', 'www', 'alpha.0.0', 'default', 'ru-ru', true),
+            new DomainContext('example.ru', 'example.ru', 'www', 'default', 'ru-ru', true),
         );
     }
 

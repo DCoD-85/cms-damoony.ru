@@ -33,7 +33,6 @@ final class SchemeLoaderTest extends TestCase
             domain: 'example.ru',
             real: 'example.ru',
             allias: 'www',
-            logic: 'alpha.0.0',
             skin: 'default',
             language: 'ru',
             available: true,

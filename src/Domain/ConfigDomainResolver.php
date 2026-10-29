@@ -10,7 +10,6 @@ final class ConfigDomainResolver implements DomainResolverInterface
 {
     public function __construct(
         private readonly Config $site,
-        private readonly string $defaultLogic = 'alpha.0.0',
         private readonly string $defaultSkin = 'default',
         private readonly string $defaultLanguage = 'ru',
     ) {
@@ -47,7 +46,6 @@ final class ConfigDomainResolver implements DomainResolverInterface
                 domain: $host,
                 real: $host,
                 allias: '',
-                logic: $this->defaultLogic,
                 skin: $this->defaultSkin,
                 language: $this->defaultLanguage,
                 available: false,
@@ -79,7 +77,6 @@ final class ConfigDomainResolver implements DomainResolverInterface
             domain: $host,
             real: $real,
             allias: $allias,
-            logic: (string) $this->site->getByKey(['domains_logic', $real], $this->defaultLogic),
             skin: (string) $this->site->getByKey(['domains_skins', $real], $this->defaultSkin),
             language: $lang,
             available: $available,
