@@ -9,6 +9,7 @@ use Damoony\Cli\Commands\FillerNewCommand;
 use Damoony\Cli\Commands\FillerToggleCommand;
 use Damoony\Cli\Context;
 use Damoony\Core\Config;
+use Damoony\Files\Fs;
 use Damoony\Files\Paths;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
@@ -143,6 +144,133 @@ final class FillerController extends BaseController
         return Response::html($this->view->render($card, ['title' => View::t('filler.title')]));
     }
 
+    public function edit(Request $request): Response
+    {
+        $auth = $this->requireAuth();
+        if ($auth !== null) {
+            return $auth;
+        }
+
+        $domain = (string) $request->query('domain', '');
+        $allias = (string) $request->query('allias', '');
+        $block = (string) $request->query('block', '');
+
+        if ($domain === '' || $allias === '' || $block === '') {
+            return $this->redirect('/admin/?p=domain');
+        }
+
+        $blockDir = $this->paths->domain($domain) . '/.alliasglobal/' . $block;
+        if (!is_dir($blockDir)) {
+            return $this->redirect('/admin/?p=filler&domain=' . urlencode($domain) . '&allias=' . urlencode($allias));
+        }
+
+        $editFile = $blockDir . '/' . $block . '_' . $allias . '.edit.json';
+        $data = is_file($editFile) ? json_decode((string) file_get_contents($editFile), true) : [];
+        $blocks = is_array($data) && isset($data['blocks']) ? $data['blocks'] : [];
+
+        $card = Builder::div('admin-card');
+
+        $link = Builder::el('link', true);
+        $link->attrs()->add('rel', 'stylesheet');
+        $link->attrs()->add('href', '/media/admin/page-builder.css');
+        $card->append($link);
+
+        $script = Builder::el('script');
+        $script->attrs()->add('src', '/media/admin/page-builder.js');
+        $script->attrs()->add('defer', 'true');
+        $card->append($script);
+
+        $card->append(Builder::a('/admin/?p=filler&domain=' . urlencode($domain) . '&allias=' . urlencode($allias))->content(View::t('domain.bind_back')));
+        $card->append(Builder::h(1)->content(View::t('admin.filler.new_title') . ': ' . View::esc($block) . ' (' . View::esc($allias) . ')'));
+
+        $form = Builder::el('form');
+        $form->attrs()->add('method', 'post');
+        $form->attrs()->add('action', '/admin/?p=filler:save&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&block=' . urlencode($block));
+        $form->attrs()->classAdd('editor-form');
+        $form->append(Text::raw($this->csrf->field()));
+
+        $blocksContainer = Builder::div();
+        $blocksContainer->attrs()->add('id', 'blocks-container');
+
+        if ($blocks === []) {
+            $blocks = [['type' => 'text', 'content' => '']];
+        }
+        foreach ($blocks as $i => $b) {
+            $blocksContainer->append(Text::raw(\Damoony\Admin\Support\VisualEditorRenderer::renderBlockRow($i, $b)));
+        }
+        $form->append($blocksContainer);
+
+        $actionsDiv = Builder::div();
+        $actionsDiv->attrs()->styleAdd('margin-top: 15px; display: flex; gap: 10px;');
+
+        $addBtn = Builder::el('button');
+        $addBtn->attrs()->add('type', 'button');
+        $addBtn->attrs()->add('id', 'add-block-btn');
+        $addBtn->attrs()->classAdd('btn btn-outline');
+        $addBtn->content(View::t('admin.page.add_block'));
+        $actionsDiv->append($addBtn);
+
+        $saveBtn = Builder::el('button');
+        $saveBtn->attrs()->add('type', 'submit');
+        $saveBtn->attrs()->classAdd('btn btn-primary');
+        $saveBtn->content(View::t('domain.save'));
+        $actionsDiv->append($saveBtn);
+
+        $form->append($actionsDiv);
+        $card->append($form);
+
+        return Response::html($this->view->render($card, ['title' => View::t('admin.filler.new_title')]));
+    }
+
+    public function save(Request $request): Response
+    {
+        $auth = $this->requireAuth();
+        if ($auth !== null) {
+            return $auth;
+        }
+
+        $csrfErr = $this->requireCsrf($request);
+        if ($csrfErr !== null) {
+            return $csrfErr;
+        }
+
+        $domain = (string) $request->query('domain', '');
+        $allias = (string) $request->query('allias', '');
+        $block = (string) $request->query('block', '');
+
+        $blockDir = $this->paths->domain($domain) . '/.alliasglobal/' . $block;
+        if (!is_dir($blockDir)) {
+            return $this->redirect('/admin/?p=filler&domain=' . urlencode($domain) . '&allias=' . urlencode($allias));
+        }
+
+        $blocks = $request->post['blocks'] ?? [];
+        if (!is_array($blocks)) {
+            $blocks = [];
+        }
+
+        $cleanBlocks = [];
+        foreach ($blocks as $b) {
+            if (isset($b['type'], $b['content']) && trim((string)$b['content']) !== '') {
+                $cleanBlocks[] = ['type' => (string)$b['type'], 'content' => (string)$b['content']];
+            }
+        }
+
+        $editFile = $blockDir . '/' . $block . '_' . $allias . '.edit.json';
+        Fs::writeAtomic($editFile, json_encode(['blocks' => $cleanBlocks], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
+
+        $siteFile = $this->paths->siteConfig();
+        $site = Config::fromFile($siteFile)->all();
+        $realDomain = (string) $site['domains_real'][$domain];
+        $namespace = (string) ($site['domains_namespace'][$realDomain] ?? str_replace(['.', '-'], '_', $realDomain));
+
+        $compiler = new \Damoony\Region\RegionCompiler();
+        // Передаем суффикс '_www' для филлера
+        $php = $compiler->compile($namespace, $block, $cleanBlocks, '_' . $allias);
+
+        Fs::writeAtomic($blockDir . '/' . $block . '_' . $allias . '.php', $php);
+
+        return $this->redirect('/admin/?p=filler&domain=' . urlencode($domain) . '&allias=' . urlencode($allias));
+    }
     public function sync(Request $request): Response
     {
         $auth = $this->requireAuth();

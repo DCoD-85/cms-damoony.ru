@@ -9,9 +9,9 @@ final class RegionCompiler
     /**
      * @param list<array{type: string, content: string, level?: int}> $blocks
      */
-    public function compile(string $namespace, string $blockName, array $blocks): string
+    public function compile(string $namespace, string $blockName, array $blocks, string $classSuffix = ''): string
     {
-        $className = 'alliasglobal_' . $blockName;
+        $className = 'alliasglobal_' . $blockName . $classSuffix;
 
         $code = "<?php\n\ndeclare(strict_types=1);\n\n";
         $code .= "namespace {$namespace};\n\n";

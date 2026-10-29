@@ -1,7 +1,7 @@
 <?php
 
-declare(strict_types=1);
-
+declare(strict_types=1)
+r
 return [
     'admin.nav.domains' => '域名',
     'admin.nav.stubs' => '存根',
@@ -291,6 +291,22 @@ return [
     'error.403.message' => '您无权访问此页面。',
     'error.404.title' => '页面未找到',
     'error.404.message' => '请求的页面不存在。',
+    'error.429.title' => '请求过多',
+    'error.429.message' => '您在短时间内发送了太多请求。',
+    'error.429.retry' => '请等待 {minutes} 分钟后重试。',
+    'error.500.title' => '服务器错误',
+    'error.500.message' => '出错了。请稍后重试。',
+    'error.503.title' => '维护中',
+    'error.503.message' => '网站正在临时维护。',
+]; '请求的页面不存在。',
+    'error.429.title' => '请求过多',
+    'error.429.message' => '您在短时间内发送了太多请求。',
+    'error.429.retry' => '请等待 {minutes} 分钟后重试。',
+    'error.500.title' => '服务器错误',
+    'error.500.message' => '出错了。请稍后重试。',
+    'error.503.title' => '维护中',
+    'error.503.message' => '网站正在临时维护。',
+]; '请求的页面不存在。',
     'error.429.title' => '请求过多',
     'error.429.message' => '您在短时间内发送了太多请求。',
     'error.429.retry' => '请等待 {minutes} 分钟后重试。',

@@ -85,7 +85,7 @@ final class BlockController extends BaseController
         $header = Builder::div('page-header');
         $header->append(Builder::h(1)->content(View::t('tab.blocks')));
         $actions = Builder::div('page-actions');
-        $actions->append(Builder::a('/admin/?p=block:new&domain=' . urlencode($domain), 'btn btn-primary')->content(View::t('domain.add')));
+        $actions->append(Builder::a('/admin/?p=block:new&domain=' . urlencode($domain), 'btn btn-primary')->content(View::t('block.add')));
         $header->append($actions);
         $card->append($header);
 
@@ -234,6 +234,17 @@ final class BlockController extends BaseController
         $blocks = is_array($data) && isset($data['blocks']) ? $data['blocks'] : [];
 
         $card = Builder::div('admin-card');
+
+        $link = Builder::el('link', true);
+        $link->attrs()->add('rel', 'stylesheet');
+        $link->attrs()->add('href', '/media/admin/page-builder.css');
+        $card->append($link);
+
+        $script = Builder::el('script');
+        $script->attrs()->add('src', '/media/admin/page-builder.js');
+        $script->attrs()->add('defer', 'true');
+        $card->append($script);
+
         $card->append(Builder::a('/admin/?p=block&domain=' . urlencode($domain))->content(View::t('domain.bind_back')));
         $card->append(Builder::h(1)->content(View::t('block.edit_title') . ': ' . View::esc($name)));
 
