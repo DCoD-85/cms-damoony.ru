@@ -45,7 +45,9 @@ final class PageControllerTest extends TestCase
         $session->method('get')->willReturn($this->mockToken);
         $this->csrf = new Csrf($session);
 
-        $view = new View(new \Damoony\I18n\Translator('ru', 'ru', $this->root . '/lang'));
+        $translator = new \Damoony\I18n\Translator('ru', 'ru', $this->root . '/lang');
+        View::setLang($translator);
+        $view = new View('Test Admin');
 
         $this->controller = new PageController($auth, $this->csrf, $view, $paths);
     }
