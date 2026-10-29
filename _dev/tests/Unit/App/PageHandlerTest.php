@@ -141,7 +141,7 @@ final class PageHandlerTest extends TestCase
         self::assertSame(404, $r->status);
     }
 
-    public function testNullResultIsError(): void
+    public function testNullResultReturns204NoContent(): void
     {
         $this->writePage('ph_nul', 'algoritm_ph_nul', <<<'PHP'
             <?php
@@ -153,7 +153,7 @@ final class PageHandlerTest extends TestCase
 
         $h = new PageHandler($this->root, $this->resolver());
         $r = $h->handle(RouteMatch::found('algoritm_ph_nul', 'ph_nul'), $this->ctx());
-        self::assertSame(500, $r->status);
+        self::assertSame(204, $r->status);
     }
 
     public function testProdHidesExceptionMessage(): void
