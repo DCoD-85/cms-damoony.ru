@@ -74,8 +74,8 @@ return [
 
     'admin.msg.saved' => 'Изменения сохранены',
     'admin.msg.error' => 'Ошибка сохранения: {msg}',
-	
-	'admin.domain.new_title' => 'Добавить домен',
+    
+    'admin.domain.new_title' => 'Добавить домен',
     'admin.domain.new_domain' => 'Домен',
     'admin.domain.new_ns' => 'Namespace (опционально)',
     'admin.domain.new_submit' => 'Создать',
@@ -95,14 +95,17 @@ return [
     'admin.domain.det_new_folder' => 'Имя новой папки (если выбран шаблон или копия)',
     'admin.domain.det_submit' => 'Отвязать',
     'admin.domain.back' => 'Назад',
+    
+    'admin.domain.structure_issue' => 'Домен {domain}, алиас {alias}: {message}',
+    'admin.domain.structure_problems' => 'Обнаружены проблемы в структуре:',
 
-	'site.home' => 'Главная',
+    'site.home' => 'Главная',
     'site.about' => 'О нас',
     'site.docs' => 'Документация',
     'site.login' => 'Войти',
     'site.logout' => 'Выйти',
 
-	    'admin.profile.my_profile' => 'Мой профиль',
+    'admin.profile.my_profile' => 'Мой профиль',
     'admin.profile.title' => 'Профиль администратора',
     'admin.profile.tab_summary' => 'Сводка',
     'admin.profile.tab_logs' => 'Логирование',
@@ -125,10 +128,10 @@ return [
     'admin.profile.sec_err_match' => 'Новый пароль и подтверждение не совпадают',
     'admin.profile.sec_success' => 'Пароль успешно изменен',
 
-	'admin.profile.logs_clear' => 'Очистить',
+    'admin.profile.logs_clear' => 'Очистить',
     'admin.profile.logs_archive' => 'В архив',
 
-	'admin.stub.title' => 'Библиотека заглушек',
+    'admin.stub.title' => 'Библиотека заглушек',
     'admin.stub.add' => '+ Создать заглушку',
     'admin.stub.th_name' => 'Имя файла',
     'admin.stub.th_actions' => 'Действия',
@@ -167,13 +170,17 @@ return [
     'admin.allias.active' => 'Алиас активен',
     'admin.allias.skin' => 'Скин',
     'admin.allias.quick_links' => 'Управление контентом',
+    
+    'admin.allias.settings.active_skin' => 'Активный скин (по умолчанию)',
+    'admin.allias.settings.allow_skin' => 'Разрешить скин: {skin}',
+    'admin.allias.settings.lang_ru' => 'Русский (RU)',
 
-	'admin.allias.th_path' => 'Путь',
+    'admin.allias.th_path' => 'Путь',
     'admin.allias.empty' => 'Алиасов нет',
     'admin.allias.new_title' => 'Добавить алиас',
     'admin.allias.name_label' => 'Имя алиаса',
 
-	'admin.filler.title' => 'Блоки (Fillers)',
+    'admin.filler.title' => 'Блоки (Fillers)',
     'admin.filler.add' => '+ Создать Filler',
     'admin.filler.th_block' => 'Блок',
     'admin.filler.th_status' => 'Статус',
@@ -227,6 +234,10 @@ return [
     'admin.db.note_title' => 'Архитектура баз данных',
     'admin.db.note_text' => 'Damoony Engine использует единую базу данных для всех доменов и алиасов. Это обеспечивает высокую скорость, целостность данных и упрощает резервное копирование. Разделение баз на уровне алиасов не требуется.',
 
+    'admin.media.title' => 'Медиа: {dir}',
+    'admin.media.uploaded' => 'Файл загружен',
+    'admin.media.deleted' => 'Файл удален',
+
     'admin.editor.title' => 'Редактор',
     'admin.editor.back' => '← Назад',
     'admin.editor.file_saved' => 'Файл сохранён',
@@ -243,7 +254,7 @@ return [
     'admin.page.type_text' => 'Текст',
     'admin.page.type_img' => 'Картинка (URL)',
 
-	'admin.page.add' => '+ Добавить страницу',
+    'admin.page.add' => '+ Добавить страницу',
 
     'admin.block.all' => 'Все',
     'admin.block.type_visual' => 'Визуализация',

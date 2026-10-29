@@ -317,13 +317,13 @@ final class AlliasController extends BaseController
             ->add(Field::checkbox('available')->label(View::t('domain.avail_label'))->checked($available))
             ->add(Field::select('stub')->label(View::t('domain.stub_label'))->options($this->getStubOptions())->selected($stub))
             ->add(Field::datetime('until')->label(View::t('domain.until_label'))->hint(View::t('domain.until_hint'))->value($untilStr))
-            ->add(Field::select('active_skin')->label('Активный скин (по умолчанию)')->options($skinOptions)->selected($currentSkin));
+            ->add(Field::select('active_skin')->label(View::t('admin.allias.settings.active_skin'))->options($skinOptions)->selected($currentSkin));
 
         foreach ($skinOptions as $code => $label) {
-            $form->add(Field::checkbox('skin_' . $code)->label('Разрешить скин: ' . $label)->checked(in_array($code, $currentSkinsAllowed, true)));
+            $form->add(Field::checkbox('skin_' . $code)->label(View::t('admin.allias.settings.allow_skin', ['skin' => $label]))->checked(in_array($code, $currentSkinsAllowed, true)));
         }
 
-        $form->add(Field::checkbox('lang_ru')->label('Русский (RU)')->checked(in_array('ru', $currentLangs, true)))
+        $form->add(Field::checkbox('lang_ru')->label(View::t('admin.allias.settings.lang_ru'))->checked(in_array('ru', $currentLangs, true)))
              ->add(Field::checkbox('lang_en')->label('English (EN)')->checked(in_array('en', $currentLangs, true)))
              ->add(Field::checkbox('lang_zh')->label('中文 (ZH)')->checked(in_array('zh', $currentLangs, true)))
              ->submit(View::t('domain.save'));

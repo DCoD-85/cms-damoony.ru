@@ -59,13 +59,13 @@ final class MediaController extends BaseController
 
         // Хлебные крошки
         $breadcrumbs = Builder::div('breadcrumbs');
-        $breadcrumbs->append(Builder::a('/admin/?p=domain')->content('Домены'));
+        $breadcrumbs->append(Builder::a('/admin/?p=domain')->content(View::t('admin.nav.domains')));
         $breadcrumbs->append(Text::raw(' / '));
         $breadcrumbs->append(Builder::a('/admin/?p=domain:edit&domain=' . urlencode($domain))->content($domain));
         $card->append($breadcrumbs);
 
         $header = Builder::div('page-header');
-        $header->append(Builder::h(1)->content('Медиа: ' . View::esc($dirName)));
+        $header->append(Builder::h(1)->content(View::t('admin.media.title', ['dir' => View::esc($dirName)])));
         $card->append($header);
 
         if ($domain !== '') {
@@ -73,10 +73,10 @@ final class MediaController extends BaseController
         }
 
         if ($request->query('saved')) {
-            $card->append(Message::success('Файл загружен')->build());
+            $card->append(Message::success(View::t('admin.media.uploaded'))->build());
         }
         if ($request->query('deleted')) {
-            $card->append(Message::success('Файл удален')->build());
+            $card->append(Message::success(View::t('admin.media.deleted'))->build());
         }
 
         // Форма загрузки

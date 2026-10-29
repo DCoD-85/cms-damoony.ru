@@ -75,6 +75,36 @@ return [
     'admin.msg.saved' => '更改已保存',
     'admin.msg.error' => '保存错误: {msg}',
 
+    'admin.domain.new_title' => '添加域名',
+    'admin.domain.new_domain' => '域名',
+    'admin.domain.new_ns' => '命名空间 (可选)',
+    'admin.domain.new_submit' => '创建',
+    'admin.domain.bind_attach_title' => '将域名绑定到 {domain}',
+    'admin.domain.bind_new' => '新域名',
+    'admin.domain.bind_new_hint' => '输入名称以创建新绑定。',
+    'admin.domain.bind_from' => '或者从其他域名转移',
+    'admin.domain.bind_from_no' => '— 不转移 —',
+    'admin.domain.bind_attach_submit' => '绑定',
+    'admin.domain.bind_detach_title' => '解绑域名: {domain}',
+    'admin.domain.det_act_delete' => '删除绑定',
+    'admin.domain.det_act_delete_hint' => '域名将停止打开此网站。',
+    'admin.domain.det_act_template' => '从模板创建新逻辑',
+    'admin.domain.det_act_template_hint' => '创建一个包含基本设置的干净文件夹。',
+    'admin.domain.det_act_copy' => '复制当前逻辑',
+    'admin.domain.det_act_copy_hint' => '将当前网站的所有文件转移到新文件夹。',
+    'admin.domain.det_new_folder' => '新文件夹名称 (如果选择了模板或复制)',
+    'admin.domain.det_submit' => '解绑',
+    'admin.domain.back' => '返回',
+
+    'admin.domain.structure_issue' => '域名 {domain}, 别名 {alias}: {message}',
+    'admin.domain.structure_problems' => '检测到结构问题:',
+
+    'site.home' => '首页',
+    'site.about' => '关于',
+    'site.docs' => '文档',
+    'site.login' => '登录',
+    'site.logout' => '退出',
+
     'admin.profile.my_profile' => '我的个人资料',
     'admin.profile.title' => '管理员个人资料',
     'admin.profile.tab_summary' => '摘要',
@@ -141,6 +171,10 @@ return [
     'admin.allias.skin' => '皮肤',
     'admin.allias.quick_links' => '内容管理',
 
+    'admin.allias.settings.active_skin' => '活动皮肤 (默认)',
+    'admin.allias.settings.allow_skin' => '允许皮肤: {skin}',
+    'admin.allias.settings.lang_ru' => '俄语 (RU)',
+
     'admin.allias.th_path' => '路径',
     'admin.allias.empty' => '无别名',
     'admin.allias.new_title' => '添加别名',
@@ -200,6 +234,10 @@ return [
     'admin.db.note_title' => '数据库架构',
     'admin.db.note_text' => 'Damoony Engine 为所有域名和别名使用单一数据库。这确保了高性能、数据完整性和简化的备份。无需为每个别名单独建立数据库。',
 
+    'admin.media.title' => '媒体: {dir}',
+    'admin.media.uploaded' => '文件已上传',
+    'admin.media.deleted' => '文件已删除',
+
     'admin.editor.title' => '编辑器',
     'admin.editor.back' => '← 返回',
     'admin.editor.file_saved' => '文件已保存',
@@ -216,7 +254,7 @@ return [
     'admin.page.type_text' => '文本',
     'admin.page.type_img' => '图片 (URL)',
 
-	'admin.page.add' => '+ 添加页面',
+    'admin.page.add' => '+ 添加页面',
 
     'admin.block.all' => '全部',
     'admin.block.type_visual' => '可视化',

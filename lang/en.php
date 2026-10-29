@@ -75,7 +75,7 @@ return [
     'admin.msg.saved' => 'Changes saved',
     'admin.msg.error' => 'Save error: {msg}',
 
-	'admin.domain.new_title' => 'Add domain',
+    'admin.domain.new_title' => 'Add domain',
     'admin.domain.new_domain' => 'Domain',
     'admin.domain.new_ns' => 'Namespace (optional)',
     'admin.domain.new_submit' => 'Create',
@@ -95,14 +95,17 @@ return [
     'admin.domain.det_new_folder' => 'New folder name (if template or copy is selected)',
     'admin.domain.det_submit' => 'Detach',
     'admin.domain.back' => 'Back',
-	
-	'site.home' => 'Home',
+    
+    'admin.domain.structure_issue' => 'Domain {domain}, alias {alias}: {message}',
+    'admin.domain.structure_problems' => 'Structure problems detected:',
+
+    'site.home' => 'Home',
     'site.about' => 'About',
     'site.docs' => 'Documentation',
     'site.login' => 'Sign in',
     'site.logout' => 'Sign out',
 
-	    'admin.profile.my_profile' => 'My profile',
+    'admin.profile.my_profile' => 'My profile',
     'admin.profile.title' => 'Admin profile',
     'admin.profile.tab_summary' => 'Summary',
     'admin.profile.tab_logs' => 'Logs',
@@ -168,6 +171,10 @@ return [
     'admin.allias.skin' => 'Skin',
     'admin.allias.quick_links' => 'Content management',
 
+    'admin.allias.settings.active_skin' => 'Active skin (default)',
+    'admin.allias.settings.allow_skin' => 'Allow skin: {skin}',
+    'admin.allias.settings.lang_ru' => 'Russian (RU)',
+
     'admin.allias.th_path' => 'Path',
     'admin.allias.empty' => 'No aliases',
     'admin.allias.new_title' => 'Add alias',
@@ -227,6 +234,10 @@ return [
     'admin.db.note_title' => 'Database Architecture',
     'admin.db.note_text' => 'Damoony Engine uses a single database for all domains and aliases. This ensures high performance, data integrity, and simplifies backups. Per-alias databases are not required.',
 
+    'admin.media.title' => 'Media: {dir}',
+    'admin.media.uploaded' => 'File uploaded',
+    'admin.media.deleted' => 'File deleted',
+
     'admin.editor.title' => 'Editor',
     'admin.editor.back' => '← Back',
     'admin.editor.file_saved' => 'File saved',
@@ -243,7 +254,7 @@ return [
     'admin.page.type_text' => 'Text',
     'admin.page.type_img' => 'Image (URL)',
 
-	'admin.page.add' => '+ Add page',
+    'admin.page.add' => '+ Add page',
 
     'admin.block.all' => 'All',
     'admin.block.type_visual' => 'UI',
