@@ -246,14 +246,14 @@ return [
 	'admin.page.add' => '+ Add page',
 
     'admin.block.all' => 'All',
-    'admin.block.type_ui' => 'UI',
-    'admin.block.type_logic' => 'Logic',
+    'admin.block.type_visual' => 'UI',
+    'admin.block.type_script' => 'Logic',
     'admin.block.type_mixed' => 'Mixed',
     'admin.block.th_type' => 'Type',
     'admin.block.create_title' => 'Create block',
     'admin.block.type_label' => 'Block type',
-    'admin.block.opt_ui' => 'UI (layout only)',
-    'admin.block.opt_logic' => 'Logic (data only)',
+    'admin.block.opt_visual' => 'UI (layout only)',
+    'admin.block.opt_script' => 'Logic (data only)',
     'admin.block.opt_mixed' => 'Mixed (data + layout)',
 
     'admin.overview.title' => 'System Overview',

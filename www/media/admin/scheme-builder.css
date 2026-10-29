@@ -1,0 +1,68 @@
+.sb-layout { display: flex; gap: 20px; align-items: stretch; min-height: 85vh; }
+.sb-col { background: #f9f9f9; border: 1px solid #ddd; border-radius: 6px; padding: 15px; display: flex; flex-direction: column; }
+.sb-col-left { flex: 1; min-width: 350px; gap: 15px; }
+
+/* 3 зоны в левой колонке */
+.sb-zone, .sb-canvas { 
+    flex: 1; /* Каждая зона занимает 1/3 */
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* Внутренний скролл */
+    border-radius: 6px; 
+    padding: 10px; 
+    background: #fff;
+    border: 2px dashed #ccc;
+}
+.sb-zone h4, .sb-canvas h4 { 
+    margin: 0 0 10px 0; 
+    font-size: 12px; 
+    color: #666; 
+    text-transform: uppercase; 
+    position: sticky; 
+    top: 0; 
+    background: inherit; 
+    z-index: 5; 
+    padding-bottom: 5px;
+}
+
+/* Стили для конкретных зон */
+.sb-zone-available { border-color: #9ca3af; }
+.sb-zone-data { border-color: #fca5a5; background: #fef2f2; }
+.sb-canvas { border-color: #93c5fd; background: #eff6ff; }
+
+/* Блоки */
+.sb-item { padding: 8px; margin-bottom: 5px; background: #fff; border: 1px solid #ccc; border-radius: 4px; cursor: grab; font-size: 13px; flex-shrink: 0; }
+.sb-item-script { border-left: 4px solid #ef4444; color: #b91c1c; }
+.sb-item-visual { border-left: 4px solid #3b82f6; color: #1d4ed8; }
+.sb-item-logic { border-left: 4px solid #10b981; color: #047857; }
+
+/* Дерево внутри 3-й зоны */
+.sb-node-wrapper { position: relative; margin: 8px 0; flex-shrink: 0; }
+.sb-node { position: relative; border-left: 4px solid #10b981; }
+.sb-node.sb-type-visual { border-left-color: #3b82f6; }
+.sb-node.sb-type-logic { border-left-color: #10b981; }
+
+.sb-node-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #fff; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+.sb-node.selected > .sb-node-header { background: #dbeafe; border-color: #3b82f6; outline: 1px solid #3b82f6; }
+
+.sb-delete-node { background: none; border: none; color: #ef4444; font-weight: bold; cursor: pointer; padding: 0 5px; opacity: 0; transition: opacity 0.2s; }
+.sb-node-header:hover .sb-delete-node { opacity: 1; }
+
+.sb-children { margin-left: 20px; padding-left: 10px; border-left: 2px dashed #93c5fd; min-height: 20px; }
+.sb-children.drag-over-inside { background: #dbeafe; border-left: 2px solid #3b82f6; outline: 2px dashed #3b82f6; outline-offset: -2px; }
+
+.sb-node-wrapper.drag-over-header:not(.drag-after)::before,
+.sb-node-wrapper.drag-over-header.drag-after::after {
+    content: ''; position: absolute; left: 0; right: 0; height: 4px; background: #3b82f6; border-radius: 2px; z-index: 10;
+}
+.sb-node-wrapper.drag-over-header:not(.drag-after)::before { top: -4px; }
+.sb-node-wrapper.drag-over-header.drag-after::after { bottom: -4px; }
+
+/* Правая колонка (свойства) */
+.sb-col-right { flex: 0 0 250px; }
+.sb-prop-group { margin-bottom: 15px; }
+.sb-prop-group label { display: block; font-weight: bold; font-size: 12px; margin-bottom: 5px; }
+.sb-prop-group input, .sb-prop-group select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+
+/* 3-я колонка (файл) */
+.sb-col-file { flex: 0 0 300px; background: #1e1e1e; color: #d4d4d4; font-family: monospace; }

@@ -1,0 +1,72 @@
+{
+    "fields": [
+        {
+            "name": "bottom",
+            "type": "logic"
+        },
+        {
+            "name": "center",
+            "type": "logic"
+        },
+        {
+            "name": "footer",
+            "type": "logic"
+        },
+        {
+            "name": "left",
+            "type": "logic"
+        },
+        {
+            "name": "policy",
+            "type": "logic"
+        },
+        {
+            "name": "right",
+            "type": "logic"
+        },
+        {
+            "name": "top",
+            "type": "logic"
+        }
+    ],
+    "scheme": {
+        "children": [
+            {
+                "tag": "div",
+                "slot": "top",
+                "type": "logic"
+            },
+            {
+                "tag": "div",
+                "slot": "left",
+                "type": "logic"
+            },
+            {
+                "tag": "div",
+                "slot": "center",
+                "type": "logic"
+            },
+            {
+                "tag": "div",
+                "slot": "right",
+                "type": "logic"
+            },
+            {
+                "tag": "div",
+                "slot": "bottom",
+                "type": "logic"
+            },
+            {
+                "tag": "div",
+                "slot": "footer",
+                "type": "logic"
+            },
+            {
+                "tag": "div",
+                "slot": "policy",
+                "type": "logic"
+            }
+        ],
+        "scripts": []
+    }
+}

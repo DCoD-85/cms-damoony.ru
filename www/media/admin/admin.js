@@ -53,50 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
         editor.setSize(null, 600);
     }
 
-    // 3. Визуальный редактор схем (добавление/удаление слотов)
-    const slotsContainer = document.getElementById('slots-container');
-    const addSlotBtn = document.getElementById('add-slot-btn');
-
-    if (slotsContainer && addSlotBtn) {
-        addSlotBtn.addEventListener('click', () => {
-            const slotIndex = slotsContainer.children.length;
-            const firstRow = slotsContainer.querySelector('.editor-row');
-            
-            if (!firstRow) return; // Если нет строки-шаблона
-
-            // Клонируем существующую строку со всеми полями
-            const newRow = firstRow.cloneNode(true);
-            
-            newRow.querySelectorAll('select, input').forEach(el => {
-                // 1. Меняем индексы в name (slots[0] -> slots[N])
-                if (el.name) {
-                    el.name = el.name.replace(/slots\[\d+\]/, `slots[${slotIndex}]`);
-                }
-                
-                // 2. Генерируем уникальный ID для новой строки 
-                // (используем timestamp, чтобы он точно не пересекся с серверными 0, 1, 2)
-                if (el.type === 'hidden' && el.name.endsWith('[id]')) {
-                    el.value = Date.now();
-                }
-                
-                // 3. Сбрасываем значения для новой строки по умолчанию
-                if (el.classList.contains('parent-select')) el.selectedIndex = 0;
-                if (el.classList.contains('type-select')) el.selectedIndex = 0;
-                if (el.classList.contains('content-input')) el.value = '';
-                if (el.classList.contains('layout-select')) el.selectedIndex = 0;
-            });
-
-            slotsContainer.appendChild(newRow);
-        });
-
-        slotsContainer.addEventListener('click', (e) => {
-            if (e.target.classList.contains('remove-slot-btn')) {
-                e.target.closest('.editor-row').remove();
-            }
-        });
-    }
-
-    // 4. Сортировка (Вверх/Вниз) — работает для схем и страниц
+    // 3. Сортировка строк (Вверх/Вниз) — работает для страниц и других форм
     document.addEventListener('click', function(e) {
         if (e.target.closest('.move-up-btn')) {
             const row = e.target.closest('.editor-row');
@@ -112,14 +69,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 5. Удаление блоков (в любом контейнере)
+    // 4. Удаление блоков (в формах страниц)
     document.addEventListener('click', function(e) {
         if (e.target.classList.contains('remove-block-btn')) {
-            e.target.closest('.editor-row').remove();
+            const row = e.target.closest('.editor-row');
+            if (row) row.remove();
         }
     });
 
-    // 6. Переключение статуса слота (disabled/global/local) в редакторе страниц
+    // 5. Переключение статуса слота в визуальном редакторе СТРАНИЦ (disabled/global/local)
     document.addEventListener('change', function(e) {
         if (e.target.classList.contains('slot-status-select')) {
             const card = e.target.closest('.editor-card');
@@ -130,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 7. Добавление блока внутри конкретного слота (когда статус = local)
+    // 6. Добавление блока внутри слота СТРАНИЦЫ (когда статус = local)
     document.addEventListener('click', function(e) {
         if (e.target.classList.contains('add-slot-block-btn')) {
             const btn = e.target;

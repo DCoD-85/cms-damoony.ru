@@ -246,14 +246,14 @@ return [
 	'admin.page.add' => '+ Добавить страницу',
 
     'admin.block.all' => 'Все',
-    'admin.block.type_ui' => 'Визуализация',
-    'admin.block.type_logic' => 'Скрипты',
+    'admin.block.type_visual' => 'Визуализация',
+    'admin.block.type_script' => 'Скрипты',
     'admin.block.type_mixed' => 'Реализация',
     'admin.block.th_type' => 'Тип',
     'admin.block.create_title' => 'Создать блок',
     'admin.block.type_label' => 'Тип блока',
-    'admin.block.opt_ui' => 'Визуализация (только верстка)',
-    'admin.block.opt_logic' => 'Скрипт (только данные)',
+    'admin.block.opt_visual' => 'Визуализация (только верстка)',
+    'admin.block.opt_script' => 'Скрипт (только данные)',
     'admin.block.opt_mixed' => 'Реализация (данные + верстка)',
 
     'admin.overview.title' => 'Обзор системы',

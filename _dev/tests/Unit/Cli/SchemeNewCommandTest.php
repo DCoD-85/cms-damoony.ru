@@ -66,8 +66,8 @@ final class SchemeNewCommandTest extends TestCase
 
         $data = require $file;
         self::assertIsArray($data);
-        self::assertSame('layout-visuo', $data['class']);
-        self::assertCount(3, $data['children']);
+        self::assertSame('layout', $data['class']);
+        self::assertCount(0, $data['children']);
 
         $manifest = json_decode((string) file_get_contents($this->root . '/app/example.ru/.alliasscheme/schemes.json'), true);
         self::assertTrue($manifest['schemes']['visuo']['enabled']);

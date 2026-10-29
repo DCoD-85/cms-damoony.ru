@@ -127,7 +127,7 @@ final class VisualEditorRenderer
         $selectSlot->attrs()->classAdd('type-select');
         $selectSlot->attrs()->add('name', "slots[{$index}][name]");
         $optNone = Builder::el('option');
-        $optNone->attrs()->add('value', '');
+        $optNone->attrs()->add('value', '', true);
         if ($slotName === '') {
             $optNone->attrs()->add('selected', 'selected');
         }
@@ -170,7 +170,7 @@ final class VisualEditorRenderer
         $selectLayout->attrs()->classAdd('layout-select');
         $selectLayout->attrs()->add('name', "slots[{$index}][layout]");
         $optNone = Builder::el('option');
-        $optNone->attrs()->add('value', '');
+        $optNone->attrs()->add('value', '', true);
         if ($layout === '') {
             $optNone->attrs()->add('selected', 'selected');
         }

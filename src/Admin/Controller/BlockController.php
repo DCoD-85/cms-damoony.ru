@@ -95,8 +95,8 @@ final class BlockController extends BaseController
         $tabs = Builder::div('nav-tabs');
         $types = [
             'all' => View::t('block.all'),
-            'ui' => View::t('block.type_ui'),
-            'logic' => View::t('block.type_logic'),
+            'script' => View::t('block.type_script'),
+            'visual' => View::t('block.type_visual'),
             'mixed' => View::t('block.type_mixed'),
         ];
         foreach ($types as $code => $label) {

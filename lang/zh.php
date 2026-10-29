@@ -219,14 +219,14 @@ return [
 	'admin.page.add' => '+ 添加页面',
 
     'admin.block.all' => '全部',
-    'admin.block.type_ui' => '可视化',
-    'admin.block.type_logic' => '脚本',
+    'admin.block.type_visual' => '可视化',
+    'admin.block.type_script' => '脚本',
     'admin.block.type_mixed' => '实现',
     'admin.block.th_type' => '类型',
     'admin.block.create_title' => '创建区块',
     'admin.block.type_label' => '区块类型',
-    'admin.block.opt_ui' => '可视化 (仅布局)',
-    'admin.block.opt_logic' => '脚本 (仅数据)',
+    'admin.block.opt_visual' => '可视化 (仅布局)',
+    'admin.block.opt_script' => '脚本 (仅数据)',
     'admin.block.opt_mixed' => '实现 (数据 + 布局)',
 
     'admin.overview.title' => '系统概览',

@@ -21,7 +21,6 @@ final class SchemeNewCommand implements CommandInterface
     {
         return 'scheme:new';
     }
-
     public function description(): string
     {
         return 'Создать схему домена';
@@ -30,7 +29,6 @@ final class SchemeNewCommand implements CommandInterface
     public function run(array $args, Context $context): Result
     {
         $r = new Result();
-
         $domain = $args['domain'] ?? '';
         $name = $args['name'] ?? '';
 
@@ -55,30 +53,67 @@ final class SchemeNewCommand implements CommandInterface
         }
 
         $schemesDir = $this->paths->domain($domain) . '/.alliasscheme';
-        $schemeFile = $schemesDir . '/' . $name . '.data.php';
+        $editorFile = $schemesDir . '/' . $name . '.editor.json';
+        $dataFile = $schemesDir . '/' . $name . '.data.php';
 
-        if (Fs::isFile($schemeFile)) {
+        if (Fs::isFile($editorFile) || Fs::isFile($dataFile)) {
             $r->error('Схема уже существует');
             return $r;
         }
 
         Fs::mkdir($schemesDir);
 
-        $data = "<?php\n\nreturn [\n    'tag' => 'div',\n    'class' => 'layout-{$name}',\n    'layout' => 'vertical',\n    'children' => [\n        ['tag' => 'div', 'class' => 'top'],\n        ['tag' => 'div', 'class' => 'center'],\n        ['tag' => 'div', 'class' => 'bottom'],\n    ],\n];\n";
-        Fs::writeAtomic($schemeFile, $data);
-        $r->file(Fs::rel($schemeFile, $this->paths->root()));
+        // Сканируем доступные блоки
+        $blocksDir = $this->paths->domain($domain) . '/.alliasglobal';
+        $fields = [];
 
+        if (is_dir($blocksDir)) {
+            $types = [];
+            $jsonFile = $blocksDir . '/blocks.json';
+            if (is_file($jsonFile)) {
+                $json = json_decode((string)file_get_contents($jsonFile), true);
+                if (is_array($json)) {
+                    foreach ($json as $k => $v) {
+                        if (isset($v['type'])) {
+                            $types[$k] = $v['type'];
+                        }
+                    }
+                }
+            }
+
+            $dirs = array_filter(scandir($blocksDir) ?: [], fn ($d) => $d !== '.' && $d !== '..' && is_dir($blocksDir . '/' . $d));
+            foreach ($dirs as $bName) {
+                $engineType = $types[$bName] ?? 'mixed';
+                $fields[] = ['name' => $bName, 'type' => $engineType];
+            }
+        }
+        usort($fields, fn ($a, $b) => strcmp($a['name'], $b['name']));
+
+        // 1. Создаем editor.json
+        $editorData = [
+            'fields' => $fields,
+            'scheme' => [
+                'children' => [],
+                'scripts' => [],
+            ],
+        ];
+        Fs::writeAtomic($editorFile, json_encode($editorData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
+
+        // 2. Создаем пустой data.php
+        $data = "<?php\n\nreturn [\n    'tag' => 'div',\n    'class' => 'layout',\n    'children' => [],\n    'scripts' => [],\n];\n";
+        Fs::writeAtomic($dataFile, $data);
+
+        // 3. Обновляем schemes.json
         $manifestFile = $schemesDir . '/schemes.json';
-        $manifest = is_file($manifestFile)
-            ? json_decode((string) file_get_contents($manifestFile), true)
-            : [];
+        $manifest = is_file($manifestFile) ? json_decode((string) file_get_contents($manifestFile), true) : [];
         if (!is_array($manifest)) {
             $manifest = [];
         }
         $manifest['schemes'][$name] = ['enabled' => true];
-        Fs::writeAtomic($manifestFile, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
-        $r->file(Fs::rel($manifestFile, $this->paths->root()));
+        Fs::writeAtomic($manifestFile, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
 
+        $r->file(Fs::rel($editorFile, $this->paths->root()));
+        $r->file(Fs::rel($dataFile, $this->paths->root()));
         $context->step('Схема создана', true, $name);
 
         return $r;

@@ -35,7 +35,7 @@ final class BlockNewCommand implements CommandInterface
         $name = $args['name'] ?? '';
         $type = (string)($args['type'] ?? 'mixed');
 
-        if (!in_array($type, ['logic', 'ui', 'mixed'], true)) {
+        if (!in_array($type, ['script', 'visual', 'mixed'], true)) {
             $r->error('Некорректный тип блока (logic, ui, mixed)');
             return $r;
         }
