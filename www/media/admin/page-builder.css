@@ -1,0 +1,15 @@
+.pb-layout { display: flex; gap: 20px; align-items: flex-start; margin-top: 20px; }
+.pb-canvas { flex: 1; display: flex; flex-direction: column; gap: 15px; background: #f9f9f9; padding: 15px; border-radius: 6px; border: 1px solid #ddd; min-height: 400px; }
+.pb-tools { flex: 0 0 200px; background: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 6px; position: sticky; top: 20px; }
+
+.pb-slot { background: #fff; border: 1px solid #ccc; border-radius: 6px; overflow: hidden; }
+.pb-slot-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #e5e7eb; border-bottom: 1px solid #ccc; font-weight: bold; }
+.pb-slot-body { padding: 15px; min-height: 80px; }
+.pb-slot-body.disabled { background: #fee2e2; color: #b91c1c; text-align: center; font-style: italic; padding: 30px 15px; }
+.pb-slot-body.drag-over { background: #eff6ff; outline: 2px dashed #3b82f6; outline-offset: -5px; }
+
+.pb-block { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; margin-bottom: 8px; cursor: grab; }
+.pb-block input { flex: 1; margin: 0 10px; padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
+
+.pb-tool { padding: 10px; background: #fff; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 10px; cursor: grab; text-align: center; font-weight: bold; color: #4b5563; }
+.pb-tool:hover { background: #f3f4f6; }
