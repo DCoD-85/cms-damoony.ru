@@ -100,7 +100,7 @@ final class PageHandler implements PageHandlerInterface
             return Response::html($doc->release());
         }
 
-        return Response::noContent();
+        return Response::text('', 204);
     }
 
     private function applySkin(DomainContext $domain, RegionContext $context): void
