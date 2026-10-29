@@ -220,6 +220,12 @@ final class PageController extends BaseController
         $domain = (string) $request->query('domain', '');
         $allias = (string) $request->query('allias', 'www');
         $path = (string) $request->query('path', '');
+        $path = trim($path, '/'); // Убираем лишние слэши по краям
+
+        // Блокируем Directory Traversal (выход за пределы папки)
+        if (str_contains($path, '..')) {
+            return $this->redirect('/admin/?p=page&domain=' . urlencode($domain) . '&allias=' . urlencode($allias));
+        }
 
         if ($domain === '') {
             return $this->redirect('/admin/?p=domain');
