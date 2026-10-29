@@ -9,6 +9,7 @@ use Damoony\Admin\View;
 use Damoony\Files\Paths;
 use Damoony\Http\Request;
 use Damoony\Security\Csrf;
+use Damoony\Session\SessionInterface;
 use PHPUnit\Framework\TestCase;
 
 final class PageControllerTest extends TestCase
@@ -16,6 +17,7 @@ final class PageControllerTest extends TestCase
     private string $root;
     private PageController $controller;
     private Csrf $csrf;
+    private string $mockToken = 'test_token_123';
 
     protected function setUp(): void
     {
@@ -38,9 +40,10 @@ final class PageControllerTest extends TestCase
         $auth = $this->createMock(\Damoony\Admin\AuthInterface::class);
         $auth->method('isLoggedIn')->willReturn(true);
 
-        $this->csrf = $this->createMock(Csrf::class);
-        $this->csrf->method('field')->willReturn('<input type="hidden" name="_csrf" value="mock">');
-        $this->csrf->method('check')->willReturn(true);
+        // Создаем мок сессии для реального Csrf
+        $session = $this->createMock(SessionInterface::class);
+        $session->method('get')->willReturn($this->mockToken);
+        $this->csrf = new Csrf($session);
 
         $view = new View(new \Damoony\I18n\Translator('ru', 'ru', $this->root . '/lang'));
 
@@ -90,7 +93,9 @@ final class PageControllerTest extends TestCase
             'auth' => true,
         ]);
 
+        // Передаем правильный CSRF токен
         $req = new Request('POST', '/admin/?p=page:save&domain=example.ru&allias=www&path=about', [
+            '_csrf' => $this->mockToken,
             'page_json' => $json,
         ]);
 
