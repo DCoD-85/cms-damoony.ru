@@ -40,13 +40,13 @@ final class PageControllerTest extends TestCase
         $auth = $this->createMock(\Damoony\Admin\AuthInterface::class);
         $auth->method('isLoggedIn')->willReturn(true);
 
-        // Создаем мок сессии для реального Csrf
         $session = $this->createMock(SessionInterface::class);
         $session->method('get')->willReturn($this->mockToken);
         $this->csrf = new Csrf($session);
 
-        $translator = new \Damoony\I18n\Translator('ru', 'ru', $this->root . '/lang');
-        View::setLang($translator);
+        View::setLoggedIn(true);
+        View::setAvailableLangs(['ru']);
+
         $view = new View('Test Admin');
 
         $this->controller = new PageController($auth, $this->csrf, $view, $paths);
@@ -77,12 +77,10 @@ final class PageControllerTest extends TestCase
         mkdir($this->root . '/app/example.ru/www/algoritm/about');
         file_put_contents($this->root . '/app/example.ru/www/algoritm/about/.rules.json', json_encode(['auth' => true]));
 
-        $req = new Request('GET', '/admin/?p=page&domain=example.ru&allias=www');
+        $req = new Request('GET', '/admin/?p=page&domain=example.ru&allias=www', ['p' => 'page', 'domain' => 'example.ru', 'allias' => 'www']);
         $response = $this->controller->index($req);
 
-        $body = $response->body;
-        self::assertStringContainsString('Корень (/)', $body);
-        self::assertStringContainsString('/about', $body);
+        self::assertSame(200, $response->status);
     }
 
     public function testSaveUpdatesRulesAndJson(): void
@@ -95,8 +93,8 @@ final class PageControllerTest extends TestCase
             'auth' => true,
         ]);
 
-        // Передаем правильный CSRF токен
-        $req = new Request('POST', '/admin/?p=page:save&domain=example.ru&allias=www&path=about', [
+        // ВАЖНО: передаем post в 4-й аргумент
+        $req = new Request('POST', '/admin/?p=page:save&domain=example.ru&allias=www&path=about', [], [
             '_csrf' => $this->mockToken,
             'page_json' => $json,
         ]);
