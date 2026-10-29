@@ -48,15 +48,15 @@ final class StructureCheckCommand implements CommandInterface
                         continue;
                     }
 
-                    $issues = $checker->checkAllias((string)$domain, (string)$allias);
+                    $issues = $checker->checkAllias((string)$domain, (string)$mapped);
                     if ($issues !== []) {
                         $totalIssues += count($issues);
-                        $context->step("Алиас: {$domain} / {$allias}", false);
+                        $context->step("Алиас: {$domain} / {$mapped}", false);
                         foreach ($issues as $issue) {
                             $context->step('  - ' . $issue['message'], false);
                         }
                     } else {
-                        $context->step("Алиас: {$domain} / {$allias} — OK", true);
+                        $context->step("Алиас: {$domain} / {$mapped} — OK", true);
                     }
                 }
             }

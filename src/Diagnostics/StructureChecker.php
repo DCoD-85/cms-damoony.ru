@@ -84,6 +84,10 @@ final class StructureChecker
         $schemesDir = $this->paths->domain($realDomain) . '/.alliasscheme';
         $this->checkSchemesJson($schemesDir, $allias, $issues);
 
+        // ПРОВЕРКА blocks.json ↔ папки
+        $blocksDir = $this->paths->domain($realDomain) . '/.alliasglobal';
+        $this->checkBlocksJson($blocksDir, $issues);
+
         return $issues;
     }
 
@@ -100,6 +104,41 @@ final class StructureChecker
                 if (empty($phpFiles)) {
                     $issues[] = ['level' => 'warning', 'message' => 'Есть .edit.json, но нет сгенерированного algoritm_*.php в ' . str_replace($algoritmDir, '', $dir)];
                 }
+            }
+        }
+    }
+
+    /**
+     * @param list<array{level: string, message: string}> $issues
+     */
+    private function checkBlocksJson(string $blocksDir, array &$issues): void
+    {
+        $manifestFile = $blocksDir . '/blocks.json';
+        $manifestExists = is_file($manifestFile);
+        $declared = [];
+
+        if ($manifestExists) {
+            $manifest = json_decode((string) file_get_contents($manifestFile), true);
+            if (!is_array($manifest) || !isset($manifest['blocks']) || !is_array($manifest['blocks'])) {
+                $issues[] = ['level' => 'warning', 'message' => "blocks.json повреждён или не содержит ключ 'blocks'"];
+            } else {
+                $declared = array_keys($manifest['blocks']);
+            }
+        }
+
+        $folders = is_dir($blocksDir)
+            ? array_map('basename', glob($blocksDir . '/*', GLOB_ONLYDIR) ?: [])
+            : [];
+
+        foreach ($declared as $name) {
+            if (!in_array($name, $folders, true)) {
+                $issues[] = ['level' => 'error', 'message' => "Блок '{$name}' есть в blocks.json, но папка {$name}/ отсутствует"];
+            }
+        }
+
+        foreach ($folders as $name) {
+            if (!in_array($name, $declared, true)) {
+                $issues[] = ['level' => 'warning', 'message' => "Папка блока {$name}/ есть, но записи в blocks.json нет (сирота)"];
             }
         }
     }
