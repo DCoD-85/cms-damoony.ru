@@ -32,7 +32,7 @@ final class FileRouter implements RouterInterface
         }
 
         if ($segments === []) {
-            return RouteMatch::found('algoritm', '', [], $this->matcher->requiresAuth($rootRules), false);
+            return RouteMatch::found('algoritm', '', [], $this->matcher->requiresAuth($rootRules));
         }
 
         $classChain = 'algoritm';
@@ -69,7 +69,7 @@ final class FileRouter implements RouterInterface
         $leafRules = $this->loadRules($base . '/' . $pathRel . '/.rules.json') ?? [];
         $auth = $this->matcher->requiresAuth($leafRules);
 
-        return RouteMatch::found($classChain, $pathRel, $args, $auth, false);
+        return RouteMatch::found($classChain, $pathRel, $args, $auth);
     }
 
     /**
