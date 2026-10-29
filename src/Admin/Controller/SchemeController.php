@@ -108,7 +108,7 @@ final class SchemeController extends BaseController
                 $actionsHtml->append($delBtn);
 
                 $table->row([
-                    Text::raw('<b>' . View::esc($s) . '</b>'),
+                    Builder::el('b')->content($s),
                     $actionsHtml,
                 ]);
             }
@@ -307,8 +307,14 @@ final class SchemeController extends BaseController
         }
 
         $card = Builder::div('admin-card scheme-builder-app');
-        $card->append(Text::raw('<link rel="stylesheet" href="/media/admin/scheme-builder.css">'));
-        $card->append(Text::raw('<script src="/media/admin/scheme-builder.js" defer></script>'));
+        $link = Builder::el('link', true);
+        $link->attrs()->add('rel', 'stylesheet');
+        $link->attrs()->add('href', '/media/admin/scheme-builder.css');
+        $card->append($link);
+        $script = Builder::el('script');
+        $script->attrs()->add('src', '/media/admin/scheme-builder.js');
+        $script->attrs()->add('defer', 'true');
+        $card->append($script);
 
         foreach ($warnings as $w) {
             $card->append(Message::warning($w)->build());
@@ -358,7 +364,11 @@ final class SchemeController extends BaseController
             'fields' => $fields,
         ], JSON_UNESCAPED_UNICODE);
 
-        $card->append(Text::raw('<script type="application/json" id="sb-init-data">' . $initData . '</script>'));
+        $scriptData = Builder::el('script');
+        $scriptData->attrs()->add('type', 'application/json');
+        $scriptData->attrs()->add('id', 'sb-init-data');
+        $scriptData->append(Text::raw((string)$initData));
+        $card->append($scriptData);
 
         return Response::html($this->view->render($card, ['title' => 'Визуальный редактор схем']));
     }

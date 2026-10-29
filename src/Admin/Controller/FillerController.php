@@ -117,7 +117,7 @@ final class FillerController extends BaseController
                 }
 
                 $table->row([
-                    Text::raw('<b>' . View::esc((string)$block) . '</b>'),
+                    Builder::el('b')->content((string)$block),
                     Text::raw($statusHtml),
                     $toggleBtn,
                 ]);

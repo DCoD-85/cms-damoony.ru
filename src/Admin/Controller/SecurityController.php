@@ -112,7 +112,7 @@ final class SecurityController extends BaseController
                 }
 
                 $table->row([
-                    Text::raw('<b>' . View::esc($ban['ip']) . '</b>'),
+                    Builder::el('b')->content($ban['ip']),
                     Text::raw(View::t('security.minutes_left', ['mins' => $ban['minutes']])),
                     $unbanBtn,
                 ]);

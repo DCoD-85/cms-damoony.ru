@@ -68,7 +68,10 @@ final class PageController extends BaseController
         $tree = [$rootNode];
 
         $card = Builder::div('admin-card');
-        $card->append(Text::raw('<link rel="stylesheet" href="/media/admin/page-builder.css">')); // <--- ДОБАВИТЬ ЭТО
+        $link = Builder::el('link', true);
+        $link->attrs()->add('rel', 'stylesheet');
+        $link->attrs()->add('href', '/media/admin/page-builder.css');
+        $card->append($link);
 
         $breadcrumbs = Builder::div('breadcrumbs');
         $breadcrumbs->append(Builder::a('/admin/?p=domain')->content(View::t('domain.bread_domains')));
@@ -267,8 +270,14 @@ final class PageController extends BaseController
         }
 
         $card = Builder::div('admin-card page-builder-app');
-        $card->append(Text::raw('<link rel="stylesheet" href="/media/admin/page-builder.css">'));
-        $card->append(Text::raw('<script src="/media/admin/page-builder.js" defer></script>'));
+        $link = Builder::el('link', true);
+        $link->attrs()->add('rel', 'stylesheet');
+        $link->attrs()->add('href', '/media/admin/page-builder.css');
+        $card->append($link);
+        $script = Builder::el('script');
+        $script->attrs()->add('src', '/media/admin/page-builder.js');
+        $script->attrs()->add('defer', 'true');
+        $card->append($script);
 
         $breadcrumbs = Builder::div('breadcrumbs');
         $breadcrumbs->append(Builder::a('/admin/?p=domain')->content(View::t('domain.bread_domains')));
@@ -310,7 +319,11 @@ final class PageController extends BaseController
             'available' => $availableSlots,
             'auth' => $isAuth,
         ], JSON_UNESCAPED_UNICODE);
-        $card->append(Text::raw('<script type="application/json" id="pb-init-data">' . $initData . '</script>'));
+        $scriptData = Builder::el('script');
+        $scriptData->attrs()->add('type', 'application/json');
+        $scriptData->attrs()->add('id', 'pb-init-data');
+        $scriptData->append(Text::raw((string)$initData));
+        $card->append($scriptData);
 
         return Response::html($this->view->render($card, ['title' => 'Редактор страницы']));
     }

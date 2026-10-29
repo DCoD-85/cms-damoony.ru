@@ -55,7 +55,6 @@ final class DomainController extends BaseController
         $actions->append(Builder::a('/admin/?p=stub', 'btn btn-outline')->content(View::t('domain.stub_lib')));
         $actions->append(Builder::a('/admin/?p=domain:new', 'btn btn-primary')->content(View::t('domain.add')));
         $header->append($actions);
-
         $card->append($header);
 
         // --- ПРОВЕРКА СТРУКТУРЫ ---
@@ -90,41 +89,58 @@ final class DomainController extends BaseController
         }
         // ---------------------------
 
-        $table = (new Table())->headers(View::t('domain.th_status'), View::t('domain.th_domain'), View::t('domain.th_ns'), View::t('domain.th_files'), View::t('domain.th_aliases'));
+        $table = (new Table())->headers(
+            View::t('domain.th_status'),
+            View::t('domain.th_domain'),
+            View::t('domain.th_ns'),
+            View::t('domain.th_files'),
+            View::t('domain.th_aliases'),
+            View::t('domain.bind_th_act'), // Новая колонка действий
+        );
 
         foreach ($grouped as $real => $incomingDomains) {
             $ns = (string) $this->siteConfig->getByKey(['domains_namespace', $real], '-');
             $available = (bool) $this->siteConfig->getByKey(['domains_available', $real], false);
             $hasFiles = is_dir($this->paths->domain($real));
 
-            $aliasesHtml = '';
+            // Статус
+            $statusUrl = '/admin/?p=domain:toggle&domain=' . urlencode($real);
+            $statusNode = Builder::a($statusUrl, $available ? 'status-toggle' : 'status-toggle off');
+            $statusNode->attrs()->add('title', View::t('domain.avail_label'));
+
+            // Имя домена + алиасы
+            $domainNode = Builder::div();
+            $domainNode->append(Builder::a('/admin/?p=domain:edit&domain=' . urlencode($real), 'domain-link')->content($real));
+            $subText = Builder::div('sub-text');
+            $subText->attrs()->styleAdd('font-size:12px; color:#888; font-weight:normal;');
+            $subText->content('aliases: ' . implode(', ', $incomingDomains));
+            $domainNode->append($subText);
+
+            // Бейджи алиасов
+            $aliasesNode = Builder::div('aliases-list');
             $alliases = $this->siteConfig->getByKey(['alliases_real', $real], []);
             if (is_array($alliases)) {
-                $aliasArray = [];
                 foreach ($alliases as $a => $mapped) {
                     if ($a === '') {
                         continue;
                     }
-                    $badgeClass = $available ? 'badge' : 'badge badge-disabled';
-                    $aliasArray[] = '<span class="' . $badgeClass . '">' . View::esc((string)$a) . '</span>';
+                    $aliasesNode->append(Builder::span($available ? 'badge' : 'badge badge-disabled')->content((string)$a));
                 }
-                $aliasesHtml = implode(' ', $aliasArray);
             }
 
-            $statusUrl = '/admin/?p=domain:toggle&domain=' . urlencode($real);
-            $statusHtml = $available
-                ? '<a href="' . $statusUrl . '" class="status-toggle" title="' . View::t('domain.avail_label') . '"></a>'
-                : '<a href="' . $statusUrl . '" class="status-toggle off" title="' . View::t('domain.avail_label') . '"></a>';
-
-            $filesHtml = $hasFiles ? '✓' : '✗';
-            $domainLink = Builder::a('/admin/?p=domain:edit&domain=' . urlencode($real), 'domain-link')->content(View::esc($real));
+            // Действия
+            $actionsNode = Builder::div('table-actions');
+            $actionsNode->append(Builder::a('/admin/?p=domain:edit&domain=' . urlencode($real), 'btn btn-outline')->content(View::t('page.edit')));
+            $actionsNode->append(Builder::a('/admin/?p=domain:bindings&domain=' . urlencode($real), 'btn btn-outline')->content(View::t('domain.bind_title')));
+            $actionsNode->append(Builder::a('/admin/?p=domain:remove&domain=' . urlencode($real), 'btn btn-danger')->content(View::t('stub.delete')));
 
             $row = [
-                Text::raw($statusHtml),
-                Text::raw($domainLink->release() . '<div style="font-size:12px; color:#888; font-weight:normal;">aliases: ' . View::esc(implode(', ', $incomingDomains)) . '</div>'),
-                Text::raw(View::esc($ns)),
-                Text::raw($filesHtml),
-                Text::raw($aliasesHtml),
+                $statusNode,
+                $domainNode,
+                Text::escaped($ns),
+                Text::escaped($hasFiles ? '✓' : '✗'),
+                $aliasesNode,
+                $actionsNode,
             ];
 
             $rowClass = $available ? 'row-active' : '';
@@ -132,7 +148,6 @@ final class DomainController extends BaseController
         }
 
         $card->append($table->build());
-
         return Response::html($this->view->render($card, ['title' => View::t('domain.title')]));
     }
 
@@ -224,7 +239,7 @@ final class DomainController extends BaseController
             }
 
             $table->row([
-                Text::raw('<b>' . View::esc($incoming) . '</b>'),
+                Builder::el('b')->content($incoming),
                 $commentFormNode,
                 $actionsHtml,
             ]);

@@ -120,7 +120,7 @@ final class AliasDbController extends BaseController
         foreach ($rows as $row) {
             $tr = Builder::el('tr');
             $tr->append(Builder::el('td')->content(View::t($row[0])));
-            $tr->append(Builder::el('td')->content('<b>' . View::esc($row[1]) . '</b>'));
+            $tr->append(Builder::el('td')->append(Builder::el('b')->content($row[1])));
             $tbody->append($tr);
         }
         $infoTable->append($tbody);

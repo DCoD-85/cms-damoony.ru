@@ -14,7 +14,6 @@ use Damoony\Ui\Field;
 use Damoony\Ui\Form;
 use Damoony\Ui\Message;
 use Damoony\Ui\Node;
-use Damoony\Ui\Text;
 
 final class ProfileController extends BaseController
 {
@@ -80,7 +79,9 @@ final class ProfileController extends BaseController
         $formNode = $form->build();
 
         // Внедряем индикатор надежности после поля new_password
-        $indicator = Text::raw('<div class="pwd-strength-bar"><div id="pwd-strength" class="pwd-strength-fill"></div></div>');
+        $pwdFill = Builder::div('pwd-strength-fill');
+        $pwdFill->attrs()->add('id', 'pwd-strength');
+        $indicator = Builder::div('pwd-strength-bar')->append($pwdFill);
         $formNode->append($indicator);
 
         $content = Builder::div();

@@ -237,6 +237,7 @@ return [
     'admin.media.title' => 'Медиа: {dir}',
     'admin.media.uploaded' => 'Файл загружен',
     'admin.media.deleted' => 'Файл удален',
+    'admin.media.empty' => 'Файлов пока нет',
 
     'admin.editor.title' => 'Редактор',
     'admin.editor.back' => '← Назад',

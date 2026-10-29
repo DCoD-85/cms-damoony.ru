@@ -237,6 +237,7 @@ return [
     'admin.media.title' => 'Media: {dir}',
     'admin.media.uploaded' => 'File uploaded',
     'admin.media.deleted' => 'File deleted',
+    'admin.media.empty' => 'No files yet.',
 
     'admin.editor.title' => 'Editor',
     'admin.editor.back' => '← Back',

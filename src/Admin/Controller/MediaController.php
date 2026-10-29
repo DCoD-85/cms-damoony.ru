@@ -97,7 +97,7 @@ final class MediaController extends BaseController
         $table = (new Table())->headers('Файл', 'Размер', 'Действия');
 
         if ($files === []) {
-            $table->row([Text::raw('Файлов пока нет'), Text::raw(''), Text::raw('')]);
+            $table->row([View::t('admin.media.empty'), Text::raw(''), Text::raw('')]);
         } else {
             foreach ($files as $f) {
                 $sizeKb = round($f['size'] / 1024, 1) . ' KB';
@@ -117,7 +117,12 @@ final class MediaController extends BaseController
                 $actionsHtml->append($delFormNode);
 
                 $table->row([
-                    Text::raw('<a href="' . View::esc($f['url']) . '" target="_blank">' . View::esc($f['name']) . '</a>'),
+                    (function () use ($f) {
+                        $l = Builder::a($f['url'], '');
+                        $l->attrs()->add('target', '_blank');
+                        $l->content($f['name']);
+                        return $l;
+                    })(),
                     Text::raw($sizeKb),
                     $actionsHtml,
                 ]);

@@ -145,7 +145,7 @@ final class BlockController extends BaseController
                 $actionsHtml->append($delBtn);
 
                 $table->row([
-                    Text::raw('<b>' . View::esc($name) . '</b>'),
+                    Builder::el('b')->content($name),
                     Text::raw(View::esc($typeLabel)),
                     $actionsHtml,
                 ]);

@@ -59,7 +59,7 @@ final class AlliasController extends BaseController
         $header->append(Builder::h(1)->content(View::t('tab.alliases')));
 
         $actions = Builder::div('page-actions');
-        $actions->append(Builder::a('/admin/?p=allias:new&domain=' . urlencode($domain), 'btn btn-primary')->content(View::t('domain.add')));
+        $actions->append(Builder::a('/admin/?p=allias:new&domain=' . urlencode($domain), 'btn btn-primary')->content(View::t('allias.new_title')));
         $header->append($actions);
         $card->append($header);
 
@@ -80,30 +80,36 @@ final class AlliasController extends BaseController
                     continue;
                 }
 
-                // Проверяем статус (по умолчанию включен)
                 $available = (bool) $this->siteConfig->getByKey(['alliases_available', $domain, (string)$name], true);
 
+                // Статус
                 $statusUrl = '/admin/?p=allias:toggle&domain=' . urlencode($domain) . '&name=' . urlencode((string)$name);
-                $statusHtml = $available
-                    ? '<a href="' . $statusUrl . '" class="status-toggle" title="' . View::t('domain.avail_label') . '"></a>'
-                    : '<a href="' . $statusUrl . '" class="status-toggle off" title="' . View::t('domain.avail_label') . '"></a>';
+                $statusNode = Builder::a($statusUrl, $available ? 'status-toggle' : 'status-toggle off');
+                $statusNode->attrs()->add('title', View::t('domain.avail_label'));
 
+                // Ссылка на редактирование
                 $editUrl = '/admin/?p=allias:edit&domain=' . urlencode($domain) . '&allias=' . urlencode((string)$name);
                 $aliasLink = Builder::a($editUrl, 'domain-link')->content((string)$name);
 
-                $pathHtml = '<span style="font-family:monospace; font-size:12px; background:#f3f4f6; padding:2px 6px; border-radius:4px;">app/' . View::esc($domain) . '/' . View::esc((string)$name) . '</span>';
+                // Путь
+                $pathNode = Builder::span();
+                $pathNode->content('app/' . $domain . '/' . (string)$name);
+                $pathNode->attrs()->styleAdd('font-family:monospace; font-size:12px; background:#f3f4f6; padding:2px 6px; border-radius:4px;');
 
-                $deleteBtn = Builder::a('/admin/?p=allias:remove&domain=' . urlencode($domain) . '&name=' . urlencode((string)$name), 'btn btn-danger')->content(View::t('stub.delete'));
+                // Действия
+                $actionsNode = Builder::div('table-actions');
+                $actionsNode->append(Builder::a($editUrl, 'btn btn-outline')->content(View::t('page.edit')));
+                $actionsNode->append(Builder::a('/admin/?p=allias:remove&domain=' . urlencode($domain) . '&name=' . urlencode((string)$name), 'btn btn-danger')->content(View::t('stub.delete')));
 
                 $table->row([
-                    Text::raw($statusHtml),
-                    Text::raw($aliasLink->release()),
-                    Text::raw($pathHtml),
-                    $deleteBtn,
+                    $statusNode,
+                    $aliasLink,
+                    $pathNode,
+                    $actionsNode,
                 ]);
             }
         } else {
-            $table->row([Text::raw(''), Text::raw(View::t('allias.empty')), Text::raw(''), Text::raw('')]);
+            $table->row([Text::escaped(''), Text::escaped(View::t('allias.empty')), Text::escaped(''), Text::escaped('')]);
         }
 
         $card->append($table->build());

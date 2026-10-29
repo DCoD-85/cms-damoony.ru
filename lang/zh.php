@@ -237,6 +237,7 @@ return [
     'admin.media.title' => '媒体: {dir}',
     'admin.media.uploaded' => '文件已上传',
     'admin.media.deleted' => '文件已删除',
+    'admin.media.empty' => '暂无文件。',
 
     'admin.editor.title' => '编辑器',
     'admin.editor.back' => '← 返回',

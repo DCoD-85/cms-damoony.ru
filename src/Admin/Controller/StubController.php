@@ -15,7 +15,6 @@ use Damoony\Ui\Field;
 use Damoony\Ui\Form;
 use Damoony\Ui\Message;
 use Damoony\Ui\Table;
-use Damoony\Ui\Text;
 
 final class StubController extends BaseController
 {
@@ -67,7 +66,7 @@ final class StubController extends BaseController
                     }
                 }
                 $actionsHtml->append($delBtn);
-                $table->row([Text::raw('<b>' . View::esc($name) . '</b>'), $actionsHtml]);
+                $table->row([Builder::el('b')->content($name), $actionsHtml]);
             }
             $card->append($table->build());
         }
