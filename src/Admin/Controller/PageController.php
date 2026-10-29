@@ -89,7 +89,7 @@ final class PageController extends BaseController
     }
 
     /**
-     * @return list<array{name: string, path: string, auth: bool, search: bool, children: array}>
+     * @return array<int, array<string, mixed>>
      */
     private function buildPageTree(string $baseDir, string $relativePath): array
     {
@@ -131,7 +131,7 @@ final class PageController extends BaseController
     }
 
     /**
-     * @param list<array{name: string, path: string, auth: bool, search: bool, children: array}> $nodes
+     * @param array<int, array<string, mixed>> $nodes
      */
     private function renderTreeHtml(array $nodes, string $domain, string $allias): Element
     {
