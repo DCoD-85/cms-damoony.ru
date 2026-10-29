@@ -24,7 +24,7 @@ Low-Code визуальный редактор с компиляцией в на
 Блок	Синоним региона	—
 Филлер	Переопределение региона для алиаса	Глобальный регион
 Страница	Класс Algoritm в algoritm/	Регион
-Тип блока	logic / ui / mixed	—
+Тип блока script / visual / mixed	—
 Правило	.rules.json рядом со страницей	Конфиг
 Запрещено: "module", "plugin", "widget", "template".
 
@@ -43,7 +43,7 @@ Auth: DbAuth (password_hash), SessionAuth, Csrf, login/logout, логирова�
 
 БД: PDO, MigrationRunner, MariaDB/MySQL.
 
-Админка: Вход/выход, профиль, I18n (RU/EN/ZH), Обзор системы, Домены, Алиасы, Блоки, Схемы, Филлеры, Страницы, Схемы алиаса, БД алиаса, Заглушки, Безопасность, Настройки, CodeMirror (локально), Safe Mode. Визуальные редакторы для Блоков, Схем, Страниц.
+Админка: Вход/выход, профиль, I18n (RU/EN/ZH), Обзор системы, Домены, Алиасы, Блоки, Схемы, Филлеры, Страницы, Схемы алиаса, БД алиаса, Заглушки, Безопасность, Настройки, CodeMirror (локально), Safe Mode. Визуальные редакторы для Блоков, Схем (Drag&Drop, editor.json), Страниц.
 
 Low-Code: PageCompiler, RegionCompiler, .edit.json рядом с .php, статусы слотов disabled/global/local.
 
@@ -270,13 +270,9 @@ StructureChecker — расширить проверки (schemes.json ↔ фа�
 
 SchemeLoader — проверка Env::isDev().
 
-SchemeController::edit() — сохранение вложенности.
-
 PageController::edit() — резолв входящего хоста.
 
 Algoritm::default(): null — убрать из интерфейса или трактовать как 204.
-
-Автомиграция .edit.json {blocks} → {slots}.
 
 P2 — техдолг
 domains_real[$domain] → ConfigDomainResolver::real().

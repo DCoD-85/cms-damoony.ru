@@ -62,7 +62,7 @@ UI — типизированное дерево (не строки): Node, Elem
 Attrs::release() экранирует значения через htmlspecialchars(ENT_QUOTES | ENT_SUBSTITUTE). Имена атрибутов не валидируются (§7.2 п.2, P1) — не передавайте в attrs()->add() имена из пользовательских данных.
 
 Регионы, Слоты и Схемы
-Region (RegionInterface): независимый блок контента (шапка, футер). Типы: ui (визуализация), logic (скрипт), mixed (реализация). Типы в blocks.json записываются CLI, но RegionLoader их не читает (MANIFEST.md §4) — источник истины — папки.
+Region (RegionInterface): независимый блок контента (шапка, футер). Типы: visual (визуализация), script (скрипт), mixed (реализация). Типы в blocks.json записываются CLI, но RegionLoader их не читает (MANIFEST.md §4) — источник истины — папки.
 
 Slot: узел в схеме для вставки региона. Slot::release() возвращает '' — если слот не заменён регионом, он молча исчезает.
 
@@ -83,7 +83,7 @@ Low-Code и Компиляция
 
 ~~addslashes в PageCompiler/RegionCompiler~~ — ✅ закрыто (stage-1, var_export).
 
-UI: VisualEditorRenderer (в Admin/Support/) генерирует формы. Визуальный редактор схем сохраняет плоский список слотов — вложенные схемы схлопываются (§6.15, P1).
+UI: VisualEditorRenderer (новый) использует Drag&Drop и сохраняет вложенность. Editor хранит правила в editor.json, компилятор генерирует data.php. (§6.15, P1).
 
 default(): null: интерфейс разрешает null, но PageHandler на null бросает RuntimeException → 500 (§6.18, P1).
 

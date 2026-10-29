@@ -194,7 +194,7 @@ SchemeRenderer::render(array $manifest, RegionRegistry $regions, RegionContext $
 
 ~~SchemeCompiler::compile() использует var_export + str_replace('array (', '[').~~ ✅ Закрыто (stage-1): str_replace удалён, var_export как есть. Round-trip тест в SchemeCompilerTest.
 
-SchemeController::edit() схлопывает вложенные схемы в плоский div.layout (§6.15, P1). Вложенность сохраняется только при редактировании через CodeMirror.
+SchemeController::edit() схлопывает вложенные схемы в плоский div.layout (§6.15, P1). Схема хранится в двух файлах: editor.json (дерево для UI) и data.php (массив для рендера). Вложенность сохраняется только при редактировании через CodeMirror.
 
 schemes.json может рассинхронизироваться с файлами на диске — «сироты» (пример: visuo.data.php без записи в schemes.json). StructureChecker это не ловит (§7.2 п.3, P1).
 

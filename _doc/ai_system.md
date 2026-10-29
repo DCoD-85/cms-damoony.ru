@@ -47,7 +47,7 @@ allias:new --domain=example.ru --name=doc — создать алиас.
 allias:remove --domain=example.ru --name=doc --force — удалить (карантин <name>_trash_<timestamp>). Без --force — отмена.
 
 Блоки, схемы, филлеры
-block:new --domain=example.ru --name=top [--type=ui] — создать блок. --type: logic, ui, mixed (по умолчанию mixed). Тип не используется в рантайме (§4).
+block:new --domain=example.ru --name=top [--type=ui] — создать блок. --type: script, visual, mixed (по умолчанию mixed). Тип не используется в рантайме (§4).
 
 block:remove --domain=example.ru --name=top — удалить (без карантина!). Коммит до.
 
@@ -55,7 +55,7 @@ filler:new --domain=example.ru --allias=doc --block=top — переопреде
 
 filler:toggle --domain=example.ru --allias=doc --block=top --value=0 — вкл/выкл филлер.
 
-scheme:new --domain=example.ru --name=www — создать глобальную схему.
+scheme:new --domain=example.ru --name=www — создать схему (создает editor.json и data.php, сканирует блоки).
 
 Страницы
 page:new --domain=example.ru --allias=doc --name=index [--parent=path] — создать страницу.

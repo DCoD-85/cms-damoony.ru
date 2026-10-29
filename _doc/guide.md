@@ -142,9 +142,9 @@ bash
 php bin/cli.php block:new --domain=example.ru --name=header --type=mixed
 Типы блоков:
 
-ui — только вёрстка (статичный HTML);
+visual — только вёрстка (статичный HTML);
 
-logic — только скрипт (возвращает данные, не участвует в визуализации);
+script — только скрипт (возвращает данные, не участвует в визуализации);
 
 mixed — реализация (данные + вёрстка).
 
@@ -185,28 +185,7 @@ final class alliasglobal_header implements RegionInterface
 В админке — визуальный редактор (ui/mixed) или CodeMirror (logic/mixed). Визуальный редактор блоков работает и не теряет данные, но при сохранении перезаписывает header.php. Не правьте header.php руками, если блок редактируется визуально.
 
 6. Создание Схем (Каркасов)
-bash
-php bin/cli.php scheme:new --domain=example.ru --name=default
-В файле .alliasscheme/default.data.php:
-
-php
-<?php
-
-return [
-    'tag' => 'div',
-    'class' => 'layout-default',
-    'children' => [
-        ['tag' => 'header', 'slot' => 'header'],
-        ['tag' => 'main', 'slot' => 'content'],
-        ['tag' => 'footer', 'slot' => 'footer'],
-    ],
-];
-⚠️ Вложенность схем. Визуальный редактор схем сохраняет плоский список слотов (div.layout > [слот1, слот2, ...]). Если схема содержит вложенность (например, div > main-wrap > [left, center, right]), при сохранении через UI она схлопнется. Редактируйте такие схемы только через CodeMirror. См. MANIFEST.md §6.15.
-
-✅ SchemeCompiler и скобки. SchemeCompiler использует var_export (str_replace удалён в stage-1). Строки со скобками сохраняются как есть. Классы вида sm (mobile) не ломаются.
-
-Иерархия схем
-local (алиас) → global (домен) → 500. Скрытых дефолтов быть не должно (MANIFEST.md §6.5), но в текущем коде SchemeLoader всегда возвращает fallback div.layout > main[slot=center], если схемы нет. Это P1 — исправляется. Пока полагайтесь на structure:check и не рассчитывайте на 500.
+Визуальный редактор полностью переработан. Работает на Drag&Drop. Разделяет блоки на зоны: Неактивные, Скрипты (только script), Визуал (visual и mixed). Поддерживает вложенность (в visual можно класть другие блоки).
 
 7. Управление регионами из кода (Runtime API)
 Внутри default():

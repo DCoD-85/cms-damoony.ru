@@ -34,7 +34,7 @@ php bin/cli.php allias:new --domain=example.ru --name=doc
 
 S03. Создание глобального блока — ✅
 text
-php bin/cli.php block:new --domain=example.ru --name=top --type=ui
+php bin/cli.php block:new --domain=example.ru --name=top --type=visual
 Ожидание: создана папка app/example.ru/.alliasglobal/top/ с top.php и top.data.php, в blocks.json добавлена запись с типом ui.
 
 Фактически: ✅ создаётся.
@@ -66,7 +66,7 @@ php bin/cli.php scheme:new --domain=example.ru --name=default
 
 Фактически: ✅ создаётся.
 
-Оговорка: ✅ Закрыто (stage-1): SchemeCompiler использует чистый var_export без str_replace. Строки со скобками сохраняются. Регрессия покрыта SchemeCompilerTest.
+✅ создаются editor.json и data.php
 
 S07. Очистка карантина — ✅
 text
@@ -201,12 +201,12 @@ S22. Развёртывание по IP — 🟡
 
 Фактически: 🟡 работает без порта. С портом (192.168.1.10:8080) — 404 из-за отсутствия нормализации Host (§6.17, P0). Трейлинг-точка (example.ru.) — тоже не матчится.
 
-S23. Визуальное сохранение схемы с вложенностью — 🔴
+S23. Визуальное сохранение схемы с вложенностью — ✅
 Вход: открыть visuo.data.php (вложенная схема dt_middle → dt_left/dt_center/dt_right) в визуальном редакторе, сохранить.
 
 Ожидание: вложенность сохранена.
 
-Фактически: 🔴 схема схлопывается в плоский div.layout (§6.15, P1). Вложенность теряется без предупреждения.
+Фактически: ✅ схема схлопывается в плоский div.layout (§6.15, P1). Вложенность теряется без предупреждения.
 
 S24. Визуальное сохранение страницы со старым .edit.json — ✅ (defensive, no direct test)
 Вход: about/.edit.json содержит {"blocks": [...]} (старый формат), открыть «Визуально», сохранить.

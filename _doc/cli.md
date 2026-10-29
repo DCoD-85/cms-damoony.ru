@@ -49,7 +49,7 @@ block:new
 Создать блок (регион шаблона).
 
 bash
-php bin/cli.php block:new --domain=example.ru --name=top --type=ui
+php bin/cli.php block:new --domain=example.ru --name=top --type=visual
 --name — имя блока (обязательно).
 
 --type — logic, ui, mixed (по умолчанию: mixed).
@@ -143,7 +143,7 @@ scheme:new
 
 bash
 php bin/cli.php scheme:new --domain=example.ru --name=default
-Создаёт app/example.ru/.alliasscheme/default.data.php, обновляет schemes.json.
+Создаёт default.editor.json (правила для UI) и default.data.php (рендер), обновляет schemes.json. Сканирует .alliasglobal для заполнения fields.
 
 ⚠️ SchemeCompiler (используется при визуальном редактировании схем) ломается на строках со скобками (MANIFEST.md §7.1 п.5, P0). Через CLI схема создаётся корректно, но при первом визуальном сохранении — риск потери/порчи. До фикса — правьте .data.php вручную.
 
