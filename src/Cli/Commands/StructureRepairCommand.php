@@ -52,7 +52,16 @@ final class StructureRepairCommand implements CommandInterface
 
         // 1. Восстановление алиасов
         $alliases = $site['alliases_real'][$domain] ?? ['www' => 'www'];
-        foreach ($alliases as $alias => $real) {
+
+        // Берем реальные алиасы (значения), так как "" маппится на "www"
+        $realAliases = array_unique(array_values($alliases));
+
+        foreach ($realAliases as $alias) {
+            $alias = (string)$alias;
+            if ($alias === '') {
+                continue;
+            }
+
             $algoritmDir = $domainDir . '/' . $alias . '/algoritm';
             if (!is_dir($algoritmDir)) {
                 Fs::mkdir($algoritmDir);
