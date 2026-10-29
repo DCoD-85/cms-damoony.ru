@@ -116,10 +116,14 @@ WYSIWYG (свободная вёрстка), Headless/REST/GraphQL API, Sitemap,
 Статус: P2. Через контейнер + RegionContext->service('i18n').
 
 6.20. PageHandler::applySkin читает $_COOKIE['skin'] напрямую (Новое)
-Статус: P2. Либо читать из DomainContext->skin, либо задокументировать.
+`SkinCookieMiddleware` ставит cookie и редиректит (307), но не мутирует `DomainContext->skin` — тот readonly и заполняется в `ConfigDomainResolver` до middleware. Прямая замена `$_COOKIE['skin']` → `$domain->skin` сломает выбор скина (все увидят дефолт из конфига). Валидация `domains_skins_allowed` дублируется в middleware (cookie) и в `applySkin` (чтение). Функционально корректно.
+
+Статус: P2 (дублирование валидации, не баг). Правильный фикс: middleware читает cookie → передаёт в resolver (или `RegionContext`) → `DomainContext->skin` учитывает cookie. Переделка слоя, отложено.
 
 6.21. DomainContext->logic — мёртвое поле (Новое)
-Статус: P2. Либо задокументировать, либо удалить.
+Поле `logic` вычислялось в `ConfigDomainResolver` из `domains_logic` (default `alpha.0.0`), но нигде не читалось ни в `src/`, ни в тестах.
+
+Статус: ✅ Закрыто (audit-2026-10). Поле удалено из `DomainContext`, `ConfigDomainResolver` (включая `$defaultLogic`), все 7 мест инстанцирования в тестах обновлены. Ключ `domains_logic` в `site.config` оставлен — данные пользователя, безвредны.
 
 6.22. Принятый риск: пароль dev-БД в истории git (Новое)
 Пароль `qwe12345` от локальной MariaDB (`damoony_local_db`) присутствует в коммитах `8c70dfc`, `b6c4971`, запушен в `origin/main`. Репозиторий публичный.
@@ -127,6 +131,13 @@ WYSIWYG (свободная вёрстка), Headless/REST/GraphQL API, Sitemap,
 Контекст: MariaDB слушает только `127.0.0.1`, production-доступа к ней нет. Владелец принял риск осознанно — ротация не выполняется.
 
 Статус: принятый риск, не баг. Если БД когда-либо станет доступна извне — ротация обязательна. Полная очистка истории (`git filter-repo` + force-push) возможна, но не выполняется.
+
+6.23. DomainContext->allias — ключ, а структура — значение (Новое)
+`ConfigDomainResolver::resolve()` возвращает `allias` = ключ из `alliases_real` (например `sub`), но папки на диске и `StructureChecker` работают с значением (`www`). Для identity-маппингов (`"www":"www"`) расхождения нет; для не-identity (`"sub":"www"`) `PageHandler` ищет `.../sub/algoritm/` (несуществующая папка) → 404, а `structure:check` проверяет `www/`.
+
+Также `StructureCheckCommand` не дедуплицирует по `$mapped`: при `{"sub":"www","www":"www"}` папка `www/` проверяется дважды.
+
+Статус: P2. Не регресс, поведение зафиксировано с stage-3. Требует решения по контракту: либо `DomainContext->allias` = `$mapped` (значение), либо конфиг ограничивается identity-маппингами. Dedupe в `StructureCheckCommand` — независимо.
 
 7. Известные баги (требуют исправления)
 7.1. P0 — Блокируют production (6 из 6 закрыто)
@@ -152,11 +163,12 @@ PageController::edit() → DomainContext->scheme (§6.7).
 Builder — дополнить (§6.6).
 assert() → явные проверки (§6.3).
 RegionContext::service() — добавить @template в PHPDoc (§6.2).
-Убрать мёртвый код: RouteMatch::forbidden(), Group, DomainContext->logic (§6.21).
 Удалить .data.php блоков и blocks.json или начать их читать (§4).
 Translator/LanguageNegotiator через контейнер (§6.19).
-PageHandler::applySkin — не читать $_COOKIE напрямую (§6.20).
+PageHandler::applySkin — не читать $_COOKIE напрямую (§6.20, дублирование валидации, не баг).
 Фронтенд I18n, Skins (§4).
+DomainContext->allias = ключ alliases_real, а не значение (§6.23).
+StructureCheckCommand — dedupe по $mapped, если ключ ≠ значение (§6.23).
 
 8. Инварианты
 8.1. Соблюдаются
