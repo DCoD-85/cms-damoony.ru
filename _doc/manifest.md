@@ -51,6 +51,8 @@ Low-Code: PageCompiler, RegionCompiler, page.editor.json и scheme.editor.json (
 
 CLI (18 команд): help, domain:new, allias:new, allias:remove, block:new, block:remove, filler:new, filler:toggle, page:new, page:toggle, scheme:new, db:migrate, vars:extract, admin:passwd, user:new, trash:clear, structure:check, structure:repair.
 
+ErrorPage: локализован через Translator (`error.*` в lang/{ru,en,zh}, fallback ru). Ключи: `error.{403,404,429,500,503}.{title,message}`, `error.default.*`, `error.429.retry` с подстановкой `{minutes}`.
+
 Качество: PHPUnit (53 тестовых файла, 262 теста, 593 assertions — верифицировано; 1 skipped — LinkTraversalTest, требует dev-сервер 127.0.0.1:8080, прогоняется в CI), PHPStan level 8 (0 errors), PHP-CS-Fixer (0 issues), GitHub Actions CI.
 
 4. Частично реализовано (🟡)

@@ -261,4 +261,19 @@ return [
     'admin.overview.nav' => 'Overview',
 
     'scheme.global_not_found' => 'Global scheme not found. Create it at the domain level first.',
+
+    // Error pages (403/404/429/500/503)
+    'error.default.title' => 'Error',
+    'error.default.message' => '',
+    'error.403.title' => 'Forbidden',
+    'error.403.message' => 'You do not have access to this page.',
+    'error.404.title' => 'Page not found',
+    'error.404.message' => 'The requested page does not exist.',
+    'error.429.title' => 'Too many requests',
+    'error.429.message' => 'You have made too many requests in a short time.',
+    'error.429.retry' => 'Please wait {minutes} min before trying again.',
+    'error.500.title' => 'Server error',
+    'error.500.message' => 'Something went wrong. Please try again later.',
+    'error.503.title' => 'Maintenance',
+    'error.503.message' => 'The site is temporarily under maintenance.',
 ];

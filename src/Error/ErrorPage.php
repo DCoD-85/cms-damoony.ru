@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace Damoony\Error;
 
 use Damoony\Http\Response;
+use Damoony\I18n\Translator;
 use Damoony\Ui\Builder;
 use Damoony\Ui\Document;
 
 final class ErrorPage
 {
+    /** @var array<string, Translator> */
+    private static array $translators = [];
+
     public static function notFound(string $lang = 'ru'): Response
     {
         return self::html(404, '', '', $lang);
@@ -33,16 +37,17 @@ final class ErrorPage
     public static function tooManyRequests(string $lang = 'ru', int $retryAfter = 60): Response
     {
         $minutes = max(1, (int) ceil($retryAfter / 60));
-        $message = "Пожалуйста, подождите {$minutes} мин. перед повторной попыткой.";
+        $t = self::translator($lang);
 
-        return self::html(429, 'Слишком много запросов', $message, $lang)
+        return self::html(429, $t->t('error.429.title'), $t->t('error.429.retry', ['minutes' => $minutes]), $lang)
             ->withHeader('Retry-After', (string) $retryAfter);
     }
 
     public static function html(int $code, string $title = '', string $message = '', string $lang = 'ru'): Response
     {
-        $title = $title !== '' ? $title : self::defaultTitle($code);
-        $message = $message !== '' ? $message : self::defaultMessage($code);
+        $t = self::translator($lang);
+        $title = $title !== '' ? $title : self::defaultTitle($code, $t);
+        $message = $message !== '' ? $message : self::defaultMessage($code, $t);
 
         $doc = new Document();
         $doc->lang($lang);
@@ -60,27 +65,24 @@ final class ErrorPage
         return Response::html($doc->release(), $code);
     }
 
-    private static function defaultTitle(int $code): string
+    private static function translator(string $lang): Translator
     {
-        return match ($code) {
-            403 => 'Доступ запрещён',
-            404 => 'Страница не найдена',
-            429 => 'Слишком много запросов',
-            500 => 'Ошибка сервера',
-            503 => 'Технические работы',
-            default => 'Ошибка',
-        };
+        return self::$translators[$lang] ??= new Translator($lang, 'ru');
     }
 
-    private static function defaultMessage(int $code): string
+    private static function defaultTitle(int $code, Translator $t): string
     {
-        return match ($code) {
-            403 => 'У вас нет доступа к этой странице.',
-            404 => 'Запрошенная страница не существует.',
-            429 => 'Вы сделали слишком много запросов за короткое время.',
-            500 => 'Что-то пошло не так. Попробуйте позже.',
-            503 => 'Сайт временно на обслуживании.',
-            default => '',
-        };
+        $key = 'error.' . $code . '.title';
+        $v = $t->t($key);
+
+        return $v === $key ? $t->t('error.default.title') : $v;
+    }
+
+    private static function defaultMessage(int $code, Translator $t): string
+    {
+        $key = 'error.' . $code . '.message';
+        $v = $t->t($key);
+
+        return $v === $key ? $t->t('error.default.message') : $v;
     }
 }

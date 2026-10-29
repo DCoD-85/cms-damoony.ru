@@ -176,12 +176,14 @@ final class PageHandlerTest extends TestCase
         $match = RouteMatch::found('algoritm_test', 'test');
         $context = $this->ctx();
 
-        // 1. PROD: сообщение скрыто
+        // 1. PROD: сообщение скрыто, локализованный fallback
         putenv('APP_ENV=prod');
         $_ENV['APP_ENV'] = 'prod';
         $response = $handler->handle($match, $context);
+        self::assertSame(500, $response->status);
         self::assertStringNotContainsString('SUPER_SECRET_ERROR_MESSAGE', $response->body);
-        self::assertStringContainsString('Internal Server Error', $response->body);
+        self::assertStringContainsString('Ошибка сервера', $response->body);
+        self::assertStringContainsString('Что-то пошло не так', $response->body);
 
         // 2. DEV: сообщение видно
         putenv('APP_ENV=dev');

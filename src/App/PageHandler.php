@@ -9,6 +9,7 @@ use Damoony\Core\Config;
 use Damoony\Core\Env;
 use Damoony\Domain\DomainContext;
 use Damoony\Domain\DomainResolverInterface;
+use Damoony\Error\ErrorPage;
 use Damoony\Files\Paths;
 use Damoony\Http\Response;
 use Damoony\Region\RegionContext;
@@ -42,18 +43,18 @@ final class PageHandler implements PageHandlerInterface
         $ns = $this->resolver->namespace($domain->real);
         $class = $ns . '\\' . $domain->allias . '\\' . $match->classChain;
         if (!class_exists($class, false)) {
-            return Response::internalError('Page class not found: ' . $class);
+            return ErrorPage::serverError($domain->language, $this->debugDetail('Page class not found: ' . $class));
         }
 
         if (!is_subclass_of($class, AlgoritmInterface::class)) {
-            return Response::internalError('Page class does not implement AlgoritmInterface');
+            return ErrorPage::serverError($domain->language, $this->debugDetail('Page class does not implement AlgoritmInterface'));
         }
 
         $paths = $context->service('paths');
         $site = $context->service('site');
 
         if (!$paths instanceof Paths) {
-            return Response::internalError('Paths service missing');
+            return ErrorPage::serverError($domain->language, $this->debugDetail('Paths service missing'));
         }
 
         $loader = new RegionLoader(
@@ -69,10 +70,7 @@ final class PageHandler implements PageHandlerInterface
 
             return $this->toResponse($result, $domain, $context);
         } catch (\Throwable $e) {
-            $message = Env::fromServer()->isDev()
-                ? $e->getMessage()
-                : 'Internal Server Error';
-            return Response::internalError($message);
+            return ErrorPage::serverError($domain->language, $this->debugDetail($e->getMessage()));
         }
     }
 
@@ -101,6 +99,11 @@ final class PageHandler implements PageHandlerInterface
         }
 
         return Response::text('', 204);
+    }
+
+    private function debugDetail(string $message): string
+    {
+        return Env::fromServer()->isDev() ? $message : '';
     }
 
     private function applySkin(DomainContext $domain, RegionContext $context): void

@@ -234,4 +234,19 @@ return [
     'admin.overview.nav' => '概览',
 
     'scheme.global_not_found' => '未找到全局方案。请先在域级别创建它。',
+
+    // Error pages (403/404/429/500/503)
+    'error.default.title' => '错误',
+    'error.default.message' => '',
+    'error.403.title' => '拒绝访问',
+    'error.403.message' => '您无权访问此页面。',
+    'error.404.title' => '页面未找到',
+    'error.404.message' => '请求的页面不存在。',
+    'error.429.title' => '请求过多',
+    'error.429.message' => '您在短时间内发送了太多请求。',
+    'error.429.retry' => '请等待 {minutes} 分钟后重试。',
+    'error.500.title' => '服务器错误',
+    'error.500.message' => '出错了。请稍后重试。',
+    'error.503.title' => '维护中',
+    'error.503.message' => '网站正在临时维护。',
 ];
