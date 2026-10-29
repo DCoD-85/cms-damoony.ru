@@ -132,10 +132,16 @@ final class Attrs
         }
 
         foreach ($this->attributes as $name => $value) {
+            if (!preg_match('/^[a-zA-Z0-9\-_]+$/', $name)) {
+                continue;
+            }
             $parts[] = $name . '="' . $this->esc($value) . '"';
         }
 
         foreach ($this->data as $name => $value) {
+            if (!preg_match('/^[a-zA-Z0-9\-_]+$/', $name)) {
+                continue;
+            }
             $parts[] = 'data-' . $name . '="' . $this->esc($value) . '"';
         }
 

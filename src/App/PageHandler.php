@@ -16,7 +16,6 @@ use Damoony\Region\RegionLoader;
 use Damoony\Routing\RouteMatch;
 use Damoony\Ui\Document;
 use Damoony\Ui\Node;
-use RuntimeException;
 
 final class PageHandler implements PageHandlerInterface
 {
@@ -101,7 +100,7 @@ final class PageHandler implements PageHandlerInterface
             return Response::html($doc->release());
         }
 
-        throw new RuntimeException('Page returned null; default() must return Node or Response');
+        return Response::noContent();
     }
 
     private function applySkin(DomainContext $domain, RegionContext $context): void
