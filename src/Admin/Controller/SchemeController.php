@@ -316,8 +316,8 @@ final class SchemeController extends BaseController
             }
             $class = trim((string)($row['class'] ?? ''));
             $layout = (string)($row['layout'] ?? '');
-            $parentRaw = $row['parent'] ?? '';
-            $parentId = ($parentRaw === '' || $parentRaw === null) ? null : (int)$parentRaw;
+            $parentRaw = (string)($row['parent'] ?? '');
+            $parentId = ($parentRaw === '') ? null : (int)$parentRaw;
 
             if ($slotName === '') {
                 $node = ['tag' => $tag];
