@@ -216,8 +216,9 @@ final class PageController extends BaseController
 
         // Получаем слоты из схемы
         $site = \Damoony\Core\Config::fromFile($this->paths->siteConfig())->all();
-        $schemeName = (string) ($site['domains_scheme'][$domain] ?? 'www');
-        $schemeFile = $this->paths->domain($domain) . '/.alliasscheme/' . $schemeName . '.data.php';
+        $realDomain = (string) ($site['domains_real'][$domain] ?? $domain);
+        $schemeName = (string) ($site['domains_scheme'][$realDomain] ?? 'www');
+        $schemeFile = $this->paths->domain($realDomain) . '/.alliasscheme/' . $schemeName . '.data.php';
         $availableSlots = ['center'];
         if (is_file($schemeFile)) {
             $schemeData = require $schemeFile;

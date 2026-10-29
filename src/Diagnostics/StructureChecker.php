@@ -77,7 +77,58 @@ final class StructureChecker
             }
         }
 
+        // ПРОВЕРКА .edit.json ↔ PHP
+        $this->checkPagesJson($algoritmDir, $issues);
+
+        // ПРОВЕРКА schemes.json ↔ файлы
+        $schemesDir = $this->paths->domain($realDomain) . '/.alliasscheme';
+        $this->checkSchemesJson($schemesDir, $allias, $issues);
+
         return $issues;
+    }
+
+    /**
+     * @param list<array{level: string, message: string}> $issues
+     */
+    private function checkPagesJson(string $algoritmDir, array &$issues): void
+    {
+        $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($algoritmDir, \FilesystemIterator::SKIP_DOTS));
+        foreach ($iterator as $file) {
+            if ($file->isFile() && $file->getFilename() === '.edit.json') {
+                $dir = $file->getPath();
+                $phpFiles = glob($dir . '/algoritm_*.php');
+                if (empty($phpFiles)) {
+                    $issues[] = ['level' => 'warning', 'message' => 'Есть .edit.json, но нет сгенерированного algoritm_*.php в ' . str_replace($algoritmDir, '', $dir)];
+                }
+            }
+        }
+    }
+
+    /**
+     * @param list<array{level: string, message: string}> $issues
+     */
+    private function checkSchemesJson(string $schemesDir, string $allias, array &$issues): void
+    {
+        $manifestFile = $schemesDir . '/schemes.json';
+        $manifest = is_file($manifestFile) ? json_decode((string)file_get_contents($manifestFile), true) : [];
+        $schemes = is_array($manifest) && isset($manifest['schemes']) ? array_keys($manifest['schemes']) : [];
+
+        $files = glob($schemesDir . '/*.data.php') ?: [];
+        $fileNames = array_map(fn ($f) => basename($f, '.data.php'), $files);
+
+        // 1. В манифесте есть, а файла нет
+        foreach ($schemes as $s) {
+            if (!in_array($s, $fileNames, true)) {
+                $issues[] = ['level' => 'error', 'message' => "Схема '{$s}' есть в schemes.json, но файл {$s}.data.php отсутствует"];
+            }
+        }
+
+        // 2. Файл есть, а в манифесте нет (игнорируем локальные схемы алиасов)
+        foreach ($fileNames as $f) {
+            if (!in_array($f, $schemes, true) && $f !== $allias) {
+                $issues[] = ['level' => 'warning', 'message' => "Файл {$f}.data.php есть, но его нет в schemes.json (сирота)"];
+            }
+        }
     }
 
     /**
