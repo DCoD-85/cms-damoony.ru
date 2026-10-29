@@ -7,7 +7,7 @@ namespace Damoony\Region;
 final class RegionCompiler
 {
     /**
-     * @param list<array{type: string, content: string, level?: int}> $blocks
+     * @param list<array<string, mixed>> $blocks
      */
     public function compile(string $namespace, string $blockName, array $blocks, string $classSuffix = ''): string
     {
@@ -25,18 +25,38 @@ final class RegionCompiler
         $code .= "    public function render(RegionContext \$context): Node\n    {\n";
         $code .= "        \$wrap = Builder::div('{$blockName}-wrap');\n";
 
-        foreach ($blocks as $block) {
-            $type = $block['type'];
-            $content = var_export($block['content'], true);
+        $indent = '        '; // 8 пробелов
 
-            if ($type === 'h1') {
-                $code .= "        \$wrap->append(Builder::h(1)->content({$content}));\n";
+        foreach ($blocks as $block) {
+            $type = $block['type'] ?? 'text';
+            $content = $block['content'] ?? '';
+
+            if ($type === 'custom') {
+                $userCode = (string)($block['code'] ?? '');
+                if ($userCode !== '') {
+                    foreach (explode("\n", $userCode) as $line) {
+                        $code .= $indent . $line . "\n";
+                    }
+                }
+            } elseif ($type === 'if') {
+                $condition = (string)($block['condition'] ?? '');
+                $code .= $indent . "if ({$condition}) {\n";
+                $indent .= '    ';
+            } elseif ($type === 'else') {
+                $indent = substr($indent, 0, -4);
+                $code .= $indent . "} else {\n";
+                $indent .= '    ';
+            } elseif ($type === 'endif') {
+                $indent = substr($indent, 0, -4);
+                $code .= $indent . "}\n";
+            } elseif ($type === 'h1') {
+                $code .= $indent . '$wrap->append(Builder::h(1)->content(' . var_export($content, true) . "));\n";
             } elseif ($type === 'h2') {
-                $code .= "        \$wrap->append(Builder::h(2)->content({$content}));\n";
+                $code .= $indent . '$wrap->append(Builder::h(2)->content(' . var_export($content, true) . "));\n";
             } elseif ($type === 'text') {
-                $code .= "        \$wrap->append(Builder::p()->content({$content}));\n";
+                $code .= $indent . '$wrap->append(Builder::p()->content(' . var_export($content, true) . "));\n";
             } elseif ($type === 'img') {
-                $code .= "        \$wrap->append(Builder::img({$content}, 'Image'));\n";
+                $code .= $indent . '$wrap->append(Builder::img(' . var_export($content, true) . ", 'Image'));\n";
             }
         }
 

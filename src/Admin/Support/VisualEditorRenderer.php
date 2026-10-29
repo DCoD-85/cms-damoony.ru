@@ -282,4 +282,94 @@ final class VisualEditorRenderer
 
         return $form;
     }
+
+    /**
+     * @param array<string, mixed> $block
+     */
+    public static function renderCustomRow(int $index, array $block, string $prefix = 'blocks'): Element
+    {
+        $code = (string)($block['code'] ?? '');
+
+        $tile = Builder::div('pb-block-tile editor-block-row');
+        $tile->attrs()->add('data-type', 'custom');
+
+        $header = Builder::div('pb-block-header');
+        $header->append(Builder::span('pb-block-title')->content(View::t('admin.editor.logic_code')));
+        $removeBtn = Builder::button('button', 'remove-block-btn');
+        $removeBtn->content('×');
+        $header->append($removeBtn);
+        $tile->append($header);
+
+        $textarea = Builder::el('textarea');
+        $textarea->attrs()->add('name', "{$prefix}[{$index}][code]");
+        $textarea->attrs()->add('placeholder', '// PHP code here...');
+        $textarea->attrs()->add('rows', '5');
+        $textarea->attrs()->classAdd('pb-textarea code-font');
+        $textarea->content($code);
+        $tile->append($textarea);
+
+        return $tile;
+    }
+
+    /**
+     * @param array<string, mixed> $block
+     */
+    public static function renderIfRow(int $index, array $block, string $prefix = 'blocks'): Element
+    {
+        $condition = (string)($block['condition'] ?? '');
+
+        $tile = Builder::div('pb-block-tile editor-block-row');
+        $tile->attrs()->add('data-type', 'if');
+
+        $header = Builder::div('pb-block-header');
+        $header->append(Builder::span('pb-block-title')->content(View::t('admin.editor.logic_if')));
+        $removeBtn = Builder::button('button', 'remove-block-btn');
+        $removeBtn->content('×');
+        $header->append($removeBtn);
+        $tile->append($header);
+
+        $input = Builder::input('text', "{$prefix}[{$index}][condition]");
+        $input->attrs()->add('value', $condition);
+        $input->attrs()->add('placeholder', '$isAuth === true');
+        $input->attrs()->classAdd('pb-input code-font');
+        $tile->append($input);
+
+        return $tile;
+    }
+
+    /**
+     * @param array<string, mixed> $block
+     */
+    public static function renderElseRow(int $index, array $block, string $prefix = 'blocks'): Element
+    {
+        $tile = Builder::div('pb-block-tile editor-block-row');
+        $tile->attrs()->add('data-type', 'else');
+
+        $header = Builder::div('pb-block-header');
+        $header->append(Builder::span('pb-block-title')->content(View::t('admin.editor.logic_else')));
+        $removeBtn = Builder::button('button', 'remove-block-btn');
+        $removeBtn->content('×');
+        $header->append($removeBtn);
+        $tile->append($header);
+
+        return $tile;
+    }
+
+    /**
+     * @param array<string, mixed> $block
+     */
+    public static function renderEndifRow(int $index, array $block, string $prefix = 'blocks'): Element
+    {
+        $tile = Builder::div('pb-block-tile editor-block-row');
+        $tile->attrs()->add('data-type', 'endif');
+
+        $header = Builder::div('pb-block-header');
+        $header->append(Builder::span('pb-block-title')->content(View::t('admin.editor.logic_endif')));
+        $removeBtn = Builder::button('button', 'remove-block-btn');
+        $removeBtn->content('×');
+        $header->append($removeBtn);
+        $tile->append($header);
+
+        return $tile;
+    }
 }

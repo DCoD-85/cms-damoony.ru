@@ -286,6 +286,16 @@ return [
 
     'scheme.global_not_found' => 'Global scheme not found. Create it at the domain level first.',
 
+    'admin.editor.logic_code' => 'PHP Code',
+    'admin.editor.logic_if' => 'IF Condition',
+    'admin.editor.logic_else' => 'Else',
+    'admin.editor.logic_endif' => 'End IF',
+
+    'admin.editor.error_if_empty' => 'IF condition cannot be empty.',
+    'admin.editor.error_if_unclosed' => 'IF block is not closed (ENDIF missing).',
+    'admin.editor.error_endif_orphan' => 'ENDIF without matching IF.',
+    'admin.editor.error_else_orphan' => 'ELSE without matching IF.',
+	
     // Error pages (403/404/429/500/503)
     'error.default.title' => 'Error',
     'error.default.message' => '',
@@ -300,4 +310,13 @@ return [
     'error.500.message' => 'Something went wrong. Please try again later.',
     'error.503.title' => 'Maintenance',
     'error.503.message' => 'The site is temporarily under maintenance.',
+
+    'admin.editor.root' => 'Root',
+    'admin.editor.container_no_slot' => '— Container (no slot) —',
+    'admin.editor.css_class' => 'CSS class',
+    'admin.editor.block' => 'Block',
+    'admin.editor.status_disabled' => 'Disabled',
+    'admin.editor.status_global' => 'Global',
+    'admin.editor.status_local' => 'Local',
+    'admin.editor.visual_data' => 'Data (Visual)',
 ];

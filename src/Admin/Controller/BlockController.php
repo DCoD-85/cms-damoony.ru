@@ -15,6 +15,7 @@ use Damoony\Files\Paths;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
 use Damoony\Region\RegionCompiler;
+use Damoony\Region\RegionValidator;
 use Damoony\Ui\Builder;
 use Damoony\Ui\Element;
 use Damoony\Ui\Field;
@@ -47,7 +48,6 @@ final class BlockController extends BaseController
         }
 
         $filterType = (string) $request->query('type', 'all');
-
         $blocksDir = $this->paths->domain($domain) . '/.alliasglobal';
         $manifestFile = $blocksDir . '/blocks.json';
         $manifest = is_file($manifestFile) ? json_decode((string)file_get_contents($manifestFile), true) : [];
@@ -55,27 +55,20 @@ final class BlockController extends BaseController
 
         $blocks = [];
         if (is_dir($blocksDir)) {
-            $items = scandir($blocksDir) ?: [];
-            foreach ($items as $item) {
+            foreach (scandir($blocksDir) ?: [] as $item) {
                 if ($item === '.' || $item === '..' || !is_dir($blocksDir . '/' . $item)) {
                     continue;
                 }
                 $type = $manifestBlocks[$item]['type'] ?? 'mixed';
-
                 if ($filterType !== 'all' && $filterType !== $type) {
                     continue;
                 }
-
-                $blocks[] = [
-                    'name' => $item,
-                    'type' => $type,
-                ];
+                $blocks[] = ['name' => $item, 'type' => $type];
             }
         }
         usort($blocks, fn ($a, $b) => strcmp($a['name'], $b['name']));
 
         $card = Builder::div('admin-card');
-
         $breadcrumbs = Builder::div('breadcrumbs');
         $breadcrumbs->append(Builder::a('/admin/?p=domain')->content(View::t('domain.bread_domains')));
         $breadcrumbs->append(Text::raw(' / '));
@@ -85,13 +78,11 @@ final class BlockController extends BaseController
         $header = Builder::div('page-header');
         $header->append(Builder::h(1)->content(View::t('tab.blocks')));
         $actions = Builder::div('page-actions');
-        $actions->append(Builder::a('/admin/?p=block:new&domain=' . urlencode($domain), 'btn btn-primary')->content(View::t('admin.block.add')));
+        $actions->append(Builder::a('/admin/?p=block:new&domain=' . urlencode($domain), 'btn btn-primary')->content(View::t('block.add')));
         $header->append($actions);
         $card->append($header);
-
         $card->append(View::domainTabs($domain, 'blocks'));
 
-        // Табы фильтрации
         $tabs = Builder::div('nav-tabs');
         $types = [
             'all' => View::t('block.all'),
@@ -111,7 +102,6 @@ final class BlockController extends BaseController
         $card->append($tabs);
 
         $table = (new Table())->headers(View::t('block.th_name'), View::t('block.th_type'), View::t('domain.bind_th_act'));
-
         if ($blocks === []) {
             $table->row([Text::raw(View::t('stub.empty')), Text::raw(''), Text::raw('')]);
         } else {
@@ -119,22 +109,17 @@ final class BlockController extends BaseController
                 $name = $block['name'];
                 $type = $block['type'];
                 $typeLabel = $types[$type] ?? $type;
-
                 $codeUrl = '/admin/?p=editor&domain=' . urlencode($domain) . '&file=' . urlencode('.alliasglobal/' . $name . '/' . $name . '.php');
                 $deleteUrl = '/admin/?p=block:remove&domain=' . urlencode($domain) . '&name=' . urlencode($name);
 
                 $actionsHtml = Builder::div('table-actions');
-
                 if ($type !== 'script') {
                     $visualUrl = '/admin/?p=block:edit&domain=' . urlencode($domain) . '&name=' . urlencode($name);
-                    $actionsHtml->append(Builder::a($visualUrl, 'btn btn-primary')->content(View::t('admin.block.visual_editor')));
+                    $actionsHtml->append(Builder::a($visualUrl, 'btn btn-primary')->content(View::t('block.visual_editor')));
                 }
-
                 $actionsHtml->append(Builder::a($codeUrl, 'btn btn-outline')->content(View::t('page.edit')));
 
-                $delForm = Form::create($deleteUrl, 'POST')
-                    ->csrf($this->csrf->field())
-                    ->submit(View::t('stub.delete'));
+                $delForm = Form::create($deleteUrl, 'POST')->csrf($this->csrf->field())->submit(View::t('stub.delete'));
                 $delBtn = $delForm->build();
                 foreach ($delBtn->children() as $child) {
                     if ($child instanceof Element && $child->tag() === 'button') {
@@ -144,15 +129,10 @@ final class BlockController extends BaseController
                 }
                 $actionsHtml->append($delBtn);
 
-                $table->row([
-                    Builder::el('b')->content($name),
-                    $typeLabel,
-                    $actionsHtml,
-                ]);
+                $table->row([Builder::el('b')->content($name), $typeLabel, $actionsHtml]);
             }
         }
         $card->append($table->build());
-
         return Response::html($this->view->render($card, ['title' => View::t('tab.blocks') . ': ' . $domain]));
     }
 
@@ -206,7 +186,6 @@ final class BlockController extends BaseController
             $card->append(Message::error($error)->build());
         }
         $card->append($form->build());
-
         return Response::html($this->view->render($card, ['title' => View::t('block.create_title')]));
     }
 
@@ -219,7 +198,6 @@ final class BlockController extends BaseController
 
         $domain = (string) $request->query('domain', '');
         $name = (string) $request->query('name', '');
-
         if ($domain === '' || $name === '') {
             return $this->redirect('/admin/?p=domain');
         }
@@ -248,7 +226,6 @@ final class BlockController extends BaseController
         $card->append(Builder::a('/admin/?p=block&domain=' . urlencode($domain))->content(View::t('domain.bind_back')));
         $card->append(Builder::h(1)->content(View::t('block.edit_title') . ': ' . View::esc($name)));
 
-        // Сборка формы через Builder
         $form = Builder::el('form');
         $form->attrs()->add('method', 'post');
         $form->attrs()->add('action', '/admin/?p=block:save&domain=' . urlencode($domain) . '&name=' . urlencode($name));
@@ -256,8 +233,6 @@ final class BlockController extends BaseController
         $form->append(Text::raw($this->csrf->field()));
 
         $layout = Builder::div('pb-layout');
-
-        // Левая колонка: Canvas
         $canvas = Builder::div('pb-canvas');
         $canvas->attrs()->add('id', 'blocks-container');
 
@@ -269,21 +244,19 @@ final class BlockController extends BaseController
         }
         $layout->append($canvas);
 
-        // Правая колонка: Tools
         $tools = Builder::div('pb-tools');
-        $tools->append(Builder::h(3)->content(View::t('admin.page.add_block')));
-
-        $toolTypes = ['h1' => 'H1', 'h2' => 'H2', 'text' => 'TEXT', 'img' => 'IMG'];
+        $tools->append(Builder::h(3)->content(View::t('page.add_block')));
+        $toolTypes = ['h1' => 'H1', 'h2' => 'H2', 'text' => 'TEXT', 'img' => 'IMG', 'custom' => 'PHP CODE', 'if' => 'IF', 'else' => 'ELSE', 'endif' => 'ENDIF'];
         foreach ($toolTypes as $type => $label) {
-            $btn = Builder::div("pb-tool pb-tool-{$type}")->content($label);
-            $btn->attrs()->add('data-type', $type)->add('draggable', 'true');
+            $btn = Builder::div("pb-tool pb-tool-{$type}");
+            $btn->attrs()->add('data-type', $type);
+            $btn->attrs()->add('draggable', 'true');
+            $btn->content($label);
             $tools->append($btn);
         }
         $layout->append($tools);
-
         $form->append($layout);
 
-        // Шаблон для JS
         $templateEl = Builder::el('template');
         $templateEl->attrs()->add('id', 'block-template');
         $templateEl->append(VisualEditorRenderer::renderBlockRow(9999, ['type' => 'text', 'content' => '']));
@@ -296,7 +269,7 @@ final class BlockController extends BaseController
         $addBtn->attrs()->add('type', 'button');
         $addBtn->attrs()->add('id', 'add-block-btn');
         $addBtn->attrs()->classAdd('btn btn-outline');
-        $addBtn->content(View::t('admin.page.add_block'));
+        $addBtn->content(View::t('page.add_block'));
         $actionsDiv->append($addBtn);
 
         $saveBtn = Builder::el('button');
@@ -307,7 +280,6 @@ final class BlockController extends BaseController
 
         $form->append($actionsDiv);
         $card->append($form);
-
         return Response::html($this->view->render($card, ['title' => View::t('block.edit_title')]));
     }
 
@@ -325,7 +297,6 @@ final class BlockController extends BaseController
 
         $domain = (string) $request->query('domain', '');
         $name = (string) $request->query('name', '');
-
         $blockDir = $this->paths->domain($domain) . '/.alliasglobal/' . $name;
         if (!is_dir($blockDir)) {
             return $this->redirect('/admin/?p=block&domain=' . urlencode($domain));
@@ -335,12 +306,16 @@ final class BlockController extends BaseController
         if (!is_array($blocks)) {
             $blocks = [];
         }
+        ksort($blocks);
+        $blocks = array_values($blocks);
 
-        $cleanBlocks = [];
-        foreach ($blocks as $b) {
-            if (isset($b['type'], $b['content']) && trim((string)$b['content']) !== '') {
-                $cleanBlocks[] = ['type' => (string)$b['type'], 'content' => (string)$b['content']];
-            }
+        $cleanBlocks = $this->normalizeBlocks($blocks);
+        $validator = new RegionValidator();
+        $errors = $validator->validate($cleanBlocks);
+
+        if ($errors !== []) {
+            $msg = implode(' ', array_map(fn ($k) => View::t($k), $errors));
+            return Response::text($msg, 400);
         }
 
         Fs::writeAtomic($blockDir . '/.edit.json', json_encode(['blocks' => $cleanBlocks], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
@@ -352,7 +327,6 @@ final class BlockController extends BaseController
 
         $compiler = new RegionCompiler();
         $php = $compiler->compile($namespace, $name, $cleanBlocks);
-
         Fs::writeAtomic($blockDir . '/' . $name . '.php', $php);
 
         return $this->redirect('/admin/?p=block&domain=' . urlencode($domain));
@@ -364,10 +338,12 @@ final class BlockController extends BaseController
         if ($auth !== null) {
             return $auth;
         }
+
         $postErr = $this->requirePost($request);
         if ($postErr !== null) {
             return $postErr;
         }
+
         $csrfErr = $this->requireCsrf($request);
         if ($csrfErr !== null) {
             return $csrfErr;
@@ -375,12 +351,81 @@ final class BlockController extends BaseController
 
         $domain = (string) $request->query('domain', '');
         $name = (string) $request->query('name', '');
-
         if ($domain !== '' && $name !== '') {
             $cmd = new BlockRemoveCommand($this->paths);
             $cmd->run(['domain' => $domain, 'name' => $name], new Context(static fn () => null));
         }
-
         return $this->redirect('/admin/?p=block&domain=' . urlencode($domain));
+    }
+
+    public function preview(Request $request): Response
+    {
+        $auth = $this->requireAuth();
+        if ($auth !== null) {
+            return $auth;
+        }
+
+        $domain = (string) $request->query('domain', '');
+        $name = (string) $request->query('name', '') ?: 'block';
+
+        $blocks = $request->post['blocks'] ?? [];
+        if (!is_array($blocks)) {
+            $blocks = [];
+        }
+        ksort($blocks);
+        $blocks = array_values($blocks);
+
+        $cleanBlocks = $this->normalizeBlocks($blocks);
+        $validator = new RegionValidator();
+        $errors = $validator->validate($cleanBlocks);
+
+        $card = Builder::div('admin-card');
+
+        if ($errors !== []) {
+            $msg = implode(' ', array_map(fn ($k) => View::t($k), $errors));
+            $card->append(Message::error($msg)->build());
+        } else {
+            $compiler = new RegionCompiler();
+            $php = $compiler->compile('Preview\Namespace', $name, $cleanBlocks);
+
+            $pre = Builder::el('pre');
+            $pre->attrs()->styleAdd('padding:20px; background:#282a36; color:#f8f8f2; border-radius:8px; overflow:auto; text-align:left;');
+            $code = Builder::el('code');
+            $code->content($php);
+            $pre->append($code);
+            $card->append($pre);
+        }
+
+        return Response::html($this->view->render($card, ['title' => 'PHP Preview']));
+    }
+
+    /**
+     * @param array<int, mixed> $blocks
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function normalizeBlocks(array $blocks): array
+    {
+        $clean = [];
+        foreach ($blocks as $b) {
+            if (!is_array($b)) {
+                continue;
+            }
+            $type = (string)($b['type'] ?? '');
+            if ($type === '') {
+                continue;
+            }
+
+            if ($type === 'if') {
+                $clean[] = ['type' => 'if', 'condition' => (string)($b['condition'] ?? '')];
+            } elseif ($type === 'custom') {
+                $clean[] = ['type' => 'custom', 'code' => (string)($b['code'] ?? '')];
+            } elseif ($type === 'else' || $type === 'endif') {
+                $clean[] = ['type' => $type];
+            } elseif (isset($b['content']) && trim((string)$b['content']) !== '') {
+                $clean[] = ['type' => $type, 'content' => (string)$b['content']];
+            }
+        }
+        return $clean;
     }
 }

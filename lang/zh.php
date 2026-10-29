@@ -286,6 +286,16 @@ return [
 
     'scheme.global_not_found' => '未找到全局方案。请先在域级别创建它。',
 
+    'admin.editor.logic_code' => 'PHP 代码',
+    'admin.editor.logic_if' => 'IF 条件',
+    'admin.editor.logic_else' => 'ELSE',
+    'admin.editor.logic_endif' => '结束 IF',
+
+    'admin.editor.error_if_empty' => 'IF 条件不能为空。',
+    'admin.editor.error_if_unclosed' => 'IF 块未关闭 (缺少 ENDIF)。',
+    'admin.editor.error_endif_orphan' => '多余的 ENDIF (无匹配的 IF)。',
+    'admin.editor.error_else_orphan' => '多余的 ELSE (无匹配的 IF)。',
+	
     // Error pages (403/404/429/500/503)
     'error.default.title' => '错误',
     'error.default.message' => '',
@@ -300,4 +310,13 @@ return [
     'error.500.message' => '出错了。请稍后重试。',
     'error.503.title' => '维护中',
     'error.503.message' => '网站正在临时维护。',
+
+    'admin.editor.root' => '根目录',
+    'admin.editor.container_no_slot' => '— 容器 (无插槽) —',
+    'admin.editor.css_class' => 'CSS 类',
+    'admin.editor.block' => '区块',
+    'admin.editor.status_disabled' => '已禁用',
+    'admin.editor.status_global' => '全局',
+    'admin.editor.status_local' => '本地',
+    'admin.editor.visual_data' => '数据 (可视化)',
 ];

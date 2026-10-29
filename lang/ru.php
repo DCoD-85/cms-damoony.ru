@@ -286,6 +286,16 @@ return [
 
     'scheme.global_not_found' => 'Глобальная схема не найдена. Создайте её сначала на уровне домена.',
 
+    'admin.editor.logic_code' => 'PHP Код',
+    'admin.editor.logic_if' => 'Условие IF',
+    'admin.editor.logic_else' => 'Иначе ELSE',
+    'admin.editor.logic_endif' => 'Конец IF (ENDIF)',
+
+    'admin.editor.error_if_empty' => 'Условие IF не может быть пустым.',
+    'admin.editor.error_if_unclosed' => 'Не закрыт блок IF (не хватает ENDIF).',
+    'admin.editor.error_endif_orphan' => 'Лишний ENDIF без открывающего IF.',
+    'admin.editor.error_else_orphan' => 'Лишний ELSE без открывающего IF.',
+	
     // Error pages (403/404/429/500/503)
     'error.default.title' => 'Ошибка',
     'error.default.message' => '',
@@ -300,4 +310,13 @@ return [
     'error.500.message' => 'Что-то пошло не так. Попробуйте позже.',
     'error.503.title' => 'Технические работы',
     'error.503.message' => 'Сайт временно на обслуживании.',
+
+    'admin.editor.root' => 'Корень',
+    'admin.editor.container_no_slot' => '— Контейнер (без слота) —',
+    'admin.editor.css_class' => 'CSS класс',
+    'admin.editor.block' => 'Блок',
+    'admin.editor.status_disabled' => 'Выключен',
+    'admin.editor.status_global' => 'Глобальный',
+    'admin.editor.status_local' => 'Локальный',
+    'admin.editor.visual_data' => 'Данные (Визуал)',
 ];

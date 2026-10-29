@@ -14,6 +14,8 @@ use Damoony\Files\Fs;
 use Damoony\Files\Paths;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
+use Damoony\Region\RegionCompiler;
+use Damoony\Region\RegionValidator;
 use Damoony\Ui\Builder;
 use Damoony\Ui\Element;
 use Damoony\Ui\Field;
@@ -43,23 +45,18 @@ final class FillerController extends BaseController
 
         $domain = (string) $request->query('domain', '');
         $allias = (string) $request->query('allias', '');
-
         if ($domain === '' || $allias === '') {
             return $this->redirect('/admin/?p=domain');
         }
 
         $fillers = $this->siteConfig->getByKey(['fillers', $domain, $allias], []);
-
         $success = '';
         if ($request->query('synced')) {
             $count = (int) $request->query('synced');
-            $success = $count > 0
-                ? View::t('filler.sync_success', ['count' => $count])
-                : View::t('filler.sync_empty');
+            $success = $count > 0 ? View::t('filler.sync_success', ['count' => $count]) : View::t('filler.sync_empty');
         }
 
         $card = Builder::div('admin-card');
-
         $breadcrumbs = Builder::div('breadcrumbs');
         $breadcrumbs->append(Builder::a('/admin/?p=domain')->content(View::t('domain.bread_domains')));
         $breadcrumbs->append(Text::raw(' / '));
@@ -72,24 +69,17 @@ final class FillerController extends BaseController
         $header->append(Builder::h(1)->content(View::t('filler.title') . ': ' . View::esc($allias)));
 
         $actions = Builder::div('page-actions');
-
-        // Форма синхронизации (POST)
-        $syncForm = Form::create('/admin/?p=filler:sync&domain=' . urlencode($domain) . '&allias=' . urlencode($allias), 'POST')
-            ->csrf($this->csrf->field())
-            ->submit(View::t('filler.sync'));
-
+        $syncForm = Form::create('/admin/?p=filler:sync&domain=' . urlencode($domain) . '&allias=' . urlencode($allias), 'POST')->csrf($this->csrf->field())->submit(View::t('filler.sync'));
         $syncBtn = $syncForm->build();
         foreach ($syncBtn->children() as $child) {
             if ($child instanceof Element && $child->tag() === 'button') {
                 $child->attrs()->classAdd('btn btn-outline');
             }
         }
-
         $actions->append($syncBtn);
         $actions->append(Builder::a('/admin/?p=filler:new&domain=' . urlencode($domain) . '&allias=' . urlencode($allias), 'btn btn-primary')->content(View::t('filler.add')));
         $header->append($actions);
         $card->append($header);
-
         $card->append(View::alliasTabs($domain, $allias, 'blocks'));
 
         if ($success !== '') {
@@ -97,7 +87,6 @@ final class FillerController extends BaseController
         }
 
         $table = (new Table())->headers(View::t('filler.th_block'), View::t('filler.th_status'), View::t('domain.bind_th_act'));
-
         if (is_array($fillers) && $fillers !== []) {
             foreach ($fillers as $block => $enabled) {
                 $statusBadge = Builder::span('badge');
@@ -124,28 +113,19 @@ final class FillerController extends BaseController
                 }
 
                 $codeUrl = '/admin/?p=editor&domain=' . urlencode($domain) . '&file=' . urlencode('.alliasglobal/' . $block . '/' . $block . '_' . $allias . '.php');
-                $codeBtn = Builder::a($codeUrl, 'btn btn-outline')->content(View::t('admin.filler.col_code'));
-
                 $visualUrl = '/admin/?p=filler:edit&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&block=' . urlencode((string)$block);
-                $visualBtn = Builder::a($visualUrl, 'btn btn-primary')->content(View::t('admin.page.visual_editor'));
 
                 $actionsCell = Builder::div('table-actions');
-                $actionsCell->append($visualBtn);
-                $actionsCell->append($codeBtn);
+                $actionsCell->append(Builder::a($visualUrl, 'btn btn-primary')->content(View::t('page.visual_editor')));
+                $actionsCell->append(Builder::a($codeUrl, 'btn btn-outline')->content(View::t('filler.col_code')));
                 $actionsCell->append($toggleBtn);
 
-                $table->row([
-                    Builder::el('b')->content((string)$block),
-                    $statusBadge,
-                    $actionsCell,
-                ]);
+                $table->row([Builder::el('b')->content((string)$block), $statusBadge, $actionsCell]);
             }
         } else {
             $table->row([Text::raw(View::t('filler.empty')), Text::raw(''), Text::raw('')]);
         }
-
         $card->append($table->build());
-
         return Response::html($this->view->render($card, ['title' => View::t('filler.title')]));
     }
 
@@ -159,7 +139,6 @@ final class FillerController extends BaseController
         $domain = (string) $request->query('domain', '');
         $allias = (string) $request->query('allias', '');
         $block = (string) $request->query('block', '');
-
         if ($domain === '' || $allias === '' || $block === '') {
             return $this->redirect('/admin/?p=domain');
         }
@@ -195,8 +174,6 @@ final class FillerController extends BaseController
         $form->append(Text::raw($this->csrf->field()));
 
         $layout = Builder::div('pb-layout');
-
-        // Canvas
         $canvas = Builder::div('pb-canvas');
         $canvas->attrs()->add('id', 'blocks-container');
 
@@ -208,18 +185,17 @@ final class FillerController extends BaseController
         }
         $layout->append($canvas);
 
-        // Tools
         $tools = Builder::div('pb-tools');
-        $tools->append(Builder::h(3)->content(View::t('admin.page.add_block')));
-
-        $toolTypes = ['h1' => 'H1', 'h2' => 'H2', 'text' => 'TEXT', 'img' => 'IMG'];
+        $tools->append(Builder::h(3)->content(View::t('page.add_block')));
+        $toolTypes = ['h1' => 'H1', 'h2' => 'H2', 'text' => 'TEXT', 'img' => 'IMG', 'custom' => 'PHP CODE', 'if' => 'IF', 'else' => 'ELSE', 'endif' => 'ENDIF'];
         foreach ($toolTypes as $type => $label) {
-            $btn = Builder::div("pb-tool pb-tool-{$type}")->content($label);
-            $btn->attrs()->add('data-type', $type)->add('draggable', 'true');
+            $btn = Builder::div("pb-tool pb-tool-{$type}");
+            $btn->attrs()->add('data-type', $type);
+            $btn->attrs()->add('draggable', 'true');
+            $btn->content($label);
             $tools->append($btn);
         }
         $layout->append($tools);
-
         $form->append($layout);
 
         $templateEl = Builder::el('template');
@@ -234,7 +210,7 @@ final class FillerController extends BaseController
         $addBtn->attrs()->add('type', 'button');
         $addBtn->attrs()->add('id', 'add-block-btn');
         $addBtn->attrs()->classAdd('btn btn-outline');
-        $addBtn->content(View::t('admin.page.add_block'));
+        $addBtn->content(View::t('page.add_block'));
         $actionsDiv->append($addBtn);
 
         $saveBtn = Builder::el('button');
@@ -245,7 +221,6 @@ final class FillerController extends BaseController
 
         $form->append($actionsDiv);
         $card->append($form);
-
         return Response::html($this->view->render($card, ['title' => View::t('block.edit_title')]));
     }
 
@@ -274,12 +249,16 @@ final class FillerController extends BaseController
         if (!is_array($blocks)) {
             $blocks = [];
         }
+        ksort($blocks);
+        $blocks = array_values($blocks);
 
-        $cleanBlocks = [];
-        foreach ($blocks as $b) {
-            if (isset($b['type'], $b['content']) && trim((string)$b['content']) !== '') {
-                $cleanBlocks[] = ['type' => (string)$b['type'], 'content' => (string)$b['content']];
-            }
+        $cleanBlocks = $this->normalizeBlocks($blocks);
+        $validator = new RegionValidator();
+        $errors = $validator->validate($cleanBlocks);
+
+        if ($errors !== []) {
+            $msg = implode(' ', array_map(fn ($k) => View::t($k), $errors));
+            return Response::text($msg, 400);
         }
 
         $editFile = $blockDir . '/' . $block . '_' . $allias . '.edit.json';
@@ -290,10 +269,8 @@ final class FillerController extends BaseController
         $realDomain = (string) $site['domains_real'][$domain];
         $namespace = (string) ($site['domains_namespace'][$realDomain] ?? str_replace(['.', '-'], '_', $realDomain));
 
-        $compiler = new \Damoony\Region\RegionCompiler();
-        // Передаем суффикс '_www' для филлера
+        $compiler = new RegionCompiler();
         $php = $compiler->compile($namespace, $block, $cleanBlocks, '_' . $allias);
-
         Fs::writeAtomic($blockDir . '/' . $block . '_' . $allias . '.php', $php);
 
         return $this->redirect('/admin/?p=filler&domain=' . urlencode($domain) . '&allias=' . urlencode($allias));
@@ -305,7 +282,6 @@ final class FillerController extends BaseController
         if ($auth !== null) {
             return $auth;
         }
-
         if (!$request->isPost()) {
             return $this->redirect('/admin/?p=domain');
         }
@@ -317,7 +293,6 @@ final class FillerController extends BaseController
 
         $domain = (string) $request->query('domain', '');
         $allias = (string) $request->query('allias', '');
-
         $globalDir = $this->paths->domain($domain) . '/.alliasglobal';
         $blocks = is_dir($globalDir) ? glob($globalDir . '/*', GLOB_ONLYDIR) : [];
 
@@ -327,18 +302,12 @@ final class FillerController extends BaseController
         if ($blocks) {
             foreach ($blocks as $blockPath) {
                 $blockName = basename($blockPath);
-
-                // Пытаемся создать для каждого блока.
-                // Если файл уже есть, FillerNewCommand вернет ошибку 'Filler уже существует'.
                 $res = $cmd->run(['domain' => $domain, 'allias' => $allias, 'block' => $blockName], new Context(static fn () => null));
-
-                // Если команда отработала успешно — значит, создала новый файл
                 if ($res->ok) {
                     $syncedCount++;
                 }
             }
         }
-
         return $this->redirect('/admin/?p=filler&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&synced=' . $syncedCount);
     }
 
@@ -375,11 +344,9 @@ final class FillerController extends BaseController
         }
 
         $card = Builder::div('admin-card');
-
         $breadcrumbs = Builder::div('breadcrumbs');
         $breadcrumbs->append(Builder::a('/admin/?p=filler&domain=' . urlencode($domain) . '&allias=' . urlencode($allias))->content(View::t('domain.bind_back')));
         $card->append($breadcrumbs);
-
         $card->append(Builder::h(1)->content(View::t('filler.new_title') . ' (' . View::esc($allias) . ')'));
         $card->append(View::alliasTabs($domain, $allias, 'blocks'));
 
@@ -393,7 +360,6 @@ final class FillerController extends BaseController
             ->submit(View::t('domain.new_submit'));
 
         $card->append($form->build());
-
         return Response::html($this->view->render($card, ['title' => View::t('filler.new_title')]));
     }
 
@@ -403,7 +369,6 @@ final class FillerController extends BaseController
         if ($auth !== null) {
             return $auth;
         }
-
         if (!$request->isPost()) {
             return $this->redirect('/admin/?p=domain');
         }
@@ -422,7 +387,77 @@ final class FillerController extends BaseController
             $cmd = new FillerToggleCommand($this->paths);
             $cmd->run(['domain' => $domain, 'allias' => $allias, 'block' => $block, 'value' => $value], new Context(static fn () => null));
         }
-
         return $this->redirect('/admin/?p=filler&domain=' . urlencode($domain) . '&allias=' . urlencode($allias));
+    }
+
+    public function preview(Request $request): Response
+    {
+        $auth = $this->requireAuth();
+        if ($auth !== null) {
+            return $auth;
+        }
+
+        $domain = (string) $request->query('domain', '');
+        $name = (string) $request->query('block', '') ?: 'filler';
+
+        $blocks = $request->post['blocks'] ?? [];
+        if (!is_array($blocks)) {
+            $blocks = [];
+        }
+        ksort($blocks);
+        $blocks = array_values($blocks);
+
+        $cleanBlocks = $this->normalizeBlocks($blocks);
+        $validator = new RegionValidator();
+        $errors = $validator->validate($cleanBlocks);
+
+        $card = Builder::div('admin-card');
+
+        if ($errors !== []) {
+            $msg = implode(' ', array_map(fn ($k) => View::t($k), $errors));
+            $card->append(Message::error($msg)->build());
+        } else {
+            $compiler = new RegionCompiler();
+            $php = $compiler->compile('Preview\Namespace', $name, $cleanBlocks, '_preview');
+
+            $pre = Builder::el('pre');
+            $pre->attrs()->styleAdd('padding:20px; background:#282a36; color:#f8f8f2; border-radius:8px; overflow:auto; text-align:left;');
+            $code = Builder::el('code');
+            $code->content($php);
+            $pre->append($code);
+            $card->append($pre);
+        }
+
+        return Response::html($this->view->render($card, ['title' => 'PHP Preview']));
+    }
+
+    /**
+     * @param array<int, mixed> $blocks
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function normalizeBlocks(array $blocks): array
+    {
+        $clean = [];
+        foreach ($blocks as $b) {
+            if (!is_array($b)) {
+                continue;
+            }
+            $type = (string)($b['type'] ?? '');
+            if ($type === '') {
+                continue;
+            }
+
+            if ($type === 'if') {
+                $clean[] = ['type' => 'if', 'condition' => (string)($b['condition'] ?? '')];
+            } elseif ($type === 'custom') {
+                $clean[] = ['type' => 'custom', 'code' => (string)($b['code'] ?? '')];
+            } elseif ($type === 'else' || $type === 'endif') {
+                $clean[] = ['type' => $type];
+            } elseif (isset($b['content']) && trim((string)$b['content']) !== '') {
+                $clean[] = ['type' => $type, 'content' => (string)$b['content']];
+            }
+        }
+        return $clean;
     }
 }
