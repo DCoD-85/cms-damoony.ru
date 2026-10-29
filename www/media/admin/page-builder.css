@@ -13,3 +13,79 @@
 
 .pb-tool { padding: 10px; background: #fff; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 10px; cursor: grab; text-align: center; font-weight: bold; color: #4b5563; }
 .pb-tool:hover { background: #f3f4f6; }
+
+.pb-settings { background: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+.pb-settings h3 { margin-top: 0; margin-bottom: 15px; font-size: 16px; color: #333; }
+
+.pb-tabs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 15px; border-bottom: 2px solid #e5e7eb; padding-bottom: 5px; }
+.pb-tab { padding: 6px 12px; background: #f3f4f6; border: 1px solid #d1d5db; border-bottom: none; border-radius: 4px 4px 0 0; cursor: pointer; font-size: 13px; font-weight: bold; color: #6b7280; }
+.pb-tab:hover { background: #e5e7eb; }
+.pb-tab.active { background: #fff; color: #3b82f6; border-color: #3b82f6; border-bottom: 2px solid #fff; margin-bottom: -7px; }
+
+.pb-tab-content { padding: 10px; background: #fff; border: 1px solid #d1d5db; border-radius: 4px; }
+.pb-text-input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
+
+.pb-code-editor { width: 100%; min-height: 150px; padding: 10px; font-family: 'Courier New', monospace; font-size: 13px; border: 1px solid #333; border-radius: 4px; background: #1e1e1e; color: #d4d4d4; box-sizing: border-box; resize: vertical; line-height: 1.5; }
+
+
+/* Стили для верхних табов слотов */
+.pb-tabs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 5px; }
+.pb-tab { padding: 8px 16px; background: #f3f4f6; border: 1px solid #d1d5db; border-bottom: none; border-radius: 6px 6px 0 0; cursor: pointer; font-size: 14px; font-weight: bold; color: #4b5563; transition: 0.2s; }
+.pb-tab:hover { background: #e5e7eb; }
+.pb-tab.active { background: #fff; color: #3b82f6; border-color: #3b82f6; border-bottom: 2px solid #fff; margin-bottom: -7px; box-shadow: 0 -2px 5px rgba(0,0,0,0.05); }
+
+/* Список блоков внутри слота (вертикально) */
+.pb-block-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; padding: 10px; background: #f9f9f9; border: 1px solid #eee; border-radius: 4px; }
+.pb-block-label { font-family: monospace; font-weight: bold; color: #6b7280; padding-top: 8px; min-width: 50px; }
+.pb-text-input { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+.pb-code-editor { flex: 1; min-height: 80px; padding: 8px; font-family: monospace; border: 1px solid #333; border-radius: 4px; background: #1e1e1e; color: #d4d4d4; }
+
+/* Главные Табы */
+.pb-main-tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
+.pb-main-tab { padding: 10px 20px; font-weight: bold; font-size: 14px; cursor: pointer; color: #666; background: #f5f5f5; border: 1px solid #ddd; border-bottom: none; border-radius: 6px 6px 0 0; margin-right: 5px; }
+.pb-main-tab:hover { background: #eee; }
+.pb-main-tab.active { background: #fff; color: #3b82f6; border-color: #ddd; border-bottom: 2px solid #fff; margin-bottom: -2px; }
+
+/* Аккордеон слотов */
+.pb-acc-slot { border: 1px solid #ddd; border-radius: 6px; margin-bottom: 10px; overflow: hidden; background: #fff; }
+.pb-acc-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: #f9f9f9; cursor: pointer; user-select: none; }
+.pb-acc-header:hover { background: #f3f4f6; }
+.pb-acc-title { font-weight: bold; color: #333; transition: transform 0.2s; display: inline-block; }
+.pb-acc-slot.open .pb-acc-title { transform: rotate(90deg); } /* Стрелочка поворачивается */
+.pb-acc-body { padding: 15px; border-top: 1px solid #ddd; }
+
+/* Строка с блоком */
+.pb-block-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; background: #fdfdfd; padding: 10px; border: 1px solid #eee; border-radius: 4px; }
+
+/* Дерево страниц */
+.page-tree { list-style: none; padding-left: 0; margin: 0; }
+.page-tree-item { margin-bottom: 5px; }
+.page-tree-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #f9f9f9; border: 1px solid #e5e7eb; border-radius: 4px; transition: background 0.2s; }
+.page-tree-header:hover { background: #f3f4f6; }
+.page-tree-link { text-decoration: none; color: #1d4ed8; font-weight: bold; font-size: 14px; }
+.page-tree-badges { display: flex; gap: 5px; }
+.badge { padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+.badge-auth { background: #fef3c7; color: #92400e; }
+
+/* Вложенные уровни */
+.page-tree .page-tree { padding-left: 25px; margin-top: 5px; border-left: 2px dashed #d1d5db; }
+
+/* Стили для дерева страниц */
+.page-tree-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    margin-bottom: 5px;
+    transition: box-shadow 0.2s;
+}
+.page-tree-header:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.page-tree-actions {
+    display: flex;
+    align-items: center;
+}

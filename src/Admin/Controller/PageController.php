@@ -19,7 +19,6 @@ use Damoony\Ui\Element;
 use Damoony\Ui\Field;
 use Damoony\Ui\Form;
 use Damoony\Ui\Message;
-use Damoony\Ui\Table;
 use Damoony\Ui\Text;
 
 final class PageController extends BaseController
@@ -42,25 +41,31 @@ final class PageController extends BaseController
 
         $domain = (string) $request->query('domain', '');
         $allias = (string) $request->query('allias', 'www');
-        $path = (string) $request->query('path', '');
 
         if ($domain === '') {
             return $this->redirect('/admin/?p=domain');
         }
 
-        $baseDir = $this->paths->algoritm($domain, $allias) . ($path === '' ? '' : '/' . $path);
+        $baseDir = $this->paths->algoritm($domain, $allias);
 
-        $pages = [];
-        if (is_dir($baseDir)) {
-            $items = scandir($baseDir) ?: [];
-            foreach ($items as $item) {
-                if ($item === '.' || $item === '..' || !is_dir($baseDir . '/' . $item)) {
-                    continue;
-                }
-                $pages[] = $item;
-            }
+        // Корневой узел (/) — сам algoritm.php
+        $rootNode = [
+            'name' => 'Корень (/)',
+            'path' => '',
+            'auth' => false,
+            'search' => true,
+            'children' => $this->buildPageTree($baseDir, ''),
+        ];
+
+        // Читаем настройки корня
+        $rootRules = $baseDir . '/.rules.json';
+        if (is_file($rootRules)) {
+            $r = json_decode((string)file_get_contents($rootRules), true);
+            $rootNode['auth'] = (bool)($r['auth'] ?? false);
+            $rootNode['search'] = (bool)($r['search'] ?? true);
         }
-        sort($pages);
+
+        $tree = [$rootNode];
 
         $card = Builder::div('admin-card');
 
@@ -68,99 +73,139 @@ final class PageController extends BaseController
         $breadcrumbs->append(Builder::a('/admin/?p=domain')->content(View::t('domain.bread_domains')));
         $breadcrumbs->append(Text::raw(' / '));
         $breadcrumbs->append(Builder::a('/admin/?p=domain:edit&domain=' . urlencode($domain))->content($domain));
-        $breadcrumbs->append(Text::raw(' / '));
-        $breadcrumbs->append(Builder::a('/admin/?p=allias&domain=' . urlencode($domain))->content(View::t('tab.alliases')));
         $card->append($breadcrumbs);
 
         $header = Builder::div('page-header');
         $header->append(Builder::h(1)->content(View::t('page.title') . ': ' . View::esc($allias)));
-
         $actions = Builder::div('page-actions');
-        if ($path !== '') {
-            $parentPath = dirname($path);
-            $upUrl = '/admin/?p=page&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . ($parentPath === '.' ? '' : '&path=' . urlencode($parentPath));
-            $actions->append(Builder::a($upUrl, 'btn btn-outline')->content(View::t('page.up')));
-        }
-        $actions->append(Builder::a('/admin/?p=page:new&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&parent=' . urlencode($path), 'btn btn-primary')->content(View::t('page.add')));
+        $actions->append(Builder::a('/admin/?p=page:new&domain=' . urlencode($domain) . '&allias=' . urlencode($allias), 'btn btn-primary')->content(View::t('page.add')));
         $header->append($actions);
         $card->append($header);
-
         $card->append(View::alliasTabs($domain, $allias, 'pages'));
 
-        if ($path !== '') {
-            $pathInfo = Builder::p('text-muted')->content(View::t('page.current_path', ['path' => View::esc($path)]));
-            $pathInfo->attrs()->styleAdd('margin-bottom: 16px;');
-            $card->append($pathInfo);
-        }
-
-        $table = (new Table())->headers(
-            View::t('page.th_page'),
-            View::t('page.th_auth'),
-            View::t('page.th_search'),
-            View::t('page.th_actions'),
-        );
-
-        if ($pages === []) {
-            $table->row([Text::raw(View::t('page.empty')), Text::raw(''), Text::raw(''), Text::raw('')]);
-        } else {
-            foreach ($pages as $page) {
-                $newPath = $path === '' ? $page : $path . '/' . $page;
-                $pageDir = $baseDir . '/' . $page;
-
-                $rulesFile = $pageDir . '/.rules.json';
-                $rules = is_file($rulesFile) ? json_decode((string)file_get_contents($rulesFile), true) : [];
-                if (!is_array($rules)) {
-                    $rules = [];
-                }
-                $isAuth = (bool)($rules['auth'] ?? false);
-                $isSearch = (bool)($rules['search'] ?? true);
-
-                $folderUrl = '/admin/?p=page&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&path=' . urlencode($newPath);
-                $pageLink = Builder::a($folderUrl, 'domain-link')->content('/' . View::esc($newPath));
-
-                $makeToggle = function (string $key, bool $val) use ($domain, $allias, $newPath) {
-                    $form = Form::create('/admin/?p=page:toggle&domain=' . urlencode($domain) . '&allias=' . urlencode($allias), 'POST')
-                        ->csrf($this->csrf->field())
-                        ->add(Field::hidden('path')->value($newPath))
-                        ->add(Field::hidden('key')->value($key))
-                        ->add(Field::hidden('value')->value($val ? '0' : '1'))
-                        ->submit($val ? View::t('page.on') : View::t('page.off'));
-
-                    $btn = $form->build();
-                    foreach ($btn->children() as $child) {
-                        if ($child instanceof Element && $child->tag() === 'button') {
-                            $child->attrs()->classAdd('btn ' . ($val ? 'btn-outline' : 'btn-danger'));
-                            $child->attrs()->styleAdd('padding: 4px 10px; font-size: 12px; min-width: 50px;');
-                        }
-                    }
-                    return $btn;
-                };
-
-                $authBtn = $makeToggle('auth', $isAuth);
-                $searchBtn = $makeToggle('search', $isSearch);
-
-                $actionsHtml = Builder::div('table-actions');
-
-                // Ссылка на визуальный редактор
-                $visualUrl = '/admin/?p=page:edit&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&path=' . urlencode($newPath);
-                $actionsHtml->append(Builder::a($visualUrl, 'btn btn-primary')->content(View::t('page.visual_editor')));
-
-                // Ссылка на код
-                $phpFile = $allias . '/algoritm/' . ($path === '' ? '' : $path . '/') . $page . '/algoritm_' . str_replace('/', '_', $newPath) . '.php';
-                $editUrl = '/admin/?p=editor&domain=' . urlencode($domain) . '&file=' . urlencode($phpFile);
-                $actionsHtml->append(Builder::a($editUrl, 'btn btn-outline')->content(View::t('page.edit')));
-
-                $table->row([
-                    Text::raw('<div style="display:flex; align-items:center; gap:8px;">📁 ' . $pageLink->release() . '</div>'),
-                    $authBtn,
-                    $searchBtn,
-                    $actionsHtml,
-                ]);
-            }
-        }
-        $card->append($table->build());
+        $card->append($this->renderTreeHtml($tree, $domain, $allias));
 
         return Response::html($this->view->render($card, ['title' => View::t('page.title')]));
+    }
+
+    /**
+     * @return list<array{name: string, path: string, auth: bool, search: bool, children: array}>
+     */
+    private function buildPageTree(string $baseDir, string $relativePath): array
+    {
+        $nodes = [];
+        $currentDir = $baseDir . ($relativePath === '' ? '' : '/' . $relativePath);
+        if (!is_dir($currentDir)) {
+            return [];
+        }
+
+        $items = scandir($currentDir) ?: [];
+        foreach ($items as $item) {
+            if ($item === '.' || $item === '..' || !is_dir($currentDir . '/' . $item)) {
+                continue;
+            }
+            if (str_starts_with($item, '.')) {
+                continue;
+            } // Пропускаем системные
+
+            $nodePath = $relativePath === '' ? $item : $relativePath . '/' . $item;
+            $rulesFile = $currentDir . '/' . $item . '/.rules.json';
+
+            $isAuth = false;
+            $isSearch = true;
+            if (is_file($rulesFile)) {
+                $rules = json_decode((string)file_get_contents($rulesFile), true);
+                $isAuth = (bool)($rules['auth'] ?? false);
+                $isSearch = (bool)($rules['search'] ?? true);
+            }
+
+            $nodes[] = [
+                'name' => $item,
+                'path' => $nodePath,
+                'auth' => $isAuth,
+                'search' => $isSearch,
+                'children' => $this->buildPageTree($baseDir, $nodePath),
+            ];
+        }
+        return $nodes;
+    }
+
+    /**
+     * @param list<array{name: string, path: string, auth: bool, search: bool, children: array}> $nodes
+     */
+    private function renderTreeHtml(array $nodes, string $domain, string $allias): Element
+    {
+        $ul = Builder::ul('page-tree');
+        if (empty($nodes)) {
+            return $ul;
+        }
+
+        foreach ($nodes as $node) {
+            $li = Builder::li('page-tree-item');
+            $header = Builder::div('page-tree-header');
+
+            // Ссылка на редактор
+            $url = '/admin/?p=page:edit&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&path=' . urlencode($node['path']);
+            $header->append(Builder::a($url, 'page-tree-link')->content('📄 /' . ($node['path'] ?: '')));
+
+            // Кнопки действий
+            $btns = Builder::div('page-tree-actions');
+
+            // Визуально
+            $btnVisual = Builder::a($url, 'btn btn-primary')->content('Визуально');
+            $btnVisual->attrs()->styleAdd('padding:4px 8px; font-size:12px;');
+            $btns->append($btnVisual);
+
+            // Код
+            $phpFile = $node['path'] === ''
+                ? $allias . '/algoritm/algoritm.php'
+                : $allias . '/algoritm/' . $node['path'] . '/algoritm_' . str_replace('/', '_', $node['path']) . '.php';
+            $codeUrl = '/admin/?p=editor&domain=' . urlencode($domain) . '&file=' . urlencode($phpFile);
+
+            $btnCode = Builder::a($codeUrl, 'btn btn-outline')->content('Код');
+            $btnCode->attrs()->styleAdd('padding:4px 8px; font-size:12px; margin-left:5px;');
+            $btns->append($btnCode);
+
+            // Toggles (Auth и Search)
+            $toggleUrl = '/admin/?p=page:toggle&domain=' . urlencode($domain) . '&allias=' . urlencode($allias);
+
+            $authForm = Form::create($toggleUrl, 'POST')->csrf($this->csrf->field())
+                ->add(Field::hidden('path')->value($node['path']))
+                ->add(Field::hidden('key')->value('auth'))
+                ->add(Field::hidden('value')->value($node['auth'] ? '0' : '1'))
+                ->submit($node['auth'] ? 'Auth: Вкл' : 'Auth: Выкл');
+            $authBtn = $authForm->build();
+            foreach ($authBtn->children() as $child) {
+                if ($child instanceof Element && $child->tag() === 'button') {
+                    $child->attrs()->classAdd($node['auth'] ? 'btn btn-danger' : 'btn btn-outline');
+                    $child->attrs()->styleAdd('padding:4px 8px; font-size:12px; margin-left:5px;');
+                }
+            }
+            $btns->append($authBtn);
+
+            $searchForm = Form::create($toggleUrl, 'POST')->csrf($this->csrf->field())
+                ->add(Field::hidden('path')->value($node['path']))
+                ->add(Field::hidden('key')->value('search'))
+                ->add(Field::hidden('value')->value($node['search'] ? '0' : '1'))
+                ->submit($node['search'] ? 'Search: Вкл' : 'Search: Выкл');
+            $searchBtn = $searchForm->build();
+            foreach ($searchBtn->children() as $child) {
+                if ($child instanceof Element && $child->tag() === 'button') {
+                    $child->attrs()->classAdd($node['search'] ? 'btn btn-outline' : 'btn btn-danger');
+                    $child->attrs()->styleAdd('padding:4px 8px; font-size:12px; margin-left:5px;');
+                }
+            }
+            $btns->append($searchBtn);
+
+            $header->append($btns);
+            $li->append($header);
+
+            if (!empty($node['children'])) {
+                $li->append($this->renderTreeHtml($node['children'], $domain, $allias));
+            }
+            $ul->append($li);
+        }
+        return $ul;
     }
 
     public function edit(Request $request): Response
@@ -257,7 +302,15 @@ final class PageController extends BaseController
         $form->submit('Сохранить страницу');
         $card->append($form->build());
 
-        $initData = json_encode(['slots' => $jsSlots, 'available' => $availableSlots], JSON_UNESCAPED_UNICODE);
+        $rulesFile = $baseDir . '/.rules.json';
+        $rules = is_file($rulesFile) ? json_decode((string)file_get_contents($rulesFile), true) : [];
+        $isAuth = (bool)($rules['auth'] ?? false);
+
+        $initData = json_encode([
+            'slots' => $jsSlots,
+            'available' => $availableSlots,
+            'auth' => $isAuth,
+        ], JSON_UNESCAPED_UNICODE);
         $card->append(Text::raw('<script type="application/json" id="pb-init-data">' . $initData . '</script>'));
 
         return Response::html($this->view->render($card, ['title' => 'Редактор страницы']));
@@ -308,6 +361,16 @@ final class PageController extends BaseController
 
         $php = $compiler->compile($namespace, $allias, $classChain, $pageData['slots'] ?? []);
         Fs::writeAtomic($baseDir . '/' . $classChain . '.php', $php);
+
+        // 4. Обновляем .rules.json (auth)
+        $rulesFile = $baseDir . '/.rules.json';
+        $rules = is_file($rulesFile) ? json_decode((string)file_get_contents($rulesFile), true) : [];
+        if (!is_array($rules)) {
+            $rules = [];
+        }
+        $rules['auth'] = (bool)($pageData['auth'] ?? false);
+        $rules['available'] = [$path]; // Убедимся, что страница доступна
+        Fs::writeAtomic($rulesFile, json_encode($rules, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
 
         return $this->redirect('/admin/?p=page:edit&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&path=' . urlencode($path) . '&saved=1');
     }
@@ -369,7 +432,7 @@ final class PageController extends BaseController
             ->add(Field::text('name')->label(View::t('page.name_label'))->placeholder('about, contacts')->required()->value($nameVal))
             ->submit(View::t('domain.new_submit'));
 
-        $card = Builder::div('admin-card');
+        $card = Builder::div('admin-card page-builder-app');
 
         $breadcrumbs = Builder::div('breadcrumbs');
         $breadcrumbs->append(Builder::a('/admin/?p=page&domain=' . urlencode($domain) . '&allias=' . urlencode($allias))->content(View::t('domain.bind_back')));

@@ -50,6 +50,8 @@ final class PageCompiler
                         $code .= "        \${$varName}->append(Builder::p()->content({$content}));\n";
                     } elseif ($type === 'img') {
                         $code .= "        \${$varName}->append(Builder::img({$content}, 'Image'));\n";
+                    } elseif ($type === 'code') {
+                        $code .= "        \${$varName}->append(Text::raw({$content}));\n";
                     }
                 }
                 $code .= "        \$this->setContent('{$slotName}', \${$varName});\n";

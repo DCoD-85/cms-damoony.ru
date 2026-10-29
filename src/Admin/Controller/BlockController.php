@@ -125,7 +125,7 @@ final class BlockController extends BaseController
 
                 $actionsHtml = Builder::div('table-actions');
 
-                if ($type !== 'logic') {
+                if ($type !== 'script') {
                     $visualUrl = '/admin/?p=block:edit&domain=' . urlencode($domain) . '&name=' . urlencode($name);
                     $actionsHtml->append(Builder::a($visualUrl, 'btn btn-primary')->content(View::t('block.visual_editor')));
                 }
@@ -194,8 +194,8 @@ final class BlockController extends BaseController
             ->csrf($this->csrf->field())
             ->add(Field::text('name')->label(View::t('filler.block_label'))->placeholder('top, footer, header')->required()->value($nameVal))
             ->add(Field::select('type')->label(View::t('block.type_label'))->options([
-                'ui' => View::t('block.opt_ui'),
-                'logic' => View::t('block.opt_logic'),
+                'script' => View::t('block.opt_script'),
+                'visual' => View::t('block.opt_visual'),
                 'mixed' => View::t('block.opt_mixed'),
             ])->selected($typeVal))
             ->submit(View::t('domain.new_submit'));

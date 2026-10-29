@@ -45,4 +45,16 @@ class Algoritm implements AlgoritmInterface
     {
         return $this->context->request->isPost();
     }
+
+    public function isAuthenticated(): bool
+    {
+        $auth = $this->context->service('auth');
+        return $auth instanceof \Damoony\Auth\AuthInterface && $auth->isAuthenticated();
+    }
+
+    public function user(): mixed
+    {
+        $auth = $this->context->service('auth');
+        return $auth instanceof \Damoony\Auth\AuthInterface ? $auth->user() : null;
+    }
 }

@@ -1,5 +1,8 @@
 {
     "available": [
         "about"
-    ]
+    ],
+    "auth": false,
+    "search": true,
+    "default": false
 }
