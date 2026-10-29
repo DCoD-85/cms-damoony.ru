@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Admin\Controller;
 
+use Damoony\Admin\Support\VisualEditorRenderer;
 use Damoony\Admin\View;
 use Damoony\Cli\Commands\FillerNewCommand;
 use Damoony\Cli\Commands\FillerToggleCommand;
@@ -123,9 +124,13 @@ final class FillerController extends BaseController
                 }
 
                 $codeUrl = '/admin/?p=editor&domain=' . urlencode($domain) . '&file=' . urlencode('.alliasglobal/' . $block . '/' . $block . '_' . $allias . '.php');
-                $codeBtn = Builder::a($codeUrl, 'btn btn-outline')->content(View::t('filler.col_code'));
+                $codeBtn = Builder::a($codeUrl, 'btn btn-outline')->content(View::t('admin.filler.col_code'));
+
+                $visualUrl = '/admin/?p=filler:edit&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&block=' . urlencode((string)$block);
+                $visualBtn = Builder::a($visualUrl, 'btn btn-primary')->content(View::t('admin.page.visual_editor'));
 
                 $actionsCell = Builder::div('table-actions');
+                $actionsCell->append($visualBtn);
                 $actionsCell->append($codeBtn);
                 $actionsCell->append($toggleBtn);
 
@@ -181,7 +186,7 @@ final class FillerController extends BaseController
         $card->append($script);
 
         $card->append(Builder::a('/admin/?p=filler&domain=' . urlencode($domain) . '&allias=' . urlencode($allias))->content(View::t('domain.bind_back')));
-        $card->append(Builder::h(1)->content(View::t('admin.filler.new_title') . ': ' . View::esc($block) . ' (' . View::esc($allias) . ')'));
+        $card->append(Builder::h(1)->content(View::t('block.edit_title') . ': ' . View::esc($block) . ' (' . View::esc($allias) . ')'));
 
         $form = Builder::el('form');
         $form->attrs()->add('method', 'post');
@@ -189,23 +194,38 @@ final class FillerController extends BaseController
         $form->attrs()->classAdd('editor-form');
         $form->append(Text::raw($this->csrf->field()));
 
-        $blocksContainer = Builder::div();
-        $blocksContainer->attrs()->add('id', 'blocks-container');
+        $layout = Builder::div('pb-layout');
+
+        // Canvas
+        $canvas = Builder::div('pb-canvas');
+        $canvas->attrs()->add('id', 'blocks-container');
 
         if ($blocks === []) {
             $blocks = [['type' => 'text', 'content' => '']];
         }
         foreach ($blocks as $i => $b) {
-            $blocksContainer->append(Text::raw(\Damoony\Admin\Support\VisualEditorRenderer::renderBlockRow($i, $b)));
+            $canvas->append(VisualEditorRenderer::renderBlockRow($i, $b));
         }
-        $templateData = ['type' => 'text', 'content' => ''];
-        $templateHtml = \Damoony\Admin\Support\VisualEditorRenderer::renderBlockRow(9999, $templateData);
+        $layout->append($canvas);
+
+        // Tools
+        $tools = Builder::div('pb-tools');
+        $tools->append(Builder::h(3)->content(View::t('admin.page.add_block')));
+
+        $toolTypes = ['h1' => 'H1', 'h2' => 'H2', 'text' => 'TEXT', 'img' => 'IMG'];
+        foreach ($toolTypes as $type => $label) {
+            $btn = Builder::div("pb-tool pb-tool-{$type}")->content($label);
+            $btn->attrs()->add('data-type', $type)->add('draggable', 'true');
+            $tools->append($btn);
+        }
+        $layout->append($tools);
+
+        $form->append($layout);
+
         $templateEl = Builder::el('template');
         $templateEl->attrs()->add('id', 'block-template');
-        $templateEl->append(Text::raw($templateHtml));
+        $templateEl->append(VisualEditorRenderer::renderBlockRow(9999, ['type' => 'text', 'content' => '']));
         $form->append($templateEl);
-
-        $form->append($blocksContainer);
 
         $actionsDiv = Builder::div();
         $actionsDiv->attrs()->styleAdd('margin-top: 15px; display: flex; gap: 10px;');
@@ -226,7 +246,7 @@ final class FillerController extends BaseController
         $form->append($actionsDiv);
         $card->append($form);
 
-        return Response::html($this->view->render($card, ['title' => View::t('admin.filler.new_title')]));
+        return Response::html($this->view->render($card, ['title' => View::t('block.edit_title')]));
     }
 
     public function save(Request $request): Response
@@ -278,6 +298,7 @@ final class FillerController extends BaseController
 
         return $this->redirect('/admin/?p=filler&domain=' . urlencode($domain) . '&allias=' . urlencode($allias));
     }
+
     public function sync(Request $request): Response
     {
         $auth = $this->requireAuth();

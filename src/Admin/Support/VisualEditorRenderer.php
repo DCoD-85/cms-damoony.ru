@@ -6,6 +6,7 @@ namespace Damoony\Admin\Support;
 
 use Damoony\Admin\View;
 use Damoony\Ui\Builder;
+use Damoony\Ui\Element;
 use Damoony\Ui\Text;
 
 final class VisualEditorRenderer
@@ -13,63 +14,54 @@ final class VisualEditorRenderer
     /**
      * @param array<string, mixed> $block
      */
-    public static function renderBlockRow(int $index, array $block, string $prefix = 'blocks'): string
+    public static function renderBlockRow(int $index, array $block, string $prefix = 'blocks'): Element
     {
         $type = (string)($block['type'] ?? 'text');
         $content = (string)($block['content'] ?? '');
 
-        $row = Builder::div('editor-row');
-        $row->attrs()->styleAdd('margin-bottom: 5px;');
+        $tile = Builder::div('pb-block-tile editor-block-row');
+        $tile->attrs()->add('data-type', $type);
 
-        $select = Builder::el('select');
-        $select->attrs()->classAdd('type-select');
-        $select->attrs()->add('name', "{$prefix}[{$index}][type]");
+        // Заголовок плитки
+        $header = Builder::div('pb-block-header');
+        $header->append(Builder::span('pb-block-title')->content(strtoupper($type)));
 
-        $options = [
-            'h1' => View::t('page.type_h1'),
-            'h2' => View::t('page.type_h2'),
-            'text' => View::t('page.type_text'),
-            'img' => View::t('page.type_img'),
-        ];
-        foreach ($options as $val => $label) {
-            $opt = Builder::el('option');
-            $opt->attrs()->add('value', $val);
-            if ($type === $val) {
-                $opt->attrs()->add('selected', 'selected');
-            }
-            $opt->content($label);
-            $select->append($opt);
+        $removeBtn = Builder::button('button', 'remove-block-btn');
+        $removeBtn->content('×');
+        $header->append($removeBtn);
+        $tile->append($header);
+
+        // Скрытое поле типа
+        $hiddenType = Builder::input('hidden', "{$prefix}[{$index}][type]");
+        $hiddenType->attrs()->add('value', $type);
+        $tile->append($hiddenType);
+
+        // Поле контента
+        if ($type === 'img') {
+            $input = Builder::input('text', "{$prefix}[{$index}][content]");
+            $input->attrs()->add('value', $content);
+            $input->attrs()->add('placeholder', View::t('admin.page.type_img'));
+            $input->attrs()->classAdd('pb-input');
+            $tile->append($input);
+        } else {
+            $textarea = Builder::el('textarea');
+            $textarea->attrs()->add('name', "{$prefix}[{$index}][content]");
+            $textarea->attrs()->add('placeholder', View::t('admin.page.block_content'));
+            $textarea->attrs()->add('rows', '3');
+            $textarea->attrs()->classAdd('pb-textarea');
+            $textarea->content($content);
+            $tile->append($textarea);
         }
-        $row->append($select);
 
-        $input = Builder::el('input', true);
-        $input->attrs()->classAdd('content-input');
-        $input->attrs()->add('type', 'text');
-        $input->attrs()->add('name', "{$prefix}[{$index}][content]");
-        $input->attrs()->add('value', $content);
-        $input->attrs()->add('placeholder', View::t('page.block_content'));
-        $row->append($input);
-
-        $btn = Builder::el('button');
-        $btn->attrs()->classAdd('btn btn-danger remove-block-btn');
-        $btn->attrs()->classAdd('remove-btn');
-        $btn->attrs()->add('type', 'button');
-        $btn->content('✕');
-        $row->append($btn);
-
-        return $row->release();
+        return $tile;
     }
 
-    /**
-     * @param array<string, mixed> $item
-     * @param list<string> $availableSlots
-     */
     /**
      * @param array{id?:int, parent?:?int, tag?:string, class?:string, layout?:string, slot?:string} $item
      * @param list<string> $availableSlots
      * @param list<array{id:int, label:string}> $containers
      */
-    public static function renderSlotRow(int $index, array $item, array $availableSlots, array $containers = []): string
+    public static function renderSlotRow(int $index, array $item, array $availableSlots, array $containers = []): Element
     {
         $rowId = (int)($item['id'] ?? $index);
         $slotName = (string)($item['slot'] ?? '');
@@ -102,13 +94,15 @@ final class VisualEditorRenderer
         $selectParent = Builder::el('select');
         $selectParent->attrs()->classAdd('parent-select');
         $selectParent->attrs()->add('name', "slots[{$index}][parent]");
+
         $optRoot = Builder::el('option');
         $optRoot->attrs()->add('value', '');
         if ($parentId === null) {
             $optRoot->attrs()->add('selected', 'selected');
         }
-        $optRoot->content('Корень');
+        $optRoot->content(View::t('admin.editor.root'));
         $selectParent->append($optRoot);
+
         foreach ($containers as $c) {
             if ($c['id'] === $rowId) {
                 continue;
@@ -126,13 +120,15 @@ final class VisualEditorRenderer
         $selectSlot = Builder::el('select');
         $selectSlot->attrs()->classAdd('type-select');
         $selectSlot->attrs()->add('name', "slots[{$index}][name]");
+
         $optNone = Builder::el('option');
-        $optNone->attrs()->add('value', '', true);
+        $optNone->attrs()->add('value', '');
         if ($slotName === '') {
             $optNone->attrs()->add('selected', 'selected');
         }
-        $optNone->content('— Контейнер (без слота) —');
+        $optNone->content(View::t('admin.editor.container_no_slot'));
         $selectSlot->append($optNone);
+
         foreach ($availableSlots as $as) {
             $opt = Builder::el('option');
             $opt->attrs()->add('value', $as);
@@ -163,19 +159,21 @@ final class VisualEditorRenderer
         $inputClass->attrs()->add('type', 'text');
         $inputClass->attrs()->add('name', "slots[{$index}][class]");
         $inputClass->attrs()->add('value', $class);
-        $inputClass->attrs()->add('placeholder', 'CSS класс');
+        $inputClass->attrs()->add('placeholder', View::t('admin.editor.css_class'));
         $row->append($inputClass);
 
         $selectLayout = Builder::el('select');
         $selectLayout->attrs()->classAdd('layout-select');
         $selectLayout->attrs()->add('name', "slots[{$index}][layout]");
+
         $optNone = Builder::el('option');
-        $optNone->attrs()->add('value', '', true);
+        $optNone->attrs()->add('value', '');
         if ($layout === '') {
             $optNone->attrs()->add('selected', 'selected');
         }
         $optNone->content('layout: —');
         $selectLayout->append($optNone);
+
         foreach (['vertical', 'horizontal'] as $l) {
             $opt = Builder::el('option');
             $opt->attrs()->add('value', $l);
@@ -193,16 +191,14 @@ final class VisualEditorRenderer
         $btn->content('✕');
         $row->append($btn);
 
-        return $row->release();
+        return $row;
     }
 
     /**
-     * Рендерит аккордеон для управления слотами страницы
-     *
      * @param array<string, array{status: string, blocks: list<array{type: string, content: string}>}> $pageSlots
      * @param list<string> $availableSlots
      */
-    public static function renderPageSlotsForm(string $action, string $csrfField, array $pageSlots, array $availableSlots): string
+    public static function renderPageSlotsForm(string $action, string $csrfField, array $pageSlots, array $availableSlots): Element
     {
         $form = Builder::el('form');
         $form->attrs()->add('method', 'post');
@@ -215,15 +211,13 @@ final class VisualEditorRenderer
             $status = $config['status'];
             $blocks = $config['blocks'];
 
-            // Карточка слота
             $card = Builder::div('editor-card');
             $card->attrs()->styleAdd('border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; background: #fff; overflow: hidden;');
 
-            // Заголовок карточки (Слот + Select)
             $header = Builder::div();
             $header->attrs()->styleAdd('display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f9fafb; border-bottom: 1px solid #eee;');
 
-            $title = Builder::h(3)->content('Блок: ' . strtoupper($slotName));
+            $title = Builder::h(3)->content(View::t('admin.editor.block') . ': ' . strtoupper($slotName));
             $title->attrs()->styleAdd('margin: 0; font-size: 16px;');
             $header->append($title);
 
@@ -233,9 +227,9 @@ final class VisualEditorRenderer
             $statusSelect->attrs()->styleAdd('padding: 6px; border-radius: 6px; border: 1px solid #ccc;');
 
             $statuses = [
-                'disabled' => 'Выключен',
-                'global' => 'Глобальный',
-                'local' => 'Локальный',
+                'disabled' => View::t('admin.editor.status_disabled'),
+                'global' => View::t('admin.editor.status_global'),
+                'local' => View::t('admin.editor.status_local'),
             ];
             foreach ($statuses as $val => $label) {
                 $opt = Builder::el('option');
@@ -249,11 +243,10 @@ final class VisualEditorRenderer
             $header->append($statusSelect);
             $card->append($header);
 
-            // Тело карточки (Контент)
             $body = Builder::div('slot-body');
             $body->attrs()->styleAdd('padding: 15px; display: ' . ($status === 'local' ? 'block' : 'none') . ';');
 
-            $body->append(Builder::h(4)->content('Данные (Визуал)'));
+            $body->append(Builder::h(4)->content(View::t('admin.editor.visual_data')));
 
             $container = Builder::div('blocks-container');
             if ($blocks === []) {
@@ -262,7 +255,7 @@ final class VisualEditorRenderer
 
             $prefix = "slots[{$slotName}][blocks]";
             foreach ($blocks as $i => $block) {
-                $container->append(Text::raw(self::renderBlockRow($i, $block, $prefix)));
+                $container->append(self::renderBlockRow($i, $block, $prefix));
             }
             $body->append($container);
 
@@ -271,7 +264,7 @@ final class VisualEditorRenderer
             $addBtn->attrs()->classAdd('btn btn-outline add-slot-block-btn');
             $addBtn->attrs()->styleAdd('margin-top: 10px;');
             $addBtn->attrs()->add('data-prefix', $prefix);
-            $addBtn->content('+ Добавить блок');
+            $addBtn->content(View::t('admin.page.add_block'));
             $body->append($addBtn);
 
             $card->append($body);
@@ -287,6 +280,6 @@ final class VisualEditorRenderer
         $actions->append($saveBtn);
         $form->append($actions);
 
-        return $form->release();
+        return $form;
     }
 }

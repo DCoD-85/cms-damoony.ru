@@ -85,7 +85,7 @@ final class BlockController extends BaseController
         $header = Builder::div('page-header');
         $header->append(Builder::h(1)->content(View::t('tab.blocks')));
         $actions = Builder::div('page-actions');
-        $actions->append(Builder::a('/admin/?p=block:new&domain=' . urlencode($domain), 'btn btn-primary')->content(View::t('block.add')));
+        $actions->append(Builder::a('/admin/?p=block:new&domain=' . urlencode($domain), 'btn btn-primary')->content(View::t('admin.block.add')));
         $header->append($actions);
         $card->append($header);
 
@@ -127,7 +127,7 @@ final class BlockController extends BaseController
 
                 if ($type !== 'script') {
                     $visualUrl = '/admin/?p=block:edit&domain=' . urlencode($domain) . '&name=' . urlencode($name);
-                    $actionsHtml->append(Builder::a($visualUrl, 'btn btn-primary')->content(View::t('block.visual_editor')));
+                    $actionsHtml->append(Builder::a($visualUrl, 'btn btn-primary')->content(View::t('admin.block.visual_editor')));
                 }
 
                 $actionsHtml->append(Builder::a($codeUrl, 'btn btn-outline')->content(View::t('page.edit')));
@@ -255,24 +255,39 @@ final class BlockController extends BaseController
         $form->attrs()->classAdd('editor-form');
         $form->append(Text::raw($this->csrf->field()));
 
-        $blocksContainer = Builder::div();
-        $blocksContainer->attrs()->add('id', 'blocks-container');
+        $layout = Builder::div('pb-layout');
+
+        // Левая колонка: Canvas
+        $canvas = Builder::div('pb-canvas');
+        $canvas->attrs()->add('id', 'blocks-container');
 
         if ($blocks === []) {
             $blocks = [['type' => 'text', 'content' => '']];
         }
         foreach ($blocks as $i => $block) {
-            // Рендерер возвращает строку, поэтому оборачиваем в Text::raw
-            $blocksContainer->append(Text::raw(VisualEditorRenderer::renderBlockRow($i, $block)));
+            $canvas->append(VisualEditorRenderer::renderBlockRow($i, $block));
         }
-        $templateData = ['type' => 'text', 'content' => ''];
-        $templateHtml = \Damoony\Admin\Support\VisualEditorRenderer::renderBlockRow(9999, $templateData);
+        $layout->append($canvas);
+
+        // Правая колонка: Tools
+        $tools = Builder::div('pb-tools');
+        $tools->append(Builder::h(3)->content(View::t('admin.page.add_block')));
+
+        $toolTypes = ['h1' => 'H1', 'h2' => 'H2', 'text' => 'TEXT', 'img' => 'IMG'];
+        foreach ($toolTypes as $type => $label) {
+            $btn = Builder::div("pb-tool pb-tool-{$type}")->content($label);
+            $btn->attrs()->add('data-type', $type)->add('draggable', 'true');
+            $tools->append($btn);
+        }
+        $layout->append($tools);
+
+        $form->append($layout);
+
+        // Шаблон для JS
         $templateEl = Builder::el('template');
         $templateEl->attrs()->add('id', 'block-template');
-        $templateEl->append(Text::raw($templateHtml));
+        $templateEl->append(VisualEditorRenderer::renderBlockRow(9999, ['type' => 'text', 'content' => '']));
         $form->append($templateEl);
-
-        $form->append($blocksContainer);
 
         $actionsDiv = Builder::div();
         $actionsDiv->attrs()->styleAdd('margin-top: 15px; display: flex; gap: 10px;');
@@ -281,7 +296,7 @@ final class BlockController extends BaseController
         $addBtn->attrs()->add('type', 'button');
         $addBtn->attrs()->add('id', 'add-block-btn');
         $addBtn->attrs()->classAdd('btn btn-outline');
-        $addBtn->content(View::t('page.add_block'));
+        $addBtn->content(View::t('admin.page.add_block'));
         $actionsDiv->append($addBtn);
 
         $saveBtn = Builder::el('button');
