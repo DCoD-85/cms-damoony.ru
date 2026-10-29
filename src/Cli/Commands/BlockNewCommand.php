@@ -24,7 +24,7 @@ final class BlockNewCommand implements CommandInterface
 
     public function description(): string
     {
-        return 'Создать блок alliasglobal (--type=logic|ui|mixed)';
+        return 'Создать блок alliasglobal (--type=script|visual|mixed)';
     }
 
     public function run(array $args, Context $context): Result
@@ -36,7 +36,7 @@ final class BlockNewCommand implements CommandInterface
         $type = (string)($args['type'] ?? 'mixed');
 
         if (!in_array($type, ['script', 'visual', 'mixed'], true)) {
-            $r->error('Некорректный тип блока (logic, ui, mixed)');
+            $r->error('Некорректный тип блока (script, visual, mixed)');
             return $r;
         }
 
@@ -75,7 +75,7 @@ final class BlockNewCommand implements CommandInterface
         Fs::mkdir($blockDir);
         $r->file(Fs::rel($blockDir, $this->paths->root()));
 
-        if ($type === 'logic') {
+        if ($type === 'script') {
             $php = "<?php\n\n"
                 . "declare(strict_types=1);\n\n"
                 . "namespace {$namespace};\n\n"
