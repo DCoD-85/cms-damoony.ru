@@ -58,37 +58,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const addSlotBtn = document.getElementById('add-slot-btn');
 
     if (slotsContainer && addSlotBtn) {
-        let slotIndex = slotsContainer.children.length;
-
         addSlotBtn.addEventListener('click', () => {
-            const html = `
-                <div class="editor-row">
-                    <div class="move-buttons">
-                        <button type="button" class="btn btn-outline move-up-btn">▲</button>
-                        <button type="button" class="btn btn-outline move-down-btn">▼</button>
-                    </div>
-                    <select name="slots[${slotIndex}][name]" class="type-select">
-                        <option value="center">center</option>
-                        <option value="top">top</option>
-                        <option value="left">left</option>
-                        <option value="right">right</option>
-                        <option value="bottom">bottom</option>
-                        <option value="footer">footer</option>
-                    </select>
-                    <select name="slots[${slotIndex}][tag]" class="tag-select">
-                        <option value="div">&lt;div&gt;</option>
-                        <option value="header">&lt;header&gt;</option>
-                        <option value="main">&lt;main&gt;</option>
-                        <option value="footer">&lt;footer&gt;</option>
-                        <option value="aside">&lt;aside&gt;</option>
-                        <option value="section">&lt;section&gt;</option>
-                    </select>
-                    <input type="text" name="slots[${slotIndex}][class]" placeholder="CSS класс" class="content-input">
-                    <button type="button" class="btn btn-danger remove-slot-btn remove-btn">✕</button>
-                </div>
-            `;
-            slotsContainer.insertAdjacentHTML('beforeend', html);
-            slotIndex++;
+            const slotIndex = slotsContainer.children.length;
+            const firstRow = slotsContainer.querySelector('.editor-row');
+            
+            if (!firstRow) return; // Если нет строки-шаблона
+
+            // Клонируем существующую строку со всеми полями
+            const newRow = firstRow.cloneNode(true);
+            
+            newRow.querySelectorAll('select, input').forEach(el => {
+                // 1. Меняем индексы в name (slots[0] -> slots[N])
+                if (el.name) {
+                    el.name = el.name.replace(/slots\[\d+\]/, `slots[${slotIndex}]`);
+                }
+                
+                // 2. Генерируем уникальный ID для новой строки 
+                // (используем timestamp, чтобы он точно не пересекся с серверными 0, 1, 2)
+                if (el.type === 'hidden' && el.name.endsWith('[id]')) {
+                    el.value = Date.now();
+                }
+                
+                // 3. Сбрасываем значения для новой строки по умолчанию
+                if (el.classList.contains('parent-select')) el.selectedIndex = 0;
+                if (el.classList.contains('type-select')) el.selectedIndex = 0;
+                if (el.classList.contains('content-input')) el.value = '';
+                if (el.classList.contains('layout-select')) el.selectedIndex = 0;
+            });
+
+            slotsContainer.appendChild(newRow);
         });
 
         slotsContainer.addEventListener('click', (e) => {
