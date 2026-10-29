@@ -291,7 +291,8 @@ final class PageController extends BaseController
         $breadcrumbs->append(Builder::a('/admin/?p=page&domain=' . urlencode($domain) . '&allias=' . urlencode($allias))->content(View::t('page.title')));
         $card->append($breadcrumbs);
 
-        $card->append(Builder::h(1)->content('Редактор страницы: /' . View::esc($path)));
+        $pageTitle = $path === '' ? '/' : '/' . $path;
+        $card->append(Builder::h(1)->content('Редактор страницы: ' . View::esc($pageTitle)));
 
         $layout = Builder::div('pb-layout');
 
@@ -350,9 +351,20 @@ final class PageController extends BaseController
         $allias = (string) $request->query('allias', 'www');
         $path = (string) $request->query('path', '');
 
-        $baseDir = $this->paths->algoritm($domain, $allias) . '/' . $path;
+        if ($domain === '') {
+            return $this->redirect('/admin/?p=domain');
+        }
+
+        $path = trim($path, '/');
+
+        // Блокируем Directory Traversal
+        if (str_contains($path, '..')) {
+            return $this->redirect('/admin/?p=page&domain=' . urlencode($domain) . '&allias=' . urlencode($allias));
+        }
+
+        $baseDir = $this->paths->algoritm($domain, $allias) . ($path !== '' ? '/' . $path : '');
         if (!is_dir($baseDir)) {
-            return $this->redirect('/admin/?p=page&domain=' . urlencode($domain));
+            return $this->redirect('/admin/?p=page&domain=' . urlencode($domain) . '&allias=' . urlencode($allias));
         }
 
         $json = (string) ($request->post['page_json'] ?? '');
