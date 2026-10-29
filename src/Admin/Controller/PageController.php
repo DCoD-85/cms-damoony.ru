@@ -221,11 +221,11 @@ final class PageController extends BaseController
         $allias = (string) $request->query('allias', 'www');
         $path = (string) $request->query('path', '');
 
-        if ($domain === '' || $path === '') {
+        if ($domain === '') {
             return $this->redirect('/admin/?p=domain');
         }
 
-        $baseDir = $this->paths->algoritm($domain, $allias) . '/' . $path;
+        $baseDir = $this->paths->algoritm($domain, $allias) . ($path !== '' ? '/' . $path : '');
         if (!is_dir($baseDir)) {
             return $this->redirect('/admin/?p=page&domain=' . urlencode($domain) . '&allias=' . urlencode($allias));
         }
