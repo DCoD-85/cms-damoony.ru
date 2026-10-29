@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Scheme;
 
+use Damoony\Core\Env;
 use Damoony\Domain\DomainContext;
 use Damoony\Files\Paths;
 use RuntimeException;
@@ -23,7 +24,12 @@ final class SchemeLoader
         $file = $this->paths->domain($domain->real) . '/.alliasscheme/' . $schemeName . '.data.php';
 
         if (!is_file($file)) {
-            // Fallback, если схемы нет
+            if (!Env::fromServer()->isDev()) {
+                throw new RuntimeException('Scheme not found: ' . $file);
+            }
+
+            error_log('Warning: scheme not found: ' . $file . ' — using fallback (dev only)');
+
             return [
                 'tag' => 'div',
                 'class' => 'layout',

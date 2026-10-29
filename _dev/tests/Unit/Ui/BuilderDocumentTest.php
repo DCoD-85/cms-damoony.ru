@@ -90,4 +90,19 @@ final class BuilderDocumentTest extends TestCase
         $doc->body()->append(Builder::div('main')->content('x'));
         self::assertStringContainsString('<body><div class="main">x</div></body>', $doc->release());
     }
+
+    public function testReleaseIsIdempotent(): void
+    {
+        $meta = new \Damoony\Ui\Meta();
+        $meta->setTitle('Test');
+        $doc = new Document($meta);
+        $doc->body()->append(Builder::div()->content('Body'));
+
+        $html1 = $doc->release();
+        $html2 = $doc->release();
+
+        self::assertSame($html1, $html2, 'Document::release() must be idempotent');
+        self::assertSame(1, substr_count($html2, '<title>'), 'Title must appear once');
+        self::assertSame(1, substr_count($html2, 'charset="utf-8"'), 'Charset must appear once');
+    }
 }

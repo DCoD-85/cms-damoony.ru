@@ -10,6 +10,7 @@ final class Document
     private readonly Element $head;
     private readonly Element $body;
     public readonly Meta $meta;
+    private bool $metaRendered = false;
 
     public function __construct(?Meta $meta = null)
     {
@@ -58,9 +59,12 @@ final class Document
 
     public function release(): string
     {
-        $metaRaw = $this->meta->render();
-        if ($metaRaw !== '') {
-            $this->head->append(Text::raw($metaRaw));
+        if (!$this->metaRendered) {
+            $metaRaw = $this->meta->render();
+            if ($metaRaw !== '') {
+                $this->head->append(Text::raw($metaRaw));
+            }
+            $this->metaRendered = true;
         }
 
         return "<!DOCTYPE html>\n" . $this->html->release();
