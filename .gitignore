@@ -1,0 +1,63 @@
+# vendor
+/vendor/
+/vendor-dev/
+
+# composer
+/composer.phar
+
+# phpunit / phpstan / cs-fixer cache
+.phpunit.cache/
+.phpunit.result.cache
+.php-cs-fixer.cache
+/_dev/var/
+
+# IDE
+/.idea/
+/.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# PHP
+*.log
+phpstan.neon.local
+/build/
+/coverage/
+
+# секреты и runtime
+/secure/
+/var/
+/storage/
+env.php
+.env
+.env.local
+
+# тестовые артефакты
+/tests/fixtures/scenarios/**/actual/
+/tests/fixtures/scenarios/**/diff/
+
+# временное
+/tmp/
+*.tmp
+
+# аудит-снапшот
+/_doc/_audit-snapshot.txt
+
+# dev-маркер (локально)
+/.dev
+
+# прод-специфика: конфиги с секретами и пользовательский media
+/config/admin.config
+/config/site.config
+# /www/media/damoony.ru/skin/
+
+# личный briefing (пути, IP, git-workflow)
+/config/engine.config
+
+# audit dev docs
+/_devdoc/
