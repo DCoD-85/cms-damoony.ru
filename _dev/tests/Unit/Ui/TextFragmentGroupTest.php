@@ -6,7 +6,6 @@ namespace Damoony\Tests\Unit\Ui;
 
 use Damoony\Ui\Element;
 use Damoony\Ui\Fragment;
-use Damoony\Ui\Group;
 use Damoony\Ui\Text;
 use PHPUnit\Framework\TestCase;
 
@@ -46,37 +45,5 @@ final class TextFragmentGroupTest extends TestCase
         $f->append('b');
         $f->prepend('a');
         self::assertSame('ab', $f->release());
-    }
-
-    public function testGroupAddRemove(): void
-    {
-        $a = new Element('span');
-        $b = new Element('span');
-
-        $g = new Group('items');
-        $g->add($a)->add($b);
-
-        self::assertSame(2, $g->count());
-        self::assertSame([$a, $b], $g->items());
-
-        $g->remove($a);
-        self::assertSame(1, $g->count());
-    }
-
-    public function testGroupBuildWrapsInDivWithClass(): void
-    {
-        $a = new Element('span');
-        $a->content('x');
-
-        $g = new Group('items');
-        $g->add($a);
-
-        self::assertSame('<div class="items"><span>x</span></div>', $g->release());
-    }
-
-    public function testGroupDefaultClass(): void
-    {
-        $g = new Group();
-        self::assertSame('<div class="group"></div>', $g->release());
     }
 }

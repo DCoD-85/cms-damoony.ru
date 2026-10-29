@@ -73,4 +73,54 @@ final class RegionRegistryTest extends TestCase
         $out = $this->region('top')->render($ctx);
         self::assertSame('<div class="region-top">www</div>', $out->release());
     }
+
+    public function testDisableBeatsFillerAndBase(): void
+    {
+        $r = new RegionRegistry();
+        $r->add($this->region('top'), true);
+        $r->add($this->region('top'));
+
+        $r->disable('top');
+
+        self::assertNull($r->get('top'));
+        self::assertFalse($r->has('top'));
+    }
+
+    public function testFillerBeatsBase(): void
+    {
+        $r = new RegionRegistry();
+        $base = $this->region('top');
+        $filler = $this->region('top');
+        $r->add($base, true);
+        $r->add($filler);
+
+        self::assertSame($filler, $r->get('top'));
+    }
+
+    public function testUseGlobalBeatsFiller(): void
+    {
+        $r = new RegionRegistry();
+        $base = $this->region('top');
+        $filler = $this->region('top');
+        $r->add($base, true);
+        $r->add($filler);
+
+        $r->useGlobal('top');
+
+        self::assertSame($base, $r->get('top'));
+    }
+
+    public function testUseFillerRevertsForceGlobal(): void
+    {
+        $r = new RegionRegistry();
+        $base = $this->region('top');
+        $filler = $this->region('top');
+        $r->add($base, true);
+        $r->add($filler);
+
+        $r->useGlobal('top');
+        $r->useFiller('top');
+
+        self::assertSame($filler, $r->get('top'));
+    }
 }
