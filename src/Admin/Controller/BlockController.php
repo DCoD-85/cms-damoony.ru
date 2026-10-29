@@ -146,7 +146,7 @@ final class BlockController extends BaseController
 
                 $table->row([
                     Builder::el('b')->content($name),
-                    Text::raw(View::esc($typeLabel)),
+                    $typeLabel,
                     $actionsHtml,
                 ]);
             }

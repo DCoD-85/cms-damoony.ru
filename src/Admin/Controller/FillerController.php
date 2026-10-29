@@ -98,9 +98,14 @@ final class FillerController extends BaseController
 
         if (is_array($fillers) && $fillers !== []) {
             foreach ($fillers as $block => $enabled) {
-                $statusHtml = $enabled
-                    ? '<span class="badge" style="background:#dcfce7; color:#166534;">' . View::t('filler.enabled') . '</span>'
-                    : '<span class="badge" style="background:#fee2e2; color:#991b1b;">' . View::t('filler.disabled') . '</span>';
+                $statusBadge = Builder::span('badge');
+                if ($enabled) {
+                    $statusBadge->attrs()->styleAdd('background:#dcfce7; color:#166534;');
+                    $statusBadge->content(View::t('filler.enabled'));
+                } else {
+                    $statusBadge->attrs()->styleAdd('background:#fee2e2; color:#991b1b;');
+                    $statusBadge->content(View::t('filler.disabled'));
+                }
 
                 $form = Form::create('/admin/?p=filler:toggle&domain=' . urlencode($domain) . '&allias=' . urlencode($allias), 'POST')
                     ->csrf($this->csrf->field())
@@ -116,10 +121,17 @@ final class FillerController extends BaseController
                     }
                 }
 
+                $codeUrl = '/admin/?p=editor&domain=' . urlencode($domain) . '&file=' . urlencode('.alliasglobal/' . $block . '/' . $block . '_' . $allias . '.php');
+                $codeBtn = Builder::a($codeUrl, 'btn btn-outline')->content(View::t('admin.filler.col_code'));
+
+                $actionsCell = Builder::div('table-actions');
+                $actionsCell->append($codeBtn);
+                $actionsCell->append($toggleBtn);
+
                 $table->row([
                     Builder::el('b')->content((string)$block),
-                    Text::raw($statusHtml),
-                    $toggleBtn,
+                    $statusBadge,
+                    $actionsCell,
                 ]);
             }
         } else {

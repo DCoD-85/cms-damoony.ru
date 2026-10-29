@@ -50,7 +50,7 @@ final class PageController extends BaseController
 
         // Корневой узел (/) — сам algoritm.php
         $rootNode = [
-            'name' => 'Корень (/)',
+            'name' => View::t('admin.page.root'),
             'path' => '',
             'auth' => false,
             'search' => true,
@@ -159,7 +159,7 @@ final class PageController extends BaseController
             $right = Builder::div('page-tree-actions');
 
             // Визуально
-            $btnVisual = Builder::a($url, 'btn btn-primary btn-sm')->content('Визуально');
+            $btnVisual = Builder::a($url, 'btn btn-primary btn-sm')->content(View::t('admin.page.visual_editor'));
             $right->append($btnVisual);
 
             // Код
@@ -167,7 +167,7 @@ final class PageController extends BaseController
                 ? $allias . '/algoritm/algoritm.php'
                 : $allias . '/algoritm/' . $node['path'] . '/algoritm_' . str_replace('/', '_', $node['path']) . '.php';
             $codeUrl = '/admin/?p=editor&domain=' . urlencode($domain) . '&file=' . urlencode($phpFile);
-            $btnCode = Builder::a($codeUrl, 'btn btn-outline btn-sm')->content('Код');
+            $btnCode = Builder::a($codeUrl, 'btn btn-outline btn-sm')->content(View::t('admin.page.code'));
             $right->append($btnCode);
 
             // Toggles (Auth и Search)
@@ -177,7 +177,7 @@ final class PageController extends BaseController
                 ->add(Field::hidden('path')->value($node['path']))
                 ->add(Field::hidden('key')->value('auth'))
                 ->add(Field::hidden('value')->value($node['auth'] ? '0' : '1'))
-                ->submit($node['auth'] ? '🔒 Auth: Вкл' : '🔓 Auth: Выкл');
+                ->submit($node['auth'] ? View::t('admin.page.btn_auth_on') : View::t('admin.page.btn_auth_off'));
             $authBtn = $authForm->build();
             foreach ($authBtn->children() as $child) {
                 if ($child instanceof Element && $child->tag() === 'button') {
@@ -190,7 +190,7 @@ final class PageController extends BaseController
                 ->add(Field::hidden('path')->value($node['path']))
                 ->add(Field::hidden('key')->value('search'))
                 ->add(Field::hidden('value')->value($node['search'] ? '0' : '1'))
-                ->submit($node['search'] ? '🔍 Search: Вкл' : '🔍 Search: Выкл');
+                ->submit($node['search'] ? View::t('admin.page.btn_search_on') : View::t('admin.page.btn_search_off'));
             $searchBtn = $searchForm->build();
             foreach ($searchBtn->children() as $child) {
                 if ($child instanceof Element && $child->tag() === 'button') {
