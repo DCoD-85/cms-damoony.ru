@@ -68,6 +68,7 @@ final class PageController extends BaseController
         $tree = [$rootNode];
 
         $card = Builder::div('admin-card');
+        $card->append(Text::raw('<link rel="stylesheet" href="/media/admin/page-builder.css">')); // <--- ДОБАВИТЬ ЭТО
 
         $breadcrumbs = Builder::div('breadcrumbs');
         $breadcrumbs->append(Builder::a('/admin/?p=domain')->content(View::t('domain.bread_domains')));
@@ -142,29 +143,29 @@ final class PageController extends BaseController
 
         foreach ($nodes as $node) {
             $li = Builder::li('page-tree-item');
-            $header = Builder::div('page-tree-header');
+            $header = Builder::div('page-tree-row');
 
-            // Ссылка на редактор
+            // Левая часть: Иконка и ссылка
+            $left = Builder::div('page-tree-left');
+            $icon = $node['path'] === '' ? '🏠' : '📄';
             $url = '/admin/?p=page:edit&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&path=' . urlencode($node['path']);
-            $header->append(Builder::a($url, 'page-tree-link')->content('📄 /' . ($node['path'] ?: '')));
+            $left->append(Builder::a($url, 'page-tree-link')->content($icon . ' /' . ($node['path'] ?: '')));
+            $header->append($left);
 
-            // Кнопки действий
-            $btns = Builder::div('page-tree-actions');
+            // Правая часть: Кнопки
+            $right = Builder::div('page-tree-actions');
 
             // Визуально
-            $btnVisual = Builder::a($url, 'btn btn-primary')->content('Визуально');
-            $btnVisual->attrs()->styleAdd('padding:4px 8px; font-size:12px;');
-            $btns->append($btnVisual);
+            $btnVisual = Builder::a($url, 'btn btn-primary btn-sm')->content('Визуально');
+            $right->append($btnVisual);
 
             // Код
             $phpFile = $node['path'] === ''
                 ? $allias . '/algoritm/algoritm.php'
                 : $allias . '/algoritm/' . $node['path'] . '/algoritm_' . str_replace('/', '_', $node['path']) . '.php';
             $codeUrl = '/admin/?p=editor&domain=' . urlencode($domain) . '&file=' . urlencode($phpFile);
-
-            $btnCode = Builder::a($codeUrl, 'btn btn-outline')->content('Код');
-            $btnCode->attrs()->styleAdd('padding:4px 8px; font-size:12px; margin-left:5px;');
-            $btns->append($btnCode);
+            $btnCode = Builder::a($codeUrl, 'btn btn-outline btn-sm')->content('Код');
+            $right->append($btnCode);
 
             // Toggles (Auth и Search)
             $toggleUrl = '/admin/?p=page:toggle&domain=' . urlencode($domain) . '&allias=' . urlencode($allias);
@@ -173,31 +174,29 @@ final class PageController extends BaseController
                 ->add(Field::hidden('path')->value($node['path']))
                 ->add(Field::hidden('key')->value('auth'))
                 ->add(Field::hidden('value')->value($node['auth'] ? '0' : '1'))
-                ->submit($node['auth'] ? 'Auth: Вкл' : 'Auth: Выкл');
+                ->submit($node['auth'] ? '🔒 Auth: Вкл' : '🔓 Auth: Выкл');
             $authBtn = $authForm->build();
             foreach ($authBtn->children() as $child) {
                 if ($child instanceof Element && $child->tag() === 'button') {
-                    $child->attrs()->classAdd($node['auth'] ? 'btn btn-danger' : 'btn btn-outline');
-                    $child->attrs()->styleAdd('padding:4px 8px; font-size:12px; margin-left:5px;');
+                    $child->attrs()->classAdd('btn btn-toggle ' . ($node['auth'] ? 'toggle-on' : 'toggle-off'));
                 }
             }
-            $btns->append($authBtn);
+            $right->append($authBtn);
 
             $searchForm = Form::create($toggleUrl, 'POST')->csrf($this->csrf->field())
                 ->add(Field::hidden('path')->value($node['path']))
                 ->add(Field::hidden('key')->value('search'))
                 ->add(Field::hidden('value')->value($node['search'] ? '0' : '1'))
-                ->submit($node['search'] ? 'Search: Вкл' : 'Search: Выкл');
+                ->submit($node['search'] ? '🔍 Search: Вкл' : '🔍 Search: Выкл');
             $searchBtn = $searchForm->build();
             foreach ($searchBtn->children() as $child) {
                 if ($child instanceof Element && $child->tag() === 'button') {
-                    $child->attrs()->classAdd($node['search'] ? 'btn btn-outline' : 'btn btn-danger');
-                    $child->attrs()->styleAdd('padding:4px 8px; font-size:12px; margin-left:5px;');
+                    $child->attrs()->classAdd('btn btn-toggle ' . ($node['search'] ? 'toggle-on' : 'toggle-off'));
                 }
             }
-            $btns->append($searchBtn);
+            $right->append($searchBtn);
 
-            $header->append($btns);
+            $header->append($right);
             $li->append($header);
 
             if (!empty($node['children'])) {

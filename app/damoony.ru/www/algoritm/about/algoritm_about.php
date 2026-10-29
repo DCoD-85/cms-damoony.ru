@@ -19,7 +19,11 @@ final class algoritm_about extends Algoritm
         $this->regions()->useGlobal('top');
         $this->regions()->useGlobal('test_v');
         $this->regions()->useGlobal('left');
-        $this->regions()->useGlobal('center');
+        $container_center = Builder::div('page-slot-center');
+        $container_center->append(Builder::h(1)->content('Это CENTER'));
+        $container_center->append(Builder::p()->content('Это текст CENTER'));
+        $container_center->append(Builder::p()->content(''));
+        $this->setContent('center', $container_center);
         $this->regions()->useGlobal('right');
         $this->regions()->useGlobal('bottom');
         $this->regions()->useGlobal('footer');
