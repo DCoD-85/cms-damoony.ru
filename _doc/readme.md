@@ -132,7 +132,7 @@ P0 — блокируют production
 
 ~~addslashes в компиляторах~~ — ✅ закрыто (stage-1, var_export + тесты).
 
-Response::internalError($e->getMessage()): утечка путей/классов в prod. — открыт, stage-3.
+~~Response::internalError($e->getMessage()): утечка путей/классов в prod.~~ ✅ Закрыто (stage-3)
 
 ~~Два формата .edit.json~~ — ✅ закрыто (stage-2a, `edit()`/`save()` блокируют legacy + `about/.edit.json` удалён).
 

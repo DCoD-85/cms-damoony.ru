@@ -3,7 +3,7 @@
 Документация Damoony Engine
 Вся документация по проекту. Разделена по назначению: разработчики, администраторы, AI-агенты.
 
-Статус проекта: 85% production-ready. 2 P0-блокера до деплоя (~0.5 дня). Полное состояние — MANIFEST.md.
+Статус проекта: ~95% production-ready. 0 P0-блокеров до деплоя (~0.5 дня). Полное состояние — MANIFEST.md.
 
 ⚠️ Порядок приоритета при расхождении: код в src/ → MANIFEST.md → остальные документы _doc/ → комментарии в коде. Если документ противоречит MANIFEST.md — доверяйте MANIFEST.md.
 
@@ -55,7 +55,7 @@ AI-агент (код)	MANIFEST.md → ai_logic.md → guide.md → contracts.md
 
 ~~addslashes в компиляторах.~~ ✅ Закрыто (stage-1).
 
-Response::internalError($e->getMessage()) в prod. — открыт, stage-3.
+~~Response::internalError($e->getMessage()) в prod.~~ ✅ Закрыто (stage-3).
 
 ~~Два формата .edit.json без миграции.~~ ✅ Закрыто (stage-2a).
 
