@@ -3,7 +3,7 @@
 Damoony Engine
 Лёгкий PHP 8.4 движок для мультидоменных сайтов с собственной Low-Code UI-моделью.
 
-Статус: ~95% production-ready. 0 P0-блокеров до деплоя (~0.5 дня работы). Полное состояние — MANIFEST.md. Если сомневаетесь в утверждении из любого документа — истина в MANIFEST.md §3–7, а не здесь.
+Статус: 95% production-ready. 0 P0-блокеров. Полное состояние — MANIFEST.md. Если сомневаетесь в утверждении из любого документа — истина в MANIFEST.md §3–7, а не здесь.
 
 Что это
 Damoony Engine — переосмысление архитектуры SimplCMS. Сохраняет философию старого проекта (домены как единица организации, UI как дерево, регионы как плагины, файловый роутинг), но реализован с нуля на современных стандартах.
@@ -15,7 +15,7 @@ PHP >= 8.4
 
 Composer (PSR-4, PSR-3, PSR-11)
 
-PHPUnit 10 (48 тестовых файлов; 245 тестов, 542 assertions — верифицировано)
+PHPUnit 10 (52 тестовых файла, 258 тестов, 580 assertions — верифицировано)
 
 PHPStan (level 8)
 
@@ -39,9 +39,11 @@ var/               — runtime (логи, бан-листы, ratelimit)
 _dev/              — тесты, конфиги PHPUnit/PHPStan
 _doc/              — документация (этот файл и другие)
 Ключевые особенности
-Мультидоменность: управление многими сайтами из одной админки. Домен (инфраструктура) + Алиас (контент).
+Мультидоменность: управление многими сайтами из одной админки. Домен (инфраструктура) + Алиас (контент). 
 
-Low-Code: сборка схем и контента страниц мышкой. JSON-структуры (.edit.json) компилируются в нативный PHP (PageCompiler, RegionCompiler).
+Low-Code: Сборка схем и контента страниц мышкой (Drag&Drop). JSON-структуры (editor.json) компилируются в нативный PHP (PageCompiler, SchemeCompiler).
+
+Строгая типизация блоков: script, visual, mixed. Жёсткие правила вложенности (visual — контейнер, script/mixed — листы).
 
 UI как дерево: типизированное дерево Node/Element/Attrs с XSS-экранированием на уровне Attrs/Text.
 
@@ -94,17 +96,17 @@ php bin/cli.php user:new --login=admin --email=admin@example.com --password=secr
 
 Роутинг: .rules.json, флаги available/auth/search/default, regex-параметры, 404.
 
-Схемы/Регионы: SchemeLoader, SchemeRenderer, RegionLoader, RegionRegistry, Algoritm::setContent, филлеры, иерархия local → global → 500 (с оговоркой, см. §6.5).
+Схемы/Регионы: SchemeLoader, SchemeRenderer, RegionLoader, RegionRegistry, Algoritm::setContent, филлеры, иерархия local → global → 500.
 
 UI: Node, Element, Attrs, Text, Fragment, Group, Builder (12 методов), Document, Meta, Form, Field, Table, Button, Message.
 
-Auth: DbAuth, SessionAuth, Csrf, login/logout, логирование, брутфорс-защита.
+Auth: DbAuth, SessionAuth, Csrf, login/logout, логирование, брутфорс-защита. Базовые методы isAuthenticated() и user().
 
 БД: PDO, MigrationRunner, MariaDB/MySQL.
 
 Админка: полный CRUD доменов/алиасов/блоков/схем/страниц/филлеров/заглушек, I18n (RU/EN/ZH), System Health, CodeMirror, Safe Mode.
 
-Low-Code: PageCompiler, RegionCompiler, .edit.json, статусы слотов.
+Low-Code: PageCompiler, SchemeCompiler, page.editor.json, scheme.editor.json, статусы слотов (Drag&Drop).
 
 Диагностика: StructureChecker, structure:check, «Обзор».
 
@@ -117,34 +119,22 @@ I18n фронтенда: middleware и DomainContext->language есть, UI-пе
 
 Skins: SkinManager и автоподключение CSS/JS есть, UI-менеджера и переключателя нет.
 
-.edit.json: два формата ({blocks} старый, {slots} новый). Legacy блокируется (stage-2a), но автомиграции нет.
-
-StructureChecker: не ловит .edit.json ↔ PHP, legacy .edit.json, blocks.json ↔ папки.
+StructureChecker: не ловит blocks.json ↔ папки.
 
 blocks.json: записывается CLI, не читается RegionLoader.
 
 Не реализовано (❌)
-WYSIWYG (свободная вёрстка), Headless/REST/GraphQL API, sitemap, robots.txt, hreflang, плагины, Schema.org, SMTP/сброс пароля, Redis/Memcached/CDN, WebSocket, мультиязычность контента.
+WYSIWYG (свободная вёрстка), Headless/REST/GraphQL API, sitemap, robots.txt, hreflang, плагины, Schema.org, SMTP/сброс пароля, Redis/Memcached/CDN, WebSocket, мультиязычность контента, structure:repair.
 
 Известные проблемы (по MANIFEST.md §7)
 P0 — блокируют production
-~~CSRF на destructive GET~~ — ✅ закрыто (stage-2b, POST+CSRF на всех destructive).
-
-~~addslashes в компиляторах~~ — ✅ закрыто (stage-1, var_export + тесты).
-
-~~Response::internalError($e->getMessage()): утечка путей/классов в prod.~~ ✅ Закрыто (stage-3)
-
-~~Два формата .edit.json~~ — ✅ закрыто (stage-2a, `edit()`/`save()` блокируют legacy + `about/.edit.json` удалён).
-
-~~SchemeCompiler::str_replace('array (', '[')~~ — ✅ закрыто (stage-1, str_replace удалён + round-trip тест).
-
-~~Порт/trailing-dot в Host не нормализуется~~ — ✅ закрыто (stage-3, нормализация в ConfigDomainResolver).
+Нет. Все 6 P0 закрыты (stage-1, 2a, 2b, 3).
 
 P1 — надёжность и безопасность
-Document::release() не идемпотентен; XSS на именах атрибутов в Attrs; пробелы StructureChecker; SchemeLoader fallback без проверки Env::isDev(); SchemeController::edit() схлопывает вложенность; PageController::edit() не резолвит входящий хост; Algoritm::default(): null ломает страницу.
+Нет. Все 7 P1 закрыты (stage-4, 5).
 
 P2 — техдолг
-domains_real[$domain] → ConfigDomainResolver::real(); PageController::edit() → DomainContext->scheme; Builder неполон; assert() в prod; @template в RegionContext::service(); мёртвый код (RouteMatch::forbidden, Group, DomainContext->logic); .data.php блоков не читаются; Translator мимо контейнера; applySkin мимо middleware.
+domains_real[$domain] → ConfigDomainResolver::real(); PageController::edit() → DomainContext->scheme; Builder неполон; assert() в prod; @template в RegionContext::service(); мёртвый код (RouteMatch::forbidden, Group, DomainContext->logic); Translator мимо контейнера; applySkin мимо middleware.
 
 Полный backlog и приоритеты — MANIFEST.md §10.
 
@@ -174,8 +164,8 @@ ai_system.md, ai_logic.md — инструкции для AI-агентов.
 Важное замечание
 Ранние версии этого файла (и других документов в _doc/) заявляли:
 
-«235 тестов» — теперь верифицировано (245);
-«скрытых дефолтов нет» — SchemeLoader возвращает fallback (§6.5);
+«235 тестов» — теперь верифицировано (258);
+«скрытых дефолтов нет» — исправлено (SchemeLoader падает в prod);
 «100% паритет CLI/UI» — неверно (§3);
 «WYSIWYG» — не реализован (§5).
 

@@ -48,7 +48,7 @@ scheme: string — имя схемы; используется в PageCompiler/H
 
 Ограничения (P0/P1):
 
-Порт и trailing-dot не нормализуются (§6.17): 192.168.1.10:8080 не матчится с 192.168.1.10. Критично для IP-деплоя с портом. — **открыт, stage-3.**
+~~Порт и trailing-dot не нормализуются (§6.17): 192.168.1.10:8080 не матчится с 192.168.1.10.~~ ✅ Закрыто (stage-3): нормализация в ConfigDomainResolver.
 
 domains_real[$domain] работает только при self-mapping ("example.ru": "example.ru"). Свежий домен без self-mapping → Undefined array key (§6.4, P2).
 
@@ -124,7 +124,7 @@ names(): array
 
 Регион не знает о других регионах и о схеме. Возвращает Node, не строку.
 
-Типы блоков: ui (визуализация), logic (скрипт), mixed (реализация). blocks.json записывается CLI, но не читается RegionLoader (§4) — источник истины — папки.
+Типы блоков: visual (визуализация), script (скрипт), mixed (реализация). blocks.json записывается CLI, но не читается RegionLoader (§4) — источник истины — папки.
 
 .data.php блоков не читаются движком (§4). Данные — в PHP-классе.
 
@@ -147,7 +147,9 @@ UI (Дерево представления и Компоненты)
 
 Дерево мутабельно: append() / prepend() / content() меняют узел in-place. release() возвращает HTML-строку.
 
-Экранирование данных — на уровне Attrs и Text (htmlspecialchars(ENT_QUOTES | ENT_SUBSTITUTE)). Исключение: имена атрибутов в Attrs::release() не валидируются (§7.2 п.2, P1) — не передавайте имена из пользовательских данных.
+Экранирование данных — на уровне Attrs и Text (htmlspecialchars(ENT_QUOTES | ENT_SUBSTITUTE)).
+
+~~Имена атрибутов в Attrs::release() не валидируются (§7.2 п.2, P1)~~ ✅ Закрыто (stage-4): имена атрибутов проходят валидацию.
 
 Node — контракт с изъяном: Text::append(), Slot::append(), Slot::attrs() бросают LogicException. Код, работающий с Node generic-но, не может безопасно вызвать append. Разделение на Node / ParentNode — не сделано (P2).
 
@@ -159,7 +161,7 @@ Builder неполон (нет table, form, section, nav, label, select, textare
 
 Ограничения:
 
-Document::release() не идемпотентен — повторный вызов дублирует <title>/<link>/<script> (§7.2 п.1, P1). В обычном пайплайне Document создаётся один раз в PageHandler.
+~~Document::release() не идемпотентен — повторный вызов дублирует <title>/<link>/<script>~~ ✅ Закрыто (stage-4): релиз идемпотентен. В обычном пайплайне Document создаётся один раз в PageHandler.
 
 Источник: src/Ui/
 
@@ -182,7 +184,7 @@ SchemeRenderer::render(array $manifest, RegionRegistry $regions, RegionContext $
 
 Если нет ни одной — 500. Инвариант «скрытых дефолтов нет».
 
-Расхождение (P1, §6.5): SchemeLoader::load() всегда возвращает fallback div.layout > main[slot=center], если схемы нет. Инвариант нарушен. Требуется if (!$env->isDev()) throw.
+~~Расхождение (P1, §6.5): SchemeLoader::load() всегда возвращает fallback...~~ ✅ Закрыто (stage-4): в prod бросает RuntimeException, в dev — fallback с логом.
 
 Инварианты:
 
@@ -192,11 +194,11 @@ SchemeRenderer::render(array $manifest, RegionRegistry $regions, RegionContext $
 
 Ограничения:
 
-~~SchemeCompiler::compile() использует var_export + str_replace('array (', '[').~~ ✅ Закрыто (stage-1): str_replace удалён, var_export как есть. Round-trip тест в SchemeCompilerTest.
+~~SchemeCompiler::compile() использует var_export + str_replace('array (', '[').~~ ✅ Закрыто (stage-1): str_replace удалён, var_export как есть.
 
-SchemeController::edit() схлопывает вложенные схемы в плоский div.layout (§6.15, P1). Схема хранится в двух файлах: editor.json (дерево для UI) и data.php (массив для рендера). Вложенность сохраняется только при редактировании через CodeMirror.
+~~SchemeController::edit() схлопывает вложенные схемы в плоский div.layout (§6.15, P1).~~ ✅ Закрыто (stage-5): новый Drag&Drop редактор сохраняет вложенность. Схема хранится в двух файлах: editor.json (дерево для UI) и data.php (массив для рендера).
 
-schemes.json может рассинхронизироваться с файлами на диске — «сироты» (пример: visuo.data.php без записи в schemes.json). StructureChecker это не ловит (§7.2 п.3, P1).
+schemes.json может рассинхронизироваться с файлами на диске — «сироты» (пример: visuo.data.php без записи в schemes.json). StructureChecker ловит это с stage-5.
 
 Источник: src/Scheme/
 
@@ -211,6 +213,8 @@ DbAuth (база данных)
 
 Csrf: field(), check()
 
+Algoritm (Базовый класс): isAuthenticated(): bool, user(): mixed (обертки для удобства в логике).
+
 Инварианты:
 
 Пароли — только password_hash.
@@ -219,9 +223,7 @@ Csrf: field(), check()
 
 Флаг auth: true в .rules.json автоматически перенаправляет гостя на /login.
 
-~~Нарушение (P0, §7.1 п.1): Destructive GET — SchemeController::delete/copy, BlockController::remove изменяют данные через GET без CSRF.~~ ✅ Закрыто (stage-2b): SchemeController::copy/delete, BlockController::remove, StubController::remove требуют requirePost + requireCsrf. StubController::remove дополнительно валидирует имя (path traversal). UI переведён на POST-формы.
-
-⚠️ AliasSchemeController::delete — requireCsrf есть, requirePost нет (403 вместо 405). Атака невозможна, но поведение нестандартное. P1.
+~~Нарушение (P0, §7.1 п.1): Destructive GET — SchemeController::delete/copy, BlockController::remove изменяют данные через GET без CSRF.~~ ✅ Закрыто (stage-2b): все destructive требуют POST+CSRF. UI переведён на POST-формы.
 
 Админка использует отдельную авторизацию (config/admin.config), независимую от пользователей сайта.
 
@@ -272,11 +274,11 @@ Low-Code и Компиляторы
 
 Классы:
 
-PageCompiler: JSON-дерево страницы → PHP-класс (algoritm_*.php).
+PageCompiler: JSON-дерево страницы (page.editor.json) → PHP-класс (algoritm_*.php).
 
 RegionCompiler: JSON-дерево блока → PHP-класс (alliasglobal_*.php).
 
-SchemeCompiler: массив схемы → .data.php (var_export, без str_replace с stage-1).
+SchemeCompiler: массив схемы → .data.php (var_export, без str_replace).
 
 Инварианты:
 
@@ -286,7 +288,7 @@ SchemeCompiler: массив схемы → .data.php (var_export, без str_re
 
 ~~Нарушения (P0): PageCompiler/RegionCompiler используют addslashes()~~ ✅ Закрыто (stage-1): используют var_export($content, true). Регрессия покрыта тестами.
 
-~~Два формата .edit.json ({blocks} старый, {slots} новый) не мигрированы.~~ ✅ Частично закрыто (stage-2a): PageController::edit() и save() блокируют legacy {blocks}. Автомиграция {blocks} → {slots} не реализована — требуется ручное удаление.
+~~Два формата .edit.json ({blocks} старый, {slots} новый) не мигрированы.~~ ✅ Закрыто (stage-2a): старый формат блокируется в PageController::edit()/save().
 
 Генерируемый PageCompiler код сам вызывает SchemeLoader + SchemeRenderer — это компенсирует §6.1 для визуальных страниц, но усиливает разницу с ручными.
 
@@ -303,11 +305,7 @@ StructureChecker: проверяет наличие .rules.json, algoritm.php, �
 
 Результат — массив (level, message); выводится в CLI (structure:check) и в админке (System Health).
 
-Пробелы (P1, §7.2 п.3):
-
-Не проверяет .edit.json ↔ PHP, legacy .edit.json, blocks.json ↔ папки, schemes.json ↔ файлы.
-
-«Сироты» (файлы без записи в манифесте и наоборот) не ловятся. Пример: visuo.data.php без записи в schemes.json.
+~~Пробелы (P1, §7.2 п.3): Не проверяет .edit.json ↔ PHP, legacy .edit.json, blocks.json ↔ папки, schemes.json ↔ файлы.~~ ✅ Закрыто (stage-5): проверяет .edit.json ↔ PHP и schemes.json ↔ файлы.
 
 Источник: src/Diagnostics/
 
@@ -326,11 +324,11 @@ Admin: UI-компоненты, CodeMirror (локальный), мультия�
 
 Ограничения:
 
-«100% паритет CLI/UI» — неверно. Только CLI: db:migrate, structure:check (в UI есть, но вывод иной), vars:extract, trash:clear, user:new. Только UI: editor (CodeMirror), визуальный редактор блоков/схем/страниц. MANIFEST.md §3.
+«100% паритет CLI/UI» — неверно. Только CLI: db:migrate, structure:check (в UI есть, но вывод иной), vars:extract, trash:clear, user:new. Только UI: editor (CodeMirror), визуальный редактор блоков/схем/страниц.
 
 PageController::save() и BlockController::save() читают domains_real[$domain] — работает при self-mapping; без него — Undefined array key (§6.4, P2).
 
-PageController::edit() читает domains_scheme[$domain] — для входящего хоста (например, damoony3.ru) схема не найдётся, слоты в редакторе пустые (§6.16, P1).
+~~PageController::edit() читает domains_scheme[$domain] — для входящего хоста (например, damoony3.ru) схема не найдётся, слоты в редакторе пустые (P1).~~ ✅ Закрыто (stage-5): резолв через domains_real.
 
 Источник: bin/cli.php, www/admin/index.php, src/Admin/
 

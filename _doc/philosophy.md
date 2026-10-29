@@ -20,7 +20,7 @@
 Соблюдается: ✅ в основном.
 Расхождения:
 
-Attrs::release() не валидирует имена атрибутов → XSS-вектор (MANIFEST.md §7.2 п.2, P1).
+~~Attrs::release() не валидирует имена атрибутов → XSS-вектор~~ — ✅ закрыто (stage-4, добавлена валидация).
 
 Builder неполон (table, form, section и т.д. отсутствуют) — сложные структуры через new Element() (§6.6).
 
@@ -34,7 +34,7 @@ Node — контракт с изъяном: Text::append(), Slot::append() бр
 Соблюдается: ✅ в RegionRegistry (приоритет: disabled → forcedGlobal → filler → base — образцовый).
 Расхождения:
 
-SchemeLoader всегда возвращает fallback, если схемы нет — нарушает инвариант «скрытых дефолтов нет» (§6.5, P1).
+~~SchemeLoader всегда возвращает fallback, если схемы нет~~ — ✅ закрыто (stage-4, в prod бросает RuntimeException).
 
 blocks.json записывается, но не читается; .data.php блоков не читаются (§4).
 
@@ -53,11 +53,11 @@ Slot::release() возвращает '' — слот без региона мо�
 RouteMatch::forbidden() и guest — мёртвый код.
 
 5. Low-Code и компиляция (Zero-Overhead)
-Визуальный редактор — инструмент генерации данных. Админка сохраняет структуру блоков в .edit.json. PageCompiler/RegionCompiler компилируют JSON в чистый PHP с Builder. Пользователь получает нативный PHP без парсинга JSON на лету.
+Визуальный редактор — инструмент генерации данных. Админка сохраняет структуру блоков в editor.json. PageCompiler/SchemeCompiler компилируют JSON в чистый PHP с Builder. Пользователь получает нативный PHP без парсинга JSON на лету.
 
 Следствие: удобство конструктора (как Tilda/Webflow) без потери производительности.
 
-Соблюдается: ✅ в основном. P0-блокеры закрыты (stage-1, 2a).
+Соблюдается: ✅ полностью (stage-1, 2a, 5).
 Расхождения:
 
 ~~addslashes вместо var_export~~ — ✅ закрыто (stage-1).
@@ -66,7 +66,7 @@ RouteMatch::forbidden() и guest — мёртвый код.
 
 ~~Два формата .edit.json без миграции~~ — ✅ закрыто (stage-2a, legacy блокируется).
 
-SchemeController::edit() схлопывает вложенные схемы (§6.15, P1).
+~~SchemeController::edit() схлопывает вложенные схемы~~ — ✅ закрыто (stage-5, новый Drag&Drop).
 
 Ручные страницы не идут через схему — визуальная и ручная версия одной страницы выглядят по-разному (§6.1).
 
@@ -96,7 +96,7 @@ FrontController создаёт Translator/LanguageNegotiator вручную, м�
 
 RegionContext::service() возвращает mixed — контракт размыт (§6.2).
 
-AlgoritmInterface::default(): Node|Response|null разрешает null, а runtime на null бросает RuntimeException → 500. Контракт противоречит поведению (§6.18, P1).
+~~AlgoritmInterface::default(): Node|Response|null разрешает null, а runtime на null бросает RuntimeException → 500~~ — ✅ закрыто (stage-4, null трактуется как 204).
 
 8. CLI и Админка — равноправные интерфейсы
 Любая операция доступна как CLI, так и через админку. Админка использует те же UI-компоненты, что фронтенд, и включает CodeMirror. AI-агенты управляют через CLI, люди — через UI.
@@ -122,7 +122,7 @@ AlgoritmInterface::default(): Node|Response|null разрешает null, а run
 
 ~~Response::internalError($e->getMessage()) в PageHandler~~ — ✅ закрыто (stage-3, в prod generic).
 
-XSS на именах атрибутов в Attrs::release() (§7.2 п.2, P1).
+~~XSS на именах атрибутов в Attrs::release()~~ — ✅ закрыто (stage-4).
 
 Что работает: password_hash, CSRF на POST, HttpOnly, RateLimit, CSP, Safe Mode, whitelist загрузок, hash_equals — это сильная сторона проекта.
 
@@ -131,10 +131,10 @@ XSS на именах атрибутов в Attrs::release() (§7.2 п.2, P1).
 
 Следствие: System Health, structure:check, Safe Mode.
 
-Соблюдается: 🟡 частично.
+Соблюдается: ✅ в основном.
 Расхождения:
 
-StructureChecker не ловит .edit.json ↔ PHP, legacy .edit.json, blocks.json ↔ папки, schemes.json ↔ файлы («сироты» вроде visuo.data.php) (§7.2 п.3, P1).
+~~StructureChecker не ловит .edit.json ↔ PHP, legacy .edit.json, blocks.json ↔ папки, schemes.json ↔ файлы («сироты» вроде visuo.data.php)~~ — ✅ закрыто (stage-5, добавлены проверки .edit.json и schemes.json).
 
 Safe Mode работает на уровне bootstrap админки, но ошибки внутри контроллеров ловит Kernel (500, не Safe Mode) — это ожидаемо.
 
@@ -145,7 +145,7 @@ PHP 8.4
 
 Composer (PSR-4, PSR-3, PSR-11)
 
-PHPUnit 10+ (48 тестовых файлов, 245 тестов, 542 assertions — верифицировано)
+PHPUnit 10+ (52 тестовых файла, 258 тестов, 580 assertions — верифицировано)
 
 PHPStan (level 8)
 
@@ -156,16 +156,16 @@ Nginx + PHP-FPM (или Apache + mod_php)
 Итог: соблюдение принципов
 #	Принцип	Статус	Ключевое расхождение
 1	Домен/Алиас	✅	—
-2	UI — дерево	✅	XSS на именах атрибутов, Builder неполон
-3	Регионы/слоты/filler	✅	SchemeLoader fallback, blocks.json/.data.php не читаются
+2	UI — дерево	✅	Builder неполон, Node/ParentNode
+3	Регионы/слоты/filler	✅	blocks.json/.data.php не читаются
 4	Файловый роутинг	✅	@preg_match глушит ошибки, мёртвый forbidden()
-5	Low-Code / Zero-Overhead	✅	Схлопывание вложенности (§6.15)
+5	Low-Code / Zero-Overhead	✅	Ручные страницы не идут через схему (архитектурный дефект §6.1)
 6	Explicit over implicit	🟡	Ручная/визуальная страница ведут себя по-разному (§6.1)
-7	Contract-first	🟡	default(): null разрешён, runtime ломает (§6.18)
+7	Contract-first	✅	default(): null → 204 (stage-4)
 8	CLI = UI	🟡	«100%» — неверно
-9	Безопасность — основа	✅	XSS на именах атрибутов (P1)
-10	Диагностика	🟡	StructureChecker не ловит главного
-7 принципов соблюдаются полностью или почти (1, 2, 3, 4, 5, 9, частично 6–10). P0-блокеры закрыты (stage-1, 2a, 2b, 3). Это не провал философии, а разрыв между замыслом и «последней милей». Архитектура — на 9/10, реализация Low-Code — на 8/10.
+9	Безопасность — основа	✅	P0 закрыты (stage-2b, 3, 4)
+10	Диагностика	✅	StructureChecker расширен (stage-5)
+8 принципов соблюдаются полностью или почти (1, 2, 3, 4, 5, 7, 9, 10). P0-блокеры закрыты (stage-1, 2a, 2b, 3). Это не провал философии, а разрыв между замыслом и «последней милей». Архитектура — на 9.5/10.
 
 Подробнее о конкретных багах — MANIFEST.md §6–7. О состоянии проекта — readme.md.
 

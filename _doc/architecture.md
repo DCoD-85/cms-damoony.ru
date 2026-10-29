@@ -19,7 +19,7 @@ Middleware — стек: SecurityHeadersMiddleware (CSP, HSTS), RateLimitMiddlew
 
 FrontController:
 
-DomainResolver::resolve(host) — определяет DomainContext.
+DomainResolver::resolve(host) — определяет DomainContext. Нормализует Host (отрезает порт, trailing-dot, приводит к нижнему регистру).
 
 Проверяет, зарегистрирован ли домен. Если нет — 404.
 
@@ -31,7 +31,7 @@ Router::match(path, domain) → RouteMatch. Проверяет флаг auth.
 
 Router (FileRouter) — идёт по дереву algoritm/, читает .rules.json, возвращает RouteMatch.
 
-PageHandler — загружает RegionRegistry (через RegionLoader), подключает PHP-файл страницы, вызывает default().
+PageHandler — загружает RegionRegistry (через RegionLoader), подключает PHP-файл страницы, вызывает default(). Если страница возвращает null, PageHandler возвращает 204 No Content (stage-4). Если бросает исключение — в dev отдаёт сообщение, в prod — generic 500 (stage-3).
 
 Algoritm (Страница) — возвращает Node или Response.
 
@@ -41,11 +41,11 @@ Response — оборачивает Node в Document (тег <html>) с мета
 
 страница скомпилирована через PageCompiler (он вставляет SchemeLoader + SchemeRenderer в сгенерированный default());
 
-страница наследуется от HomePage (демо-класс, делает то же);
+страница наследуется от HomePage;
 
 страница сама вызвала SchemeRenderer в default().
 
-Это известный дефект API (MANIFEST.md §6.1, P1). Не «скрытый дефолт» — скрытая разница между ручной и визуальной страницей. guide.md §4 описывает оба варианта.
+guide.md §4 описывает оба варианта.
 
 Слой домена и алиаса
 Домен — папка app/<real_domain>/. Входящие хосты мапятся на реальный домен через ConfigDomainResolver.
@@ -54,12 +54,14 @@ Response — оборачивает Node в Document (тег <html>) с мета
 
 Инфраструктурные папки скрыты точкой: .alliasglobal/ (блоки), .alliasscheme/ (схемы).
 
-Резолвер: ConfigDomainResolver::resolve() приводит хост к нижнему регистру, отрезает порт (:8080) и трейлинг-точку (example.ru.) — нормализация добавлена в stage-3. Для localhost без порта — работает.
+Резолвер: ConfigDomainResolver::resolve() нормализует хост (отрезает :8080, отрезает trailing-dot, lowercase) — stage-3. Для IP-деплоя с портом теперь работает.
 
 Слой UI и Компоненты
 UI — типизированное дерево (не строки): Node, Element, Attrs, Builder, Document, Meta. Компоненты (Form, Field, Table, Button, Message) — высокоуровневые блоки для админки. Вся вёрстка в контроллерах — через Builder там, где это возможно; сложные структуры — через new Element() или компоненты (MANIFEST.md §6.6).
 
-Attrs::release() экранирует значения через htmlspecialchars(ENT_QUOTES | ENT_SUBSTITUTE). Имена атрибутов не валидируются (§7.2 п.2, P1) — не передавайте в attrs()->add() имена из пользовательских данных.
+Attrs::release() экранирует значения через htmlspecialchars(ENT_QUOTES | ENT_SUBSTITUTE). Имена атрибутов валидируются (пропускаются только безопасные) — stage-4, XSS закрыт.
+
+Document::release() идемпотентен — повторный вызов не дублирует <title>/<link>/<script> (stage-4).
 
 Регионы, Слоты и Схемы
 Region (RegionInterface): независимый блок контента (шапка, футер). Типы: visual (визуализация), script (скрипт), mixed (реализация). Типы в blocks.json записываются CLI, но RegionLoader их не читает (MANIFEST.md §4) — источник истины — папки.
@@ -68,24 +70,26 @@ Slot: узел в схеме для вставки региона. Slot::release
 
 Scheme: SchemeRenderer собирает каркас из манифеста и слотов.
 
-Иерархия: локальная схема алиаса → глобальная схема домена. Инвариант — «если нет ни одной, 500». Фактически SchemeLoader всегда возвращает fallback div.layout > main[slot=center] (§6.5, P1). Скрытых дефолтов должно быть нет — сейчас есть, это баг.
+Иерархия: локальная схема алиаса → глобальная схема домена. Если нет ни одной — в prod SchemeLoader бросает RuntimeException, в dev возвращает fallback div.layout > main[slot=center] с логом (stage-4).
 
 Filler: переопределение региона для конкретного алиаса (<name>_<allias>.php). Управление — RegionRegistry (disable, useGlobal), приоритет: disabled → forcedGlobal → filler → base.
 
 .data.php блоков и филлеров не читаются движком (§4). Данные — в самом PHP-классе.
 
 Low-Code и Компиляция
-Механика: админка сохраняет структуру блоков в .edit.json рядом с .php.
+Механика: админка сохраняет структуру блоков в `.editor.json` рядом с `.php` (схемы: `scheme.editor.json`, страницы: `page.editor.json`).
 
-Два формата .edit.json: {blocks} (старый) и {slots} (новый). Legacy {blocks} блокируется в PageController::edit()/save() с предупреждением (stage-2a). Автомиграция не реализована, но регрессия закрыта.
+Схемы: `editor.json` хранит дерево блоков для UI (Drag&Drop, вложенность). При сохранении SchemeCompiler компилирует его в `data.php` (чистый PHP-массив, var_export).
 
-Компиляция: PageCompiler (страницы), RegionCompiler (регионы) читают JSON и генерируют PHP с вызовами Builder и var_export для строк. SchemeCompiler — просто var_export, str_replace удалён (stage-1, §7.1 п.5).
+Страницы: `page.editor.json` хранит статусы слотов (global/local/disabled) и контент (h1, text, code). При сохранении PageCompiler компилирует его в `algoritm_*.php`.
 
-~~addslashes в PageCompiler/RegionCompiler~~ — ✅ закрыто (stage-1, var_export).
+Legacy `.edit.json` (старый формат {blocks}) блокируется в PageController::edit() с предупреждением (stage-2a).
 
-UI: VisualEditorRenderer (новый) использует Drag&Drop и сохраняет вложенность. Editor хранит правила в editor.json, компилятор генерирует data.php. (§6.15, P1).
+Компиляторы: PageCompiler (страницы), RegionCompiler (регионы) и SchemeCompiler используют var_export для строк, без addslashes и str_replace (stage-1).
 
-default(): null: интерфейс разрешает null, но PageHandler на null бросает RuntimeException → 500 (§6.18, P1).
+UI: Редакторы схем и страниц полностью переработаны (stage-5). Работают на Drag&Drop. Разделяют зоны на «Неактивные», «Скрипты» и «Визуал». Страницы имеют вкладки (Обзор, Слоты, Настройки).
+
+default(): null: PageHandler на null возвращает 204 No Content (stage-4). Контракт и runtime согласованы.
 
 Слой данных
 Только PDO (Connection). SQLite (тесты) / MariaDB (prod).
@@ -99,6 +103,8 @@ DbAuth (password_hash / password_verify).
 
 Флаг auth в .rules.json проверяется FrontController → Response::redirect('/login?return=...', 302) для гостя.
 
+В базовый класс Algoritm добавлены методы isAuthenticated() и user() (stage-5).
+
 Админка — отдельная авторизация (config/admin.config), независимая от пользователей сайта.
 
 Все POST — CSRF. Destructive — POST+CSRF (stage-2b).
@@ -111,14 +117,14 @@ Admin: UI-компоненты, CodeMirror (локальный), мультия�
 Админка и CLI — равноправные способы управления, делят бизнес-логику через *NewCommand, *ToggleCommand.
 
 Диагностика и отказоустойчивость
-StructureChecker: проверяет наличие .rules.json, algoritm.php, схем, глобальных блоков, стыковку филлер↔слот. Не проверяет: .edit.json ↔ PHP, legacy .edit.json, blocks.json ↔ папки, schemes.json ↔ файлы (это ловит «сироту» visuo.data.php без записи в schemes.json). §7.2 п.3, P1.
+StructureChecker: проверяет наличие .rules.json, algoritm.php, схем, глобальных блоков, стыковку филлер↔слот, а также `.edit.json ↔ PHP` и `schemes.json ↔ файлы` (stage-5).
 
 OverviewController (System Health): древовидный дашборд доменов и алиасов с отображением ошибок/предупреждений.
 
 Safe Mode: www/admin/index.php перехватывает фатальные ошибки и отдаёт понятную страницу вместо белого экрана.
 
 Безопасность
-Экранирование в Attrs и Text (XSS-защита). Исключение: имена атрибутов не валидируются (§7.2 п.2, P1).
+Экранирование в Attrs и Text (XSS-защита). Имена атрибутов валидируются (stage-4).
 
 Пароли — только password_hash.
 
@@ -128,11 +134,11 @@ CSRF-токены обязательны на POST. Destructive — POST+CSRF (s
 
 Загрузка файлов — whitelist расширений (MediaController).
 
-Response::internalError() в PageHandler — в prod отдаёт generic сообщение (stage-3, §7.1 п.3). Kernel ловит Throwable, но не Response с сообщением.
+Response::internalError() в PageHandler — в prod отдаёт generic сообщение (stage-3). Kernel ловит Throwable, но не Response с сообщением.
 
 Session: HttpOnly, SameSite=Lax, Secure при HTTPS.
 
 Что не реализовано
-Headless/REST/GraphQL API, sitemap, hreflang, плагины, Schema.org, SMTP/сброс пароля, Redis/Memcached/CDN, WebSocket, мультиязычность контента, WYSIWYG (свободная вёрстка). См. MANIFEST.md §5.
+Headless/REST/GraphQL API, sitemap, hreflang, плагины, Schema.org, SMTP/сброс пароля, Redis/Memcached/CDN, WebSocket, мультиязычность контента, WYSIWYG (свободная вёрстка), structure:repair. См. MANIFEST.md §5.
 
 --- КОНЕЦ ДОКУМЕНТА ---
