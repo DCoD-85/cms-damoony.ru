@@ -1,7 +1,7 @@
 <?php
 
-declare(strict_types=1)
-r
+declare(strict_types=1);
+
 return [
     'admin.nav.domains' => '域名',
     'admin.nav.stubs' => '存根',
@@ -27,7 +27,7 @@ return [
     'admin.dash.logged_as' => '登录为 {login}',
     'admin.dash.domain_count' => '配置中的域名数量: {count}',
     'admin.dash.manage_domains' => '管理域名',
-    'admin.page.title' => '面板',
+    'admin.dash.page_title' => '面板',
 
     'admin.login.title' => '登录',
     'admin.login.error' => '无效的登录名或密码',
@@ -95,7 +95,7 @@ return [
     'admin.domain.det_new_folder' => '新文件夹名称 (如果选择了模板或复制)',
     'admin.domain.det_submit' => '解绑',
     'admin.domain.back' => '返回',
-
+    
     'admin.domain.structure_issue' => '域名 {domain}, 别名 {alias}: {message}',
     'admin.domain.structure_problems' => '检测到结构问题:',
 
@@ -170,7 +170,7 @@ return [
     'admin.allias.active' => '别名已激活',
     'admin.allias.skin' => '皮肤',
     'admin.allias.quick_links' => '内容管理',
-
+    
     'admin.allias.settings.active_skin' => '活动皮肤 (默认)',
     'admin.allias.settings.allow_skin' => '允许皮肤: {skin}',
     'admin.allias.settings.lang_ru' => '俄语 (RU)',
@@ -191,6 +191,7 @@ return [
     'admin.filler.disable' => '禁用',
     'admin.filler.new_title' => '创建填充',
     'admin.filler.block_label' => '区块名称 (例如 top, bottom)',
+    'admin.filler.col_code' => '代码',
 
     'admin.filler.sync' => '同步',
     'admin.filler.sync_success' => '已同步区块: {count}',
@@ -209,6 +210,12 @@ return [
     'admin.page.edit' => '编辑',
     'admin.page.on' => '开',
     'admin.page.off' => '关',
+    'admin.page.root' => '根目录 (/)',
+    'admin.page.code' => '代码',
+    'admin.page.btn_auth_on' => '🔒 授权: 开',
+    'admin.page.btn_auth_off' => '🔓 授权: 关',
+    'admin.page.btn_search_on' => '🔍 索引: 开',
+    'admin.page.btn_search_off' => '🔍 索引: 关',
 
     'admin.scheme.title' => '别名方案',
     'admin.scheme.current' => '当前方案',
@@ -217,6 +224,9 @@ return [
     'admin.scheme.create_local' => '创建本地方案',
     'admin.scheme.delete_local' => '删除本地方案',
     'admin.scheme.local_exists' => '此别名的本地方案已存在。',
+    'admin.scheme.col_name' => '方案',
+    'admin.scheme.btn_copy' => '复制',
+    'admin.scheme.btn_delete' => '删除',
 
     'admin.db.title' => '数据库',
     'admin.db.conn_info' => '连接信息',
@@ -238,16 +248,6 @@ return [
     'admin.media.uploaded' => '文件已上传',
     'admin.media.deleted' => '文件已删除',
     'admin.media.empty' => '暂无文件。',
-    'admin.page.root' => '根目录 (/)',
-    'admin.page.code' => '代码',
-    'admin.page.btn_auth_on' => '🔒 授权: 开',
-    'admin.page.btn_auth_off' => '🔓 授权: 关',
-    'admin.page.btn_search_on' => '🔍 索引: 开',
-    'admin.page.btn_search_off' => '🔍 索引: 关',
-    'admin.scheme.col_name' => '方案',
-    'admin.scheme.btn_copy' => '复制',
-    'admin.scheme.btn_delete' => '删除',
-    'admin.filler.col_code' => '代码',
 
     'admin.editor.title' => '编辑器',
     'admin.editor.back' => '← 返回',
@@ -264,7 +264,6 @@ return [
     'admin.page.type_h2' => '标题 H2',
     'admin.page.type_text' => '文本',
     'admin.page.type_img' => '图片 (URL)',
-
     'admin.page.add' => '+ 添加页面',
 
     'admin.block.all' => '全部',
@@ -272,11 +271,14 @@ return [
     'admin.block.type_script' => '脚本',
     'admin.block.type_mixed' => '实现',
     'admin.block.th_type' => '类型',
+    'admin.block.th_name' => '区块',
     'admin.block.create_title' => '创建区块',
     'admin.block.type_label' => '区块类型',
     'admin.block.opt_visual' => '可视化 (仅布局)',
     'admin.block.opt_script' => '脚本 (仅数据)',
     'admin.block.opt_mixed' => '实现 (数据 + 布局)',
+    'admin.block.visual_editor' => '可视化',
+    'admin.block.add' => '+ 添加区块',
 
     'admin.overview.title' => '系统概览',
     'admin.overview.subtitle' => '所有域名和别名的总体状态。此处显示方案、区块和页面的问题。',
@@ -291,22 +293,6 @@ return [
     'error.403.message' => '您无权访问此页面。',
     'error.404.title' => '页面未找到',
     'error.404.message' => '请求的页面不存在。',
-    'error.429.title' => '请求过多',
-    'error.429.message' => '您在短时间内发送了太多请求。',
-    'error.429.retry' => '请等待 {minutes} 分钟后重试。',
-    'error.500.title' => '服务器错误',
-    'error.500.message' => '出错了。请稍后重试。',
-    'error.503.title' => '维护中',
-    'error.503.message' => '网站正在临时维护。',
-]; '请求的页面不存在。',
-    'error.429.title' => '请求过多',
-    'error.429.message' => '您在短时间内发送了太多请求。',
-    'error.429.retry' => '请等待 {minutes} 分钟后重试。',
-    'error.500.title' => '服务器错误',
-    'error.500.message' => '出错了。请稍后重试。',
-    'error.503.title' => '维护中',
-    'error.503.message' => '网站正在临时维护。',
-]; '请求的页面不存在。',
     'error.429.title' => '请求过多',
     'error.429.message' => '您在短时间内发送了太多请求。',
     'error.429.retry' => '请等待 {minutes} 分钟后重试。',

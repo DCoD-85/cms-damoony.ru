@@ -176,7 +176,7 @@ final class FillerController extends BaseController
         $card->append($link);
 
         $script = Builder::el('script');
-        $script->attrs()->add('src', '/media/admin/page-builder.js');
+        $script->attrs()->add('src', '/media/admin/block-builder.js');
         $script->attrs()->add('defer', 'true');
         $card->append($script);
 
@@ -198,6 +198,13 @@ final class FillerController extends BaseController
         foreach ($blocks as $i => $b) {
             $blocksContainer->append(Text::raw(\Damoony\Admin\Support\VisualEditorRenderer::renderBlockRow($i, $b)));
         }
+        $templateData = ['type' => 'text', 'content' => ''];
+        $templateHtml = \Damoony\Admin\Support\VisualEditorRenderer::renderBlockRow(9999, $templateData);
+        $templateEl = Builder::el('template');
+        $templateEl->attrs()->add('id', 'block-template');
+        $templateEl->append(Text::raw($templateHtml));
+        $form->append($templateEl);
+
         $form->append($blocksContainer);
 
         $actionsDiv = Builder::div();
