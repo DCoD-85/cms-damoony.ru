@@ -72,8 +72,8 @@ final class SchemeNewCommand implements CommandInterface
             $jsonFile = $blocksDir . '/blocks.json';
             if (is_file($jsonFile)) {
                 $json = json_decode((string)file_get_contents($jsonFile), true);
-                if (is_array($json)) {
-                    foreach ($json as $k => $v) {
+                if (is_array($json) && isset($json['blocks']) && is_array($json['blocks'])) {
+                    foreach ($json['blocks'] as $k => $v) {
                         if (isset($v['type'])) {
                             $types[$k] = $v['type'];
                         }

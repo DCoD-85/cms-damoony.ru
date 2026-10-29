@@ -2,31 +2,43 @@
     "fields": [
         {
             "name": "bottom",
-            "type": "logic"
+            "type": "mixed"
         },
         {
             "name": "center",
-            "type": "logic"
+            "type": "mixed"
         },
         {
             "name": "footer",
-            "type": "logic"
+            "type": "mixed"
         },
         {
             "name": "left",
-            "type": "logic"
+            "type": "mixed"
         },
         {
             "name": "policy",
-            "type": "logic"
+            "type": "mixed"
         },
         {
             "name": "right",
-            "type": "logic"
+            "type": "mixed"
+        },
+        {
+            "name": "test_m",
+            "type": "mixed"
+        },
+        {
+            "name": "test_s",
+            "type": "script"
+        },
+        {
+            "name": "test_v",
+            "type": "visual"
         },
         {
             "name": "top",
-            "type": "logic"
+            "type": "mixed"
         }
     ],
     "scheme": {
@@ -34,39 +46,48 @@
             {
                 "tag": "div",
                 "slot": "top",
-                "type": "logic"
+                "type": "mixed"
             },
             {
                 "tag": "div",
-                "slot": "left",
-                "type": "logic"
-            },
-            {
-                "tag": "div",
-                "slot": "center",
-                "type": "logic"
-            },
-            {
-                "tag": "div",
-                "slot": "right",
-                "type": "logic"
+                "slot": "test_v",
+                "type": "visual",
+                "children": [
+                    {
+                        "tag": "div",
+                        "slot": "left",
+                        "type": "mixed"
+                    },
+                    {
+                        "tag": "div",
+                        "slot": "center",
+                        "type": "mixed"
+                    },
+                    {
+                        "tag": "div",
+                        "slot": "right",
+                        "type": "mixed"
+                    }
+                ]
             },
             {
                 "tag": "div",
                 "slot": "bottom",
-                "type": "logic"
+                "type": "mixed"
             },
             {
                 "tag": "div",
                 "slot": "footer",
-                "type": "logic"
+                "type": "mixed"
             },
             {
                 "tag": "div",
                 "slot": "policy",
-                "type": "logic"
+                "type": "mixed"
             }
         ],
-        "scripts": []
+        "scripts": [
+            "test_s"
+        ]
     }
 }

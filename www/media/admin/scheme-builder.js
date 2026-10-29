@@ -134,7 +134,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         el.appendChild(header);
 
-        if (node.type === 'visual' || node.type === 'mixed') {
+        // Контейнер для детей — ТОЛЬКО для VISUAL. У MIXED и SCRIPT его нет.
+        if (node.type === 'visual') {
             const childrenContainer = document.createElement('div');
             childrenContainer.className = 'sb-children';
 
@@ -218,6 +219,10 @@ document.addEventListener('DOMContentLoaded', () => {
             syncAvailable(); renderAll(); resetDrag(); return;
         }
 
+		if (position === 'inside' && targetNode !== state.scheme && targetNode.type === 'mixed') {
+            alert('В блок mixed нельзя вкладывать другие элементы!');
+            resetDrag(); return;
+        }
         if (window.draggedSource === 'available') {
             const block = window.draggedBlock;
             
