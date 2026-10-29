@@ -93,11 +93,13 @@ final class PageControllerTest extends TestCase
             'auth' => true,
         ]);
 
-        // ВАЖНО: передаем post в 4-й аргумент
-        $req = new Request('POST', '/admin/?p=page:save&domain=example.ru&allias=www&path=about', [], [
-            '_csrf' => $this->mockToken,
-            'page_json' => $json,
-        ]);
+        // Передаем GET-параметры в 3-й аргумент (query), а POST — в 4-й
+        $req = new Request(
+            'POST',
+            '/admin/?p=page:save&domain=example.ru&allias=www&path=about',
+            ['p' => 'page:save', 'domain' => 'example.ru', 'allias' => 'www', 'path' => 'about'],
+            ['_csrf' => $this->mockToken, 'page_json' => $json],
+        );
 
         $response = $this->controller->save($req);
         self::assertSame(302, $response->status);
