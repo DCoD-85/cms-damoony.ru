@@ -89,7 +89,9 @@ Production: прямое редактирование /var/www/damoony.ru/ по 
 
 Git: пуш в main при красных проверках; коммит config/*.config; изменение composer.lock без запроса; удаление var/ на production; новые директории в корне без согласования.
 
-Правила кода и операций — в MANIFEST.md §7 (P0/P1), ai_logic.md §10, ai_system.md §9. Здесь не дублируются: это часть «что сломано» и «как не наступить».
+⚠️ Текущий статус кода (см. MANIFEST.md §7): Все P0 и P1 закрыты (stage-1...stage-6). 
+Остались только задачи P2 (техдолг): Builder неполон, assert(), Translator мимо контейнера, applySkin мимо middleware. 
+Риски, описанные в старой документации (addslashes, CSRF на GET, null из default(), пустой Host) — **уже устранены**. 
 
 6. Ключевые пути
 Что	Путь
@@ -112,7 +114,7 @@ Runtime	var/
 7. Workflow
 Прочитать задачу.
 
-Прочитать _doc/MANIFEST.md §6–7 — что сломано, что в P0, чего не делать. Это не опционально.
+Прочитать _doc/MANIFEST.md §6–7 — что реализовано, какие есть ограничения (P2), чего не делать. Это не опционально.
 
 git status, git log --oneline -3.
 
@@ -153,8 +155,9 @@ php vendor/bin/phpunit -c _dev/phpunit.xml
 php vendor/bin/phpstan analyse -c _dev/phpstan.neon --memory-limit=1G --no-progress
 PHP_CS_FIXER_IGNORE_ENV=1 php vendor/bin/php-cs-fixer fix --config=_dev/.php-cs-fixer.php --dry-run
 
-# Диагностика (см. MANIFEST.md §7.2 п.3 — не ловит часть проблем, проверяй вручную)
+# Диагностика и восстановление структуры
 php bin/cli.php structure:check
+php bin/cli.php structure:repair --domain=example.ru
 
 # Миграции
 php bin/cli.php db:migrate
@@ -171,6 +174,6 @@ php bin/cli.php db:migrate
 
 Собираешься делать destructive-операцию без коммита.
 
-Остальные риски (визуальный редактор, .edit.json, null из default(), addslashes и т.д.) — в MANIFEST.md §6–7. Прочитай их до, а не после.
+Остальные архитектурные ограничения (P2, `Builder` неполон, `assert()`, `applySkin` мимо middleware) — в MANIFEST.md §6–7. Прочитай их до, а не после.
 
 --- КОНЕЦ ДОКУМЕНТА ---

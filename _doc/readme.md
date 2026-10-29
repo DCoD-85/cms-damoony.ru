@@ -15,7 +15,7 @@ PHP >= 8.4
 
 Composer (PSR-4, PSR-3, PSR-11)
 
-PHPUnit 10 (52 тестовых файла, 258 тестов, 580 assertions — верифицировано)
+PHPUnit 10 (53 тестовых файла, 262 теста, 593 assertions — верифицировано; 1 skipped — env-dependent)
 
 PHPStan (level 8)
 
@@ -110,7 +110,7 @@ Low-Code: PageCompiler, SchemeCompiler, page.editor.json, scheme.editor.json, с
 
 Диагностика: StructureChecker, structure:check, «Обзор».
 
-CLI (17 команд).
+CLI (18 команд, включая structure:check и structure:repair).
 
 Качество: PHPUnit, PHPStan level 8, PHP-CS-Fixer, CI.
 
@@ -164,7 +164,7 @@ ai_system.md, ai_logic.md — инструкции для AI-агентов.
 Важное замечание
 Ранние версии этого файла (и других документов в _doc/) заявляли:
 
-«235 тестов» — теперь верифицировано (258);
+«235 тестов» — теперь верифицировано (262);
 «скрытых дефолтов нет» — исправлено (SchemeLoader падает в prod);
 «100% паритет CLI/UI» — неверно (§3);
 «WYSIWYG» — не реализован (§5).

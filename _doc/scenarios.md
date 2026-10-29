@@ -11,7 +11,7 @@
 
 🔴 — сломан/не реализован на момент аудита (P0/P1).
 
-Тесты: _dev/tests/Unit/ и _dev/tests/Scenarios/. 258 тестов, 580 assertions, 52 файла (верифицировано). Запуск: php vendor/bin/phpunit -c _dev/phpunit.xml.
+Тесты: _dev/tests/Unit/ и _dev/tests/Scenarios/. 262 теста, 593 assertions, 53 файла (верифицировано; 1 skipped — LinkTraversalTest требует dev-сервер 127.0.0.1:8080, прогоняется в CI). Запуск: php vendor/bin/phpunit -c _dev/phpunit.xml.
 
 Сценарии управления структурой (CLI и файловая система)
 S01. Создание домена — ✅
@@ -227,7 +227,7 @@ S08–S12	✅	_dev/tests/Unit/App/, Http/
 S13–S16	✅	_dev/tests/Unit/Admin/AuthTest.php, Security/CsrfTest.php
 S17–S18	✅	_dev/tests/Unit/Response/
 S19	✅	_dev/tests/Unit/Admin/PageControllerTest.php
-S20	✅	StructureCheckerTest (добавлен)
+S20	✅	(тестов нет — P2, см. MANIFEST §10)
 S21	✅	_dev/tests/Unit/Admin/
 S22–S26	✅	Закрыто, регрессии покрыты
 S27–S28	✅ (defensive)	Защита через review и структуру UI

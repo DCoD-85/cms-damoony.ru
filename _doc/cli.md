@@ -23,7 +23,7 @@ php bin/cli.php domain:new --domain=example.ru --namespace=example
 
 Создаёт папку app/example.ru/, алиас www, .rules.json, обновляет config/site.config. Алиас www создаётся автоматически — отдельный allias:new для него не нужен.
 
-⚠️ Для работы по IP (например 192.168.1.10) добавьте IP как ключ в domains_real вручную или через --domain=192.168.1.10. Для IP с портом (192.168.1.10:8080) — не сработает: ConfigDomainResolver не нормализует порт (MANIFEST.md §6.17, P0).
+⚠️ Для работы по IP (например 192.168.1.10) добавьте IP как ключ в domains_real вручную или через --domain=192.168.1.10. Порт и trailing-dot нормализуются (stage-3) — 192.168.1.10:8080 сработает.
 
 allias:new
 Создать дополнительный алиас.
@@ -52,13 +52,13 @@ bash
 php bin/cli.php block:new --domain=example.ru --name=top --type=visual
 --name — имя блока (обязательно).
 
---type — logic, ui, mixed (по умолчанию: mixed).
+--type — script, visual, mixed (по умолчанию: mixed).
 
-logic — только скрипт (не участвует в визуализации).
+script — только скрипт (не участвует в визуализации, логика).
 
-ui — только визуализация (статичный HTML).
+visual — только визуализация (статичный HTML, контейнер).
 
-mixed — реализация (данные + вёрстка).
+mixed — реализация (данные + вёрстка, конечный лист).
 
 Создаёт:
 
@@ -68,7 +68,7 @@ app/example.ru/.alliasglobal/
 └── top/
     ├── top.php
     └── top.data.php
-⚠️ blocks.json записывается, но не читается RegionLoader (MANIFEST.md §4). Тип блока в рантайме не используется. Источник истины — папки .alliasglobal/*/.
+⚠️ blocks.json записывается, но не читается RegionLoader (MANIFEST.md §4). Источник истины — папки .alliasglobal/*/.
 ⚠️ top.data.php не читается движком (§4). Данные — в top.php.
 
 block:remove
@@ -123,7 +123,7 @@ app/example.ru/www/algoritm/
     ├── .rules.json
     └── algoritm_about.php (класс algoritm_about, namespace домена)
 ⚠️ Страница не рендерит схему по умолчанию (MANIFEST.md §6.1). Шапки/футера/регионов на такой странице не будет — только Node от default(). См. guide.md §4 (Вариант A — со схемой, Вариант B — без).
-⚠️ default(): null ломает страницу (500). Не возвращайте null (§6.18).
+✅ default(): null безопасен (возвращает 204 No Content), но лучше возвращать Node или Response.
 
 page:toggle
 Переключить флаг страницы.
@@ -145,7 +145,7 @@ bash
 php bin/cli.php scheme:new --domain=example.ru --name=default
 Создаёт default.editor.json (правила для UI) и default.data.php (рендер), обновляет schemes.json. Сканирует .alliasglobal для заполнения fields.
 
-⚠️ SchemeCompiler (используется при визуальном редактировании схем) ломается на строках со скобками (MANIFEST.md §7.1 п.5, P0). Через CLI схема создаётся корректно, но при первом визуальном сохранении — риск потери/порчи. До фикса — правьте .data.php вручную.
+✅ Работает корректно. Визуальный редактор (Drag&Drop) сохраняет вложенность (stage-5).
 
 db:migrate
 Применить SQL-миграции. Только CLI.
@@ -209,29 +209,22 @@ structure:check
 
 bash
 php bin/cli.php structure:check
-Проверяет:
-
-наличие .rules.json, algoritm.php;
-
-наличие схем (локальной/глобальной);
-
-наличие глобальных блоков;
-
-стыковку филлер↔слот.
+Проверяет наличие .rules.json, algoritm.php, схем, глобальных блоков, стыковку филлер↔слот, а также `.edit.json ↔ PHP` и `schemes.json ↔ файлы` (stage-5).
 
 Выводит список ошибок или сообщение об успехе.
 
-⚠️ Не проверяет (MANIFEST.md §7.2 п.3, P1):
+structure:repair
+Умное восстановление структуры домена (восстанавливает удаленные алиасы, синхронизирует JSON-манифесты).
 
-.edit.json ↔ PHP (есть ли .php для каждого .edit.json, и наоборот);
+bash
+php bin/cli.php structure:repair --domain=example.ru
+Сканирует папку домена и:
+- Восстанавливает папки удаленных алиасов (создает algoritm/ и algoritm.php).
+- Добавляет в schemes.json записи о существующих .data.php.
+- Добавляет в blocks.json записи о существующих папках блоков.
 
-legacy .edit.json ({blocks} без {slots});
-
-blocks.json ↔ папки;
-
-schemes.json ↔ файлы (не ловит «сирот» вроде visuo.data.php без записи в манифесте).
-
-Для полной картины — проверяйте вручную или через админку «Обзор». Не полагайтесь на structure:check как на единственный источник диагностики.
+⚠️ Не трогает страницы и настройки в site.config. Корректно обрабатывает пустые алиасы ("" -> www).
+Для проверки без записи используйте structure:check. Подробности — structure_repair.md.
 
 Общие флаги
 --dry — предпросмотр без записи (vars:extract, trash:clear).
@@ -247,6 +240,8 @@ vars:extract — повторный запуск не перезаписывае
 
 trash:clear — безопасен, по умолчанию только показывает список.
 
+structure:repair — безопасен, проверяет наличие перед созданием.
+
 Чего в CLI нет (только UI)
 CodeMirror-редактор (/admin/?p=editor).
 
@@ -260,6 +255,8 @@ CodeMirror-редактор (/admin/?p=editor).
 
 Что делать при ошибке
 structure:check — базовая диагностика.
+
+structure:repair — умное восстановление структуры.
 
 Проверить config/site.config (валидный JSON, self-mapping в domains_real).
 

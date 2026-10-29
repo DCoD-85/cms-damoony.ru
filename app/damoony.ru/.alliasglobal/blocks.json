@@ -26,6 +26,14 @@
         "test_m": {
             "enabled": true,
             "type": "mixed"
+        },
+        "center": {
+            "enabled": true,
+            "type": "mixed"
+        },
+        "footer": {
+            "enabled": true,
+            "type": "mixed"
         }
     }
 }

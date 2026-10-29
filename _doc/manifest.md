@@ -49,9 +49,9 @@ Low-Code: PageCompiler, RegionCompiler, page.editor.json и scheme.editor.json (
 
 Диагностика: StructureChecker (наличие файлов, стыковка филлер↔слот), CLI structure:check, страница «Обзор».
 
-CLI (17 команд): help, domain:new, allias:new, allias:remove, block:new, block:remove, filler:new, filler:toggle, page:new, page:toggle, scheme:new, db:migrate, vars:extract, admin:passwd, user:new, trash:clear, structure:check.
+CLI (18 команд): help, domain:new, allias:new, allias:remove, block:new, block:remove, filler:new, filler:toggle, page:new, page:toggle, scheme:new, db:migrate, vars:extract, admin:passwd, user:new, trash:clear, structure:check, structure:repair.
 
-Качество: PHPUnit (50 тестовых файлов, 258 тестов, 580 assertions — верифицировано), PHPStan level 8 (0 errors), PHP-CS-Fixer (0 issues), GitHub Actions CI.
+Качество: PHPUnit (53 тестовых файла, 262 теста, 593 assertions — верифицировано; 1 skipped — LinkTraversalTest, требует dev-сервер 127.0.0.1:8080, прогоняется в CI), PHPStan level 8 (0 errors), PHP-CS-Fixer (0 issues), GitHub Actions CI.
 
 4. Частично реализовано (🟡)
 Фича	Что есть	Что нужно для ✅
@@ -118,6 +118,13 @@ WYSIWYG (свободная вёрстка), Headless/REST/GraphQL API, Sitemap,
 
 6.21. DomainContext->logic — мёртвое поле (Новое)
 Статус: P2. Либо задокументировать, либо удалить.
+
+6.22. Принятый риск: пароль dev-БД в истории git (Новое)
+Пароль `qwe12345` от локальной MariaDB (`damoony_local_db`) присутствует в коммитах `8c70dfc`, `b6c4971`, запушен в `origin/main`. Репозиторий публичный.
+
+Контекст: MariaDB слушает только `127.0.0.1`, production-доступа к ней нет. Владелец принял риск осознанно — ротация не выполняется.
+
+Статус: принятый риск, не баг. Если БД когда-либо станет доступна извне — ротация обязательна. Полная очистка истории (`git filter-repo` + force-push) возможна, но не выполняется.
 
 7. Известные баги (требуют исправления)
 7.1. P0 — Блокируют production (6 из 6 закрыто)

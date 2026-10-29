@@ -110,7 +110,7 @@ DbAuth (password_hash / password_verify).
 Все POST — CSRF. Destructive — POST+CSRF (stage-2b).
 
 CLI и Админка
-CLI: 17 команд, возвращают Result (ok, errors), идемпотентны. structure:check — диагностика.
+CLI: 18 команд, возвращают Result (ok, errors), идемпотентны. structure:check — диагностика, structure:repair — восстановление.
 
 Admin: UI-компоненты, CodeMirror (локальный), мультиязычность (RU/EN/ZH через cookie admin_lang), профиль, менеджер заглушек, дашборд безопасности, System Health. POST защищены CSRF (PRG), destructive — POST+CSRF.
 
