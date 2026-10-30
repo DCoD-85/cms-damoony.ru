@@ -21,6 +21,7 @@ final class SchemeNewCommand implements CommandInterface
     {
         return 'scheme:new';
     }
+
     public function description(): string
     {
         return 'Создать схему домена';
@@ -54,9 +55,10 @@ final class SchemeNewCommand implements CommandInterface
 
         $schemesDir = $this->paths->domain($domain) . '/.alliasscheme';
         $editorFile = $schemesDir . '/' . $name . '.editor.json';
-        $dataFile = $schemesDir . '/' . $name . '.data.php';
+        $phpFile = $schemesDir . '/' . $name . '.php';
+        $rulesFile = $schemesDir . '/' . $name . '.rules.json';
 
-        if (Fs::isFile($editorFile) || Fs::isFile($dataFile)) {
+        if (Fs::isFile($editorFile) || Fs::isFile($phpFile)) {
             $r->error('Схема уже существует');
             return $r;
         }
@@ -70,9 +72,9 @@ final class SchemeNewCommand implements CommandInterface
         if (is_dir($blocksDir)) {
             $dirs = array_filter(scandir($blocksDir) ?: [], fn ($d) => $d !== '.' && $d !== '..' && is_dir($blocksDir . '/' . $d));
             foreach ($dirs as $bName) {
-                $rulesFile = $blocksDir . '/' . $bName . '/' . $bName . '.rules.json';
-                $rules = is_file($rulesFile) ? json_decode((string)file_get_contents($rulesFile), true) : [];
-                $engineType = $rules['type'] ?? 'mixed';
+                $bRulesFile = $blocksDir . '/' . $bName . '/' . $bName . '.rules.json';
+                $bRules = is_file($bRulesFile) ? json_decode((string)file_get_contents($bRulesFile), true) : [];
+                $engineType = $bRules['type'] ?? 'mixed';
                 $fields[] = ['name' => $bName, 'type' => $engineType];
             }
         }
@@ -88,21 +90,16 @@ final class SchemeNewCommand implements CommandInterface
         ];
         Fs::writeAtomic($editorFile, json_encode($editorData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
 
-        // 2. Создаем пустой data.php
+        // 2. Создаем пустой php
         $data = "<?php\n\nreturn [\n    'tag' => 'div',\n    'class' => 'layout',\n    'children' => [],\n    'scripts' => [],\n];\n";
-        Fs::writeAtomic($dataFile, $data);
+        Fs::writeAtomic($phpFile, $data);
 
-        // 3. Обновляем schemes.json
-        $manifestFile = $schemesDir . '/schemes.json';
-        $manifest = is_file($manifestFile) ? json_decode((string) file_get_contents($manifestFile), true) : [];
-        if (!is_array($manifest)) {
-            $manifest = [];
-        }
-        $manifest['schemes'][$name] = ['enabled' => true];
-        Fs::writeAtomic($manifestFile, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
+        // 3. Создаем rules.json
+        Fs::writeAtomic($rulesFile, json_encode(['enabled' => true], JSON_PRETTY_PRINT) . "\n");
 
         $r->file(Fs::rel($editorFile, $this->paths->root()));
-        $r->file(Fs::rel($dataFile, $this->paths->root()));
+        $r->file(Fs::rel($phpFile, $this->paths->root()));
+        $r->file(Fs::rel($rulesFile, $this->paths->root()));
         $context->step('Схема создана', true, $name);
 
         return $r;

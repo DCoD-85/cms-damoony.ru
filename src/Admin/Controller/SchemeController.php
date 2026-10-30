@@ -43,9 +43,12 @@ final class SchemeController extends BaseController
             return $this->redirect('/admin/?p=domain');
         }
 
-        $manifestFile = $this->paths->domain($domain) . '/.alliasscheme/schemes.json';
-        $manifest = is_file($manifestFile) ? json_decode((string) file_get_contents($manifestFile), true) : [];
-        $schemes = is_array($manifest) && isset($manifest['schemes']) ? array_keys($manifest['schemes']) : [];
+        $schemesDir = $this->paths->domain($domain) . '/.alliasscheme';
+        $schemes = [];
+        if (is_dir($schemesDir)) {
+            $files = glob($schemesDir . '/*.php') ?: [];
+            $schemes = array_map(fn ($f) => basename($f, '.php'), $files);
+        }
 
         $card = Builder::div('admin-card');
 
@@ -74,7 +77,7 @@ final class SchemeController extends BaseController
                 }
 
                 $editUrl = '/admin/?p=scheme:visual&domain=' . urlencode($domain) . '&name=' . urlencode($s);
-                $codeFile = '.alliasscheme/' . $s . '.data.php';
+                $codeFile = '.alliasscheme/' . $s . '.php';
                 $codeUrl = '/admin/?p=editor&domain=' . urlencode($domain) . '&file=' . urlencode($codeFile);
 
                 $actionsHtml = Builder::div('table-actions');
@@ -141,24 +144,23 @@ final class SchemeController extends BaseController
             return $this->redirect('/admin/?p=domain');
         }
 
+        $schemesDir = $this->paths->domain($domain) . '/.alliasscheme';
         $newName = $name . '_copy';
         $i = 1;
-        while (is_file($this->paths->domain($domain) . '/.alliasscheme/' . $newName . '.data.php')) {
+        while (is_file($schemesDir . '/' . $newName . '.php')) {
             $newName = $name . '_copy_' . $i++;
         }
 
-        $srcFile = $this->paths->domain($domain) . '/.alliasscheme/' . $name . '.data.php';
-        $dstFile = $this->paths->domain($domain) . '/.alliasscheme/' . $newName . '.data.php';
-
-        if (is_file($srcFile)) {
-            copy($srcFile, $dstFile);
-            $manifestFile = $this->paths->domain($domain) . '/.alliasscheme/schemes.json';
-            $manifest = is_file($manifestFile) ? json_decode((string)file_get_contents($manifestFile), true) : [];
-            if (!is_array($manifest)) {
-                $manifest = ['schemes' => []];
+        if (is_file($schemesDir . '/' . $name . '.php')) {
+            copy($schemesDir . '/' . $name . '.php', $schemesDir . '/' . $newName . '.php');
+            if (is_file($schemesDir . '/' . $name . '.rules.json')) {
+                copy($schemesDir . '/' . $name . '.rules.json', $schemesDir . '/' . $newName . '.rules.json');
+            } else {
+                Fs::writeAtomic($schemesDir . '/' . $newName . '.rules.json', '{}');
             }
-            $manifest['schemes'][$newName] = ['enabled' => true];
-            Fs::writeAtomic($manifestFile, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
+            if (is_file($schemesDir . '/' . $name . '.editor.json')) {
+                copy($schemesDir . '/' . $name . '.editor.json', $schemesDir . '/' . $newName . '.editor.json');
+            }
         }
 
         return $this->redirect('/admin/?p=scheme&domain=' . urlencode($domain));
@@ -186,16 +188,10 @@ final class SchemeController extends BaseController
             return $this->redirect('/admin/?p=domain');
         }
 
-        $file = $this->paths->domain($domain) . '/.alliasscheme/' . $name . '.data.php';
-        if (is_file($file)) {
-            unlink($file);
-            $manifestFile = $this->paths->domain($domain) . '/.alliasscheme/schemes.json';
-            $manifest = is_file($manifestFile) ? json_decode((string)file_get_contents($manifestFile), true) : [];
-            if (is_array($manifest) && isset($manifest['schemes'][$name])) {
-                unset($manifest['schemes'][$name]);
-                Fs::writeAtomic($manifestFile, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
-            }
-        }
+        $schemesDir = $this->paths->domain($domain) . '/.alliasscheme';
+        @unlink($schemesDir . '/' . $name . '.php');
+        @unlink($schemesDir . '/' . $name . '.rules.json');
+        @unlink($schemesDir . '/' . $name . '.editor.json');
 
         return $this->redirect('/admin/?p=scheme&domain=' . urlencode($domain));
     }
@@ -262,7 +258,7 @@ final class SchemeController extends BaseController
 
         $schemesDir = $this->paths->domain($domain) . '/.alliasscheme';
         $editorFile = $schemesDir . '/' . $name . '.editor.json';
-        $dataFile = $schemesDir . '/' . $name . '.data.php';
+        $phpFile = $schemesDir . '/' . $name . '.php';
 
         if (!is_file($editorFile)) {
             return $this->redirect('/admin/?p=scheme&domain=' . urlencode($domain));
@@ -395,7 +391,7 @@ final class SchemeController extends BaseController
 
         $schemesDir = $this->paths->domain($domain) . '/.alliasscheme';
         $editorFile = $schemesDir . '/' . $name . '.editor.json';
-        $dataFile = $schemesDir . '/' . $name . '.data.php';
+        $phpFile = $schemesDir . '/' . $name . '.php';
 
         // 1. Обновляем editor.json
         $editorData = json_decode((string)file_get_contents($editorFile), true);
@@ -411,7 +407,7 @@ final class SchemeController extends BaseController
         ];
 
         $compiler = new SchemeCompiler();
-        Fs::writeAtomic($dataFile, $compiler->compile($phpData));
+        Fs::writeAtomic($phpFile, $compiler->compile($phpData));
 
         return $this->redirect('/admin/?p=scheme:visual&domain=' . urlencode($domain) . '&name=' . urlencode($name) . '&saved=1');
     }

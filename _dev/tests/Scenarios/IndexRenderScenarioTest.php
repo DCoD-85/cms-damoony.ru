@@ -72,7 +72,7 @@ final class IndexRenderScenarioTest extends TestCase
 
         $schemeDir = $this->root . '/app/damoony.test/.alliasscheme';
         mkdir($schemeDir, 0o777, true);
-        file_put_contents($schemeDir . '/www.data.php', <<<'PHP'
+        file_put_contents($schemeDir . '/www.php', <<<'PHP'
             <?php
             return [
                 'tag' => 'div',

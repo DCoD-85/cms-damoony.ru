@@ -90,12 +90,12 @@ final class StructureCheckCommandTest extends TestCase
         file_put_contents($domain . '/' . $alias . '/algoritm/.rules.json', (string) json_encode(['available' => []]));
         file_put_contents($domain . '/' . $alias . '/algoritm/algoritm.php', "<?php\n");
         file_put_contents(
-            $domain . '/.alliasscheme/www.data.php',
+            $domain . '/.alliasscheme/www.php',
             "<?php\nreturn ['tag' => 'div', 'children' => []];\n",
         );
         file_put_contents(
-            $domain . '/.alliasscheme/schemes.json',
-            (string) json_encode(['schemes' => ['www' => ['enabled' => true]]]),
+            $domain . '/.alliasscheme/www.rules.json',
+            (string) json_encode(['enabled' => true]),
         );
     }
 

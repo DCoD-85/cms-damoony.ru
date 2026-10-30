@@ -74,28 +74,20 @@ final class StructureRepairCommand implements CommandInterface
             }
         }
 
-        // 2. Восстановление schemes.json
+        // 2. Восстановление rules.json для схем
         $schemesDir = $domainDir . '/.alliasscheme';
-        if (!is_dir($schemesDir)) {
-            Fs::mkdir($schemesDir);
-        }
-
-        $schemesFile = $schemesDir . '/schemes.json';
-        $schemes = is_file($schemesFile) ? json_decode((string)file_get_contents($schemesFile), true) : [];
-        if (!is_array($schemes)) {
-            $schemes = ['schemes' => []];
-        }
-
-        $files = glob($schemesDir . '/*.data.php') ?: [];
-        foreach ($files as $file) {
-            $name = basename($file, '.data.php');
-            if (!isset($schemes['schemes'][$name])) {
-                $schemes['schemes'][$name] = ['enabled' => true];
-                $context->step("Восстановлена запись схемы в schemes.json: {$name}");
-                $fixed++;
+        if (is_dir($schemesDir)) {
+            $files = glob($schemesDir . '/*.php') ?: [];
+            foreach ($files as $file) {
+                $name = basename($file, '.php');
+                $rulesFile = $schemesDir . '/' . $name . '.rules.json';
+                if (!is_file($rulesFile)) {
+                    Fs::writeAtomic($rulesFile, json_encode(['enabled' => true], JSON_PRETTY_PRINT) . "\n");
+                    $context->step("Восстановлен {$name}.rules.json");
+                    $fixed++;
+                }
             }
         }
-        Fs::writeAtomic($schemesFile, json_encode($schemes, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
 
         // 3. Восстановление rules.json и editor.json для блоков (Вместо blocks.json)
         $blocksDir = $domainDir . '/.alliasglobal';

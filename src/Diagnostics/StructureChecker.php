@@ -36,8 +36,8 @@ final class StructureChecker
 
         // 1. Проверка стыковки Схемы и Блоков
         $schemeName = (string) $this->site->getByKey(['domains_scheme', $realDomain], 'www');
-        $localScheme = $this->paths->domain($realDomain) . '/.alliasscheme/' . $allias . '.data.php';
-        $globalScheme = $this->paths->domain($realDomain) . '/.alliasscheme/' . $schemeName . '.data.php';
+        $localScheme = $this->paths->domain($realDomain) . '/.alliasscheme/' . $allias . '.php';
+        $globalScheme = $this->paths->domain($realDomain) . '/.alliasscheme/' . $schemeName . '.php';
 
         if (!is_file($localScheme) && !is_file($globalScheme)) {
             $issues[] = ['level' => 'error', 'message' => "Не найдена схема (ни {$allias}.data.php, ни {$schemeName}.data.php)"];
@@ -138,22 +138,14 @@ final class StructureChecker
     /** @param list<array{level: string, message: string}> $issues */
     private function checkSchemesJson(string $schemesDir, string $allias, array &$issues): void
     {
-        $manifestFile = $schemesDir . '/schemes.json';
-        $manifest = is_file($manifestFile) ? json_decode((string)file_get_contents($manifestFile), true) : [];
-        $schemes = is_array($manifest) && isset($manifest['schemes']) ? array_keys($manifest['schemes']) : [];
-
-        $files = glob($schemesDir . '/*.data.php') ?: [];
-        $fileNames = array_map(fn ($f) => basename($f, '.data.php'), $files);
-
-        foreach ($schemes as $s) {
-            if (!in_array($s, $fileNames, true)) {
-                $issues[] = ['level' => 'error', 'message' => "Схема '{$s}' есть в schemes.json, но файл {$s}.data.php отсутствует"];
-            }
+        if (!is_dir($schemesDir)) {
+            return;
         }
-
-        foreach ($fileNames as $f) {
-            if (!in_array($f, $schemes, true) && $f !== $allias) {
-                $issues[] = ['level' => 'warning', 'message' => "Файл {$f}.data.php есть, но его нет в schemes.json (сирота)"];
+        $files = glob($schemesDir . '/*.php') ?: [];
+        foreach ($files as $file) {
+            $name = basename($file, '.php');
+            if (!is_file($schemesDir . '/' . $name . '.rules.json')) {
+                $issues[] = ['level' => 'warning', 'message' => "Отсутствует {$name}.rules.json для схемы {$name}"];
             }
         }
     }

@@ -64,7 +64,7 @@ final class FillerCommandsTest extends TestCase
 
         self::assertTrue($res->ok);
         self::assertFileExists($this->root . '/app/example.ru/.alliasglobal/top/top_www.php');
-        self::assertFileExists($this->root . '/app/example.ru/.alliasglobal/top/top_www.data.php');
+        self::assertFileExists($this->root . '/app/example.ru/.alliasglobal/top/top_www.rules.json');
 
         $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
         self::assertTrue($site['fillers']['example.ru']['www']['top']);

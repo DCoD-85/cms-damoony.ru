@@ -34,7 +34,7 @@ final class PageControllerTest extends TestCase
             'domains_namespace' => ['example.ru' => 'example'],
         ]));
 
-        file_put_contents($this->root . '/app/example.ru/.alliasscheme/www.data.php', "<?php return ['children' => [['slot' => 'center']]];");
+        file_put_contents($this->root . '/app/example.ru/.alliasscheme/www.php', "<?php return ['children' => [['slot' => 'center']]];");
 
         $paths = new Paths($this->root);
         $auth = $this->createMock(\Damoony\Admin\AuthInterface::class);

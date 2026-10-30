@@ -33,8 +33,8 @@ final class StructureCheckerTest extends TestCase
 
         file_put_contents($domain . '/www/algoritm/.rules.json', json_encode(['available' => []]));
         file_put_contents($domain . '/www/algoritm/algoritm.php', "<?php\n");
-        file_put_contents($domain . '/.alliasscheme/www.data.php', "<?php\nreturn ['tag' => 'div', 'children' => []];\n");
-        file_put_contents($domain . '/.alliasscheme/schemes.json', json_encode(['schemes' => ['www' => ['enabled' => true]]]));
+        file_put_contents($domain . '/.alliasscheme/www.php', "<?php\nreturn ['tag' => 'div', 'children' => []];\n");
+        file_put_contents($domain . '/.alliasscheme/www.rules.json', json_encode(['enabled' => true]));
     }
 
     private function checker(): StructureChecker

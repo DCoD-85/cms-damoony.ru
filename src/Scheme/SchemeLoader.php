@@ -21,7 +21,7 @@ final class SchemeLoader
      */
     public function load(DomainContext $domain, string $schemeName = 'www'): array
     {
-        $file = $this->paths->domain($domain->real) . '/.alliasscheme/' . $schemeName . '.data.php';
+        $file = $this->paths->domain($domain->real) . '/.alliasscheme/' . $schemeName . '.php';
 
         if (!is_file($file)) {
             if (!Env::fromServer()->isDev()) {

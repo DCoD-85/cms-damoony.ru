@@ -40,7 +40,7 @@ final class AliasSchemeController extends BaseController
             return $this->redirect('/admin/?p=domain');
         }
 
-        $localSchemeFile = $this->paths->domain($domain) . '/.alliasscheme/' . $allias . '.data.php';
+        $localSchemeFile = $this->paths->domain($domain) . '/.alliasscheme/' . $allias . '.php';
         $hasLocal = is_file($localSchemeFile);
 
         $globalSchemeName = (string) $this->siteConfig->getByKey(['domains_scheme', $domain], 'www');
@@ -79,7 +79,7 @@ final class AliasSchemeController extends BaseController
             $card->append(Message::info(View::t('scheme.global_active') . " ({$globalSchemeName}.data.php)")->build());
 
             // Проверяем, существует ли глобальная схема, чтобы её скопировать
-            $globalFile = $this->paths->domain($domain) . '/.alliasscheme/' . $globalSchemeName . '.data.php';
+            $globalFile = $this->paths->domain($domain) . '/.alliasscheme/' . $globalSchemeName . '.php';
 
             if (is_file($globalFile)) {
                 $form = Form::create('/admin/?p=allias_scheme:create&domain=' . urlencode($domain) . '&allias=' . urlencode($allias), 'POST')
@@ -110,8 +110,8 @@ final class AliasSchemeController extends BaseController
         $allias = (string) $request->query('allias', '');
 
         $globalSchemeName = (string) $this->siteConfig->getByKey(['domains_scheme', $domain], 'www');
-        $globalFile = $this->paths->domain($domain) . '/.alliasscheme/' . $globalSchemeName . '.data.php';
-        $localFile = $this->paths->domain($domain) . '/.alliasscheme/' . $allias . '.data.php';
+        $globalFile = $this->paths->domain($domain) . '/.alliasscheme/' . $globalSchemeName . '.php';
+        $localFile = $this->paths->domain($domain) . '/.alliasscheme/' . $allias . '.php';
 
         if (is_file($globalFile) && !is_file($localFile)) {
             $content = (string) file_get_contents($globalFile);
@@ -141,7 +141,7 @@ final class AliasSchemeController extends BaseController
         $domain = (string) $request->query('domain', '');
         $allias = (string) $request->query('allias', '');
 
-        $localFile = $this->paths->domain($domain) . '/.alliasscheme/' . $allias . '.data.php';
+        $localFile = $this->paths->domain($domain) . '/.alliasscheme/' . $allias . '.php';
         if (is_file($localFile)) {
             unlink($localFile);
         }

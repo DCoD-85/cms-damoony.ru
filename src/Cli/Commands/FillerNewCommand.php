@@ -77,10 +77,10 @@ final class FillerNewCommand implements CommandInterface
 
         $className = 'alliasglobal_' . $block . '_' . $allias;
         $fillerPhp = $blockDir . '/' . $block . '_' . $allias . '.php';
-        $dataFile = $blockDir . '/' . $block . '_' . $allias . '.data.php';
+        $rulesFile = $blockDir . '/' . $block . '_' . $allias . '.rules.json';
+        $editorFile = $blockDir . '/' . $block . '_' . $allias . '.editor.json';
 
-        // ИСПРАВЛЕНИЕ: Проверяем наличие ОБОИХ файлов
-        if (Fs::isFile($fillerPhp) && Fs::isFile($dataFile)) {
+        if (Fs::isFile($fillerPhp) || Fs::isFile($rulesFile)) {
             $r->error('Filler уже существует');
             return $r;
         }
@@ -112,10 +112,13 @@ final class FillerNewCommand implements CommandInterface
         Fs::writeAtomic($fillerPhp, $php);
         $r->file(Fs::rel($fillerPhp, $this->paths->root()));
 
-        $data = "<?php\n\nreturn [\n    'wrapper' => ['tag' => 'div', 'attrs' => ['class' => '{$block}-{$allias}']],\n    'sections' => [],\n];\n";
-        Fs::writeAtomic($dataFile, $data);
-        $r->file(Fs::rel($dataFile, $this->paths->root()));
+        // Создаем rules.json и editor.json
+        Fs::writeAtomic($rulesFile, json_encode(['enabled' => true], JSON_PRETTY_PRINT) . "\n");
+        Fs::writeAtomic($editorFile, json_encode([], JSON_PRETTY_PRINT) . "\n");
+        $r->file(Fs::rel($rulesFile, $this->paths->root()));
+        $r->file(Fs::rel($editorFile, $this->paths->root()));
 
+        // Обновляем site.config (включенность филлера)
         $site['fillers'][$domain][$allias][$block] ??= true;
         Fs::writeAtomic($siteFile, json_encode($site, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
         $r->file(Fs::rel($siteFile, $this->paths->root()));

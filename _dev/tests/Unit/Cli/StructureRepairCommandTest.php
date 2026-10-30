@@ -82,15 +82,13 @@ final class StructureRepairCommandTest extends TestCase
             'alliases_real' => ['example.ru' => ['www' => 'www']],
         ]);
         mkdir($this->tmpDir . '/app/example.ru/.alliasscheme', 0o777, true);
-        file_put_contents($this->tmpDir . '/app/example.ru/.alliasscheme/test.data.php', '<?php');
-        file_put_contents($this->tmpDir . '/app/example.ru/.alliasscheme/schemes.json', '{"schemes":{}}');
+        file_put_contents($this->tmpDir . '/app/example.ru/.alliasscheme/test.php', '<?php');
 
         $cmd = new StructureRepairCommand($this->paths);
         $res = $cmd->run(['domain' => 'example.ru'], new Context(static fn () => null));
 
         $this->assertTrue($res->ok);
-        $json = json_decode((string)file_get_contents($this->tmpDir . '/app/example.ru/.alliasscheme/schemes.json'), true);
-        $this->assertArrayHasKey('test', $json['schemes']);
+        $this->assertFileExists($this->tmpDir . '/app/example.ru/.alliasscheme/test.rules.json');
     }
 
     public function testRestoresMissingBlockRecord(): void
@@ -124,7 +122,8 @@ final class StructureRepairCommandTest extends TestCase
         $res = $cmd->run(['domain' => 'example.ru'], new Context(static fn () => null));
 
         $this->assertTrue($res->ok);
-        $this->assertFileExists($this->tmpDir . '/app/example.ru/.alliasscheme/schemes.json');
+        // Проверяем, что лишнего не создалось
+        $this->assertFileDoesNotExist($this->tmpDir . '/app/example.ru/.alliasscheme/schemes.json');
     }
 
     private function writeSiteConfig(array $data): void
