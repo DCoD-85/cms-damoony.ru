@@ -2,18 +2,18 @@
     "blocks": [
         {
             "type": "if",
-            "condition": ""
+            "condition": "$context->isAuthenticated()"
         },
         {
             "type": "text",
-            "content": "TRUE"
+            "content": "Вы авторизованы"
         },
         {
             "type": "else"
         },
         {
             "type": "text",
-            "content": "FALSE"
+            "content": "Гость"
         },
         {
             "type": "endif"

@@ -24,10 +24,10 @@ final class alliasglobal_bottom implements RegionInterface
     public function render(RegionContext $context): Node
     {
         $wrap = Builder::div('bottom-wrap');
-        if () {
-            $wrap->append(Builder::p()->content('TRUE'));
+        if ($context->isAuthenticated()) {
+            $wrap->append(Builder::p()->content('Вы авторизованы'));
         } else {
-            $wrap->append(Builder::p()->content('FALSE'));
+            $wrap->append(Builder::p()->content('Гость'));
         }
         return $wrap;
     }

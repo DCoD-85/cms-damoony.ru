@@ -37,4 +37,26 @@ final class RegionContext
         }
         return $key;
     }
+
+    public function isAuthenticated(): bool
+    {
+        $auth = $this->service('auth');
+        return $auth instanceof \Damoony\Auth\AuthInterface && $auth->isAuthenticated();
+    }
+
+    public function user(): mixed
+    {
+        $auth = $this->service('auth');
+        return $auth instanceof \Damoony\Auth\AuthInterface ? $auth->user() : null;
+    }
+
+    public function isPost(): bool
+    {
+        return $this->request->isPost();
+    }
+
+    public function isAjax(): bool
+    {
+        return $this->request->isAjax();
+    }
 }
