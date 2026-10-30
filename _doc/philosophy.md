@@ -145,7 +145,7 @@ PHP 8.4
 
 Composer (PSR-4, PSR-3, PSR-11)
 
-PHPUnit 10+ (55 тестовых файла, 275 теста, 593 assertions — верифицировано; 1 skipped — env-dependent)
+PHPUnit 10+ (61 тестовый файл, 294 теста, 660 assertions — верифицировано; 1 skipped — env-dependent)
 
 PHPStan (level 8)
 

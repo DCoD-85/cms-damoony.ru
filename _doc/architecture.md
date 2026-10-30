@@ -139,6 +139,6 @@ Response::internalError() в PageHandler — в prod отдаёт generic соо
 Session: HttpOnly, SameSite=Lax, Secure при HTTPS.
 
 Что не реализовано
-Headless/REST/GraphQL API, sitemap, hreflang, плагины, Schema.org, SMTP/сброс пароля, Redis/Memcached/CDN, WebSocket, мультиязычность контента, WYSIWYG (свободная вёрстка), structure:repair. См. MANIFEST.md §5.
+Headless/REST/GraphQL API, sitemap, hreflang, плагины, Schema.org, SMTP/сброс пароля, Redis/Memcached/CDN, WebSocket, мультиязычность контента, WYSIWYG (свободная вёрстка). См. MANIFEST.md §5.
 
 --- КОНЕЦ ДОКУМЕНТА ---

@@ -49,11 +49,11 @@ Low-Code: PageCompiler, RegionCompiler, page.editor.json и scheme.editor.json (
 
 Диагностика: StructureChecker (наличие файлов, стыковка филлер↔слот), CLI structure:check, страница «Обзор».
 
-CLI (18 команд): help, domain:new, allias:new, allias:remove, block:new, block:remove, filler:new, filler:toggle, page:new, page:toggle, scheme:new, db:migrate, vars:extract, admin:passwd, user:new, trash:clear, structure:check, structure:repair.
+CLI (18 команд): help, domain:new, allias:new, allias:remove, block:new, block:remove, filler:new, filler:toggle, page:new, page:toggle, scheme:new, db:migrate, vars:extract, admin:passwd, user:new, trash:clear, structure:check.
 
 ErrorPage: локализован через Translator (`error.*` в lang/{ru,en,zh}, fallback ru). Ключи: `error.{403,404,429,500,503}.{title,message}`, `error.default.*`, `error.429.retry` с подстановкой `{minutes}`.
 
-Качество: PHPUnit (55 тестовых файла, 275 теста, 593 assertions — верифицировано; 1 skipped — LinkTraversalTest, требует dev-сервер 127.0.0.1:8080, прогоняется в CI), PHPStan level 8 (0 errors), PHP-CS-Fixer (0 issues), GitHub Actions CI.
+Качество: PHPUnit (61 тестовый файл, 294 теста, 660 assertions — верифицировано; 1 skipped — LinkTraversalTest, требует dev-сервер 127.0.0.1:8080, прогоняется в CI), PHPStan level 8 (0 errors), PHP-CS-Fixer (0 issues), GitHub Actions CI.
 
 4. Частично реализовано (🟡)
 Фича	Что есть	Что нужно для ✅
@@ -62,7 +62,7 @@ Skins	SkinManager, автоподключение CSS/JS	UI-менеджер в 
 StructureChecker	Наличие файлов, стыковка филлер↔слот, проверка .edit.json и schemes.json (stage-5)	Проверка blocks.json ↔ папки, legacy .edit.json
 blocks.json	Записывается CLI	Не читается RegionLoader (источник — папки)
 5. Не реализовано (❌)
-WYSIWYG (свободная вёрстка), Headless/REST/GraphQL API, Sitemap, robots.txt, hreflang, плагины, Schema.org, SMTP / сброс пароля, Redis/Memcached/CDN, WebSocket, мультиязычность контента (перевод текста страниц), structure:repair.
+WYSIWYG (свободная вёрстка), Headless/REST/GraphQL API, Sitemap, robots.txt, hreflang, плагины, Schema.org, SMTP / сброс пароля, Redis/Memcached/CDN, WebSocket, мультиязычность контента (перевод текста страниц).
 
 6. Осознанные архитектурные решения и известные дефекты
 6.1. Ручные страницы не идут через схему по умолчанию (Известный дефект API)
@@ -210,6 +210,7 @@ P1 — надёжность/безопасность
 Нет. Все закрыты.
 
 P2 — техдолг
+Закрыто (текущий): structure:repair покрыт тестами (StructureRepairCommandTest).
 domains_real[$domain] → ConfigDomainResolver::real().
 PageController::edit() → DomainContext->scheme.
 Builder — дополнить.

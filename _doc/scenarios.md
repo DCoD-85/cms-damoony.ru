@@ -11,7 +11,7 @@
 
 🔴 — сломан/не реализован на момент аудита (P0/P1).
 
-Тесты: _dev/tests/Unit/ и _dev/tests/Scenarios/. 275 теста, 593 assertions, 55 файла (верифицировано; 1 skipped — LinkTraversalTest требует dev-сервер 127.0.0.1:8080, прогоняется в CI). Запуск: php vendor/bin/phpunit -c _dev/phpunit.xml.
+Тесты: _dev/tests/Unit/ и _dev/tests/Scenarios/. 294 теста, 660 assertions, 55 файла (верифицировано; 1 skipped — LinkTraversalTest требует dev-сервер 127.0.0.1:8080, прогоняется в CI). Запуск: php vendor/bin/phpunit -c _dev/phpunit.xml.
 
 Сценарии управления структурой (CLI и файловая система)
 S01. Создание домена — ✅
