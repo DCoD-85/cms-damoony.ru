@@ -65,6 +65,10 @@ final class PageController extends BaseController
         $tree = [$rootNode];
 
         $card = Builder::div('admin-card');
+        $link = Builder::el('link', true);
+        $link->attrs()->add('rel', 'stylesheet');
+        $link->attrs()->add('href', '/media/admin/page-builder.css');
+        $card->append($link);
 
         $breadcrumbs = Builder::div('breadcrumbs');
         $breadcrumbs->append(Builder::a('/admin/?p=domain')->content(View::t('domain.bread_domains')));
