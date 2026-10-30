@@ -49,57 +49,43 @@ final class StructureCheckerTest extends TestCase
 
     public function testCleanStructureHasNoIssues(): void
     {
-        $this->writeBlocksJson(['top' => ['enabled' => true]]);
-        mkdir($this->root . '/app/example.ru/.alliasglobal/top', 0o777, true);
-
+        $this->writeBlockFiles('top');
         $issues = $this->checker()->checkAllias('example.ru', 'www');
-
         self::assertSame([], $issues);
     }
 
-    public function testFlagsManifestEntryWithoutFolder(): void
+    public function testFlagsMissingRulesJson(): void
     {
-        $this->writeBlocksJson(['ghost' => ['enabled' => true]]);
+        mkdir($this->root . '/app/example.ru/.alliasglobal/top', 0o777, true);
+        file_put_contents($this->root . '/app/example.ru/.alliasglobal/top/top.php', "<?php\n");
 
         $issues = $this->checker()->checkAllias('example.ru', 'www');
-        $match = array_values(array_filter($issues, fn ($i) => str_contains($i['message'], "Блок 'ghost'")));
-
-        self::assertCount(1, $match);
-        self::assertSame('error', $match[0]['level']);
-    }
-
-    public function testFlagsFolderWithoutManifestEntry(): void
-    {
-        $this->writeBlocksJson([]);
-        mkdir($this->root . '/app/example.ru/.alliasglobal/orphan', 0o777, true);
-
-        $issues = $this->checker()->checkAllias('example.ru', 'www');
-        $match = array_values(array_filter($issues, fn ($i) => str_contains($i['message'], 'orphan')));
+        $match = array_values(array_filter($issues, fn ($i) => str_contains($i['message'], 'Отсутствует top.rules.json')));
 
         self::assertCount(1, $match);
         self::assertSame('warning', $match[0]['level']);
     }
 
-    public function testFlagsMalformedBlocksJson(): void
+    public function testFlagsMissingEditorJson(): void
     {
-        file_put_contents(
-            $this->root . '/app/example.ru/.alliasglobal/blocks.json',
-            '{"blocks": "not-an-array"}',
-        );
+        mkdir($this->root . '/app/example.ru/.alliasglobal/top', 0o777, true);
+        file_put_contents($this->root . '/app/example.ru/.alliasglobal/top/top.php', "<?php\n");
+        file_put_contents($this->root . '/app/example.ru/.alliasglobal/top/top.rules.json', '{"enabled":true,"type":"mixed"}');
 
         $issues = $this->checker()->checkAllias('example.ru', 'www');
-        $match = array_values(array_filter($issues, fn ($i) => str_contains($i['message'], 'blocks.json повреждён')));
+        $match = array_values(array_filter($issues, fn ($i) => str_contains($i['message'], 'Отсутствует top.editor.json')));
 
         self::assertCount(1, $match);
         self::assertSame('warning', $match[0]['level']);
     }
 
-    private function writeBlocksJson(array $blocks): void
+    private function writeBlockFiles(string $name): void
     {
-        file_put_contents(
-            $this->root . '/app/example.ru/.alliasglobal/blocks.json',
-            json_encode(['blocks' => $blocks]),
-        );
+        $dir = $this->root . '/app/example.ru/.alliasglobal/' . $name;
+        mkdir($dir, 0o777, true);
+        file_put_contents($dir . '/' . $name . '.php', "<?php\n");
+        file_put_contents($dir . '/' . $name . '.rules.json', '{"enabled":true,"type":"mixed"}');
+        file_put_contents($dir . '/' . $name . '.editor.json', '{}');
     }
 
     private function rmrf(string $dir): void

@@ -7,8 +7,6 @@ namespace Damoony\Cli\Commands;
 use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
-use Damoony\Core\Config;
-use Damoony\Files\Fs;
 use Damoony\Files\Paths;
 
 final class BlockRemoveCommand implements CommandInterface
@@ -30,48 +28,32 @@ final class BlockRemoveCommand implements CommandInterface
     public function run(array $args, Context $context): Result
     {
         $r = new Result();
+        $domain = (string)($args['domain'] ?? '');
+        $name = (string)($args['name'] ?? '');
 
-        $domain = $args['domain'] ?? '';
-        $name = $args['name'] ?? '';
-
-        if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain) || !preg_match('/^[a-z][a-z0-9_]*$/', $name)) {
-            $r->error('Некорректные параметры');
+        if ($domain === '' || $name === '') {
+            $r->error('Укажите --domain и --name');
             return $r;
         }
 
-        $siteFile = $this->paths->siteConfig();
-        if (!is_file($siteFile)) {
-            $r->error('site.config не найден');
+        // ВАЖНО: Защита от Path Traversal (выход за пределы .alliasglobal)
+        if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain)) {
+            $r->error('Некорректный домен');
             return $r;
         }
-        $site = Config::fromFile($siteFile)->all();
-        if (!isset($site['domains_real'][$domain])) {
-            $r->error('Домен не найден');
+        if (!preg_match('/^[a-z][a-z0-9_]*$/', $name)) {
+            $r->error('Некорректное имя блока');
             return $r;
         }
 
-        $blocksDir = $this->paths->domain($domain) . '/.alliasglobal';
-        $blockDir = $blocksDir . '/' . $name;
-
-        if (!Fs::isDir($blockDir)) {
+        $blockDir = $this->paths->domain($domain) . '/.alliasglobal/' . $name;
+        if (!is_dir($blockDir)) {
             $r->error('Блок не найден');
             return $r;
         }
 
         $this->rmrf($blockDir);
-        $context->step('Папка блока удалена', true, $name);
-
-        $manifestFile = $blocksDir . '/blocks.json';
-        if (is_file($manifestFile)) {
-            $manifest = json_decode((string) file_get_contents($manifestFile), true);
-            if (is_array($manifest) && isset($manifest['blocks'][$name])) {
-                unset($manifest['blocks'][$name]);
-                Fs::writeAtomic($manifestFile, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
-                $r->file(Fs::rel($manifestFile, $this->paths->root()));
-                $context->step('Манифест обновлён');
-            }
-        }
-
+        $context->step("Блок {$name} удален", true);
         return $r;
     }
 

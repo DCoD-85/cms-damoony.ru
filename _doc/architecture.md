@@ -39,13 +39,11 @@ Response — оборачивает Node в Document (тег <html>) с мета
 
 Важно (§6.1): PageHandler не оборачивает Node в Document через схему автоматически. Если страница вернула Node, он кладётся в <body> как есть — без шапки/футера/регионов. Схема применяется только если:
 
-страница скомпилирована через PageCompiler (он вставляет SchemeLoader + SchemeRenderer в сгенерированный default());
-
 страница наследуется от HomePage;
 
-страница сама вызвала SchemeRenderer в default().
+страница сама вызвала SchemeRenderer в default() (Вариант A из guide.md §4).
 
-guide.md §4 описывает оба варианта.
+Так как визуальный редактор страниц удален, весь код страниц (включая вызов SchemeRenderer) пишется разработчиком вручную через CodeMirror.
 
 Слой домена и алиаса
 Домен — папка app/<real_domain>/. Входящие хосты мапятся на реальный домен через ConfigDomainResolver.
@@ -77,17 +75,15 @@ Filler: переопределение региона для конкретно�
 .data.php блоков и филлеров не читаются движком (§4). Данные — в самом PHP-классе.
 
 Low-Code и Компиляция
-Механика: админка сохраняет структуру блоков в `.editor.json` рядом с `.php` (схемы: `scheme.editor.json`, страницы: `page.editor.json`).
+Механика: визуальный редактор оставлен только для Схем. Админка сохраняет структуру схемы в `scheme.editor.json`.
 
 Схемы: `editor.json` хранит дерево блоков для UI (Drag&Drop, вложенность). При сохранении SchemeCompiler компилирует его в `data.php` (чистый PHP-массив, var_export).
 
-Страницы: `page.editor.json` хранит статусы слотов (global/local/disabled) и контент (h1, text, code). При сохранении PageCompiler компилирует его в `algoritm_*.php`.
+Страницы, Блоки и Филлеры: визуальные редакторы удалены. Редактирование происходит напрямую в PHP-файлах через CodeMirror.
 
-Legacy `.edit.json` (старый формат {blocks}) блокируется в PageController::edit() с предупреждением (stage-2a).
+RegionCompiler: используется для компиляции блоков при создании через CLI. Для генерации сырого PHP (блоки custom, if, else, endif) требуется включить `security.allow_php_blocks` в engine.config. В целях безопасности по умолчанию эти блоки заблокированы.
 
-Компиляторы: PageCompiler (страницы), RegionCompiler (регионы) и SchemeCompiler используют var_export для строк, без addslashes и str_replace (stage-1).
-
-UI: Редакторы схем и страниц полностью переработаны (stage-5). Работают на Drag&Drop. Разделяют зоны на «Неактивные», «Скрипты» и «Визуал». Страницы имеют вкладки (Обзор, Слоты, Настройки).
+Компиляторы используют var_export для строк, без addslashes и str_replace (stage-1).
 
 default(): null: PageHandler на null возвращает 204 No Content (stage-4). Контракт и runtime согласованы.
 
@@ -117,7 +113,7 @@ Admin: UI-компоненты, CodeMirror (локальный), мультия�
 Админка и CLI — равноправные способы управления, делят бизнес-логику через *NewCommand, *ToggleCommand.
 
 Диагностика и отказоустойчивость
-StructureChecker: проверяет наличие .rules.json, algoritm.php, схем, глобальных блоков, стыковку филлер↔слот, а также `.edit.json ↔ PHP` и `schemes.json ↔ файлы` (stage-5).
+StructureChecker: проверяет наличие .rules.json, algoritm.php, схем, глобальных блоков, стыковку филлер↔слот, а также `schemes.json ↔ файлы`.
 
 OverviewController (System Health): древовидный дашборд доменов и алиасов с отображением ошибок/предупреждений.
 
@@ -139,6 +135,6 @@ Response::internalError() в PageHandler — в prod отдаёт generic соо
 Session: HttpOnly, SameSite=Lax, Secure при HTTPS.
 
 Что не реализовано
-Headless/REST/GraphQL API, sitemap, hreflang, плагины, Schema.org, SMTP/сброс пароля, Redis/Memcached/CDN, WebSocket, мультиязычность контента, WYSIWYG (свободная вёрстка). См. MANIFEST.md §5.
+Headless/REST/GraphQL API, sitemap, hreflang, плагины, Schema.org, SMTP/сброс пароля, Redis/Memcached/CDN, WebSocket, мультиязычность контента, WYSIWYG (свободная вёрстка), визуальный редактор страниц/блоков. См. MANIFEST.md §5.
 
 --- КОНЕЦ ДОКУМЕНТА ---

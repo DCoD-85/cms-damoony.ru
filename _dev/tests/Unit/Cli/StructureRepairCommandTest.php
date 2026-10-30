@@ -106,8 +106,8 @@ final class StructureRepairCommandTest extends TestCase
         $res = $cmd->run(['domain' => 'example.ru'], new Context(static fn () => null));
 
         $this->assertTrue($res->ok);
-        $json = json_decode((string)file_get_contents($this->tmpDir . '/app/example.ru/.alliasglobal/blocks.json'), true);
-        $this->assertArrayHasKey('top', $json['blocks']);
+        $this->assertFileExists($this->tmpDir . '/app/example.ru/.alliasglobal/top/top.rules.json');
+        $this->assertFileExists($this->tmpDir . '/app/example.ru/.alliasglobal/top/top.editor.json');
     }
 
     public function testStructureOk(): void
@@ -124,7 +124,6 @@ final class StructureRepairCommandTest extends TestCase
         $res = $cmd->run(['domain' => 'example.ru'], new Context(static fn () => null));
 
         $this->assertTrue($res->ok);
-        // Проверяем, что ничего лишнего не создалось, кроме отсутствовавших папок
         $this->assertFileExists($this->tmpDir . '/app/example.ru/.alliasscheme/schemes.json');
     }
 

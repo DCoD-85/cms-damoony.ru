@@ -26,7 +26,6 @@ final class StructureCheckCommandTest extends TestCase
 
     public function testChecksMappedAliasFolderNotKey(): void
     {
-        // alliases_real: "sub" => "www" — реальная папка www/, не sub/
         $this->createAliasFolders('www');
         $cmd = new StructureCheckCommand(
             new Paths($this->root),
@@ -63,7 +62,6 @@ final class StructureCheckCommandTest extends TestCase
 
     public function testEmptyKeyIsSkipped(): void
     {
-        // "" => "www" — этот ключ пропускается, чтобы не дублировать проверку
         $this->createAliasFolders('www');
         $cmd = new StructureCheckCommand(
             new Paths($this->root),
@@ -98,10 +96,6 @@ final class StructureCheckCommandTest extends TestCase
         file_put_contents(
             $domain . '/.alliasscheme/schemes.json',
             (string) json_encode(['schemes' => ['www' => ['enabled' => true]]]),
-        );
-        file_put_contents(
-            $domain . '/.alliasglobal/blocks.json',
-            (string) json_encode(['blocks' => []]),
         );
     }
 

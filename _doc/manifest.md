@@ -45,7 +45,7 @@ Auth: DbAuth (password_hash), SessionAuth, Csrf, login/logout, логирова�
 
 Админка: Вход/выход, профиль, I18n (RU/EN/ZH), Обзор системы, Домены, Алиасы, Блоки, Схемы, Филлеры, Страницы (дерево), Схемы алиаса, БД алиаса, Заглушки, Безопасность, Настройки, CodeMirror (локально), Safe Mode. Визуальные редакторы для Блоков, Схем (Drag&Drop), Страниц (Табы, Обзор, Drag&Drop).
 
-Low-Code: PageCompiler, RegionCompiler, page.editor.json и scheme.editor.json (источник правил), статусы слотов disabled/global/local.
+Low-Code: Визуальный редактор схем (Drag&Drop) и CodeMirror для страниц, блоков и филлеров.
 
 Диагностика: StructureChecker (наличие файлов, стыковка филлер↔слот), CLI structure:check, страница «Обзор».
 
@@ -53,7 +53,7 @@ CLI (18 команд): help, domain:new, allias:new, allias:remove, block:new, b
 
 ErrorPage: локализован через Translator (`error.*` в lang/{ru,en,zh}, fallback ru). Ключи: `error.{403,404,429,500,503}.{title,message}`, `error.default.*`, `error.429.retry` с подстановкой `{minutes}`.
 
-Качество: PHPUnit (61 тестовый файл, 294 теста, 660 assertions — верифицировано; 1 skipped — LinkTraversalTest, требует dev-сервер 127.0.0.1:8080, прогоняется в CI), PHPStan level 8 (0 errors), PHP-CS-Fixer (0 issues), GitHub Actions CI.
+Качество: PHPUnit (61 тестовый файл, 289 тестов, 642 assertions — верифицировано; 1 skipped — LinkTraversalTest, требует dev-сервер 127.0.0.1:8080, прогоняется в CI), PHPStan level 8 (0 errors), PHP-CS-Fixer (0 issues), GitHub Actions CI.
 
 4. Частично реализовано (🟡)
 Фича	Что есть	Что нужно для ✅

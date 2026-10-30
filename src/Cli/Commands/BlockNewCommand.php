@@ -75,6 +75,7 @@ final class BlockNewCommand implements CommandInterface
         Fs::mkdir($blockDir);
         $r->file(Fs::rel($blockDir, $this->paths->root()));
 
+        // 1. Создаем PHP-класс
         if ($type === 'script') {
             $php = "<?php\n\n"
                 . "declare(strict_types=1);\n\n"
@@ -108,20 +109,17 @@ final class BlockNewCommand implements CommandInterface
         Fs::writeAtomic($blockDir . '/' . $name . '.php', $php);
         $r->file(Fs::rel($blockDir . '/' . $name . '.php', $this->paths->root()));
 
-        $data = "<?php\n\nreturn [\n    'wrapper' => ['tag' => 'div', 'attrs' => ['class' => '{$name}']],\n    'sections' => [],\n];\n";
-        Fs::writeAtomic($blockDir . '/' . $name . '.data.php', $data);
-        $r->file(Fs::rel($blockDir . '/' . $name . '.data.php', $this->paths->root()));
+        // 2. Создаем rules.json
+        $rules = [
+            'enabled' => true,
+            'type' => $type,
+        ];
+        Fs::writeAtomic($blockDir . '/' . $name . '.rules.json', json_encode($rules, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
+        $r->file(Fs::rel($blockDir . '/' . $name . '.rules.json', $this->paths->root()));
 
-        $manifestFile = $blocksDir . '/blocks.json';
-        $manifest = is_file($manifestFile)
-            ? json_decode((string) file_get_contents($manifestFile), true)
-            : [];
-        if (!is_array($manifest)) {
-            $manifest = [];
-        }
-        $manifest['blocks'][$name] = ['enabled' => true, 'type' => $type];
-        Fs::writeAtomic($manifestFile, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
-        $r->file(Fs::rel($manifestFile, $this->paths->root()));
+        // 3. Создаем editor.json (пока пустой, для будущего визуального редактора)
+        Fs::writeAtomic($blockDir . '/' . $name . '.editor.json', json_encode([], JSON_PRETTY_PRINT) . "\n");
+        $r->file(Fs::rel($blockDir . '/' . $name . '.editor.json', $this->paths->root()));
 
         $context->step("Блок создан ({$type})", true, $name);
 

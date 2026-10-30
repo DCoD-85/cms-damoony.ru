@@ -34,16 +34,16 @@ final class StructureChecker
             $issues[] = ['level' => 'error', 'message' => "Отсутствует главный файл algoritm.php в algoritm/{$allias}"];
         }
 
+        // 1. Проверка стыковки Схемы и Блоков
         $schemeName = (string) $this->site->getByKey(['domains_scheme', $realDomain], 'www');
         $localScheme = $this->paths->domain($realDomain) . '/.alliasscheme/' . $allias . '.data.php';
         $globalScheme = $this->paths->domain($realDomain) . '/.alliasscheme/' . $schemeName . '.data.php';
 
         if (!is_file($localScheme) && !is_file($globalScheme)) {
             $issues[] = ['level' => 'error', 'message' => "Не найдена схема (ни {$allias}.data.php, ни {$schemeName}.data.php)"];
-            return $issues; // Дальше проверять стыковку нет смысла
+            return $issues;
         }
 
-        // ПРОВЕРКА СТЫКОВКИ СХЕМЫ И БЛОКОВ
         $schemeFile = is_file($localScheme) ? $localScheme : $globalScheme;
         $schemeData = require $schemeFile;
 
@@ -56,7 +56,6 @@ final class StructureChecker
             $globalBlocks = is_dir($blocksDir) ? glob($blocksDir . '/*', GLOB_ONLYDIR) : [];
             $globalBlocks = array_map('basename', $globalBlocks ?: []);
 
-            // 1. Слоты в схеме, для которых нет ни глобального блока, ни локального филлера
             foreach ($schemeSlots as $slot) {
                 if (!in_array($slot, $globalBlocks, true)) {
                     $localFiller = $blocksDir . '/' . $slot . '/' . $slot . '_' . $allias . '.php';
@@ -66,7 +65,6 @@ final class StructureChecker
                 }
             }
 
-            // 2. Включенные филлеры, которых нет в схеме
             $fillers = $this->site->getByKey(['fillers', $realDomain, $allias], []);
             if (is_array($fillers)) {
                 foreach ($fillers as $fillerName => $enabled) {
@@ -77,75 +75,67 @@ final class StructureChecker
             }
         }
 
-        // ПРОВЕРКА .edit.json ↔ PHP
-        $this->checkPagesJson($algoritmDir, $issues);
+        // 2. Проверка страниц (наличие PHP и editor.json)
+        $this->checkPagesStructure($algoritmDir, $issues);
 
-        // ПРОВЕРКА schemes.json ↔ файлы
+        // 3. Проверка схем
         $schemesDir = $this->paths->domain($realDomain) . '/.alliasscheme';
         $this->checkSchemesJson($schemesDir, $allias, $issues);
 
-        // ПРОВЕРКА blocks.json ↔ папки
+        // 4. Проверка блоков (наличие .rules.json и .editor.json)
         $blocksDir = $this->paths->domain($realDomain) . '/.alliasglobal';
-        $this->checkBlocksJson($blocksDir, $issues);
+        $this->checkBlocksRules($blocksDir, $issues);
 
         return $issues;
     }
 
-    /**
-     * @param list<array{level: string, message: string}> $issues
-     */
-    private function checkPagesJson(string $algoritmDir, array &$issues): void
+    /** @param list<array{level: string, message: string}> $issues */
+    private function checkPagesStructure(string $algoritmDir, array &$issues): void
     {
         $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($algoritmDir, \FilesystemIterator::SKIP_DOTS));
         foreach ($iterator as $file) {
-            if ($file->isFile() && $file->getFilename() === '.edit.json') {
-                $dir = $file->getPath();
-                $phpFiles = glob($dir . '/algoritm_*.php');
-                if (empty($phpFiles)) {
-                    $issues[] = ['level' => 'warning', 'message' => 'Есть .edit.json, но нет сгенерированного algoritm_*.php в ' . str_replace($algoritmDir, '', $dir)];
+            if ($file->isDir()) {
+                $dir = $file->getPathname();
+                if (basename($dir) === 'algoritm') {
+                    continue;
+                }
+
+                $name = basename($dir);
+                $phpFile = $dir . '/algoritm_' . $name . '.php';
+                $rulesFile = $dir . '/algoritm_' . $name . '.rules.json';
+                $editorFile = $dir . '/algoritm_' . $name . '.editor.json';
+
+                if (!is_file($phpFile)) {
+                    $issues[] = ['level' => 'error', 'message' => "Нет файла algoritm_{$name}.php в папке " . str_replace($algoritmDir, '', $dir)];
+                }
+                if (!is_file($rulesFile)) {
+                    $issues[] = ['level' => 'warning', 'message' => "Нет файла algoritm_{$name}.rules.json в папке " . str_replace($algoritmDir, '', $dir)];
+                }
+                if (!is_file($editorFile)) {
+                    $issues[] = ['level' => 'warning', 'message' => "Нет файла algoritm_{$name}.editor.json в папке " . str_replace($algoritmDir, '', $dir)];
                 }
             }
         }
     }
 
-    /**
-     * @param list<array{level: string, message: string}> $issues
-     */
-    private function checkBlocksJson(string $blocksDir, array &$issues): void
+    /** @param list<array{level: string, message: string}> $issues */
+    private function checkBlocksRules(string $blocksDir, array &$issues): void
     {
-        $manifestFile = $blocksDir . '/blocks.json';
-        $manifestExists = is_file($manifestFile);
-        $declared = [];
-
-        if ($manifestExists) {
-            $manifest = json_decode((string) file_get_contents($manifestFile), true);
-            if (!is_array($manifest) || !isset($manifest['blocks']) || !is_array($manifest['blocks'])) {
-                $issues[] = ['level' => 'warning', 'message' => "blocks.json повреждён или не содержит ключ 'blocks'"];
-            } else {
-                $declared = array_keys($manifest['blocks']);
-            }
-        }
-
-        $folders = is_dir($blocksDir)
-            ? array_map('basename', glob($blocksDir . '/*', GLOB_ONLYDIR) ?: [])
-            : [];
-
-        foreach ($declared as $name) {
-            if (!in_array($name, $folders, true)) {
-                $issues[] = ['level' => 'error', 'message' => "Блок '{$name}' есть в blocks.json, но папка {$name}/ отсутствует"];
-            }
-        }
-
+        $folders = is_dir($blocksDir) ? array_map('basename', glob($blocksDir . '/*', GLOB_ONLYDIR) ?: []) : [];
         foreach ($folders as $name) {
-            if (!in_array($name, $declared, true)) {
-                $issues[] = ['level' => 'warning', 'message' => "Папка блока {$name}/ есть, но записи в blocks.json нет (сирота)"];
+            $rulesFile = $blocksDir . '/' . $name . '/' . $name . '.rules.json';
+            $editorFile = $blocksDir . '/' . $name . '/' . $name . '.editor.json';
+
+            if (!is_file($rulesFile)) {
+                $issues[] = ['level' => 'warning', 'message' => "Отсутствует {$name}.rules.json для блока {$name}"];
+            }
+            if (!is_file($editorFile)) {
+                $issues[] = ['level' => 'warning', 'message' => "Отсутствует {$name}.editor.json для блока {$name}"];
             }
         }
     }
 
-    /**
-     * @param list<array{level: string, message: string}> $issues
-     */
+    /** @param list<array{level: string, message: string}> $issues */
     private function checkSchemesJson(string $schemesDir, string $allias, array &$issues): void
     {
         $manifestFile = $schemesDir . '/schemes.json';
@@ -155,14 +145,12 @@ final class StructureChecker
         $files = glob($schemesDir . '/*.data.php') ?: [];
         $fileNames = array_map(fn ($f) => basename($f, '.data.php'), $files);
 
-        // 1. В манифесте есть, а файла нет
         foreach ($schemes as $s) {
             if (!in_array($s, $fileNames, true)) {
                 $issues[] = ['level' => 'error', 'message' => "Схема '{$s}' есть в schemes.json, но файл {$s}.data.php отсутствует"];
             }
         }
 
-        // 2. Файл есть, а в манифесте нет (игнорируем локальные схемы алиасов)
         foreach ($fileNames as $f) {
             if (!in_array($f, $schemes, true) && $f !== $allias) {
                 $issues[] = ['level' => 'warning', 'message' => "Файл {$f}.data.php есть, но его нет в schemes.json (сирота)"];

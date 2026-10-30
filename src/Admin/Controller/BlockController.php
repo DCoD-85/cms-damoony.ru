@@ -44,9 +44,6 @@ final class BlockController extends BaseController
 
         $filterType = (string) $request->query('type', 'all');
         $blocksDir = $this->paths->domain($domain) . '/.alliasglobal';
-        $manifestFile = $blocksDir . '/blocks.json';
-        $manifest = is_file($manifestFile) ? json_decode((string)file_get_contents($manifestFile), true) : [];
-        $manifestBlocks = is_array($manifest) && isset($manifest['blocks']) ? $manifest['blocks'] : [];
 
         $blocks = [];
         if (is_dir($blocksDir)) {
@@ -54,7 +51,9 @@ final class BlockController extends BaseController
                 if ($item === '.' || $item === '..' || !is_dir($blocksDir . '/' . $item)) {
                     continue;
                 }
-                $type = $manifestBlocks[$item]['type'] ?? 'mixed';
+                $rulesFile = $blocksDir . '/' . $item . '/' . $item . '.rules.json';
+                $rules = is_file($rulesFile) ? json_decode((string)file_get_contents($rulesFile), true) : [];
+                $type = $rules['type'] ?? 'mixed';
                 if ($filterType !== 'all' && $filterType !== $type) {
                     continue;
                 }

@@ -21,6 +21,7 @@ final class StructureRepairCommand implements CommandInterface
     {
         return 'structure:repair';
     }
+
     public function description(): string
     {
         return 'Восстановить структуру доменов, алиасов и схем';
@@ -52,8 +53,6 @@ final class StructureRepairCommand implements CommandInterface
 
         // 1. Восстановление алиасов
         $alliases = $site['alliases_real'][$domain] ?? ['www' => 'www'];
-
-        // Берем реальные алиасы (значения), так как "" маппится на "www"
         $realAliases = array_unique(array_values($alliases));
 
         foreach ($realAliases as $alias) {
@@ -98,27 +97,26 @@ final class StructureRepairCommand implements CommandInterface
         }
         Fs::writeAtomic($schemesFile, json_encode($schemes, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
 
-        // 3. Восстановление blocks.json
+        // 3. Восстановление rules.json и editor.json для блоков (Вместо blocks.json)
         $blocksDir = $domainDir . '/.alliasglobal';
-        if (!is_dir($blocksDir)) {
-            Fs::mkdir($blocksDir);
-        }
+        if (is_dir($blocksDir)) {
+            $dirs = array_filter(scandir($blocksDir) ?: [], fn ($d) => $d !== '.' && $d !== '..' && is_dir($blocksDir . '/' . $d));
+            foreach ($dirs as $bName) {
+                $rulesFile = $blocksDir . '/' . $bName . '/' . $bName . '.rules.json';
+                if (!is_file($rulesFile)) {
+                    Fs::writeAtomic($rulesFile, json_encode(['enabled' => true, 'type' => 'mixed'], JSON_PRETTY_PRINT) . "\n");
+                    $context->step("Восстановлен {$bName}.rules.json");
+                    $fixed++;
+                }
 
-        $blocksFile = $blocksDir . '/blocks.json';
-        $blocksData = is_file($blocksFile) ? json_decode((string)file_get_contents($blocksFile), true) : [];
-        if (!is_array($blocksData) || !isset($blocksData['blocks'])) {
-            $blocksData = ['blocks' => []];
-        }
-
-        $dirs = array_filter(scandir($blocksDir) ?: [], fn ($d) => $d !== '.' && $d !== '..' && is_dir($blocksDir . '/' . $d));
-        foreach ($dirs as $bName) {
-            if (!isset($blocksData['blocks'][$bName])) {
-                $blocksData['blocks'][$bName] = ['enabled' => true, 'type' => 'mixed'];
-                $context->step("Восстановлена запись блока в blocks.json: {$bName}");
-                $fixed++;
+                $editorFile = $blocksDir . '/' . $bName . '/' . $bName . '.editor.json';
+                if (!is_file($editorFile)) {
+                    Fs::writeAtomic($editorFile, json_encode([], JSON_PRETTY_PRINT) . "\n");
+                    $context->step("Восстановлен {$bName}.editor.json");
+                    $fixed++;
+                }
             }
         }
-        Fs::writeAtomic($blocksFile, json_encode($blocksData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
 
         if ($fixed === 0) {
             $context->step('Структура в порядке, исправлений не требуется.');

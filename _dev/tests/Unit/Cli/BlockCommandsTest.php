@@ -65,10 +65,13 @@ final class BlockCommandsTest extends TestCase
         $dir = $this->root . '/app/example.ru/.alliasglobal/custom';
         self::assertDirectoryExists($dir);
         self::assertFileExists($dir . '/custom.php');
-        self::assertFileExists($dir . '/custom.data.php');
+        self::assertFileExists($dir . '/custom.rules.json');
+        self::assertFileExists($dir . '/custom.editor.json');
+        self::assertFileDoesNotExist($dir . '/custom.data.php');
 
-        $manifest = json_decode((string) file_get_contents($this->root . '/app/example.ru/.alliasglobal/blocks.json'), true);
-        self::assertTrue($manifest['blocks']['custom']['enabled']);
+        $rules = json_decode((string) file_get_contents($dir . '/custom.rules.json'), true);
+        self::assertTrue($rules['enabled']);
+        self::assertSame('mixed', $rules['type']);
     }
 
     public function testS04RejectsDuplicate(): void
@@ -96,9 +99,6 @@ final class BlockCommandsTest extends TestCase
 
         self::assertTrue($res->ok);
         self::assertDirectoryDoesNotExist($this->root . '/app/example.ru/.alliasglobal/custom');
-
-        $manifest = json_decode((string) file_get_contents($this->root . '/app/example.ru/.alliasglobal/blocks.json'), true);
-        self::assertArrayNotHasKey('custom', $manifest['blocks']);
     }
 
     public function testS05MissingBlock(): void

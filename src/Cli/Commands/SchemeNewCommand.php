@@ -68,22 +68,11 @@ final class SchemeNewCommand implements CommandInterface
         $fields = [];
 
         if (is_dir($blocksDir)) {
-            $types = [];
-            $jsonFile = $blocksDir . '/blocks.json';
-            if (is_file($jsonFile)) {
-                $json = json_decode((string)file_get_contents($jsonFile), true);
-                if (is_array($json) && isset($json['blocks']) && is_array($json['blocks'])) {
-                    foreach ($json['blocks'] as $k => $v) {
-                        if (isset($v['type'])) {
-                            $types[$k] = $v['type'];
-                        }
-                    }
-                }
-            }
-
             $dirs = array_filter(scandir($blocksDir) ?: [], fn ($d) => $d !== '.' && $d !== '..' && is_dir($blocksDir . '/' . $d));
             foreach ($dirs as $bName) {
-                $engineType = $types[$bName] ?? 'mixed';
+                $rulesFile = $blocksDir . '/' . $bName . '/' . $bName . '.rules.json';
+                $rules = is_file($rulesFile) ? json_decode((string)file_get_contents($rulesFile), true) : [];
+                $engineType = $rules['type'] ?? 'mixed';
                 $fields[] = ['name' => $bName, 'type' => $engineType];
             }
         }
