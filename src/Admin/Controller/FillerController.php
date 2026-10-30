@@ -4,18 +4,14 @@ declare(strict_types=1);
 
 namespace Damoony\Admin\Controller;
 
-use Damoony\Admin\Support\VisualEditorRenderer;
 use Damoony\Admin\View;
 use Damoony\Cli\Commands\FillerNewCommand;
 use Damoony\Cli\Commands\FillerToggleCommand;
 use Damoony\Cli\Context;
 use Damoony\Core\Config;
-use Damoony\Files\Fs;
 use Damoony\Files\Paths;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
-use Damoony\Region\RegionCompiler;
-use Damoony\Region\RegionValidator;
 use Damoony\Ui\Builder;
 use Damoony\Ui\Element;
 use Damoony\Ui\Field;
@@ -116,7 +112,6 @@ final class FillerController extends BaseController
                 $visualUrl = '/admin/?p=filler:edit&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&block=' . urlencode((string)$block);
 
                 $actionsCell = Builder::div('table-actions');
-                $actionsCell->append(Builder::a($visualUrl, 'btn btn-primary')->content(View::t('page.visual_editor')));
                 $actionsCell->append(Builder::a($codeUrl, 'btn btn-outline')->content(View::t('filler.col_code')));
                 $actionsCell->append($toggleBtn);
 
@@ -127,158 +122,6 @@ final class FillerController extends BaseController
         }
         $card->append($table->build());
         return Response::html($this->view->render($card, ['title' => View::t('filler.title')]));
-    }
-
-    public function edit(Request $request): Response
-    {
-        $auth = $this->requireAuth();
-        if ($auth !== null) {
-            return $auth;
-        }
-
-        $domain = (string) $request->query('domain', '');
-        $allias = (string) $request->query('allias', '');
-        $block = (string) $request->query('block', '');
-        if ($domain === '' || $allias === '' || $block === '') {
-            return $this->redirect('/admin/?p=domain');
-        }
-
-        $blockDir = $this->paths->domain($domain) . '/.alliasglobal/' . $block;
-        if (!is_dir($blockDir)) {
-            return $this->redirect('/admin/?p=filler&domain=' . urlencode($domain) . '&allias=' . urlencode($allias));
-        }
-
-        $editFile = $blockDir . '/' . $block . '_' . $allias . '.edit.json';
-        $data = is_file($editFile) ? json_decode((string) file_get_contents($editFile), true) : [];
-        $blocks = is_array($data) && isset($data['blocks']) ? $data['blocks'] : [];
-
-        $card = Builder::div('admin-card');
-
-        $link = Builder::el('link', true);
-        $link->attrs()->add('rel', 'stylesheet');
-        $link->attrs()->add('href', '/media/admin/page-builder.css');
-        $card->append($link);
-
-        $script = Builder::el('script');
-        $script->attrs()->add('src', '/media/admin/block-builder.js');
-        $script->attrs()->add('defer', 'true');
-        $card->append($script);
-
-        $card->append(Builder::a('/admin/?p=filler&domain=' . urlencode($domain) . '&allias=' . urlencode($allias))->content(View::t('domain.bind_back')));
-        $card->append(Builder::h(1)->content(View::t('block.edit_title') . ': ' . View::esc($block) . ' (' . View::esc($allias) . ')'));
-
-        $form = Builder::el('form');
-        $form->attrs()->add('method', 'post');
-        $form->attrs()->add('action', '/admin/?p=filler:save&domain=' . urlencode($domain) . '&allias=' . urlencode($allias) . '&block=' . urlencode($block));
-        $form->attrs()->classAdd('editor-form');
-        $form->append(Text::raw($this->csrf->field()));
-
-        $layout = Builder::div('pb-layout');
-        $canvas = Builder::div('pb-canvas');
-        $canvas->attrs()->add('id', 'blocks-container');
-
-        if ($blocks === []) {
-            $blocks = [['type' => 'text', 'content' => '']];
-        }
-        foreach ($blocks as $i => $b) {
-            $canvas->append(VisualEditorRenderer::renderBlockRow($i, $b));
-        }
-        $layout->append($canvas);
-
-        $tools = Builder::div('pb-tools');
-        $tools->append(Builder::h(3)->content(View::t('page.add_block')));
-        $toolTypes = ['h1' => 'H1', 'h2' => 'H2', 'text' => 'TEXT', 'img' => 'IMG', 'custom' => 'PHP CODE', 'if' => 'IF', 'else' => 'ELSE', 'endif' => 'ENDIF'];
-        foreach ($toolTypes as $type => $label) {
-            $btn = Builder::div("pb-tool pb-tool-{$type}");
-            $btn->attrs()->add('data-type', $type);
-            $btn->attrs()->add('draggable', 'true');
-            $btn->content($label);
-            $tools->append($btn);
-        }
-        $layout->append($tools);
-        $form->append($layout);
-
-        $templateEl = Builder::el('template');
-        $templateEl->attrs()->add('id', 'block-template');
-        $templateEl->append(VisualEditorRenderer::renderBlockRow(9999, ['type' => 'text', 'content' => '']));
-        $form->append($templateEl);
-
-        $actionsDiv = Builder::div();
-        $actionsDiv->attrs()->styleAdd('margin-top: 15px; display: flex; gap: 10px;');
-
-        $addBtn = Builder::el('button');
-        $addBtn->attrs()->add('type', 'button');
-        $addBtn->attrs()->add('id', 'add-block-btn');
-        $addBtn->attrs()->classAdd('btn btn-outline');
-        $addBtn->content(View::t('page.add_block'));
-        $actionsDiv->append($addBtn);
-
-        $saveBtn = Builder::el('button');
-        $saveBtn->attrs()->add('type', 'submit');
-        $saveBtn->attrs()->classAdd('btn btn-primary');
-        $saveBtn->content(View::t('domain.save'));
-        $actionsDiv->append($saveBtn);
-
-        $form->append($actionsDiv);
-        $card->append($form);
-        return Response::html($this->view->render($card, ['title' => View::t('block.edit_title')]));
-    }
-
-    public function save(Request $request): Response
-    {
-        $auth = $this->requireAuth();
-        if ($auth !== null) {
-            return $auth;
-        }
-
-        $csrfErr = $this->requireCsrf($request);
-        if ($csrfErr !== null) {
-            return $csrfErr;
-        }
-
-        $domain = (string) $request->query('domain', '');
-        $allias = (string) $request->query('allias', '');
-        $block = (string) $request->query('block', '');
-
-        $blockDir = $this->paths->domain($domain) . '/.alliasglobal/' . $block;
-        if (!is_dir($blockDir)) {
-            return $this->redirect('/admin/?p=filler&domain=' . urlencode($domain) . '&allias=' . urlencode($allias));
-        }
-
-        $blocks = $request->post['blocks'] ?? [];
-        if (!is_array($blocks)) {
-            $blocks = [];
-        }
-        ksort($blocks);
-        $blocks = array_values($blocks);
-
-        $cleanBlocks = $this->normalizeBlocks($blocks);
-        $allowPhp = $this->allowPhpBlocks();
-        $validator = new RegionValidator($allowPhp);
-        $errors = $validator->validate($cleanBlocks);
-
-        if ($errors !== []) {
-            $msg = implode(' ', array_map(fn ($k) => View::t($k), $errors));
-            return Response::text($msg, 400);
-        }
-
-        $siteFile = $this->paths->siteConfig();
-        $site = Config::fromFile($siteFile)->all();
-        $realDomain = (string) $site['domains_real'][$domain];
-        $namespace = (string) ($site['domains_namespace'][$realDomain] ?? str_replace(['.', '-'], '_', $realDomain));
-
-        try {
-            $compiler = new RegionCompiler($allowPhp);
-            $php = $compiler->compile($namespace, $block, $cleanBlocks, '_' . $allias);
-        } catch (\RuntimeException $e) {
-            return Response::text($e->getMessage(), 400);
-        }
-
-        $editFile = $blockDir . '/' . $block . '_' . $allias . '.edit.json';
-        Fs::writeAtomic($editFile, json_encode(['blocks' => $cleanBlocks], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
-        Fs::writeAtomic($blockDir . '/' . $block . '_' . $allias . '.php', $php);
-
-        return $this->redirect('/admin/?p=filler&domain=' . urlencode($domain) . '&allias=' . urlencode($allias));
     }
 
     public function sync(Request $request): Response
@@ -393,91 +236,5 @@ final class FillerController extends BaseController
             $cmd->run(['domain' => $domain, 'allias' => $allias, 'block' => $block, 'value' => $value], new Context(static fn () => null));
         }
         return $this->redirect('/admin/?p=filler&domain=' . urlencode($domain) . '&allias=' . urlencode($allias));
-    }
-
-    public function preview(Request $request): Response
-    {
-        $auth = $this->requireAuth();
-        if ($auth !== null) {
-            return $auth;
-        }
-
-        $domain = (string) $request->query('domain', '');
-        $name = (string) $request->query('block', '') ?: 'filler';
-
-        $blocks = $request->post['blocks'] ?? [];
-        if (!is_array($blocks)) {
-            $blocks = [];
-        }
-        ksort($blocks);
-        $blocks = array_values($blocks);
-
-        $cleanBlocks = $this->normalizeBlocks($blocks);
-        $allowPhp = $this->allowPhpBlocks();
-        $validator = new RegionValidator($allowPhp);
-        $errors = $validator->validate($cleanBlocks);
-
-        $card = Builder::div('admin-card');
-
-        if ($errors !== []) {
-            $msg = implode(' ', array_map(fn ($k) => View::t($k), $errors));
-            $card->append(Message::error($msg)->build());
-        } else {
-            try {
-                $compiler = new RegionCompiler($allowPhp);
-                $php = $compiler->compile('Preview\Namespace', $name, $cleanBlocks, '_preview');
-
-                $pre = Builder::el('pre');
-                $pre->attrs()->styleAdd('padding:20px; background:#282a36; color:#f8f8f2; border-radius:8px; overflow:auto; text-align:left;');
-                $code = Builder::el('code');
-                $code->content($php);
-                $pre->append($code);
-                $card->append($pre);
-            } catch (\RuntimeException $e) {
-                $card->append(Message::error($e->getMessage())->build());
-            }
-        }
-
-        return Response::html($this->view->render($card, ['title' => 'PHP Preview']));
-    }
-
-    /**
-     * @param array<int, mixed> $blocks
-     *
-     * @return list<array<string, mixed>>
-     */
-    private function normalizeBlocks(array $blocks): array
-    {
-        $clean = [];
-        foreach ($blocks as $b) {
-            if (!is_array($b)) {
-                continue;
-            }
-            $type = (string)($b['type'] ?? '');
-            if ($type === '') {
-                continue;
-            }
-
-            if ($type === 'if') {
-                $clean[] = ['type' => 'if', 'condition' => (string)($b['condition'] ?? '')];
-            } elseif ($type === 'custom') {
-                $clean[] = ['type' => 'custom', 'code' => (string)($b['code'] ?? '')];
-            } elseif ($type === 'else' || $type === 'endif') {
-                $clean[] = ['type' => $type];
-            } elseif (isset($b['content']) && trim((string)$b['content']) !== '') {
-                $clean[] = ['type' => $type, 'content' => (string)$b['content']];
-            }
-        }
-        return $clean;
-    }
-
-    private function allowPhpBlocks(): bool
-    {
-        $engineFile = $this->paths->root() . '/config/engine.config';
-        if (!is_file($engineFile)) {
-            return false;
-        }
-
-        return (bool) Config::fromFile($engineFile)->get('security.allow_php_blocks', false);
     }
 }

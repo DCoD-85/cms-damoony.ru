@@ -82,40 +82,4 @@ final class PageControllerTest extends TestCase
 
         self::assertSame(200, $response->status);
     }
-
-    public function testSaveUpdatesRulesAndJson(): void
-    {
-        mkdir($this->root . '/app/example.ru/www/algoritm/about');
-        file_put_contents($this->root . '/app/example.ru/www/algoritm/about/.rules.json', json_encode(['auth' => false]));
-
-        $json = json_encode([
-            'slots' => ['center' => ['status' => 'local', 'blocks' => [['type' => 'h1', 'content' => 'Test']]]],
-            'auth' => true,
-        ]);
-
-        // Передаем GET-параметры в 3-й аргумент (query), а POST — в 4-й
-        $req = new Request(
-            'POST',
-            '/admin/?p=page:save&domain=example.ru&allias=www&path=about',
-            ['p' => 'page:save', 'domain' => 'example.ru', 'allias' => 'www', 'path' => 'about'],
-            ['_csrf' => $this->mockToken, 'page_json' => $json],
-        );
-
-        $response = $this->controller->save($req);
-        self::assertSame(302, $response->status);
-
-        $editorFile = $this->root . '/app/example.ru/www/algoritm/about/page.editor.json';
-        self::assertFileExists($editorFile);
-        $data = json_decode(file_get_contents($editorFile), true);
-        self::assertTrue($data['auth']);
-
-        $rulesFile = $this->root . '/app/example.ru/www/algoritm/about/.rules.json';
-        $rules = json_decode(file_get_contents($rulesFile), true);
-        self::assertTrue($rules['auth']);
-
-        $phpFile = $this->root . '/app/example.ru/www/algoritm/about/algoritm_about.php';
-        self::assertFileExists($phpFile);
-        $phpContent = file_get_contents($phpFile);
-        self::assertStringContainsString("Builder::h(1)->content('Test')", $phpContent);
-    }
 }

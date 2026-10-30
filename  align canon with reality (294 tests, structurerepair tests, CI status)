@@ -1,0 +1,9 @@
+ _doc/architecture.md     | 2 [32m+[m[31m-[m
+ _doc/cli.md              | 1 [31m-[m
+ _doc/index.md            | 7 [32m+++++[m[31m--[m
+ _doc/manifest.md         | 7 [32m++++[m[31m---[m
+ _doc/philosophy.md       | 2 [32m+[m[31m-[m
+ _doc/readme.md           | 2 [32m+[m[31m-[m
+ _doc/scenarios.md        | 2 [32m+[m[31m-[m
+ _doc/structure_repair.md | 2 [32m+[m[31m-[m
+ 8 files changed, 14 insertions(+), 11 deletions(-)

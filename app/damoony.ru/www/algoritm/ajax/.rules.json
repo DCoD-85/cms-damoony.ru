@@ -2,7 +2,7 @@
     "available": [
         "([a-z]+)|mode"
     ],
-    "auth": true,
+    "auth": false,
     "search": true,
     "default": false
 }
