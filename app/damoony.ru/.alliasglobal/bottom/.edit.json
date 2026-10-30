@@ -1,0 +1,22 @@
+{
+    "blocks": [
+        {
+            "type": "if",
+            "condition": ""
+        },
+        {
+            "type": "text",
+            "content": "TRUE"
+        },
+        {
+            "type": "else"
+        },
+        {
+            "type": "text",
+            "content": "FALSE"
+        },
+        {
+            "type": "endif"
+        }
+    ]
+}

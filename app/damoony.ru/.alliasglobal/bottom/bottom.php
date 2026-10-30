@@ -23,8 +23,12 @@ final class alliasglobal_bottom implements RegionInterface
 
     public function render(RegionContext $context): Node
     {
-        $wrap = Builder::div('bottom');
-        $wrap->append(Builder::p()->content('Блок bottom'));
+        $wrap = Builder::div('bottom-wrap');
+        if () {
+            $wrap->append(Builder::p()->content('TRUE'));
+        } else {
+            $wrap->append(Builder::p()->content('FALSE'));
+        }
         return $wrap;
     }
 }

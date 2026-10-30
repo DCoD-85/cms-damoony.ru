@@ -72,3 +72,11 @@
 .pb-overview-row:last-child { border-bottom: none; }
 .pb-overview-row strong { font-size: 14px; color: #374151; }
 .pb-overview-row select { padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; font-weight: bold; }
+
+/* Перенос табов, чтобы не уходили за край */
+.pb-main-tabs, .tabs, .slot-tabs, .nav-tabs, .admin-tabs {
+    display: flex;
+    flex-wrap: wrap; /* Это разрешает перенос строк */
+    gap: 8px;
+    margin-bottom: 20px;
+}
