@@ -31,7 +31,7 @@ use Damoony\Admin\Controller\ProfileController;
 use Damoony\Admin\Controller\OverviewController;
 
 $root = dirname(__DIR__, 2);
-if (is_file($root . '/.dev')) {
+if (is_file($root . '/_dev/.dev')) {
     putenv('APP_ENV=dev');
 }
 

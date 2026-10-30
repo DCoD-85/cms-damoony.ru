@@ -19,7 +19,7 @@ use Damoony\Session\SessionInterface;
 require_once __DIR__ . '/../vendor/autoload.php';
 
 $root = dirname(__DIR__);
-if (is_file($root . '/.dev')) {
+if (is_file($root . '/_dev/.dev')) {
     putenv('APP_ENV=dev');
 }
 $app = AppFactory::create($root);
