@@ -50,6 +50,8 @@ env.php
 
 # dev-маркер (локально)
 /.dev
+/_dev/.dev
+/bin/composer.phar
 
 # прод-специфика: конфиги с секретами и пользовательский media
 /config/admin.config
@@ -61,3 +63,6 @@ env.php
 
 # audit dev docs
 /_devdocoldpro/
+
+/_dev/.dev
+/bin/composer.phar

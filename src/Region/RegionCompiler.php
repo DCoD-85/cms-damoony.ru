@@ -6,11 +6,25 @@ namespace Damoony\Region;
 
 final class RegionCompiler
 {
+    /** @var list<string> */
+    private const PHP_BLOCK_TYPES = ['custom', 'if', 'else', 'endif'];
+
+    public function __construct(private readonly bool $allowPhpBlocks = false)
+    {
+    }
+
     /**
      * @param list<array<string, mixed>> $blocks
      */
     public function compile(string $namespace, string $blockName, array $blocks, string $classSuffix = ''): string
     {
+        if (!$this->allowPhpBlocks && $this->hasPhpBlocks($blocks)) {
+            throw new \RuntimeException(
+                'PHP blocks (custom/if/else/endif) are disabled. ' .
+                'Set security.allow_php_blocks=true in engine.config to enable.',
+            );
+        }
+
         $className = 'alliasglobal_' . $blockName . $classSuffix;
 
         $code = "<?php\n\ndeclare(strict_types=1);\n\n";
@@ -64,5 +78,17 @@ final class RegionCompiler
         $code .= "    }\n}\n";
 
         return $code;
+    }
+
+    /** @param list<array<string, mixed>> $blocks */
+    private function hasPhpBlocks(array $blocks): bool
+    {
+        foreach ($blocks as $block) {
+            if (in_array($block['type'] ?? '', self::PHP_BLOCK_TYPES, true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

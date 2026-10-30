@@ -253,7 +253,8 @@ final class FillerController extends BaseController
         $blocks = array_values($blocks);
 
         $cleanBlocks = $this->normalizeBlocks($blocks);
-        $validator = new RegionValidator();
+        $allowPhp = $this->allowPhpBlocks();
+        $validator = new RegionValidator($allowPhp);
         $errors = $validator->validate($cleanBlocks);
 
         if ($errors !== []) {
@@ -261,16 +262,20 @@ final class FillerController extends BaseController
             return Response::text($msg, 400);
         }
 
-        $editFile = $blockDir . '/' . $block . '_' . $allias . '.edit.json';
-        Fs::writeAtomic($editFile, json_encode(['blocks' => $cleanBlocks], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
-
         $siteFile = $this->paths->siteConfig();
         $site = Config::fromFile($siteFile)->all();
         $realDomain = (string) $site['domains_real'][$domain];
         $namespace = (string) ($site['domains_namespace'][$realDomain] ?? str_replace(['.', '-'], '_', $realDomain));
 
-        $compiler = new RegionCompiler();
-        $php = $compiler->compile($namespace, $block, $cleanBlocks, '_' . $allias);
+        try {
+            $compiler = new RegionCompiler($allowPhp);
+            $php = $compiler->compile($namespace, $block, $cleanBlocks, '_' . $allias);
+        } catch (\RuntimeException $e) {
+            return Response::text($e->getMessage(), 400);
+        }
+
+        $editFile = $blockDir . '/' . $block . '_' . $allias . '.edit.json';
+        Fs::writeAtomic($editFile, json_encode(['blocks' => $cleanBlocks], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
         Fs::writeAtomic($blockDir . '/' . $block . '_' . $allias . '.php', $php);
 
         return $this->redirect('/admin/?p=filler&domain=' . urlencode($domain) . '&allias=' . urlencode($allias));
@@ -408,7 +413,8 @@ final class FillerController extends BaseController
         $blocks = array_values($blocks);
 
         $cleanBlocks = $this->normalizeBlocks($blocks);
-        $validator = new RegionValidator();
+        $allowPhp = $this->allowPhpBlocks();
+        $validator = new RegionValidator($allowPhp);
         $errors = $validator->validate($cleanBlocks);
 
         $card = Builder::div('admin-card');
@@ -417,15 +423,19 @@ final class FillerController extends BaseController
             $msg = implode(' ', array_map(fn ($k) => View::t($k), $errors));
             $card->append(Message::error($msg)->build());
         } else {
-            $compiler = new RegionCompiler();
-            $php = $compiler->compile('Preview\Namespace', $name, $cleanBlocks, '_preview');
+            try {
+                $compiler = new RegionCompiler($allowPhp);
+                $php = $compiler->compile('Preview\Namespace', $name, $cleanBlocks, '_preview');
 
-            $pre = Builder::el('pre');
-            $pre->attrs()->styleAdd('padding:20px; background:#282a36; color:#f8f8f2; border-radius:8px; overflow:auto; text-align:left;');
-            $code = Builder::el('code');
-            $code->content($php);
-            $pre->append($code);
-            $card->append($pre);
+                $pre = Builder::el('pre');
+                $pre->attrs()->styleAdd('padding:20px; background:#282a36; color:#f8f8f2; border-radius:8px; overflow:auto; text-align:left;');
+                $code = Builder::el('code');
+                $code->content($php);
+                $pre->append($code);
+                $card->append($pre);
+            } catch (\RuntimeException $e) {
+                $card->append(Message::error($e->getMessage())->build());
+            }
         }
 
         return Response::html($this->view->render($card, ['title' => 'PHP Preview']));
@@ -459,5 +469,15 @@ final class FillerController extends BaseController
             }
         }
         return $clean;
+    }
+
+    private function allowPhpBlocks(): bool
+    {
+        $engineFile = $this->paths->root() . '/config/engine.config';
+        if (!is_file($engineFile)) {
+            return false;
+        }
+
+        return (bool) Config::fromFile($engineFile)->get('security.allow_php_blocks', false);
     }
 }

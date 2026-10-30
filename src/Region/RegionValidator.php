@@ -6,6 +6,13 @@ namespace Damoony\Region;
 
 final class RegionValidator
 {
+    /** @var list<string> */
+    private const PHP_BLOCK_TYPES = ['custom', 'if', 'else', 'endif'];
+
+    public function __construct(private readonly bool $allowPhpBlocks = false)
+    {
+    }
+
     /**
      * @param list<array<string, mixed>> $blocks
      *
@@ -14,6 +21,13 @@ final class RegionValidator
     public function validate(array $blocks): array
     {
         $errors = [];
+
+        if (!$this->allowPhpBlocks && $this->hasPhpBlocks($blocks)) {
+            $errors[] = 'admin.editor.error_php_blocks_disabled';
+
+            return $errors;
+        }
+
         $depth = 0;
 
         foreach ($blocks as $block) {
@@ -43,5 +57,17 @@ final class RegionValidator
         }
 
         return $errors;
+    }
+
+    /** @param list<array<string, mixed>> $blocks */
+    private function hasPhpBlocks(array $blocks): bool
+    {
+        foreach ($blocks as $block) {
+            if (in_array($block['type'] ?? '', self::PHP_BLOCK_TYPES, true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

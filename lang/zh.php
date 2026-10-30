@@ -291,6 +291,7 @@ return [
     'admin.editor.logic_else' => 'ELSE',
     'admin.editor.logic_endif' => '结束 IF',
 
+	'admin.editor.error_php_blocks_disabled' => 'PHP 块已禁用。请在 engine.config 中启用 security.allow_php_blocks。',
     'admin.editor.error_if_empty' => 'IF 条件不能为空。',
     'admin.editor.error_if_unclosed' => 'IF 块未关闭 (缺少 ENDIF)。',
     'admin.editor.error_endif_orphan' => '多余的 ENDIF (无匹配的 IF)。',

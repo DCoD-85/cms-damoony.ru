@@ -291,6 +291,7 @@ return [
     'admin.editor.logic_else' => 'Else',
     'admin.editor.logic_endif' => 'End IF',
 
+	'admin.editor.error_php_blocks_disabled' => 'PHP blocks are disabled. Enable security.allow_php_blocks in engine.config.',
     'admin.editor.error_if_empty' => 'IF condition cannot be empty.',
     'admin.editor.error_if_unclosed' => 'IF block is not closed (ENDIF missing).',
     'admin.editor.error_endif_orphan' => 'ENDIF without matching IF.',
