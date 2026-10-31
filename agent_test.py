@@ -4,15 +4,16 @@ import urllib.request
 
 OLLAMA_URL = "http://localhost:11434/api/chat"
 MODEL_NAME = "gemma4:26b"
+MAX_STEPS = 10  # Защита от зацикливания
 
 messages = [
     {
         "role": "system", 
-        "content": "You are an AI managing the Damoony Engine. First, create the domain 'damoony3test.ru', alias 'coffee', and page 'about'. Then, use 'page:write' to add a heading 'About Coffee' and text 'Best coffee in town'. Finally, use 'page:read' to verify the code."
+        "content": "You are an AI managing the Damoony Engine. Follow these steps exactly: 1) domain:new for 'damoony3test.ru'. 2) allias:new 'coffee'. 3) page:new 'about'. 4) page:write to add content. For page:write, pass the 'blocks' parameter as a JSON array of objects."
     },
     {
         "role": "user", 
-        "content": "Build the coffee shop site and fill the 'about' page with content."
+        "content": "Build the coffee shop site. Fill the 'about' page with a heading 'About Coffee' and text 'Best coffee in town'."
     }
 ]
 
@@ -45,16 +46,26 @@ tools = [
         "type": "function",
         "function": {
             "name": "page:write",
-            "description": "Writes content to a page. JSON must be an array of blocks: [{\"type\": \"h1\", \"content\": \"Title\"}, {\"type\": \"text\", \"content\": \"Hello\"}]",
+            "description": "Writes content to a page. The 'blocks' parameter must be a JSON array (list) of objects. Example: [{\"type\": \"h1\", \"content\": \"Title\"}, {\"type\": \"text\", \"content\": \"Body\"}]",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "domain": {"type": "string"},
                     "allias": {"type": "string"},
                     "name": {"type": "string"},
-                    "json": {"type": "string", "description": "JSON string of blocks"}
+                    "blocks": {
+                        "type": "array",
+                        "description": "Array of blocks (h1, h2, text, img)",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "type": {"type": "string"},
+                                "content": {"type": "string"}
+                            }
+                        }
+                    }
                 },
-                "required": ["domain", "allias", "name", "json"]
+                "required": ["domain", "allias", "name", "blocks"]
             }
         }
     },
@@ -62,7 +73,7 @@ tools = [
         "type": "function",
         "function": {
             "name": "page:read",
-            "description": "Reads the PHP code of a page to verify it.",
+            "description": "Reads the PHP code of a page.",
             "parameters": {
                 "type": "object",
                 "properties": {"domain": {"type": "string"}, "allias": {"type": "string"}, "name": {"type": "string"}},
@@ -85,7 +96,7 @@ def call_ollama(payload):
 print(f"Запуск агента ({MODEL_NAME})...\n")
 
 step = 1
-while True:
+while step <= MAX_STEPS:
     print(f"--- Шаг {step}: Запрос к Gemma ---")
     
     payload = {"model": MODEL_NAME, "messages": messages, "tools": tools, "stream": False}
@@ -128,3 +139,6 @@ while True:
         
     step += 1
     print("")
+
+if step > MAX_STEPS:
+    print(f"\n⚠️ Агент достиг лимита {MAX_STEPS} шагов. Принудительная остановка.")

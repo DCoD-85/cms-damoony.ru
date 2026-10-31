@@ -48,8 +48,9 @@ final class PageReadCommand implements CommandInterface
         }
 
         // Возвращаем сам код через контекст
-        $context->step(file_get_contents($file), true);
-        
+        $code = file_get_contents($file);
+        $context->step($code !== false ? $code : 'Error reading file', true);
+
         return $r;
     }
 }

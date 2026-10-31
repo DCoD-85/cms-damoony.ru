@@ -34,8 +34,18 @@ final class PageWriteCommand implements CommandInterface
         $domain = $args['domain'] ?? '';
         $allias = $args['allias'] ?? '';
         $name = $args['name'] ?? '';
-        $json = $args['json'] ?? '[]';
         $parent = trim((string)($args['parent'] ?? ''), '/');
+
+        // Принимаем JSON в base64 (для агента) или обычный JSON (для CLI)
+        if (isset($args['json_b64'])) {
+            $json = base64_decode((string)$args['json_b64'], true);
+            if ($json === false) {
+                $r->error('Некорректный base64');
+                return $r;
+            }
+        } else {
+            $json = $args['json'] ?? '[]';
+        }
 
         if ($domain === '' || $allias === '' || $name === '') {
             $r->error('Укажите --domain, --allias и --name');
@@ -66,9 +76,9 @@ final class PageWriteCommand implements CommandInterface
 
         $phpFile = $pageDir . '/' . $classChain . '.php';
         Fs::writeAtomic($phpFile, $php);
-        
+
         $r->file(Fs::rel($phpFile, $this->paths->root()));
-        $context->step("Контент страницы обновлен", true, $name);
+        $context->step('Контент страницы обновлен', true, $name);
 
         return $r;
     }

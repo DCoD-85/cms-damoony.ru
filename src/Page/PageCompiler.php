@@ -22,8 +22,8 @@ final class PageCompiler
         $code .= "        \$wrap = Builder::div('page');\n";
 
         foreach ($blocks as $block) {
-            $type = $block['type'] ?? 'text';
-            $content = $block['content'] ?? '';
+            $type = $block['type'];
+            $content = $block['content'];
             // Безопасная генерация через var_export
             $safeContent = var_export($content, true);
 

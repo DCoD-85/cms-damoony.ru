@@ -51,12 +51,12 @@ final class DomainRemoveCommand implements CommandInterface
         $site = Config::fromFile($siteFile)->all();
 
         $domainDir = $this->paths->domain($domain);
-        
+
         // 1. Перемещаем папку в карантин
         if (is_dir($domainDir)) {
             $trashDir = $domainDir . '_trash_' . time();
             rename($domainDir, $trashDir);
-            $context->step("Папка домена перемещена в карантин: " . basename($trashDir));
+            $context->step('Папка домена перемещена в карантин: ' . basename($trashDir));
         }
 
         // 2. Чистим конфиг
@@ -67,9 +67,9 @@ final class DomainRemoveCommand implements CommandInterface
         unset($site['alliases_available'][$domain]);
         unset($site['alliases_langs'][$domain]);
         unset($site['domains_scheme'][$domain]);
-        
+
         Fs::writeAtomic($siteFile, json_encode($site, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
-        
+
         $context->step("Домен {$domain} удален из конфига", true);
 
         return $r;

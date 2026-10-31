@@ -13,6 +13,9 @@ final class algoritm_about extends Page
 {
     public function default(): Node|Response|null
     {
-        return Builder::div('page')->content('Страница about');
+        $wrap = Builder::div('page');
+        $wrap->append(Builder::h(1)->content('About Coffee'));
+        $wrap->append(Builder::p()->content('Best coffee in town'));
+        return $wrap;
     }
 }
