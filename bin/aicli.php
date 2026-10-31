@@ -13,7 +13,6 @@ if (!is_array($request) || !isset($request['command'])) {
 $command = $request['command'];
 $args = $request['args'] ?? [];
 
-// Загружаем конфиг агента
 $agentConfigFile = __DIR__ . '/../config/agent.config';
 $allowedDomains = [];
 if (is_file($agentConfigFile)) {
@@ -21,7 +20,7 @@ if (is_file($agentConfigFile)) {
     $allowedDomains = $agentConfig['allowed_domains'] ?? [];
 }
 
-$allowedCommands = ['read_test_file', 'engine_status', 'filler_toggle', 'domain:new', 'allias:new', 'page:new'];
+$allowedCommands = ['read_test_file', 'engine_status', 'filler_toggle', 'domain:new', 'allias:new', 'page:new', 'page:write', 'page:read'];
 
 if (!in_array($command, $allowedCommands, true)) {
     echo json_encode(['ok' => false, 'error' => "Command '{$command}' is not allowed."]);
@@ -82,11 +81,9 @@ try {
 
     elseif ($command === 'domain:new') {
         $domain = $args['domain'] ?? '';
-        
         if (!in_array($domain, $allowedDomains, true)) {
             throw new \RuntimeException("Security violation: Domain '{$domain}' is not in the allowed list.");
         }
-
         $safeDomain = escapeshellarg($domain);
         $output = shell_exec("php " . __DIR__ . "/cli.php domain:new --domain={$safeDomain} 2>&1");
         echo json_encode(['ok' => true, 'data' => ['output' => trim((string)$output)]]);
@@ -126,6 +123,42 @@ try {
         $safeName = escapeshellarg($name);
         
         $output = shell_exec("php " . __DIR__ . "/cli.php page:new --domain={$safeDomain} --allias={$safeAllias} --name={$safeName} 2>&1");
+        echo json_encode(['ok' => true, 'data' => ['output' => trim((string)$output)]]);
+    }
+
+    elseif ($command === 'page:write') {
+        $domain = $args['domain'] ?? '';
+        $allias = $args['allias'] ?? '';
+        $name = $args['name'] ?? '';
+        $json = $args['json'] ?? '[]';
+        
+        if (!in_array($domain, $allowedDomains, true)) {
+            throw new \RuntimeException("Security violation: Domain '{$domain}' is not in the allowed list.");
+        }
+        
+        $safeDomain = escapeshellarg($domain);
+        $safeAllias = escapeshellarg($allias);
+        $safeName = escapeshellarg($name);
+        $safeJson = escapeshellarg($json);
+        
+        $output = shell_exec("php " . __DIR__ . "/cli.php page:write --domain={$safeDomain} --allias={$safeAllias} --name={$safeName} --json={$safeJson} 2>&1");
+        echo json_encode(['ok' => true, 'data' => ['output' => trim((string)$output)]]);
+    }
+
+    elseif ($command === 'page:read') {
+        $domain = $args['domain'] ?? '';
+        $allias = $args['allias'] ?? '';
+        $name = $args['name'] ?? '';
+        
+        if (!in_array($domain, $allowedDomains, true)) {
+            throw new \RuntimeException("Security violation: Domain '{$domain}' is not in the allowed list.");
+        }
+
+        $safeDomain = escapeshellarg($domain);
+        $safeAllias = escapeshellarg($allias);
+        $safeName = escapeshellarg($name);
+        
+        $output = shell_exec("php " . __DIR__ . "/cli.php page:read --domain={$safeDomain} --allias={$safeAllias} --name={$safeName} 2>&1");
         echo json_encode(['ok' => true, 'data' => ['output' => trim((string)$output)]]);
     }
     

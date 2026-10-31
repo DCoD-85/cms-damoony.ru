@@ -8,11 +8,11 @@ MODEL_NAME = "gemma4:26b"
 messages = [
     {
         "role": "system", 
-        "content": "You are an AI managing the Damoony Engine. You can create domains, aliases, and pages. To create a full site: 1) Create domain 'damoony3test.ru'. 2) Create alias 'coffee'. 3) Create page 'about' for alias 'coffee'."
+        "content": "You are an AI managing the Damoony Engine. First, create the domain 'damoony3test.ru', alias 'coffee', and page 'about'. Then, use 'page:write' to add a heading 'About Coffee' and text 'Best coffee in town'. Finally, use 'page:read' to verify the code."
     },
     {
         "role": "user", 
-        "content": "Create a new test site for a coffee shop on the domain 'damoony3test.ru'. Create the alias 'coffee'. Then create a page named 'about' inside the 'coffee' alias."
+        "content": "Build the coffee shop site and fill the 'about' page with content."
     }
 ]
 
@@ -20,50 +20,52 @@ tools = [
     {
         "type": "function",
         "function": {
-            "name": "engine_status",
-            "description": "Runs structure:check to verify the engine's health.",
-            "parameters": {"type": "object", "properties": {}, "required": []}
-        }
-    },
-    {
-        "type": "function",
-        "function": {
             "name": "domain:new",
             "description": "Creates a new domain.",
-            "parameters": {
-                "type": "object",
-                "properties": {"domain": {"type": "string"}},
-                "required": ["domain"]
-            }
+            "parameters": {"type": "object", "properties": {"domain": {"type": "string"}}, "required": ["domain"]}
         }
     },
     {
         "type": "function",
         "function": {
             "name": "allias:new",
-            "description": "Creates a new alias for a domain.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "domain": {"type": "string"},
-                    "name": {"type": "string"}
-                },
-                "required": ["domain", "name"]
-            }
+            "description": "Creates a new alias.",
+            "parameters": {"type": "object", "properties": {"domain": {"type": "string"}, "name": {"type": "string"}}, "required": ["domain", "name"]}
         }
     },
     {
         "type": "function",
         "function": {
             "name": "page:new",
-            "description": "Creates a new page inside an alias.",
+            "description": "Creates a new page.",
+            "parameters": {"type": "object", "properties": {"domain": {"type": "string"}, "allias": {"type": "string"}, "name": {"type": "string"}}, "required": ["domain", "allias", "name"]}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "page:write",
+            "description": "Writes content to a page. JSON must be an array of blocks: [{\"type\": \"h1\", \"content\": \"Title\"}, {\"type\": \"text\", \"content\": \"Hello\"}]",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "domain": {"type": "string"},
                     "allias": {"type": "string"},
-                    "name": {"type": "string"}
+                    "name": {"type": "string"},
+                    "json": {"type": "string", "description": "JSON string of blocks"}
                 },
+                "required": ["domain", "allias", "name", "json"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "page:read",
+            "description": "Reads the PHP code of a page to verify it.",
+            "parameters": {
+                "type": "object",
+                "properties": {"domain": {"type": "string"}, "allias": {"type": "string"}, "name": {"type": "string"}},
                 "required": ["domain", "allias", "name"]
             }
         }
