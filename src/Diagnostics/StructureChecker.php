@@ -40,7 +40,7 @@ final class StructureChecker
         $globalScheme = $this->paths->domain($realDomain) . '/.alliasscheme/' . $schemeName . '.php';
 
         if (!is_file($localScheme) && !is_file($globalScheme)) {
-            $issues[] = ['level' => 'error', 'message' => "Не найдена схема (ни {$allias}.data.php, ни {$schemeName}.data.php)"];
+            $issues[] = ['level' => 'error', 'message' => "Не найдена схема (ни {$allias}.php, ни {$schemeName}.php)"];
             return $issues;
         }
 

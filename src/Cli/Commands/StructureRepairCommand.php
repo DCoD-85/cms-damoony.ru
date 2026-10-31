@@ -64,12 +64,20 @@ final class StructureRepairCommand implements CommandInterface
             $algoritmDir = $domainDir . '/' . $alias . '/algoritm';
             if (!is_dir($algoritmDir)) {
                 Fs::mkdir($algoritmDir);
-                $rules = ['available' => []];
-                Fs::writeAtomic($algoritmDir . '/.rules.json', json_encode($rules, JSON_PRETTY_PRINT) . "\n");
+            }
 
+            $rulesFile = $algoritmDir . '/.rules.json';
+            if (!is_file($rulesFile)) {
+                Fs::writeAtomic($rulesFile, json_encode(['available' => []], JSON_PRETTY_PRINT) . "\n");
+                $context->step("Восстановлен .rules.json для алиаса: {$alias}");
+                $fixed++;
+            }
+
+            $phpFile = $algoritmDir . '/algoritm.php';
+            if (!is_file($phpFile)) {
                 $php = "<?php\n\ndeclare(strict_types=1);\n\nnamespace " . $site['domains_namespace'][$domain] . "\\{$alias};\n\nuse Damoony\\Algoritm\\Algoritm;\nuse Damoony\\Ui\\Builder;\nuse Damoony\\Ui\\Node;\nuse Damoony\\Http\\Response;\n\nfinal class algoritm extends Algoritm\n{\n    public function default(): Node|Response|null\n    {\n        return Builder::div('page')->content('Главная страница');\n    }\n}\n";
-                Fs::writeAtomic($algoritmDir . '/algoritm.php', $php);
-                $context->step("Восстановлен алиас: {$alias}");
+                Fs::writeAtomic($phpFile, $php);
+                $context->step("Восстановлен algoritm.php для алиаса: {$alias}");
                 $fixed++;
             }
         }

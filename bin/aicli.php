@@ -77,7 +77,8 @@ try {
         $domain = $args['domain'] ?? '';
         
         // КРИТИЧЕСКАЯ ЗАЩИТА: Агенту разрешено создавать только домены, начинающиеся с test-
-        if (!preg_match('/^test-[a-z0-9-]+\.[a-z]{2,}$/', $domain)) {
+        // Разрешаем поддомены (например, test-coffee.damoony.ru)
+        if (!preg_match('/^test-[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/', $domain)) {
             throw new \RuntimeException("Security violation: AI can only create domains starting with 'test-'. Received: {$domain}");
         }
 
