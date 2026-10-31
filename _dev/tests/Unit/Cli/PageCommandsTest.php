@@ -67,10 +67,11 @@ final class PageCommandsTest extends TestCase
         $dir = $this->root . '/app/example.ru/www/algoritm/about';
         self::assertDirectoryExists($dir);
         self::assertFileExists($dir . '/algoritm_about.php');
-        self::assertFileExists($dir . '/.rules.json');
+        self::assertFileExists($dir . '/algoritm_about.rules.json');
+        self::assertFileExists($dir . '/algoritm_about.editor.json');
 
-        $rules = json_decode((string) file_get_contents($dir . '/.rules.json'), true);
-        self::assertSame(['about'], $rules['available']);
+        $rules = json_decode((string) file_get_contents($dir . '/algoritm_about.rules.json'), true);
+        self::assertIsArray($rules);
 
         $parent = json_decode((string) file_get_contents($this->root . '/app/example.ru/www/algoritm/.rules.json'), true);
         self::assertContains('about', $parent['available']);

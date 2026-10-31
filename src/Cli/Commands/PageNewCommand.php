@@ -66,6 +66,11 @@ final class PageNewCommand implements CommandInterface
             return $r;
         }
 
+        if (!isset($site['alliases_real'][$domain][$allias])) {
+            $r->error('Алиас не найден в конфиге');
+            return $r;
+        }
+
         $namespace = (string) ($site['domains_namespace'][$domain] ?? str_replace(['.', '-'], '_', $domain));
 
         // 2. Определяем пути и классы
