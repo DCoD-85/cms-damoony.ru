@@ -22,7 +22,7 @@ final class PageCompiler
         $code .= "        \$content = Builder::div('page-content');\n\n";
 
         foreach ($blocks as $block) {
-            $type = $block['type'] ?? 'text';
+            $type = $block['type'];
             $content = $block['content'] ?? '';
             $url = $block['url'] ?? '#';
             $class = $block['class'] ?? '';

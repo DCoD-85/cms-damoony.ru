@@ -66,3 +66,4 @@ env.php
 
 /_dev/.dev
 /bin/composer.phar
+app/*_trash_*
