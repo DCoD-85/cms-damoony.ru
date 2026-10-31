@@ -5,15 +5,14 @@ import urllib.request
 OLLAMA_URL = "http://localhost:11434/api/chat"
 MODEL_NAME = "gemma4:26b"
 
-# Инициализируем историю сообщений
 messages = [
     {
         "role": "system", 
-        "content": "You are an AI managing the Damoony Engine. You can check status, fix fillers, and create TEST domains. To create a site, use 'domain:new' with a domain name starting with 'test-' (e.g., test-coffee.ru)."
+        "content": "You are an AI managing the Damoony Engine. You have access to the domain 'damoony3test.ru'. You can create aliases for this domain (e.g., 'coffee', 'shop') to make subdomains."
     },
     {
         "role": "user", 
-        "content": "Create a new test site for a coffee shop. Use the domain test-coffee.damoony.ru. Then check the status."
+        "content": "Create a new test site for a coffee shop. Use the domain 'damoony3test.ru' and the alias name 'coffee'. Then check the status."
     }
 ]
 
@@ -47,13 +46,28 @@ tools = [
         "type": "function",
         "function": {
             "name": "domain:new",
-            "description": "Creates a new test domain. Domain MUST start with 'test-'.",
+            "description": "Creates a new domain (must be in the allowed list).",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "domain": {"type": "string", "description": "e.g., test-coffee.damoony.ru"}
+                    "domain": {"type": "string", "description": "e.g., damoony3test.ru"}
                 },
                 "required": ["domain"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "allias:new",
+            "description": "Creates a new alias for an existing domain.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "domain": {"type": "string", "description": "e.g., damoony3test.ru"},
+                    "name": {"type": "string", "description": "e.g., coffee"}
+                },
+                "required": ["domain", "name"]
             }
         }
     }

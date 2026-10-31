@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace damoony_ru\doc;
 
-use Damoony\Algoritm\Algoritm;
+use Damoony\Algoritm\Page;
 use Damoony\Http\Response;
 use Damoony\Region\RegionContext;
 use Damoony\Region\RegionInterface;
@@ -13,7 +13,7 @@ use Damoony\Ui\Builder;
 use Damoony\Ui\Node;
 use Damoony\Ui\Text;
 
-class algoritm_doc extends Algoritm
+class algoritm_doc extends Page
 {
     public function default(): Node|Response|null
     {

@@ -73,9 +73,27 @@ final class DomainNewCommand implements CommandInterface
         $r->file(Fs::rel($algoritmDir . '/.rules.json', $this->paths->root()));
 
         // 2. Создаём algoritm.php
-        $php = "<?php\n\ndeclare(strict_types=1);\n\nnamespace {$namespace}\\{$allias};\n\nuse Damoony\\Algoritm\\Algoritm;\nuse Damoony\\Ui\\Builder;\nuse Damoony\\Ui\\Node;\nuse Damoony\\Http\\Response;\n\nfinal class algoritm extends Algoritm\n{\n    public function default(): Node|Response|null\n    {\n        return Builder::div('page')->content('Главная страница');\n    }\n}\n";
+        $php = "<?php\n\ndeclare(strict_types=1);\n\nnamespace {$namespace}\\{$allias};\n\nuse Damoony\\Algoritm\\Algoritm;\nuse Damoony\\Ui\\Builder;\nuse Damoony\\Ui\\Node;\nuse Damoony\\Http\\Response;\n\nfinal class algoritm extends Page\n{\n    public function default(): Node|Response|null\n    {\n        return Builder::div('page')->content('Главная страница');\n    }\n}\n";
         Fs::writeAtomic($algoritmDir . '/algoritm.php', $php);
         $r->file(Fs::rel($algoritmDir . '/algoritm.php', $this->paths->root()));
+
+        // 3. Создаём глобальную схему www.php
+        $schemesDir = $domainDir . '/.alliasscheme';
+        Fs::mkdir($schemesDir);
+        $schemePhp = "<?php\n\nreturn [\n    'tag' => 'div',\n    'class' => 'layout',\n    'children' => [\n        ['tag' => 'main', 'slot' => 'center'],\n    ],\n];\n";
+        Fs::writeAtomic($schemesDir . '/www.php', $schemePhp);
+        Fs::writeAtomic($schemesDir . '/www.rules.json', json_encode(['enabled' => true], JSON_PRETTY_PRINT) . "\n");
+        $r->file(Fs::rel($schemesDir . '/www.php', $this->paths->root()));
+
+        // 4. Создаём глобальный блок center по умолчанию
+        $globalDir = $domainDir . '/.alliasglobal/center';
+        Fs::mkdir($globalDir);
+
+        $centerPhp = "<?php\n\ndeclare(strict_types=1);\n\nnamespace {$namespace};\n\nuse Damoony\\Region\\RegionContext;\nuse Damoony\\Region\\RegionInterface;\nuse Damoony\\Ui\\Builder;\nuse Damoony\\Ui\\Node;\n\nfinal class alliasglobal_center implements RegionInterface\n{\n    public function name(): string { return 'center'; }\n    public function enabled(): bool { return true; }\n\n    public function render(RegionContext \$context): Node\n    {\n        \$wrap = Builder::div('center');\n        \$wrap->append(Builder::p()->content('Добро пожаловать на сайт!'));\n        return \$wrap;\n    }\n}\n";
+        Fs::writeAtomic($globalDir . '/center.php', $centerPhp);
+        Fs::writeAtomic($globalDir . '/center.rules.json', json_encode(['enabled' => true, 'type' => 'mixed'], JSON_PRETTY_PRINT) . "\n");
+        Fs::writeAtomic($globalDir . '/center.editor.json', json_encode([], JSON_PRETTY_PRINT) . "\n");
+        $r->file(Fs::rel($globalDir . '/center.php', $this->paths->root()));
 
         $site['domains_real'][$domain] = $domain;
         $site['domains_available'][$domain] = true;

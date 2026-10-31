@@ -9,7 +9,7 @@ use Damoony\Region\RegionContext;
 use Damoony\Region\RegionRegistry;
 use Damoony\Ui\Node;
 
-class Algoritm implements AlgoritmInterface
+class Page implements PageInterface
 {
     /** @param array<string, string> $args */
     public function __construct(

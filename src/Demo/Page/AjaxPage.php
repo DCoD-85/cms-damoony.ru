@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Damoony\Demo\Page;
 
-use Damoony\Algoritm\Algoritm;
+use Damoony\Algoritm\Page;
 use Damoony\Http\Response;
 use Damoony\Response\AjaxStruct;
 use Damoony\Response\MinStruct;
 use Damoony\Ui\Builder;
 use Damoony\Ui\Node;
 
-class AjaxPage extends Algoritm
+class AjaxPage extends Page
 {
     public function default(): Node|Response|null
     {

@@ -13,8 +13,15 @@ if (!is_array($request) || !isset($request['command'])) {
 $command = $request['command'];
 $args = $request['args'] ?? [];
 
-// WHITELIST команд (разрешено только это)
-$allowedCommands = ['read_test_file', 'engine_status', 'filler_toggle', 'domain:new'];
+// Загружаем конфиг агента (какие домены ему разрешено трогать)
+$agentConfigFile = __DIR__ . '/../config/agent.config';
+$allowedDomains = [];
+if (is_file($agentConfigFile)) {
+    $agentConfig = json_decode(file_get_contents($agentConfigFile), true);
+    $allowedDomains = $agentConfig['allowed_domains'] ?? [];
+}
+
+$allowedCommands = ['read_test_file', 'engine_status', 'filler_toggle', 'domain:new', 'allias:new'];
 
 if (!in_array($command, $allowedCommands, true)) {
     echo json_encode(['ok' => false, 'error' => "Command '{$command}' is not allowed."]);
@@ -62,9 +69,10 @@ try {
         $block = $args['block'] ?? '';
         $value = $args['value'] ?? '0';
         
-        if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain) || 
-            !preg_match('/^[a-z][a-z0-9_]*$/', $allias) || 
-            !preg_match('/^[a-z][a-z0-9_]*$/', $block)) {
+        if (!in_array($domain, $allowedDomains, true)) {
+            throw new \RuntimeException("Domain '{$domain}' is not allowed for AI operations.");
+        }
+        if (!preg_match('/^[a-z][a-z0-9_]*$/', $allias) || !preg_match('/^[a-z][a-z0-9_]*$/', $block)) {
             throw new \RuntimeException('Invalid arguments for filler_toggle.');
         }
 
@@ -72,20 +80,33 @@ try {
         echo json_encode(['ok' => true, 'data' => ['output' => trim((string)$output)]]);
     }
 
-    // НОВАЯ КОМАНДА: Создание ТОЛЬКО тестовых доменов
     elseif ($command === 'domain:new') {
         $domain = $args['domain'] ?? '';
         
-        // КРИТИЧЕСКАЯ ЗАЩИТА: Агенту разрешено создавать только домены, начинающиеся с test-
-        // Разрешаем поддомены (например, test-coffee.damoony.ru)
-        if (!preg_match('/^test-[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/', $domain)) {
-            throw new \RuntimeException("Security violation: AI can only create domains starting with 'test-'. Received: {$domain}");
+        // Проверка: домен должен быть в списке разрешенных
+        if (!in_array($domain, $allowedDomains, true)) {
+            throw new \RuntimeException("Security violation: Domain '{$domain}' is not in the allowed list. Check config/agent.config.");
         }
 
-        // Дополнительная защита от инъекций (хотя regex уже строгий)
         $safeDomain = escapeshellarg($domain);
-        
         $output = shell_exec("php " . __DIR__ . "/cli.php domain:new --domain={$safeDomain} 2>&1");
+        echo json_encode(['ok' => true, 'data' => ['output' => trim((string)$output)]]);
+    }
+
+    elseif ($command === 'allias:new') {
+        $domain = $args['domain'] ?? '';
+        $name = $args['name'] ?? '';
+        
+        if (!in_array($domain, $allowedDomains, true)) {
+            throw new \RuntimeException("Security violation: Domain '{$domain}' is not in the allowed list.");
+        }
+        if (!preg_match('/^[a-z][a-z0-9_]*$/', $name)) {
+            throw new \RuntimeException("Invalid alias name. Use lowercase letters and numbers.");
+        }
+
+        $safeName = escapeshellarg($name);
+        $safeDomain = escapeshellarg($domain);
+        $output = shell_exec("php " . __DIR__ . "/cli.php allias:new --domain={$safeDomain} --name={$safeName} 2>&1");
         echo json_encode(['ok' => true, 'data' => ['output' => trim((string)$output)]]);
     }
     

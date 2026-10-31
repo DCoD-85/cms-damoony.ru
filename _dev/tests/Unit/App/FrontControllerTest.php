@@ -147,11 +147,11 @@ final class FrontControllerTest extends TestCase
         file_put_contents($base . '/fc_home/algoritm_fc_home.php', <<<'PHP'
             <?php
             namespace example\www;
-            use Damoony\Algoritm\Algoritm;
+            use Damoony\Algoritm\Page;
             use Damoony\Http\Response;
             use Damoony\Ui\Builder;
             use Damoony\Ui\Node;
-            final class algoritm_fc_home extends Algoritm {
+            final class algoritm_fc_home extends Page {
                 public function default(): Node|Response|null {
                     return Builder::div('page')->content('home');
                 }

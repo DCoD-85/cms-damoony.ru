@@ -55,7 +55,6 @@ final class AlliasNewCommand implements CommandInterface
             return $r;
         }
 
-        $logic = (string) ($args['logic'] ?? 'alpha.0.0');
         $alliasDir = $this->paths->allias($domain, $name);
         if (Fs::isDir($alliasDir)) {
             $r->error('Алиас уже существует');
@@ -67,8 +66,16 @@ final class AlliasNewCommand implements CommandInterface
 
         $algoritmDir = $this->paths->algoritm($domain, $name);
         Fs::mkdir($algoritmDir);
+
+        // 1. Создаём .rules.json
         Fs::writeAtomic($algoritmDir . '/.rules.json', json_encode(['available' => ['']], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
         $r->file(Fs::rel($algoritmDir . '/.rules.json', $this->paths->root()));
+
+        // 2. Создаём algoritm.php
+        $namespace = (string) ($site['domains_namespace'][$domain] ?? str_replace(['.', '-'], '_', $domain));
+        $php = "<?php\n\ndeclare(strict_types=1);\n\nnamespace {$namespace}\\{$name};\n\nuse Damoony\\Algoritm\\Algoritm;\nuse Damoony\\Ui\\Builder;\nuse Damoony\\Ui\\Node;\nuse Damoony\\Http\\Response;\n\nfinal class algoritm extends Page\n{\n    public function default(): Node|Response|null\n    {\n        return Builder::div('page')->content('Страница {$name}');\n    }\n}\n";
+        Fs::writeAtomic($algoritmDir . '/algoritm.php', $php);
+        $r->file(Fs::rel($algoritmDir . '/algoritm.php', $this->paths->root()));
 
         $site['alliases_real'][$domain][$name] = $name;
         Fs::writeAtomic($siteFile, json_encode($site, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");

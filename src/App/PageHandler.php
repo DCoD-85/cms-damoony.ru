@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\App;
 
-use Damoony\Algoritm\AlgoritmInterface;
+use Damoony\Algoritm\PageInterface;
 use Damoony\Core\Config;
 use Damoony\Core\Env;
 use Damoony\Domain\DomainContext;
@@ -38,16 +38,19 @@ final class PageHandler implements PageHandlerInterface
             return Response::notFound();
         }
 
-        require_once $file;
-
         $ns = $this->resolver->namespace($domain->real);
         $class = $ns . '\\' . $domain->allias . '\\' . $match->classChain;
+
+        if (!class_exists($class, false)) {
+            require_once $file;
+        }
+
         if (!class_exists($class, false)) {
             return ErrorPage::serverError($domain->language, $this->debugDetail('Page class not found: ' . $class));
         }
 
-        if (!is_subclass_of($class, AlgoritmInterface::class)) {
-            return ErrorPage::serverError($domain->language, $this->debugDetail('Page class does not implement AlgoritmInterface'));
+        if (!is_subclass_of($class, PageInterface::class)) {
+            return ErrorPage::serverError($domain->language, $this->debugDetail('Page class does not implement PageInterface'));
         }
 
         $paths = $context->service('paths');
@@ -64,7 +67,7 @@ final class PageHandler implements PageHandlerInterface
         $regions = $loader->load($domain);
 
         try {
-            /** @var AlgoritmInterface $page */
+            /** @var PageInterface $page */
             $page = new $class($context, $regions, $match->args);
             $result = $page->default();
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace damoony_ru\doc;
 
-use Damoony\Algoritm\Algoritm;
+use Damoony\Algoritm\Page;
 use Damoony\Auth\AuthInterface;
 use Damoony\Http\Response;
 use Damoony\Security\Csrf;
@@ -14,7 +14,7 @@ use Damoony\Ui\Form;
 use Damoony\Ui\Message;
 use Damoony\Ui\Node;
 
-class algoritm_login extends Algoritm
+class algoritm_login extends Page
 {
     public function default(): Node|Response|null
     {

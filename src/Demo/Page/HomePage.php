@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Damoony\Demo\Page;
 
-use Damoony\Algoritm\Algoritm;
+use Damoony\Algoritm\Page;
 use Damoony\Files\Paths;
 use Damoony\Http\Response;
 use Damoony\Scheme\SchemeLoader;
 use Damoony\Scheme\SchemeRenderer;
 use Damoony\Ui\Node;
 
-class HomePage extends Algoritm
+class HomePage extends Page
 {
     public function default(): Node|Response|null
     {

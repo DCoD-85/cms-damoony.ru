@@ -40,7 +40,7 @@ final class FileRouterTest extends TestCase
         @rmdir($dir);
     }
 
-    private function writeAlgoritm(string $real, string $allias, string $rel, array $rules, bool $withPhp = true): void
+    private function writePage(string $real, string $allias, string $rel, array $rules, bool $withPhp = true): void
     {
         $base = $this->root . '/app/' . $real . '/' . $allias . '/algoritm';
         $dir = $rel === '' ? $base : $base . '/' . $rel;
@@ -73,7 +73,7 @@ final class FileRouterTest extends TestCase
 
     public function testRootMatch(): void
     {
-        $this->writeAlgoritm('example.ru', 'www', '', ['available' => ['']]);
+        $this->writePage('example.ru', 'www', '', ['available' => ['']]);
         $m = $this->router()->match('/', $this->ctx());
         self::assertTrue($m->found);
         self::assertSame('algoritm', $m->classChain);
@@ -82,8 +82,8 @@ final class FileRouterTest extends TestCase
 
     public function testExactSegment(): void
     {
-        $this->writeAlgoritm('example.ru', 'www', '', ['available' => ['about']]);
-        $this->writeAlgoritm('example.ru', 'www', 'about', ['available' => ['']]);
+        $this->writePage('example.ru', 'www', '', ['available' => ['about']]);
+        $this->writePage('example.ru', 'www', 'about', ['available' => ['']]);
         $m = $this->router()->match('/about', $this->ctx());
         self::assertTrue($m->found);
         self::assertSame('algoritm_about', $m->classChain);
@@ -92,8 +92,8 @@ final class FileRouterTest extends TestCase
 
     public function testRegexSegmentWithArg(): void
     {
-        $this->writeAlgoritm('example.ru', 'www', '', ['available' => ['([a-z-]+)|slug']]);
-        $this->writeAlgoritm('example.ru', 'www', 'slug', ['available' => ['']]);
+        $this->writePage('example.ru', 'www', '', ['available' => ['([a-z-]+)|slug']]);
+        $this->writePage('example.ru', 'www', 'slug', ['available' => ['']]);
         $m = $this->router()->match('/hello-world', $this->ctx());
         self::assertTrue($m->found);
         self::assertSame('algoritm_slug', $m->classChain);
@@ -118,16 +118,16 @@ final class FileRouterTest extends TestCase
 
     public function testUnknownSegmentReturnsNotFound(): void
     {
-        $this->writeAlgoritm('example.ru', 'www', '', ['available' => ['about']]);
+        $this->writePage('example.ru', 'www', '', ['available' => ['about']]);
         $m = $this->router()->match('/nope', $this->ctx());
         self::assertFalse($m->found);
     }
 
     public function testDeepMatch(): void
     {
-        $this->writeAlgoritm('example.ru', 'www', '', ['available' => ['docs']]);
-        $this->writeAlgoritm('example.ru', 'www', 'docs', ['available' => ['([a-z]+)|page']]);
-        $this->writeAlgoritm('example.ru', 'www', 'docs/page', ['available' => ['']]);
+        $this->writePage('example.ru', 'www', '', ['available' => ['docs']]);
+        $this->writePage('example.ru', 'www', 'docs', ['available' => ['([a-z]+)|page']]);
+        $this->writePage('example.ru', 'www', 'docs/page', ['available' => ['']]);
         $m = $this->router()->match('/docs/intro', $this->ctx());
         self::assertTrue($m->found);
         self::assertSame('algoritm_docs_page', $m->classChain);
