@@ -13,7 +13,7 @@ if (!is_array($request) || !isset($request['command'])) {
 $command = $request['command'];
 $args = $request['args'] ?? [];
 
-// Загружаем конфиг агента (какие домены ему разрешено трогать)
+// Загружаем конфиг агента
 $agentConfigFile = __DIR__ . '/../config/agent.config';
 $allowedDomains = [];
 if (is_file($agentConfigFile)) {
@@ -21,7 +21,7 @@ if (is_file($agentConfigFile)) {
     $allowedDomains = $agentConfig['allowed_domains'] ?? [];
 }
 
-$allowedCommands = ['read_test_file', 'engine_status', 'filler_toggle', 'domain:new', 'allias:new'];
+$allowedCommands = ['read_test_file', 'engine_status', 'filler_toggle', 'domain:new', 'allias:new', 'page:new'];
 
 if (!in_array($command, $allowedCommands, true)) {
     echo json_encode(['ok' => false, 'error' => "Command '{$command}' is not allowed."]);
@@ -70,7 +70,7 @@ try {
         $value = $args['value'] ?? '0';
         
         if (!in_array($domain, $allowedDomains, true)) {
-            throw new \RuntimeException("Domain '{$domain}' is not allowed for AI operations.");
+            throw new \RuntimeException("Domain '{$domain}' is not allowed.");
         }
         if (!preg_match('/^[a-z][a-z0-9_]*$/', $allias) || !preg_match('/^[a-z][a-z0-9_]*$/', $block)) {
             throw new \RuntimeException('Invalid arguments for filler_toggle.');
@@ -83,9 +83,8 @@ try {
     elseif ($command === 'domain:new') {
         $domain = $args['domain'] ?? '';
         
-        // Проверка: домен должен быть в списке разрешенных
         if (!in_array($domain, $allowedDomains, true)) {
-            throw new \RuntimeException("Security violation: Domain '{$domain}' is not in the allowed list. Check config/agent.config.");
+            throw new \RuntimeException("Security violation: Domain '{$domain}' is not in the allowed list.");
         }
 
         $safeDomain = escapeshellarg($domain);
@@ -101,12 +100,32 @@ try {
             throw new \RuntimeException("Security violation: Domain '{$domain}' is not in the allowed list.");
         }
         if (!preg_match('/^[a-z][a-z0-9_]*$/', $name)) {
-            throw new \RuntimeException("Invalid alias name. Use lowercase letters and numbers.");
+            throw new \RuntimeException("Invalid alias name.");
         }
 
         $safeName = escapeshellarg($name);
         $safeDomain = escapeshellarg($domain);
         $output = shell_exec("php " . __DIR__ . "/cli.php allias:new --domain={$safeDomain} --name={$safeName} 2>&1");
+        echo json_encode(['ok' => true, 'data' => ['output' => trim((string)$output)]]);
+    }
+
+    elseif ($command === 'page:new') {
+        $domain = $args['domain'] ?? '';
+        $allias = $args['allias'] ?? '';
+        $name = $args['name'] ?? '';
+        
+        if (!in_array($domain, $allowedDomains, true)) {
+            throw new \RuntimeException("Security violation: Domain '{$domain}' is not in the allowed list.");
+        }
+        if (!preg_match('/^[a-z][a-z0-9_]*$/', $allias) || !preg_match('/^[a-z][a-z0-9_]*$/', $name)) {
+            throw new \RuntimeException("Invalid alias or page name.");
+        }
+
+        $safeDomain = escapeshellarg($domain);
+        $safeAllias = escapeshellarg($allias);
+        $safeName = escapeshellarg($name);
+        
+        $output = shell_exec("php " . __DIR__ . "/cli.php page:new --domain={$safeDomain} --allias={$safeAllias} --name={$safeName} 2>&1");
         echo json_encode(['ok' => true, 'data' => ['output' => trim((string)$output)]]);
     }
     

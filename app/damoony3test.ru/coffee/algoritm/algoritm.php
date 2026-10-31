@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace damoony3test_ru\coffee;
 
-use Damoony\Algoritm\Page;
+use Damoony\Algoritm\Algoritm;
 use Damoony\Ui\Builder;
 use Damoony\Ui\Node;
 use Damoony\Http\Response;
