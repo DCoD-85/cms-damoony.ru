@@ -73,7 +73,7 @@ final class DomainNewCommand implements CommandInterface
         $r->file(Fs::rel($algoritmDir . '/.rules.json', $this->paths->root()));
 
         // 2. Создаём algoritm.php
-        $php = "<?php\n\ndeclare(strict_types=1);\n\nnamespace {$namespace}\\{$allias};\n\nuse Damoony\\Algoritm\\Algoritm;\nuse Damoony\\Ui\\Builder;\nuse Damoony\\Ui\\Node;\nuse Damoony\\Http\\Response;\n\nfinal class algoritm extends Page\n{\n    public function default(): Node|Response|null\n    {\n        return Builder::div('page')->content('Главная страница');\n    }\n}\n";
+        $php = "<?php\n\ndeclare(strict_types=1);\n\nnamespace {$namespace}\\{$allias};\n\nuse Damoony\\Algoritm\\Page;\nuse Damoony\\Ui\\Builder;\nuse Damoony\\Ui\\Node;\nuse Damoony\\Http\\Response;\n\nfinal class algoritm extends Page\n{\n    public function default(): Node|Response|null\n    {\n        return Builder::div('page')->content('Главная страница');\n    }\n}\n";
         Fs::writeAtomic($algoritmDir . '/algoritm.php', $php);
         $r->file(Fs::rel($algoritmDir . '/algoritm.php', $this->paths->root()));
 

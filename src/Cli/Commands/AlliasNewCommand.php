@@ -73,7 +73,7 @@ final class AlliasNewCommand implements CommandInterface
 
         // 2. Создаём algoritm.php
         $namespace = (string) ($site['domains_namespace'][$domain] ?? str_replace(['.', '-'], '_', $domain));
-        $php = "<?php\n\ndeclare(strict_types=1);\n\nnamespace {$namespace}\\{$name};\n\nuse Damoony\\Algoritm\\Algoritm;\nuse Damoony\\Ui\\Builder;\nuse Damoony\\Ui\\Node;\nuse Damoony\\Http\\Response;\n\nfinal class algoritm extends Page\n{\n    public function default(): Node|Response|null\n    {\n        return Builder::div('page')->content('Страница {$name}');\n    }\n}\n";
+        $php = "<?php\n\ndeclare(strict_types=1);\n\nnamespace {$namespace}\\{$name};\n\nuse Damoony\\Algoritm\\Page;\nuse Damoony\\Ui\\Builder;\nuse Damoony\\Ui\\Node;\nuse Damoony\\Http\\Response;\n\nfinal class algoritm extends Page\n{\n    public function default(): Node|Response|null\n    {\n        return Builder::div('page')->content('Страница {$name}');\n    }\n}\n";
         Fs::writeAtomic($algoritmDir . '/algoritm.php', $php);
         $r->file(Fs::rel($algoritmDir . '/algoritm.php', $this->paths->root()));
 
