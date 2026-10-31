@@ -130,13 +130,9 @@ try {
         $domain = $args['domain'] ?? '';
         $allias = $args['allias'] ?? '';
         $name = $args['name'] ?? '';
-        $blocks = $args['blocks'] ?? [];   // <-- теперь массив
+        $blocks = $args['blocks'] ?? [];
+        $withSchema = $args['with_schema'] ?? '0';
         
-        if (!in_array($domain, $allowedDomains, true)) {
-            throw new \RuntimeException("Security violation: Domain '{$domain}' is not in the allowed list.");
-        }
-        
-        // Упаковываем массив в base64
         $json = json_encode($blocks, JSON_UNESCAPED_UNICODE);
         $encoded = base64_encode($json);
         
@@ -144,8 +140,9 @@ try {
         $safeAllias = escapeshellarg($allias);
         $safeName = escapeshellarg($name);
         $safeJson = escapeshellarg($encoded);
+        $safeSchema = escapeshellarg((string)$withSchema);
         
-        $output = shell_exec("php " . __DIR__ . "/cli.php page:write --domain={$safeDomain} --allias={$safeAllias} --name={$safeName} --json_b64={$safeJson} 2>&1");
+        $output = shell_exec("php " . __DIR__ . "/cli.php page:write --domain={$safeDomain} --allias={$safeAllias} --name={$safeName} --json_b64={$safeJson} --with_schema={$safeSchema} 2>&1");
         echo json_encode(['ok' => true, 'data' => ['output' => trim((string)$output)]]);
     }
 

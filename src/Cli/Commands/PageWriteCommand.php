@@ -71,8 +71,10 @@ final class PageWriteCommand implements CommandInterface
         }
 
         $classChain = 'algoritm_' . str_replace('/', '_', $targetRelPath);
+        $withSchema = isset($args['with_schema']) && $args['with_schema'] === '1';
+        
         $compiler = new PageCompiler();
-        $php = $compiler->compile($namespace . '\\' . $allias, $classChain, $blocks);
+        $php = $compiler->compile($namespace . '\\' . $allias, $classChain, $blocks, $withSchema);
 
         $phpFile = $pageDir . '/' . $classChain . '.php';
         Fs::writeAtomic($phpFile, $php);

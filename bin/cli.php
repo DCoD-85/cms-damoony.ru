@@ -12,6 +12,8 @@ use Damoony\Cli\Commands\DbMigrateCommand;
 use Damoony\Cli\Commands\SchemeNewCommand;
 use Damoony\Cli\Commands\PageNewCommand;
 use Damoony\Cli\Commands\PageToggleCommand;
+use Damoony\Cli\Commands\PageWriteCommand;
+use Damoony\Cli\Commands\PageReadCommand;
 use Damoony\Cli\Commands\FillerNewCommand;
 use Damoony\Cli\Commands\FillerToggleCommand;
 use Damoony\Cli\Commands\BlockNewCommand;
@@ -19,13 +21,16 @@ use Damoony\Cli\Commands\BlockRemoveCommand;
 use Damoony\Cli\Commands\AlliasNewCommand;
 use Damoony\Cli\Commands\AlliasRemoveCommand;
 use Damoony\Cli\Commands\DomainNewCommand;
+use Damoony\Cli\Commands\DomainRemoveCommand; // <-- ДОБАВЛЕНО
+use Damoony\Cli\Commands\StructureCheckCommand;
+use Damoony\Cli\Commands\StructureRepairCommand;
+use Damoony\Cli\Commands\TrashClearCommand;
+use Damoony\Cli\Commands\UserNewCommand;
 use Damoony\Cli\HelpCommand;
 use Damoony\Cli\Renderer;
 use Damoony\Files\Paths;
 use Damoony\Db\Connection;
-use Damoony\Cli\Commands\UserNewCommand;
 use Damoony\Core\Config;
-use Damoony\Cli\Commands\StructureCheckCommand;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -46,9 +51,13 @@ if (!is_array($dbConfig) || $dbConfig === []) {
     }
 }
 
+$siteConfigFile = $root . '/config/site.config';
+$siteConfig = is_file($siteConfigFile) ? Config::fromFile($siteConfigFile) : Config::fromArray([]);
+
 $registry = new CommandRegistry();
 $registry->add(new HelpCommand($registry));
 $registry->add(new DomainNewCommand($paths));
+$registry->add(new DomainRemoveCommand($paths)); // <-- ЗАРЕГИСТРИРОВАНО
 $registry->add(new AlliasNewCommand($paths));
 $registry->add(new AlliasRemoveCommand($paths));
 $registry->add(new BlockNewCommand($paths));
@@ -57,24 +66,18 @@ $registry->add(new FillerNewCommand($paths));
 $registry->add(new FillerToggleCommand($paths));
 $registry->add(new PageNewCommand($paths));
 $registry->add(new PageToggleCommand($paths));
+$registry->add(new PageWriteCommand($paths));
+$registry->add(new PageReadCommand($paths));
 $registry->add(new SchemeNewCommand($paths));
 $registry->add(new DbMigrateCommand($paths, $dbConfig));
 $registry->add(new VarsExtractCommand($paths));
 $registry->add(new AdminPasswdCommand($paths));
+$registry->add(new TrashClearCommand($paths));
+$registry->add(new StructureRepairCommand($paths));
+$registry->add(new StructureCheckCommand($paths, $siteConfig)); // Оставили только один, с siteConfig
 
 $db = new Connection($dbConfig);
 $registry->add(new UserNewCommand($db));
-$registry->add(new \Damoony\Cli\Commands\TrashClearCommand($paths));
-$registry->add(new \Damoony\Cli\Commands\StructureRepairCommand($paths));
-$registry->add(new \Damoony\Cli\Commands\PageWriteCommand($paths));
-$registry->add(new \Damoony\Cli\Commands\PageReadCommand($paths));
-$registry->add(new StructureCheckCommand($paths, $engineConfig));
-// ВНИМАНИЕ: site.config нужно загрузить в CLI!
-// Найди где загружается engineConfig и добавь:
-$siteConfigFile = $root . '/config/site.config';
-$siteConfig = is_file($siteConfigFile) ? Config::fromFile($siteConfigFile) : Config::fromArray([]);
-$registry->add(new StructureCheckCommand($paths, $siteConfig));
-
 
 $app = new Application($registry, new ArgvParser(), new Renderer());
 exit($app->run($_SERVER['argv']));
