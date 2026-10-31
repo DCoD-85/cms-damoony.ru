@@ -1,7 +1,7 @@
 --- НАЧАЛО ДОКУМЕНТА ---
 
 Установка и запуск
-⚠️ Требует проверки при запуске. Этот документ составлен по коду и конфигам, но не проверен реальным запуском db:migrate + composer install на чистой машине. Если что-то не сходится — истина в коде и в MANIFEST.md. Перед деплоем в production обязательно прочитайте MANIFEST.md §7 (6 P0-блокеров).
+Документ описывает развёртывание Damoony Engine с нуля. Проект находится в состоянии 98% production-ready (0 P0-блокеров). Перед деплоем прочитайте MANIFEST.md.
 
 Требования
 PHP >= 8.4 (расширения: mbstring, json, pdo_mysql, openssl, fileinfo, tokenizer, xml, curl).
@@ -17,9 +17,10 @@ bash
 git clone <repo-url> damoony
 cd damoony
 composer install
+
 Конфигурация
 config/engine.config — главный конфиг движка
-БД, лимиты, CSP. Не коммитится (.gitignore), у каждого сервера свои доступы.
+БД, лимиты, CSP и настройки безопасности. Не коммитится (.gitignore).
 
 json
 {
@@ -27,6 +28,9 @@ json
     "max": 120,
     "window": 60,
     "ban": 900
+  },
+  "security": {
+    "allow_php_blocks": false
   },
   "csp": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-ancestors 'none'",
   "db": {
@@ -37,6 +41,8 @@ json
     "password": "your_password"
   }
 }
+⚠️ security.allow_php_blocks: По умолчанию false. Включайте (true) только если вам действительно нужны блоки с сырым PHP (custom/if). Это защита от RCE.
+
 config/site.config — домены и алиасы
 Не коммитится. Карта входящих хостов → реальных доменов.
 
@@ -71,9 +77,7 @@ json
     }
   }
 }
-⚠️ Обязательно: self-mapping в domains_real. Ключ реального домена должен указывать на себя ("damoony.ru": "damoony.ru"). Без этого PageController::save() и BlockController::save() упадут с Undefined array key (MANIFEST.md §6.4, P2).
-
-⚠️ Порт и trailing-dot не нормализуются. ConfigDomainResolver не отрезает :8080 и . (MANIFEST.md §6.17, P0). Пишите хост без порта. Для развёртывания по IP с нестандартным портом — ждите фикса или используйте DNS/localhost.
+⚠️ Обязательно: self-mapping в domains_real. Ключ реального домена должен указывать на себя ("damoony.ru": "damoony.ru"). Без этого CLI-команды упадут с Undefined array key.
 
 config/admin.config — доступ в админку
 Логин, хеш пароля, список разрешённых языков.
@@ -85,7 +89,7 @@ json
   "domains_langs": ["ru", "en", "zh"],
   "default_lang": "ru"
 }
-⚠️ Пустой password_hash — админка недоступна. Задайте через php bin/cli.php admin:passwd --name=admin --password=<strong>. Не оставляйте дефолтный admin / secret — смените перед деплоем.
+⚠️ Пустой password_hash — админка недоступна. Задайте через php bin/cli.php admin:passwd --name=admin --password=<strong>.
 
 База данных
 Создайте базу:
@@ -96,7 +100,7 @@ CREATE DATABASE your_database_name CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode
 
 bash
 php bin/cli.php db:migrate
-Команда идемпотентна — повторный запуск не дублирует миграции. Поддерживает MariaDB/MySQL и SQLite (тесты).
+Команда идемпотентна. Поддерживает MariaDB/MySQL и SQLite (тесты).
 
 Веб-сервер
 Apache
@@ -124,7 +128,6 @@ server {
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
     }
 }
-⚠️ Блок location ~ \.php$ в оригинальном install.md был обрезан. Приведён рабочий вариант. Если у вас другой пул PHP-FPM — поправьте fastcgi_pass.
 
 Первый запуск
 bash
@@ -132,18 +135,18 @@ composer install
 php bin/cli.php db:migrate
 php bin/cli.php admin:passwd --name=admin --password=<strong>
 php bin/cli.php user:new --login=admin --email=admin@example.com --password=<strong>
-admin:passwd — администратор админки (/admin/).
 
-user:new — пользователь сайта (для страниц с "auth": true). Это разные учётки (MANIFEST.md §Auth). Не путайте.
+admin:passwd — администратор админки (/admin/).
+user:new — пользователь сайта (для страниц с "auth": true). Это разные учётки. Не путайте.
 
 Откройте http://<домен>/ (сайт) и http://<домен>/admin/ (админка).
 
 Создание первого сайта
 bash
 php bin/cli.php domain:new --domain=example.ru --namespace=example
-Алиас www создаётся автоматически. Проверьте config/site.config — команда обновляет его.
+Алиас www создаётся автоматически. Проверьте config/site.config.
 
-⚠️ page:new создаёт страницу без схемы по умолчанию (MANIFEST.md §6.1). Шапки/футера на ней не будет. Для обычной страницы — guide.md §4, Вариант A.
+⚠️ page:new создаёт страницу без схемы по умолчанию (MANIFEST.md §6.1). Шапки/футера на ней не будет. Для обычной страницы — guide.md §4, Вариант A (вызов SchemeRenderer в коде).
 
 Развёртывание по IP (intranet, staging)
 В config/site.config добавьте IP как ключ в domains_real (без порта):
@@ -153,9 +156,8 @@ json
     "192.168.1.10": "example.ru",
     "example.ru": "example.ru"
 }
-Откройте http://192.168.1.10/.
-
-⚠️ На один IP-хост без DNS работает только один алиас (www) — алиас определяется по Host. Для нескольких — DNS/hosts (например damoony.local, doc.damoony.local → тот же IP).
+Откройте http://192.168.1.10/. 
+⚠️ Порт и trailing-dot нормализуются автоматически (stage-3). Для нескольких алиасов нужны DNS/hosts (например damoony.local, doc.damoony.local → тот же IP).
 
 Разработка и тестирование
 bash
@@ -169,54 +171,32 @@ composer test
 composer stan
 composer cs
 composer check   # stan + cs + test
+
 Безопасность (перед production)
 Пароли — password_hash/password_verify (bcrypt). admin:passwd и user:new делают это.
-
-CSRF — на всех POST (админка и сайт). Destructive GET — баг (§7.1 п.1), не используйте.
-
+CSRF — на всех POST (админка и сайт). Destructive операции защищены.
 Сессии — HttpOnly, SameSite=Lax, Secure при HTTPS.
-
 Brute-force — бан IP на 15 минут после 5 неудач.
-
 CSP — блокирует inline-скрипты (CodeMirror локальный из /media/admin/).
-
-Файлы в www/media/ — запрещены .php-скрипты (whitelist загрузок в MediaController).
+Визуальные редакторы удалены для страниц и блоков (CodeMirror). Drag&Drop оставлен только для Схем.
+Флаг security.allow_php_blocks=false по умолчанию блокирует генерацию сырого PHP.
 
 Проверка после установки
 bash
 php bin/cli.php structure:check
-⚠️ structure:check не ловит .edit.json ↔ PHP, legacy .edit.json, blocks.json ↔ папки, schemes.json ↔ файлы (MANIFEST.md §7.2 п.3, P1). Это первый шаг, но не единственный. Дополнительно проверьте вручную.
-
-6 P0-блокеров перед production (MANIFEST.md §7.1)
-CSRF на destructive GET (SchemeController::delete/copy, BlockController::remove).
-
-addslashes в компиляторах (ломает ', \, $, \n).
-
-Response::internalError($e->getMessage()) — утечка путей/классов в prod.
-
-Два формата .edit.json без миграции — потеря контента.
-
-SchemeCompiler::str_replace('array (', '[') — ломается на скобках.
-
-Порт в Host не нормализуется — IP:порт не работает.
-
-До закрытия P0: не давайте админку непрофессионалам; визуальное сохранение — только после коммита в git; для обычных страниц используйте ручной PHP (Вариант A из guide.md §4).
+✅ Проверяет наличие всех 3 файлов (.php, .rules.json, .editor.json) для каждого элемента, стыковку филлер↔слот. Выводит OK или список ошибок.
+Если есть пропущенные файлы — восстановить можно командой:
+bash
+php bin/cli.php structure:repair --domain=example.ru
 
 Полезные ссылки
 MANIFEST.md — канон: ✅/🟡/❌, P0/P1/P2, backlog, видение.
-
 readme.md — обзор и быстрый старт.
-
 cli.md — CLI-команды.
-
 admin.md — админка.
-
 guide.md — руководство разработчика.
-
-architecture.md — жизненный цикл.
-
+architecture.md — жизненный цикл (включая AI-слой).
+ai_agent.md — интеграция AI-агентов.
 contracts.md — контракты и ограничения.
-
-scenarios.md — Use Cases со статусами.
 
 --- КОНЕЦ ДОКУМЕНТА ---

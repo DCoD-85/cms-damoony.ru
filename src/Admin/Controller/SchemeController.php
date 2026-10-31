@@ -62,7 +62,7 @@ final class SchemeController extends BaseController
         $header->append(Builder::h(1)->content(View::t('tab.schemes')));
 
         $actions = Builder::div('page-actions');
-        $actions->append(Builder::a('/admin/?p=scheme:new&domain=' . urlencode($domain), 'btn btn-primary')->content(View::t('stub.add')));
+        $actions->append(Builder::a('/admin/?p=scheme:new&domain=' . urlencode($domain), 'btn btn-primary')->content('+ Создать схему'));
         $header->append($actions);
         $card->append($header);
 

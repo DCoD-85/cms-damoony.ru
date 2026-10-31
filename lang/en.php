@@ -217,6 +217,7 @@ return [
     'admin.page.btn_search_on' => '🔍 Search: On',
     'admin.page.btn_search_off' => '🔍 Search: Off',
 
+	'admin.scheme.global_not_found' => 'Global scheme not found. Please create one.',
     'admin.scheme.title' => 'Alias Schemes',
     'admin.scheme.current' => 'Current scheme',
     'admin.scheme.global_active' => 'Global scheme is active',

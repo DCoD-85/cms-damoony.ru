@@ -30,11 +30,11 @@
         },
         {
             "name": "test_s",
-            "type": "script"
+            "type": "mixed"
         },
         {
             "name": "test_v",
-            "type": "visual"
+            "type": "mixed"
         },
         {
             "name": "top",
@@ -45,49 +45,15 @@
         "children": [
             {
                 "tag": "div",
-                "slot": "top",
-                "type": "mixed"
-            },
-            {
-                "tag": "div",
-                "slot": "test_v",
-                "type": "visual",
-                "children": [
-                    {
-                        "tag": "div",
-                        "slot": "left",
-                        "type": "mixed"
-                    },
-                    {
-                        "tag": "div",
-                        "slot": "center",
-                        "type": "mixed"
-                    },
-                    {
-                        "tag": "div",
-                        "slot": "right",
-                        "type": "mixed"
-                    }
-                ]
-            },
-            {
-                "tag": "div",
                 "slot": "bottom",
                 "type": "mixed"
             },
             {
                 "tag": "div",
-                "slot": "footer",
-                "type": "mixed"
-            },
-            {
-                "tag": "div",
-                "slot": "policy",
+                "slot": "center",
                 "type": "mixed"
             }
         ],
-        "scripts": [
-            "test_s"
-        ]
+        "scripts": []
     }
 }

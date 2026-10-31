@@ -3,18 +3,18 @@
 Start Here: Briefing для AI-агента
 Точка входа для AI-агента (или нового разработчика). Прочитай целиком до любых действий.
 
-Тебе выдаётся комплект документов. Этот файл — про окружение и правила работы. MANIFEST.md — канон: что реализовано (✅/🟡/❌), известные дефекты, баги P0/P1/P2, backlog, видение. Остальные документы (architecture.md, contracts.md, guide.md, cli.md, admin.md, ai_system.md, ai_logic.md, scenarios.md) — производные. Не жди, что баги и статус будут здесь — они в MANIFEST.md. Читай его наравне с этим файлом.
+Тебе выдаётся комплект документов. Этот файл — про окружение и правила работы. MANIFEST.md — канон: что реализовано (✅/🟡/❌), известные дефекты, баги P0/P1/P2, backlog, видение. Остальные документы (architecture.md, contracts.md, guide.md, cli.md, admin.md, ai_agent.md) — производные. Читай MANIFEST.md наравне с этим файлом.
 
 1. Идентификация проекта
 Название: Damoony Engine.
 
-Назначение: лёгкий PHP 8.4 движок для мультидоменных сайтов (Low-Code, Visual Editor, компиляция в PHP).
+Назначение: лёгкий PHP 8.4 движок для мультидоменных сайтов с архитектурой **CLI-First** и нативной интеграцией AI-агентов.
 
 Репозиторий: https://github.com/DCoD-85/cms-damoony.ru/
 
 Ветка: main.
 
-Стек: PHP 8.4, MariaDB 11.8, Apache2, Composer (PSR-4, PSR-3, PSR-11), PHPUnit 10, PHPStan level 8.
+Стек: PHP 8.4, MariaDB 11.8, Apache2, Composer (PSR-4, PSR-3, PSR-11), PHPUnit 10, PHPStan level 8, Ollama (для локальных LLM).
 
 2. Характер работы
 Разговорность — минимум. Отчёт по факту: что сделал, что проверено, что осталось. Без воды, без «отличная задача», без пересказа очевидного.
@@ -40,10 +40,9 @@ Start Here: Briefing для AI-агента
 Роль: вся разработка, тесты, PHPStan, CS-Fixer, коммиты.
 
 Обязательные бинарники (только они):
+PHP (CLI): E:\OSPanel543\modules\php\PHP_8.4\ (версия 8.4.25)
+MariaDB client: E:\OSPanel543\modules\database\MariaDB-11.8-Win10\bin\ (версия 11.8)
 
-Компонент	Путь	Версия
-PHP (CLI)	E:\OSPanel543\modules\php\PHP_8.4\	8.4.25
-MariaDB client	E:\OSPanel543\modules\database\MariaDB-11.8-Win10\bin\	11.8
 Запрещено: PHP/MariaDB из winget, глобальный PATH, Composer из AppData. Если php --version ≠ 8.4.25 из OSPanel — исправь PATH, потом продолжай.
 
 3.2. Production
@@ -74,33 +73,33 @@ PHP 8.4.25, MariaDB 11.8.
 ✅ Разрешено
 Создавать/редактировать файлы в src/, _dev/tests/, _doc/, lang/, stubs/, app/<domain>/....
 
-Запускать CLI: php bin/cli.php <command>.
+Запускать CLI: php bin/cli.php <command> (Единственный источник истины).
 
 Запускать тесты, PHPStan, CS-Fixer (см. §8).
-
-git add, git commit, git push origin main — после зелёных проверок.
 
 Обновлять _doc/.
 
 ❌ Запрещено
 Production: прямое редактирование /var/www/damoony.ru/ по SSH — только git pull.
 
-Ядро без явного запроса владельца: src/Core/, src/Http/Kernel.php, src/App/AppFactory.php.
+Ядро без явного запроса владельца: src/Core/, src/Http/Kernel.php, src/App/AppFactory.php, bin/aicli.php.
 
-Git: пуш в main при красных проверках; коммит config/*.config; изменение composer.lock без запроса; удаление var/ на production; новые директории в корне без согласования.
+Git: пуш в main при красных проверках; коммит config/*.config; изменение composer.lock без запроса.
 
-⚠️ Текущий статус кода (см. MANIFEST.md §7): Все P0 и P1 закрыты (stage-1...stage-6). 
-Остались только задачи P2 (техдолг): Builder неполон, assert(), Translator мимо контейнера, applySkin мимо middleware. 
-Риски, описанные в старой документации (addslashes, CSRF на GET, null из default(), пустой Host) — **уже устранены**. 
+⚠️ Текущий статус кода (см. MANIFEST.md §7): 
+- Все P0 и P1 закрыты. RCE, CSRF, XSS, Path Traversal — устранены.
+- Внедрено **Правило 3 файлов** (.php, .rules.json, .editor.json) для всех сущностей.
+- Визуальные редакторы для Страниц и Блоков **удалены** (переведены на CodeMirror). Drag&Drop остался только для Схем.
+- Создан безопасный AI-фасад (bin/aicli.php), связанный с Ollama.
 
 6. Ключевые пути
 Что	Путь
 Канон	_doc/MANIFEST.md
 Ядро	src/
 Домены	app/<domain>/
-Страницы алиаса	app/<domain>/<allias>/algoritm/
-Глобальные блоки	app/<domain>/.alliasglobal/
-Глобальные схемы	app/<domain>/.alliasscheme/
+Страницы алиаса	app/<domain>/<allias>/algoritm/ (3 файла: .php, .rules.json, .editor.json)
+Глобальные блоки	app/<domain>/.alliasglobal/<name>/ (3 файла)
+Глобальные схемы	app/<domain>/.alliasscheme/<name>/ (3 файла)
 Конфиги	config/*.config
 Переводы	lang/{ru,en,zh}.php
 Заглушки 503	stubs/*.html
@@ -111,6 +110,8 @@ Runtime	var/
 Вход сайта	www/index.php
 Вход админки	www/admin/index.php
 Вход CLI	bin/cli.php
+Вход AI-фасада	bin/aicli.php
+
 7. Workflow
 Прочитать задачу.
 
@@ -138,7 +139,7 @@ bash
 cd /var/www/damoony.ru && git pull origin main && systemctl reload apache2
 Обновить _doc/, если изменилось поведение/API/конфиги.
 
-Перед destructive-операциями (allias:remove, block:remove, trash:clear --force, любые правки существующих файлов) — git commit. Это workflow, а не следствие конкретных багов.
+Перед destructive-операциями (allias:remove, block:remove, scheme:remove, trash:clear --force, любые правки существующих файлов) — git commit.
 
 8. Быстрые команды
 bash
@@ -161,6 +162,9 @@ php bin/cli.php structure:repair --domain=example.ru
 
 # Миграции
 php bin/cli.php db:migrate
+
+# Проверка AI-фасада
+echo '{"command": "engine_status", "args": {}}' | php bin/aicli.php
 9. Эскалация
 Остановиться и спросить владельца, если:
 
@@ -170,10 +174,10 @@ php bin/cli.php db:migrate
 
 Нужны права (SSH, DB root).
 
-Собираешься трогать ядро (src/Core/, Kernel.php, AppFactory.php) без явного запроса.
+Собираешься трогать ядро (src/Core/, Kernel.php, AppFactory.php, bin/aicli.php) без явного запроса.
 
 Собираешься делать destructive-операцию без коммита.
 
-Остальные архитектурные ограничения (P2, `Builder` неполон, `assert()`, `applySkin` мимо middleware) — в MANIFEST.md §6–7. Прочитай их до, а не после.
+Остальные архитектурные ограничения (P2, Builder неполон, assert(), applySkin мимо middleware) — в MANIFEST.md §6–7. Прочитай их до, а не после.
 
 --- КОНЕЦ ДОКУМЕНТА ---

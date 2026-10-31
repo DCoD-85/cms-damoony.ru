@@ -217,6 +217,7 @@ return [
     'admin.page.btn_search_on' => '🔍 索引: 开',
     'admin.page.btn_search_off' => '🔍 索引: 关',
 
+	'admin.scheme.global_not_found' => '未找到全局方案。请创建一个。',
     'admin.scheme.title' => '别名方案',
     'admin.scheme.current' => '当前方案',
     'admin.scheme.global_active' => '全局方案已激活',

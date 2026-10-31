@@ -217,6 +217,7 @@ return [
     'admin.page.btn_search_on' => '🔍 Search: Вкл',
     'admin.page.btn_search_off' => '🔍 Search: Выкл',
 
+	'admin.scheme.global_not_found' => 'Глобальная схема не найдена. Создайте её.',
     'admin.scheme.title' => 'Схемы алиаса',
     'admin.scheme.current' => 'Текущая схема',
     'admin.scheme.global_active' => 'Активна глобальная схема',
