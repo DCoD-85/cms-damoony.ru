@@ -43,4 +43,27 @@ final class Renderer
 
         return $out;
     }
+
+    public function renderJson(Result $r): string
+    {
+        $payload = [
+            'ok' => $r->ok,
+            'data' => $r->data,
+            'created' => $r->created,
+            'warnings' => $r->warnings,
+            'errors' => $r->errors,
+            'steps' => array_map(
+                static fn (array $s): array => [
+                    'ok' => (bool) $s['ok'],
+                    'message' => (string) $s['message'],
+                    'detail' => (string) $s['detail'],
+                ],
+                $r->steps,
+            ),
+        ];
+
+        $encoded = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        return ($encoded === false ? '{"ok":false,"errors":["json_encode failed"]}' : $encoded) . PHP_EOL;
+    }
 }

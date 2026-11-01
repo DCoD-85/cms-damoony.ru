@@ -20,6 +20,9 @@ final class Result
     /** @var list<string> */
     public array $errors = [];
 
+    /** @var array<string, mixed> */
+    public array $data = [];
+
     public function step(string $message, bool $ok = true, string $detail = ''): void
     {
         $this->steps[] = ['message' => $message, 'ok' => $ok, 'detail' => $detail];

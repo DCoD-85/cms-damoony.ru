@@ -18,12 +18,13 @@ final class Application
     {
         $parsed = $this->parser->parse($argv);
         $command = $parsed['command'] === '' ? 'help' : $parsed['command'];
+        $jsonMode = isset($parsed['args']['json']) || in_array('--json', $argv, true);
 
         $handler = $this->registry->get($command);
         if ($handler === null) {
             $r = new Result();
             $r->error('Команда не найдена: ' . $command);
-            echo $this->renderer->render($r);
+            echo $jsonMode ? $this->renderer->renderJson($r) : $this->renderer->render($r);
             return 1;
         }
 
@@ -46,7 +47,7 @@ final class Application
             $result->ok = false;
         }
 
-        echo $this->renderer->render($result);
+        echo $jsonMode ? $this->renderer->renderJson($result) : $this->renderer->render($result);
 
         return $result->ok ? 0 : 1;
     }
