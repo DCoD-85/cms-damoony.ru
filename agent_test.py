@@ -161,6 +161,7 @@ class Batcher:
 def parse_tool_calls(message: dict[str, Any]) -> list[ToolCall]:
     calls: list[ToolCall] = []
 
+    # 1. Нативный tool_calls
     raw_calls = message.get("tool_calls") or []
     for tc in raw_calls:
         try:
@@ -175,25 +176,39 @@ def parse_tool_calls(message: dict[str, Any]) -> list[ToolCall]:
                 calls.append(ToolCall(name=name, args=args or {}))
         except (json.JSONDecodeError, AttributeError, TypeError):
             continue
-
     if calls:
         return _dedupe(calls)
 
+    # 2. Content как JSON (с поддержкой markdown-фенсов ```json ... ```)
     content = (message.get("content") or "").strip()
     if not content:
         return []
 
-    candidates = []
+    # Срезаем markdown-фенсы
+    stripped = re.sub(r"^```(?:json)?\s*", "", content)
+    stripped = re.sub(r"\s*```\s*$", "", stripped)
+    stripped = stripped.strip()
+
+    candidates: list[Any] = []
+    # 2a. Прямой json.loads
     try:
-        candidates.append(json.loads(content))
+        candidates.append(json.loads(stripped))
     except json.JSONDecodeError:
         pass
-    match = re.search(r"\[\s*\{.*?\}\s*\]", content, re.DOTALL)
-    if match:
-        try:
-            candidates.append(json.loads(match.group(0)))
-        except json.JSONDecodeError:
-            pass
+
+    # 2b. raw_decode: ищем первый валидный JSON-объект/массив внутри текста
+    try:
+        decoder = json.JSONDecoder()
+        for i, ch in enumerate(stripped):
+            if ch in "[{":
+                try:
+                    obj, _ = decoder.raw_decode(stripped[i:])
+                    candidates.append(obj)
+                    break
+                except json.JSONDecodeError:
+                    continue
+    except Exception:
+        pass
 
     for cand in candidates:
         if not isinstance(cand, list):
@@ -210,6 +225,8 @@ def parse_tool_calls(message: dict[str, Any]) -> list[ToolCall]:
                     args = {}
             if name:
                 calls.append(ToolCall(name=name, args=args or {}))
+        if calls:
+            break
 
     return _dedupe(calls)
 
@@ -377,7 +394,7 @@ def run_agent(brief: str, model: str = DEFAULT_MODEL, max_steps: int = DEFAULT_M
     tools = build_tools()
 
     print(f"\n=== Agent started (model: {model}, max_steps: {max_steps}, batch: {batch_size}) ===\n")
-    stats = {"steps": 0, "commands": 0, "errors": 0, "rollbacks": 0, "batches": 0}
+    stats = {"steps": 0, "commands": 0, "errors": 0, "rollbacks": 0, "batches": 0, "wrote_pages": 0}
 
     for step in range(1, max_steps + 1):
         stats["steps"] = step
@@ -394,17 +411,42 @@ def run_agent(brief: str, model: str = DEFAULT_MODEL, max_steps: int = DEFAULT_M
 
         if not calls:
             final = (message.get("content") or "").strip()
+
+            # Если LLM вернул JSON-план в тексте, но с markdown-фенсами — попробуем ещё раз
+            if final.startswith("```") and step < max_steps:
+                print("  [retry] content looks like markdown code fence, asking to fix")
+                messages.append({"role": "assistant", "content": final})
+                messages.append({
+                    "role": "user",
+                    "content": "Your response was wrapped in ```json ... ``` fences. Output ONLY the raw JSON array, no markdown. Try again.",
+                })
+                continue
+
             if not final:
                 if step < max_steps:
                     print(f"  [retry] empty response, asking to continue (step {step+1})")
                     messages.append({"role": "assistant", "content": "(empty)"})
                     messages.append({
                         "role": "user",
-                        "content": "You returned empty response. Check tool results from previous steps: did you call page:write for EVERY page? Did you download images? If not — continue with JSON array. If everything is done — respond with text 'DONE'.",
+                        "content": "You returned empty response. Check tool results: did you call page:write for EVERY page? If not — continue with JSON array. If done — respond with 'DONE'.",
                     })
                     continue
                 final = "(agent finished with no text response — all actions done)"
+
+            # Проверка: были ли выполнены page:write за этот прогон?
+            wrote_pages = stats.get("wrote_pages", 0)
+            is_done = final.strip().upper().startswith("DONE") or "done" in final.lower()
+
             print(f"\n=== Final answer from agent ===\n{final}\n")
+
+            if not is_done and wrote_pages == 0:
+                return {
+                    "ok": False,
+                    "error": "Agent stopped without calling page:write",
+                    "hint": "LLM returned text instead of actions; check prompt or increase max_steps",
+                    "stats": stats,
+                }
+
             tx.commit()
             return {"ok": True, "final": final, "stats": stats}
 
@@ -430,6 +472,9 @@ def run_agent(brief: str, model: str = DEFAULT_MODEL, max_steps: int = DEFAULT_M
 
                 result = client.call_aicli(call.name, call.args)
                 print(f"  [aicli] ok={result.ok}  {_short(result.data or result.error)}")
+
+                if result.ok and call.name == "page:write":
+                    stats["wrote_pages"] += 1
 
                 if not result.ok:
                     if is_already_exists_error(result.error):

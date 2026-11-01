@@ -204,6 +204,25 @@ try {
             throw new \RuntimeException('Invalid page name.');
         }
 
+        // Remap: LLM иногда использует local_url или src вместо content для img
+        foreach ($blocks as &$b) {
+            if (!is_array($b)) {
+                continue;
+            }
+            $type = $b['type'] ?? '';
+            if ($type === 'img' && (empty($b['content']) || !is_string($b['content'] ?? null))) {
+                if (!empty($b['local_url']) && is_string($b['local_url'])) {
+                    $b['content'] = $b['local_url'];
+                } elseif (!empty($b['src']) && is_string($b['src'])) {
+                    $b['content'] = $b['src'];
+                } elseif (!empty($b['url']) && is_string($b['url'])) {
+                    $b['content'] = $b['url'];
+                }
+                unset($b['local_url'], $b['src']);
+            }
+        }
+        unset($b);
+
         $cliName = ($name === '') ? '__root__' : $name;
         $json = json_encode($blocks, JSON_UNESCAPED_UNICODE);
         $encoded = base64_encode((string) $json);
@@ -293,7 +312,6 @@ try {
         $ext = (string) $data['ext'];
         $hash = (string) $data['hash'];
 
-        // Windows CMD limit ~8191 байт → --data_file через временный файл
         $tmpDir = __DIR__ . '/../var/tmp';
         if (!is_dir($tmpDir) && !@mkdir($tmpDir, 0o775, true) && !is_dir($tmpDir)) {
             echo json_encode(['ok' => false, 'error' => 'Cannot create var/tmp', 'hint' => 'Check write permissions']);
