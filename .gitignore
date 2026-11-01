@@ -56,10 +56,9 @@ env.php
 # прод-специфика: конфиги с секретами и пользовательский media
 /config/admin.config
 /config/site.config
-# /www/media/damoony.ru/skin/
-
-# личный briefing (пути, IP, git-workflow)
 /config/engine.config
+/config/agent.config
+/config/ainet.config
 
 # audit dev docs
 /_devdocoldpro/
