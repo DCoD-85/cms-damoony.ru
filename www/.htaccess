@@ -4,10 +4,6 @@ RewriteBase /
 # /admin/ и всё внутри — принудительно в admin/index.php
 RewriteRule ^admin(/.*)?$ admin/index.php [L,QSA]
 
-# --- dev: прямой доступ к /tests/ ---
-RewriteCond %{REQUEST_FILENAME} ^(.*)tests(.*)$
-RewriteRule ^(.*)$ index.php?route=tests&%{QUERY_STRING} [NC,L]
-
 # реальные файлы со статикой — отдаём как есть
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule \.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|map)$ - [L]

@@ -36,20 +36,34 @@ final class PageWriteCommand implements CommandInterface
         $name = $args['name'] ?? '';
         $parent = trim((string)($args['parent'] ?? ''), '/');
 
-        // Принимаем JSON в base64 (для агента) или обычный JSON (для CLI)
+        // 1. Обязательные аргументы — проверяются ДО конвертации __root__
+        if ($domain === '' || $allias === '') {
+            $r->error('Укажите --domain и --allias');
+            return $r;
+        }
+
+        // 2. __root__ — специальное имя для главной страницы (/)
+        if ($name === '__root__') {
+            if ($parent !== '') {
+                $r->error('--parent несовместим с __root__ (главная страница всегда в корне)');
+                return $r;
+            }
+            $name = '';
+        } elseif ($name === '') {
+            $r->error('Укажите --name (или __root__ для главной страницы)');
+            return $r;
+        }
+
+        // 3. JSON (base64 от агента или plain от CLI)
         if (isset($args['json_b64'])) {
-            $json = base64_decode((string)$args['json_b64'], true);
-            if ($json === false) {
+            $decoded = base64_decode((string)$args['json_b64'], true);
+            if ($decoded === false) {
                 $r->error('Некорректный base64');
                 return $r;
             }
+            $json = $decoded;
         } else {
-            $json = $args['json'] ?? '[]';
-        }
-
-        if ($domain === '' || $allias === '' || $name === '') {
-            $r->error('Укажите --domain, --allias и --name');
-            return $r;
+            $json = (string)($args['json'] ?? '[]');
         }
 
         $blocks = json_decode($json, true);
@@ -62,17 +76,21 @@ final class PageWriteCommand implements CommandInterface
         $site = is_file($siteFile) ? Config::fromFile($siteFile)->all() : [];
         $namespace = (string) ($site['domains_namespace'][$domain] ?? str_replace(['.', '-'], '_', $domain));
 
+        // 4. Путь без двойных слэшей (fix manifest §6.25)
         $targetRelPath = $parent === '' ? $name : $parent . '/' . $name;
-        $pageDir = $this->paths->algoritm($domain, $allias) . '/' . $targetRelPath;
+        $pageDir = rtrim($this->paths->algoritm($domain, $allias), '/');
+        if ($targetRelPath !== '') {
+            $pageDir .= '/' . $targetRelPath;
+        }
 
         if (!is_dir($pageDir)) {
             $r->error('Папка страницы не найдена. Сначала используйте page:new');
             return $r;
         }
 
-        $classChain = 'algoritm_' . str_replace('/', '_', $targetRelPath);
+        $classChain = $targetRelPath === '' ? 'algoritm' : 'algoritm_' . str_replace('/', '_', $targetRelPath);
         $withSchema = isset($args['with_schema']) && $args['with_schema'] === '1';
-        
+
         $compiler = new PageCompiler();
         $php = $compiler->compile($namespace . '\\' . $allias, $classChain, $blocks, $withSchema);
 
@@ -80,7 +98,7 @@ final class PageWriteCommand implements CommandInterface
         Fs::writeAtomic($phpFile, $php);
 
         $r->file(Fs::rel($phpFile, $this->paths->root()));
-        $context->step('Контент страницы обновлен', true, $name);
+        $context->step('Контент страницы обновлен', true, $name !== '' ? $name : '__root__');
 
         return $r;
     }

@@ -133,12 +133,28 @@ try {
         $blocks = $args['blocks'] ?? [];
         $withSchema = $args['with_schema'] ?? '0';
         
+        if (!in_array($domain, $allowedDomains, true)) {
+            throw new \RuntimeException("Security violation: Domain '{$domain}' is not in the allowed list.");
+        }
+        if (!preg_match('/^[a-z][a-z0-9_]*$/', $allias)) {
+            throw new \RuntimeException('Invalid alias name.');
+        }
+        if (!is_array($blocks)) {
+            throw new \RuntimeException('Blocks must be a JSON array.');
+        }
+        if ($name !== '' && !preg_match('/^[a-z][a-z0-9_]*$/', $name)) {
+            throw new \RuntimeException('Invalid page name.');
+        }
+        
+        // Пустое имя = главная страница алиаса (для CLI это __root__)
+        $cliName = ($name === '') ? '__root__' : $name;
+        
         $json = json_encode($blocks, JSON_UNESCAPED_UNICODE);
-        $encoded = base64_encode($json);
+        $encoded = base64_encode((string)$json);
         
         $safeDomain = escapeshellarg($domain);
         $safeAllias = escapeshellarg($allias);
-        $safeName = escapeshellarg($name);
+        $safeName = escapeshellarg($cliName);
         $safeJson = escapeshellarg($encoded);
         $safeSchema = escapeshellarg((string)$withSchema);
         

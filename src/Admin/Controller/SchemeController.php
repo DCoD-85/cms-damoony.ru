@@ -31,6 +31,23 @@ final class SchemeController extends BaseController
         parent::__construct($auth, $csrf, $view);
     }
 
+    /**
+     * Domain: alphanumeric, dots, hyphens. Starts with alphanumeric.
+     * Blocks path traversal (/, .., etc.).
+     */
+    private function isValidDomain(string $domain): bool
+    {
+        return $domain !== '' && preg_match('/^[a-z0-9][a-z0-9.\-]*$/i', $domain) === 1;
+    }
+
+    /**
+     * Scheme name: lowercase letter, then a-z0-9_. No slashes, no dots.
+     */
+    private function isValidSchemeName(string $name): bool
+    {
+        return $name !== '' && preg_match('/^[a-z][a-z0-9_]*$/', $name) === 1;
+    }
+
     public function index(Request $request): Response
     {
         $auth = $this->requireAuth();
@@ -39,7 +56,7 @@ final class SchemeController extends BaseController
         }
 
         $domain = (string) $request->query('domain', '');
-        if ($domain === '') {
+        if (!$this->isValidDomain($domain)) {
             return $this->redirect('/admin/?p=domain');
         }
 
@@ -122,6 +139,7 @@ final class SchemeController extends BaseController
         $card->append($table->build());
         return Response::html($this->view->render($card, ['title' => View::t('tab.schemes')]));
     }
+
     public function copy(Request $request): Response
     {
         $auth = $this->requireAuth();
@@ -140,7 +158,7 @@ final class SchemeController extends BaseController
         $domain = (string) $request->query('domain', '');
         $name = (string) $request->query('name', '');
 
-        if ($domain === '' || $name === '') {
+        if (!$this->isValidDomain($domain) || !$this->isValidSchemeName($name)) {
             return $this->redirect('/admin/?p=domain');
         }
 
@@ -184,14 +202,17 @@ final class SchemeController extends BaseController
         $domain = (string) $request->query('domain', '');
         $name = (string) $request->query('name', '');
 
-        if ($domain === '' || $name === '') {
+        if (!$this->isValidDomain($domain) || !$this->isValidSchemeName($name)) {
             return $this->redirect('/admin/?p=domain');
         }
 
         $schemesDir = $this->paths->domain($domain) . '/.alliasscheme';
-        @unlink($schemesDir . '/' . $name . '.php');
-        @unlink($schemesDir . '/' . $name . '.rules.json');
-        @unlink($schemesDir . '/' . $name . '.editor.json');
+        foreach (['.php', '.rules.json', '.editor.json'] as $ext) {
+            $file = $schemesDir . '/' . $name . $ext;
+            if (is_file($file) && !unlink($file)) {
+                // Ошибка удаления не роняет UX: файл остался — structure:check покажет
+            }
+        }
 
         return $this->redirect('/admin/?p=scheme&domain=' . urlencode($domain));
     }
@@ -204,7 +225,7 @@ final class SchemeController extends BaseController
         }
 
         $domain = (string) ($request->query('domain', '') ?: ($request->post['domain'] ?? ''));
-        if ($domain === '') {
+        if (!$this->isValidDomain($domain)) {
             return $this->redirect('/admin/?p=domain');
         }
 
@@ -252,7 +273,7 @@ final class SchemeController extends BaseController
 
         $domain = (string) $request->query('domain', '');
         $name = (string) $request->query('name', '');
-        if ($domain === '' || $name === '') {
+        if (!$this->isValidDomain($domain) || !$this->isValidSchemeName($name)) {
             return $this->redirect('/admin/?p=domain');
         }
 
@@ -349,7 +370,7 @@ final class SchemeController extends BaseController
         $grid->append($colLeft)->append($colRight)->append($colFile);
         $card->append($grid);
 
-        $form = Form::create('/admin/?p=scheme:saveVisual&domain=' . $domain . '&name=' . $name, 'POST');
+        $form = Form::create('/admin/?p=scheme:saveVisual&domain=' . urlencode($domain) . '&name=' . urlencode($name), 'POST');
         $form->csrf($this->csrf->field());
         $form->add(Field::hidden('scheme_json'));
         $form->submit('Сохранить');
@@ -383,6 +404,10 @@ final class SchemeController extends BaseController
         $domain = (string) $request->query('domain', '');
         $name = (string) $request->query('name', '');
 
+        if (!$this->isValidDomain($domain) || !$this->isValidSchemeName($name)) {
+            return Response::json(['error' => 'Invalid domain or scheme name']);
+        }
+
         $json = (string) ($request->post['scheme_json'] ?? '');
         $scheme = json_decode($json, true);
         if (!is_array($scheme)) {
@@ -393,8 +418,15 @@ final class SchemeController extends BaseController
         $editorFile = $schemesDir . '/' . $name . '.editor.json';
         $phpFile = $schemesDir . '/' . $name . '.php';
 
+        if (!is_file($editorFile)) {
+            return Response::json(['error' => 'Editor file not found'], 404);
+        }
+
         // 1. Обновляем editor.json
         $editorData = json_decode((string)file_get_contents($editorFile), true);
+        if (!is_array($editorData)) {
+            return Response::json(['error' => 'Corrupted editor.json'], 500);
+        }
         $editorData['scheme'] = $scheme;
         Fs::writeAtomic($editorFile, json_encode($editorData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
 
