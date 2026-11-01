@@ -32,7 +32,7 @@ final class MediaStoreCommand implements CommandInterface
 
     public function description(): string
     {
-        return 'Записать медиа (base64) в www/media/<domain>/<allias>/<category>/';
+        return 'Записать медиа (base64 или data_file) в www/media/<domain>/<allias>/<category>/';
     }
 
     public function run(array $args, Context $context): Result
@@ -43,8 +43,10 @@ final class MediaStoreCommand implements CommandInterface
         $allias = (string) ($args['allias'] ?? '');
         $category = (string) ($args['category'] ?? 'general');
         $dataB64 = (string) ($args['data_b64'] ?? '');
+        $dataFile = (string) ($args['data_file'] ?? '');
         $mime = strtolower((string) ($args['mime'] ?? ''));
         $alt = (string) ($args['alt'] ?? '');
+        $sourceUrl = (string) ($args['source_url'] ?? '');
 
         // 1. Валидация
         if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain) || str_contains($domain, '..')) {
@@ -59,40 +61,54 @@ final class MediaStoreCommand implements CommandInterface
             $r->error('Некорректная category (a-z0-9_-, 1-32)');
             return $r;
         }
-        if ($dataB64 === '') {
-            $r->error('Укажите --data_b64 (base64 содержимого)');
+
+        // 2. Чтение байтов: --data_file (приоритет) или --data_b64
+        if ($dataFile !== '') {
+            if (!is_file($dataFile)) {
+                $r->error('Файл не найден: ' . $dataFile);
+                return $r;
+            }
+            $bytes = @file_get_contents($dataFile);
+            if ($bytes === false || $bytes === '') {
+                $r->error('Не удалось прочитать data_file');
+                return $r;
+            }
+        } elseif ($dataB64 !== '') {
+            $bytes = base64_decode($dataB64, true);
+            if ($bytes === false) {
+                $r->error('Некорректный base64');
+                return $r;
+            }
+        } else {
+            $r->error('Укажите --data_b64 или --data_file');
             return $r;
         }
-        $bytes = base64_decode($dataB64, true);
-        if ($bytes === false) {
-            $r->error('Некорректный base64');
-            return $r;
-        }
+
         if ($bytes === '') {
             $r->error('Пустые байты');
             return $r;
         }
 
-        // 2. MIME whitelist
+        // 3. MIME whitelist
         if (!isset(self::MIME_EXT[$mime])) {
             $r->error("Недопустимый MIME '{$mime}' (allowed: " . implode(', ', array_keys(self::MIME_EXT)) . ')');
             return $r;
         }
 
-        // 3. Домен в agent.config.allowed_domains
+        // 4. Домен в agent.config.allowed_domains
         if (!$this->isAllowedDomain($domain)) {
             $r->error("Домен '{$domain}' не в config/agent.config.allowed_domains");
             return $r;
         }
 
-        // 4. Лимит размера (10 MB по умолчанию)
+        // 5. Лимит размера (10 MB)
         $maxSize = 10485760;
         if (strlen($bytes) > $maxSize) {
             $r->error('Файл больше ' . $maxSize . ' байт');
             return $r;
         }
 
-        // 5. Реальные размеры картинки (для не-SVG)
+        // 6. Реальные размеры (для не-SVG)
         $width = 0;
         $height = 0;
         if ($mime !== 'image/svg+xml') {
@@ -109,14 +125,14 @@ final class MediaStoreCommand implements CommandInterface
             }
         }
 
-        // 6. Хэш и путь
+        // 7. Хэш и путь
         $hash = substr(hash('sha256', $bytes), 0, 16);
         $ext = self::MIME_EXT[$mime];
         $mediaDir = $this->paths->media($domain, $allias) . '/' . $category;
         $file = $mediaDir . '/' . $hash . '.' . $ext;
         $metaFile = $mediaDir . '/' . $hash . '.meta.json';
 
-        // 7. Дедупликация
+        // 8. Дедупликация
         if (is_file($file)) {
             $rel = Fs::rel($file, $this->paths->root());
             $r->file($rel);
@@ -126,13 +142,13 @@ final class MediaStoreCommand implements CommandInterface
             return $r;
         }
 
-        // 8. Запись
+        // 9. Запись
         Fs::mkdir($mediaDir);
         Fs::writeAtomic($file, $bytes);
         $r->file(Fs::rel($file, $this->paths->root()));
 
         $meta = [
-            'source_url' => (string) ($args['source_url'] ?? ''),
+            'source_url' => $sourceUrl,
             'alt' => $alt,
             'size' => strlen($bytes),
             'mime' => $mime,

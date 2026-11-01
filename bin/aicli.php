@@ -18,7 +18,6 @@ if (!is_array($request) || !isset($request['command']) || !is_string($request['c
 $command = $request['command'];
 $args = is_array($request['args'] ?? null) ? $request['args'] : [];
 
-// === agent.config (whitelist доменов для AI) ===
 $agentConfigFile = __DIR__ . '/../config/agent.config';
 $allowedDomains = [];
 if (is_file($agentConfigFile)) {
@@ -29,7 +28,6 @@ if (is_file($agentConfigFile)) {
     }
 }
 
-// === Whitelist команд ===
 $allowedCommands = [
     'read_test_file',
     'engine_status',
@@ -54,7 +52,6 @@ if (!in_array($command, $allowedCommands, true)) {
     exit(1);
 }
 
-// === AINET (lazy, fail-safe) ===
 $ainet = null;
 $ainetError = null;
 if (in_array($command, ['net:status', 'image:search', 'image:download', 'fetch'], true)) {
@@ -70,7 +67,6 @@ if (in_array($command, ['net:status', 'image:search', 'image:download', 'fetch']
 
 /**
  * Парсит вывод CLI (Result) в {ok, output, error, hint}.
- * CLI печатает "OK" при успехе, "FAILED" + "Ошибки:" + "✗ " при ошибке.
  */
 function parseCliResult(string $output): array
 {
@@ -105,8 +101,6 @@ function runCli(string $args): array
 }
 
 try {
-    // === app/ команды (shell_exec → cli.php) ===
-
     if ($command === 'read_test_file') {
         $filename = (string) ($args['filename'] ?? '');
         if (str_contains($filename, '..') || str_contains($filename, '/')) {
@@ -237,11 +231,7 @@ try {
 
         $r = runCli("page:read --domain={$safeDomain} --allias={$safeAllias} --name={$safeName}");
         echo json_encode($r, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    }
-
-    // === net/ команды (AinetFacade in-process; image:download → cli.php media:store) ===
-
-    elseif ($command === 'net:status') {
+    } elseif ($command === 'net:status') {
         if ($ainet === null) {
             echo json_encode(['ok' => false, 'error' => $ainetError, 'hint' => 'Fix config/ainet.config or create it from ainet.config.example']);
             exit(1);
@@ -291,7 +281,6 @@ try {
             exit(1);
         }
 
-        // 1. Скачать в память (AINET не пишет на диск)
         $dl = $ainet->downloadImage($url, $domain, $allias, $category, $alt);
         if (($dl['ok'] ?? false) !== true) {
             echo json_encode($dl, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -302,29 +291,45 @@ try {
         $bytes = (string) $data['bytes'];
         $mime = (string) $data['mime'];
         $ext = (string) $data['ext'];
+        $hash = (string) $data['hash'];
 
-        // 2. Записать на диск через cli.php media:store
-        $dataB64 = base64_encode($bytes);
-        $safeDomain = escapeshellarg($domain);
-        $safeAllias = escapeshellarg($allias);
-        $safeCategory = escapeshellarg($category);
-        $safeData = escapeshellarg($dataB64);
-        $safeMime = escapeshellarg($mime);
-        $safeAlt = escapeshellarg($alt);
-        $safeSourceUrl = escapeshellarg($url);
+        // Windows CMD limit ~8191 байт → --data_file через временный файл
+        $tmpDir = __DIR__ . '/../var/tmp';
+        if (!is_dir($tmpDir) && !@mkdir($tmpDir, 0o775, true) && !is_dir($tmpDir)) {
+            echo json_encode(['ok' => false, 'error' => 'Cannot create var/tmp', 'hint' => 'Check write permissions']);
+            exit(1);
+        }
+        $tmpFile = $tmpDir . '/media_' . $hash . '_' . bin2hex(random_bytes(4)) . '.bin';
+        if (@file_put_contents($tmpFile, $bytes) === false) {
+            echo json_encode(['ok' => false, 'error' => 'Cannot write tmp file', 'hint' => 'Check var/tmp permissions']);
+            exit(1);
+        }
 
-        $cmd = 'php ' . __DIR__ . "/cli.php media:store"
-            . " --domain={$safeDomain}"
-            . " --allias={$safeAllias}"
-            . " --category={$safeCategory}"
-            . " --data_b64={$safeData}"
-            . " --mime={$safeMime}"
-            . " --alt={$safeAlt}"
-            . " --source_url={$safeSourceUrl}"
-            . ' 2>&1';
+        try {
+            $safeDomain = escapeshellarg($domain);
+            $safeAllias = escapeshellarg($allias);
+            $safeCategory = escapeshellarg($category);
+            $safeDataFile = escapeshellarg($tmpFile);
+            $safeMime = escapeshellarg($mime);
+            $safeAlt = escapeshellarg($alt);
+            $safeSourceUrl = escapeshellarg($url);
 
-        $output = shell_exec($cmd);
-        $outputStr = trim((string) $output);
+            $cmd = 'php ' . __DIR__ . "/cli.php media:store"
+                . " --domain={$safeDomain}"
+                . " --allias={$safeAllias}"
+                . " --category={$safeCategory}"
+                . " --data_file={$safeDataFile}"
+                . " --mime={$safeMime}"
+                . " --alt={$safeAlt}"
+                . " --source_url={$safeSourceUrl}"
+                . ' 2>&1';
+
+            $output = shell_exec($cmd);
+            $outputStr = trim((string) $output);
+        } finally {
+            @unlink($tmpFile);
+        }
+
         $storeResult = parseCliResult($outputStr);
 
         if (!$storeResult['ok']) {
@@ -337,7 +342,6 @@ try {
             exit(1);
         }
 
-        $hash = (string) $data['hash'];
         $localUrl = '/media/' . $domain . '/' . $allias . '/' . $category . '/' . $hash . '.' . $ext;
 
         echo json_encode([
