@@ -60,8 +60,15 @@ final class DomainListCommand implements CommandInterface
             $dir = $this->paths->domain($domain);
             $exists = Fs::isDir($dir);
             $available = (bool) ($site['domains_available'][$domain] ?? false);
-            $aliases = array_keys((array) ($site['alliases_real'][$domain] ?? []));
-            $aliases = array_values(array_filter($aliases, 'is_string'));
+            $aliasesMap = (array) ($site['alliases_real'][$domain] ?? []);
+            $realAliases = [];
+            foreach ($aliasesMap as $key => $real) {
+                if (!is_string($real) || $real === '') {
+                    continue;
+                }
+                $realAliases[$real] = true;
+            }
+            $aliases = array_keys($realAliases);
             sort($aliases);
 
             $row = [

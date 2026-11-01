@@ -91,7 +91,7 @@ final class DomainListCommandTest extends TestCase
 
         $first = $res->data['rows'][0];
         self::assertSame('damoony.ru', $first['domain']);
-        self::assertSame(2, count($first['aliases']));
+        self::assertSame(['doc', 'www'], $first['aliases']); // по реальному значению, без ""
     }
 
     public function testMissingDir(): void
@@ -136,5 +136,23 @@ final class DomainListCommandTest extends TestCase
         }
         self::assertTrue($byDomain['on.ru']['available']);
         self::assertFalse($byDomain['off.ru']['available']);
+    }
+
+    public function testAliasesByRealValueIgnoringEmptyKey(): void
+    {
+        $this->writeConfig([
+            'domains_real' => ['example.ru' => 'example.ru'],
+            'domains_available' => ['example.ru' => true],
+            'alliases_real' => ['example.ru' => [
+                '' => 'coffee',
+                'coffee' => 'coffee',
+                'tea' => 'tea',
+                'www' => 'www',
+            ]],
+        ]);
+
+        $res = $this->execute();
+        $row = $res->data['rows'][0];
+        self::assertSame(['coffee', 'tea', 'www'], $row['aliases']);
     }
 }

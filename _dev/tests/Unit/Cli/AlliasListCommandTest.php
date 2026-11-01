@@ -78,11 +78,11 @@ final class AlliasListCommandTest extends TestCase
         self::assertSame([], $res->data['rows']);
     }
 
-    public function testListsAliases(): void
+    public function testGroupsKeysByRealAlias(): void
     {
         $this->writeConfig([
             'domains_real' => ['example.ru' => 'example.ru'],
-            'alliases_real' => ['example.ru' => ['www' => 'www', 'doc' => 'doc']],
+            'alliases_real' => ['example.ru' => ['' => 'www', 'www' => 'www', 'doc' => 'doc']],
             'alliases_available' => ['example.ru' => ['www' => true, 'doc' => false]],
         ]);
         mkdir($this->root . '/app/example.ru/www/algoritm/about', 0o777, true);
@@ -91,31 +91,60 @@ final class AlliasListCommandTest extends TestCase
 
         $res = $this->execute(['domain' => 'example.ru']);
         self::assertTrue($res->ok);
-        self::assertCount(2, $res->data['rows']);
+        self::assertCount(2, $res->data['rows']); // www, doc (без отдельного "")
 
         $byName = [];
         foreach ($res->data['rows'] as $row) {
             $byName[$row['name']] = $row;
         }
-        self::assertSame('www', $byName['www']['real']);
+        self::assertArrayHasKey('www', $byName);
+        self::assertArrayHasKey('doc', $byName);
+        self::assertArrayNotHasKey('', $byName);
+
+        $wwwKeys = $byName['www']['keys'];
+        sort($wwwKeys);
+        self::assertSame(['', 'www'], $wwwKeys);
+        self::assertTrue($byName['www']['has_empty_key']);
         self::assertTrue($byName['www']['dir_exists']);
         self::assertTrue($byName['www']['available']);
         self::assertGreaterThanOrEqual(1, $byName['www']['page_count']);
 
-        self::assertSame('doc', $byName['doc']['real']);
+        self::assertSame(['doc'], $byName['doc']['keys']);
+        self::assertFalse($byName['doc']['has_empty_key']);
         self::assertFalse($byName['doc']['dir_exists']);
         self::assertFalse($byName['doc']['available']);
     }
 
-    public function testSkipsEmptyKeys(): void
+    public function testMultiDomainKeys(): void
     {
         $this->writeConfig([
             'domains_real' => ['example.ru' => 'example.ru'],
-            'alliases_real' => ['example.ru' => ['' => 'www', 'www' => 'www']],
+            'alliases_real' => ['example.ru' => [
+                '' => 'coffee',
+                'www' => 'www',
+                'tea' => 'tea',
+                'coffee' => 'coffee',
+            ]],
         ]);
+
         $res = $this->execute(['domain' => 'example.ru']);
         self::assertTrue($res->ok);
-        self::assertCount(1, $res->data['rows']);
-        self::assertSame('www', $res->data['rows'][0]['name']);
+        self::assertCount(3, $res->data['rows']); // coffee, tea, www
+
+        $byName = [];
+        foreach ($res->data['rows'] as $row) {
+            $byName[$row['name']] = $row;
+        }
+
+        $coffeeKeys = $byName['coffee']['keys'];
+        sort($coffeeKeys);
+        self::assertSame(['', 'coffee'], $coffeeKeys);
+        self::assertTrue($byName['coffee']['has_empty_key']);
+
+        self::assertSame(['tea'], $byName['tea']['keys']);
+        self::assertFalse($byName['tea']['has_empty_key']);
+
+        self::assertSame(['www'], $byName['www']['keys']);
+        self::assertFalse($byName['www']['has_empty_key']);
     }
 }
