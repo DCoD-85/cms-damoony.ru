@@ -7,36 +7,24 @@ Start Here: Briefing для AI-агента
 
 1. Идентификация проекта
 Название: Damoony Engine.
-
 Назначение: лёгкий PHP 8.4 движок для мультидоменных сайтов с архитектурой **CLI-First** и нативной интеграцией AI-агентов.
-
 Репозиторий: https://github.com/DCoD-85/cms-damoony.ru/
-
 Ветка: main.
-
-Стек: PHP 8.4, MariaDB 11.8, Apache2, Composer (PSR-4, PSR-3, PSR-11), PHPUnit 10, PHPStan level 8, Ollama (для локальных LLM).
+Стек: PHP 8.4, MariaDB 11.8, Apache2, Composer (PSR-4, PSR-3, PSR-11), PHPUnit 10, PHPStan level 8, Ollama (Qwen 2.5 Coder 7B для AI-агентов).
 
 2. Характер работы
 Разговорность — минимум. Отчёт по факту: что сделал, что проверено, что осталось. Без воды, без «отличная задача», без пересказа очевидного.
-
 Не объясняй, что ты собираешься делать — делай. Если нужен план (задача большая, риск сломать) — короткий список шагов, не эссе.
-
 Не дублируй документацию в ответах. Ссылайся на файл и раздел (MANIFEST.md §7.1), не цитируй.
-
 Если не уверен — спроси. Одна короткая формулировка вопроса. Не «делать как в прошлый раз».
-
 Не изобретай. Следуй правилам проекта, даже если считаешь, что «так лучше». Предложить изменение — можно, внедрять без согласования — нет.
 
 3. Окружения
 3.1. Локальное (разработка)
 Железо: Intel Core i9-14900HX, 32GB RAM, Windows 11.
-
 Веб-сервер: OSPanel 5.4.3.
-
 Корень проекта: E:\OSPanel543\domains\damoony3.ru\
-
 Доступ: gitbash (терминал) + VSCode.
-
 Роль: вся разработка, тесты, PHPStan, CS-Fixer, коммиты.
 
 Обязательные бинарники (только они):
@@ -47,60 +35,54 @@ MariaDB client: E:\OSPanel543\modules\database\MariaDB-11.8-Win10\bin\ (верс
 
 3.2. Production
 Железо: i7, 8GB RAM, 128GB SSD + 1TB HDD.
-
 ОС: Debian 13, Apache 2.
-
 PHP 8.4.25, MariaDB 11.8.
-
 Корень: /var/www/damoony.ru/.
-
 Роль: только git pull. Прямое редактирование на сервере запрещено.
 
 4. Git (жёсткие правила)
 Единственный источник истины — GitHub main.
-
 Цепочка: local edits → git commit → git push origin main → git pull на production.
-
 Никаких прямых правок на production (ни SSH, ни админка, кроме контента/настроек через UI).
-
 Не пушить без зелёных phpunit, phpstan, php-cs-fixer.
-
-Не коммитить config/engine.config, config/site.config, config/admin.config — они в .gitignore.
-
+Не коммитить config/engine.config, config/site.config, config/admin.config, config/agent.config — они в .gitignore.
 Регулярная синхронизация: после каждой логической порции — commit + push.
 
 5. Разрешено и запрещено
 ✅ Разрешено
 Создавать/редактировать файлы в src/, _dev/tests/, _doc/, lang/, stubs/, app/<domain>/....
-
 Запускать CLI: php bin/cli.php <command> (Единственный источник истины).
-
 Запускать тесты, PHPStan, CS-Fixer (см. §8).
-
 Обновлять _doc/.
 
 ❌ Запрещено
 Production: прямое редактирование /var/www/damoony.ru/ по SSH — только git pull.
-
 Ядро без явного запроса владельца: src/Core/, src/Http/Kernel.php, src/App/AppFactory.php, bin/aicli.php.
-
 Git: пуш в main при красных проверках; коммит config/*.config; изменение composer.lock без запроса.
 
 ⚠️ Текущий статус кода (см. MANIFEST.md §7): 
 - Все P0 и P1 закрыты. RCE, CSRF, XSS, Path Traversal — устранены.
 - Внедрено **Правило 3 файлов** (.php, .rules.json, .editor.json) для всех сущностей.
+  Для страниц все три файла имеют единый префикс: `algoritm_{name}.{php,rules.json,editor.json}` в одной папке.
+  Root алиаса: `algoritm/algoritm.{php,rules.json,editor.json}`.
 - Визуальные редакторы для Страниц и Блоков **удалены** (переведены на CodeMirror). Drag&Drop остался только для Схем.
-- Создан безопасный AI-фасад (bin/aicli.php), связанный с Ollama.
+- Создан безопасный PageCompiler (JSON -> PHP) для генерации страниц AI-агентом (защита от RCE).
+- Создан безопасный AI-фасад (bin/aicli.php), связанный с Ollama (Qwen 2.5 Coder 7B). Успешно генерирует 10-страничные сайты.
+- **Page-слой**: PagePath, PageRules, PageNamespace — единый резолвинг путей/правил/namespace для всех page-команд.
+- **Миграция**: `migrate:page-rules` — одноразовый перевод старых `.rules.json` на новую модель. Идемпотентна.
+
+⚠️ Breaking change: `page:toggle --path` заменён на `--name` + `--parent` (root — `--name='__root__'`).
 
 6. Ключевые пути
 Что	Путь
 Канон	_doc/MANIFEST.md
 Ядро	src/
 Домены	app/<domain>/
-Страницы алиаса	app/<domain>/<allias>/algoritm/ (3 файла: .php, .rules.json, .editor.json)
+Страницы алиаса	app/<domain>/<allias>/algoritm/ (3 файла: algoritm_{name}.{php,rules.json,editor.json})
+Root алиаса	app/<domain>/<allias>/algoritm/algoritm.{php,rules.json,editor.json}
 Глобальные блоки	app/<domain>/.alliasglobal/<name>/ (3 файла)
 Глобальные схемы	app/<domain>/.alliasscheme/<name>/ (3 файла)
-Конфиги	config/*.config
+Конфиги	config/*.config (включая agent.config для AI)
 Переводы	lang/{ru,en,zh}.php
 Заглушки 503	stubs/*.html
 Тесты	_dev/tests/
@@ -114,13 +96,9 @@ Runtime	var/
 
 7. Workflow
 Прочитать задачу.
-
 Прочитать _doc/MANIFEST.md §6–7 — что реализовано, какие есть ограничения (P2), чего не делать. Это не опционально.
-
 git status, git log --oneline -3.
-
 Внести изменения.
-
 Прогнать локально:
 
 bash
@@ -139,7 +117,7 @@ bash
 cd /var/www/damoony.ru && git pull origin main && systemctl reload apache2
 Обновить _doc/, если изменилось поведение/API/конфиги.
 
-Перед destructive-операциями (allias:remove, block:remove, scheme:remove, trash:clear --force, любые правки существующих файлов) — git commit.
+Перед destructive-операциями (domain:remove, allias:remove, block:remove, scheme:remove, trash:clear --force, migrate:page-rules, любые правки существующих файлов) — git commit.
 
 8. Быстрые команды
 bash
@@ -157,27 +135,15 @@ php vendor/bin/phpstan analyse -c _dev/phpstan.neon --memory-limit=1G --no-progr
 PHP_CS_FIXER_IGNORE_ENV=1 php vendor/bin/php-cs-fixer fix --config=_dev/.php-cs-fixer.php --dry-run
 
 # Диагностика и восстановление структуры
-php bin/cli.php structure:check
+php bin/cli.php structure:check                  # severity-aware: warning ≠ error
 php bin/cli.php structure:repair --domain=example.ru
 
-# Миграции
+# Миграция .rules.json на новую модель (после рефакторинга)
+php bin/cli.php migrate:page-rules --dry         # предпросмотр
+php bin/cli.php migrate:page-rules                # боевой прогон (идемпотентно)
+
+# Миграции БД
 php bin/cli.php db:migrate
 
-# Проверка AI-фасада
+# Проверка AI-фасада (требуется настроенный config/agent.config)
 echo '{"command": "engine_status", "args": {}}' | php bin/aicli.php
-9. Эскалация
-Остановиться и спросить владельца, если:
-
-Задача неоднозначна.
-
-Риск сломать production.
-
-Нужны права (SSH, DB root).
-
-Собираешься трогать ядро (src/Core/, Kernel.php, AppFactory.php, bin/aicli.php) без явного запроса.
-
-Собираешься делать destructive-операцию без коммита.
-
-Остальные архитектурные ограничения (P2, Builder неполон, assert(), applySkin мимо middleware) — в MANIFEST.md §6–7. Прочитай их до, а не после.
-
---- КОНЕЦ ДОКУМЕНТА ---

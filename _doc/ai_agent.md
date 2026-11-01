@@ -1,152 +1,106 @@
 --- НАЧАЛО ДОКУМЕНТА ---
 
 Инструкция для AI-Агента (Универсальная)
-Ты — AI-агент, работающий с Damoony Engine. Этот документ объединяет правила для архитектора (инфраструктура), разработчика (PHP-код) и интегратора (безопасный фасад aicli.php).
+Ты — AI-агент, работающий с Damoony Engine. Этот документ объединяет правила для архитектора (инфраструктура), разработчика (создание контента) и интегратора (безопасный фасад aicli.php).
 
-Перед началом прочитай MANIFEST.md. Там — что реализовано (✅), что частично (🟡). Все P0 и P1 закрыты. Остались только задачи из P2 (техдолг).
+Перед началом прочитай MANIFEST.md. Все P0 и P1 закрыты. Остались только задачи из P2 (техдолг).
 
-Правило 3 файлов: Любая сущность (Страница, Блок, Схема) состоит из трех файлов: {name}.php (код), {name}.rules.json (настройки), {name}.editor.json (данные UI). Глобальные манифесты (blocks.json, schemes.json) удалены.
+Правило 3 файлов: Любая сущность (Страница, Блок, Схема) состоит из трех файлов: `{name}.php` (код), `{name}.rules.json` (настройки), `{name}.editor.json` (данные UI). 
+Для страниц все три файла имеют единый префикс: `algoritm_{name}.{php,rules.json,editor.json}` в одной папке. Root алиаса — `algoritm/algoritm.{php,rules.json,editor.json}`. Глобальные манифесты (`blocks.json`, `schemes.json`) удалены.
 
 ---
+
 ЧАСТЬ 1: АРХИТЕКТУРА И ИНФРАСТРУКТУРА (System)
-Твоя задача: создавать домены, алиасы, блоки, схемы. Ты не пишешь вёрстку и не трогаешь ядро (src/).
+Твоя задача: создавать домены, алиасы, схемы и управлять структурой. Ты не пишешь ядро (src/).
 
 1.1. Главные правила
-- **Только CLI.** Любая операция с файловой структурой — через php bin/cli.php.
-- **Только JSON.** Настройки изменяются только в config/*.config.
-- **Запрещено:** удалять файлы вручную (только через CLI), писать код в src/, использовать прямые SQL-запросы.
-- **Коммит в git** перед destructive-операциями (allias:remove, block:remove, scheme:remove, trash:clear --force).
-- **Визуальные редакторы (Drag&Drop)** остались ТОЛЬКО для Схем. Страницы и Блоки редактируются исключительно через CodeMirror (PHP-код).
+- **Только CLI.** Любая операция с файловой структурой — через `php bin/cli.php` (или через `bin/aicli.php`, если ты работаешь как AI-агент).
+- **Коммит в git** перед destructive-операциями (`domain:remove`, `allias:remove`, `block:remove`, `trash:clear --force`, `migrate:page-rules`).
+- **Визуальные редакторы (Drag&Drop)** остались ТОЛЬКО для Схем. Страницы и Блоки редактируются через JSON (через AI) или CodeMirror (вручную).
+- **Не пиши сырой PHP.** Ты передаёшь JSON-массив блоков через `page:write`, движок компилирует в PHP через PageCompiler (безопасно, без RCE).
 
 1.2. Структура файлов
-- Домен: папка app/<domain>/.
+- Домен: папка `app/<domain>/`.
 - Алиасы (www, doc) — подпапки внутри домена.
-- Инфраструктурные папки скрыты точкой: .alliasglobal (блоки), .alliasscheme (схемы).
-
-Структура сущностей:
-- **Блок:** .alliasglobal/<name>/<name>.php, <name>.rules.json, <name>.editor.json.
-- **Схема:** .alliasscheme/<name>.php, <name>.rules.json, <name>.editor.json.
-- **Страница:** algoritm/algoritm_<name>.php, algoritm_<name>.rules.json, algoritm_<name>.editor.json.
-
-Что не читается движком (не рассчитывай): .data.php и .data.json (удалены).
+- Инфраструктурные папки скрыты точкой: `.alliasglobal` (блоки), `.alliasscheme` (схемы).
+- Страницы алиаса: `app/<domain>/<allias>/algoritm/<path>/algoritm_<path>.{php,rules.json,editor.json}`.
+- Root алиаса: `app/<domain>/<allias>/algoritm/algoritm.{php,rules.json,editor.json}`.
 
 1.3. Справочник команд (только CLI)
 Домены и алиасы:
-- domain:new --domain=example.ru [--namespace=example] — создать домен.
-- allias:new --domain=example.ru --name=doc — создать алиас.
-- allias:remove --domain=example.ru --name=doc --force — удалить (карантин).
+- `domain:new --domain=example.ru` — создать домен (создает www и схему).
+- `domain:remove --domain=example.ru --force` — удалить домен в карантин.
+- `allias:new --domain=example.ru --name=doc` — создать алиас (создает корневую страницу /).
 
 Блоки, схемы, филлеры:
-- block:new --domain=example.ru --name=top [--type=visual] — создать блок (3 файла).
-- block:remove --domain=example.ru --name=top — удалить папку блока.
-- filler:new --domain=example.ru --allias=doc --block=top — создать филлер (3 файла).
-- filler:toggle --domain=example.ru --allias=doc --block=top --value=0 — вкл/выкл филлер.
-- scheme:new --domain=example.ru --name=www — создать схему (3 файла).
-- scheme:copy --domain=example.ru --name=www — копировать схему.
-- scheme:remove --domain=example.ru --name=www — удалить схему.
-- scheme:save --domain=example.ru --name=www --scheme_json='...' — сохранить визуальную схему.
+- `block:new --domain=example.ru --name=top [--type=visual]` — создать блок (3 файла).
+- `scheme:new --domain=example.ru --name=www` — создать схему (3 файла).
 
 Страницы:
-- page:new --domain=example.ru --allias=doc --name=index [--parent=path] — создать страницу.
-- page:toggle --domain=example.ru --allias=doc --path=index --key=auth --value=1 — флаг (auth/search/default).
-⚠️ page:new создаёт страницу без схемы по умолчанию. Агент должен добавить вызов SchemeLoader + SchemeRenderer в default() (см. Часть 2).
+- `page:new --domain=example.ru --allias=doc --name=about [--parent=docs]` — создать страницу (3 файла).
+- `page:write --domain=example.ru --allias=doc --name=about --json='[...]'` — **ГЛАВНАЯ КОМАНДА ДЛЯ AI**. Записывает контент в страницу.
+  - Используй `__root__` в качестве имени (`--name='__root__'`), чтобы записать контент на главную страницу аллиаса (/).
+  - `--parent` несовместим с `__root__`.
+- `page:read --domain=example.ru --allias=doc --name=about` — прочитать PHP-код страницы (для проверки).
+- `page:toggle --domain=example.ru --allias=doc --name=about --key=auth --value=1` — переключить флаг (auth/search/default).
 
-Диагностика:
-- structure:check — проверить целостность (наличие всех 3 файлов, стыковку).
-- structure:repair — восстановить отсутствующие .rules.json и .editor.json.
-
-1.4. Управление конфигом (site.config)
-Отключить филлер:
-```json
-"fillers": { "example.ru": { "doc": { "top": false } } }
-```
-Отключить глобальный регион:
-```json
-"regions": { "example.ru": { "doc": { "left": false } } }
-```
-Отключить алиас (503):
-```json
-"alliases_available": { "example.ru": { "doc": false } }
-```
-⚠️ Обязательно: self-mapping в domains_real ("example.ru": "example.ru"). Без него CLI упадёт.
+Миграция:
+- `migrate:page-rules [--dry]` — одноразовая миграция старых `.rules.json` на новую модель. Идемпотентна.
 
 ---
-ЧАСТЬ 2: НАПИСАНИЕ PHP-КОДА (Logic)
-Твоя задача: писать код для страниц (algoritm/) и регионов (.alliasglobal/). Ты не трогаешь конфиги и ядро.
 
-2.1. Главные правила кода
-- **Никаких echo, print, var_dump.** Вывод — только через возврат Node или Response.
-- **Никакого HTML в строках.** Используй Builder:: (12 методов) или new Element() для сложных структур. Для таблиц/форм — компоненты Table, Form.
-- **Только строгая типизация.** declare(strict_types=1); + namespace в каждом файле.
-- **Проверяй типы из service().** $this->context->service('...') возвращает mixed — всегда instanceof перед использованием.
-- **Возвращай Node или Response.** Не возвращай null (рантайм отдаёт 204, но лучше явный Node).
+ЧАСТЬ 2: ГЕНЕРАЦИЯ КОНТЕНТА (Logic)
+⚠️ **КРИТИЧЕСКОЕ ПРАВИЛО:** Ты (AI) **НЕ ПИШЕШЬ PHP-КОД** для страниц. Ты генерируешь **JSON-массив блоков**, который движок сам безопасно компилирует в PHP через `Builder`.
 
-2.2. Шаблон контроллера страницы (Algoritm)
-⚠️ **Ключевое: страница со схемой vs без схемы.**
-page:new создаёт "голую" страницу (только класс Algoritm), которая НЕ рендерит схему. Если нужны шапка/футер — ты ОБЯЗАН явно вызвать SchemeLoader + SchemeRenderer (Вариант A). Если это API — можно без схемы (Вариант B).
+2.1. Формат JSON для `page:write`
+Ты должен передавать массив объектов. Поддерживаемые типы:
+- `h1`, `h2`, `h3` (заголовки)
+- `text` (параграф)
+- `img` (картинка)
+- `link` (ссылка)
+- `button` (кнопка)
+- `ul` (список)
 
-**Вариант A: страница со схемой (рекомендуется)**
+Поддерживаемые атрибуты (опционально):
+- `class` (CSS-классы)
+- `id` (HTML id)
+- `style` (inline-стили)
+- `url` (для link/button)
+- `alt` (для img)
+
+**Пример идеального JSON для `page:write`:**
+
+```json
+[
+  {"type": "h1", "content": "Добро пожаловать", "style": "color:#2c3e50; text-align:center;"},
+  {"type": "text", "content": "Наш сайт посвящен кофе."},
+  {"type": "img", "content": "https://images.unsplash.com/photo-123...", "style": "width:100%; max-width:600px;"},
+  {"type": "ul", "items": ["Пункт 1", "Пункт 2"]},
+  {"type": "link", "url": "/about", "content": "О нас", "style": "color:blue;"}
+]
+```
+
+2.2. Шаблоны страниц (для понимания)
+Если бы ты писал PHP-код (что делать не нужно), он выглядел бы так:
+
 ```php
-<?php
-
-declare(strict_types=1);
-
-namespace example_ru\www;
-
-use Damoony\Algoritm\Algoritm;
-use Damoony\Files\Paths;
-use Damoony\Http\Response;
-use Damoony\Scheme\SchemeLoader;
-use Damoony\Scheme\SchemeRenderer;
-use Damoony\Ui\Node;
-
-final class algoritm_about extends Algoritm
+final class algoritm_about extends Page
 {
     public function default(): Node|Response|null
     {
-        $this->context->meta->setTitle('О нас');
-        
-        $paths = $this->context->service('paths');
-        if (!$paths instanceof Paths) {
-            return Response::internalError('Paths service missing');
-        }
-
-        $schemeLoader = new SchemeLoader($paths);
-        $manifest = $schemeLoader->load($this->context->domain, $this->context->domain->scheme);
-
-        $renderer = new SchemeRenderer();
-
-        return $renderer->render($manifest, $this->regions(), $this->context);
+        $content = Builder::div('page-content');
+        $content->append(Builder::h(1)->content('О нас'));
+        return $content;
     }
 }
 ```
 
-**Вариант B: «голая» страница (API, AJAX)**
-```php
-final class algoritm_api extends Algoritm
-{
-    public function default(): Node|Response|null
-    {
-        return Builder::div('api')->content('ok');
-    }
-}
-```
+Но ты просто передаешь `[{"type":"h1","content":"О нас"}]` в `page:write`.
 
 2.3. Шаблон региона (.alliasglobal)
-Все блоки реализуют RegionInterface. Настройки типа блока (script, visual, mixed) хранятся в {name}.rules.json, но в рантайме RegionLoader читает папки.
+Блоки (шапки/подвалы) все еще реализуются как PHP-классы (если они не создаются через AI). Они реализуют `RegionInterface`.
 
 ```php
-<?php
-
-declare(strict_types=1);
-
-namespace example_ru;
-
-use Damoony\Region\RegionContext;
-use Damoony\Region\RegionInterface;
-use Damoony\Ui\Builder;
-use Damoony\Ui\Node;
-
 final class alliasglobal_top implements RegionInterface
 {
     public function name(): string { return 'top'; }
@@ -161,123 +115,90 @@ final class alliasglobal_top implements RegionInterface
 }
 ```
 
-2.4. Формы (POST) и CSRF
-```php
-use Damoony\Ui\Form;
-use Damoony\Ui\Field;
-
-$csrf = $this->context->service('csrf');
-if (!$csrf instanceof \Damoony\Security\Csrf) {
-    return Response::internalError('CSRF service missing');
-}
-
-$form = Form::create('/login', 'POST')
-    ->csrf($csrf->field())
-    ->add(Field::text('login')->label('Логин')->required())
-    ->add(Field::password('password')->label('Пароль')->required())
-    ->submit('Войти');
-```
-✅ Destructive-операции — только POST+CSRF. GET-delete не работают (405).
-
-2.5. Работа с БД
-```php
-$db = $this->context->service('db');
-if (!$db instanceof \Damoony\Db\Connection) {
-    return Response::internalError('DB service missing');
-}
-
-$stmt = $db->pdo()->query('SELECT * FROM news ORDER BY created_at DESC');
-$news = $stmt->fetchAll();
-```
-
-2.6. ⚠️ Чего не делать в коде
-- **addslashes** — только var_export($content, true).
-- **str_replace('array (', ...)** — только var_export($data, true).
-- **assert()** — заменяй на if (!instanceof) throw new \RuntimeException(...).
-- **$_COOKIE['skin'] напрямую** — используй $this->context->domain->skin.
-- **Сырой PHP в блоках** — для custom/if требуется security.allow_php_blocks=true в engine.config. По умолчанию заблокировано.
-
-2.7. Ограничения Builder (P2)
-Builder содержит 12 методов: el, elA, div, span, p, h, a, img, input, ul, li, button. Нет: table, tr, td, form, select, textarea, label, section, nav, header, footer, article, aside. Для них — new Element('tag') или компоненты (Table, Form, Field).
-
 ---
+
 ЧАСТЬ 3: AI-ФАСАД И ИНТЕГРАЦИЯ (Agent API)
-Твоя задача: работать через безопасный интерфейс bin/aicli.php, который связывает LLM (Ollama) с ядром.
+Твоя задача: работать через безопасный интерфейс `bin/aicli.php`, который связывает локальную LLM (Ollama, например Qwen 2.5 Coder) с ядром.
 
 3.1. Архитектура (Agentic Loop)
-Агент не имеет прямого доступа к терминалу или файловой системе. Он работает через безопасный цикл:
+Ты не имеешь прямого доступа к терминалу или файловой системе. Ты работаешь через безопасный цикл:
 
-[AI-Модель (Ollama)] 
-      ↕ (JSON: tool_calls)
-[Python/Node Скрипт (Agentic Loop)] 
+```
+[AI-Модель (Qwen 2.5 Coder)]
+      ↕ (JSON-план)
+[Python Скрипт (Agentic Loop)]
       ↕ (JSON через STDIN)
-[bin/aicli.php (Безопасный фасад)] 
-      ↕ (Вызов PHP-класса)
-[bin/cli.php (SAFE-CLI)]
+[bin/aicli.php (Безопасный фасад)]
       ↕
-[Файловая система / config/]
-
-- **Agentic Loop:** Скрипт-обертка отправляет промпт в Ollama, получает tool_calls, передает их в aicli.php, получает результат, возвращает в модель, и так до финального ответа.
-- **Разделение прав:** Агент не может выполнить system('rm -rf /'), потому что aicli.php принимает только разрешенные команды (Whitelist) и строго валидирует аргументы.
-
-3.2. Спецификация bin/aicli.php
-Читает JSON из STDIN, возвращает JSON в STDOUT.
-
-Формат запроса:
-```json
-{"command": "engine_status", "args": {}}
-{"command": "filler_toggle", "args": {"domain": "damoony.ru", "allias": "doc", "block": "top", "value": "0"}}
+[bin/cli.php (SAFE-CLI)]
 ```
 
-Формат ответа:
-```json
-{"ok": true, "data": {"status": "OK", "message": "Structure is perfect."}}
-{"ok": false, "error": "Structure check failed", "data": {"errors_count": "1", "raw_output": "..."}}
-```
+- **Agentic Loop:** Скрипт отправляет промпт в Ollama, получает JSON-план, передает его в `aicli.php`, получает результат.
+- **Разделение прав:** Ты не можешь выполнить `system('rm -rf /')`, потому что `aicli.php` принимает только разрешенные команды (Whitelist).
 
-3.3. Whitelist (Разрешенные команды)
-Список находится в bin/aicli.php (массив $allowedCommands).
-- read_test_file — Чтение тестового файла из /var/ (защита от Path Traversal).
-- engine_status — Запуск structure:check.
-- filler_toggle — Включение/выключение филлера.
+3.2. Whitelist (Разрешенные команды)
+Список находится в `bin/aicli.php` (массив `$allowedCommands`).
+Текущие разрешенные команды:
+- `domain:new` (только домены из `config/agent.config`)
+- `allias:new` (только для разрешенных доменов)
+- `page:new` (только для разрешенных доменов)
+- `page:write` (только для разрешенных доменов; принимает JSON, упаковывается в base64)
+- `page:read` (только для разрешенных доменов)
+- `filler_toggle`
+- `engine_status`
+- `read_test_file`
 
-Запрещено: деструктивные команды (allias:remove, db:migrate, user:new).
+Запрещены (вызов вернёт `{"ok": false, "error": "Command '<name>' is not allowed."}`):
+- `user:new`, `db:migrate`, `admin:passwd`, `domain:remove`, `allias:remove`, `block:remove`, `trash:clear`, `migrate:page-rules`.
 
-3.4. Безопасность AI-слоя
-- **Валидация аргументов:** Все аргументы проверяются через строгие Regex. Если агент передаст ../../etc/passwd, скрипт вернет ошибку.
-- **Жесткий вызов:** Команды вызываются через shell_exec только с валидированными аргументами.
-- **Изоляция (Roadmap):** В будущем агент будет иметь права на создание только test-* доменов.
+3.3. Безопасность AI-слоя
+- **Валидация аргументов:** Все аргументы проверяются через строгие Regex. Если ты передашь `../../etc/passwd` — скрипт вернет ошибку.
+- **Whitelist доменов:** `domain` для `page:write`/`page:new`/`page:read`/`allias:new` должен быть в `config/agent.config` (`allowed_domains`). Иначе — `Security violation: Domain 'X' is not in the allowed list.` (P0 закрыт).
+- **Жесткий вызов:** Команды вызываются через `shell_exec` только с валидированными аргументами.
+- **JSON компиляция:** Твой JSON проходит через `PageCompiler`, который использует только безопасные методы `Builder` и `var_export` для строк.
 
-3.5. Как расширять (Добавление новых команд)
-Чтобы дать агенту новую возможность (например, domain:new):
-1. Убедитесь, что команда в bin/cli.php безопасна и идемпотентна.
-2. Добавьте её в $allowedCommands в bin/aicli.php.
-3. Напишите строгую проверку аргументов (regex) для этой команды.
-4. Добавьте описание инструмента (Tool) в Python-скрипт (agent_test.py), чтобы Ollama знала о ней.
-
-3.6. Пример работы (Автономное лечение)
-1. AI вызывает engine_status. Ответ: {"ok": false, "raw_output": "...Филлер top включен, но слота top нет..."}.
-2. AI читает ошибку и вызывает filler_toggle с args: {"domain": "damoony.ru", "allias": "doc", "block": "top", "value": "0"}.
-3. aicli.php валидирует аргументы и запускает php bin/cli.php filler:toggle ...
-4. AI получает {"ok": true} и пишет финальный отчет: "Я обнаружил ошибку и отключил филлер top".
+3.4. Важные нюансы для LLM (Qwen 7B)
+- **Без висячих запятых:** Валидатор Python падает на запятых перед `]` и `}`. Будь предельно внимателен при генерации JSON.
+- **Без дефисов:** Имена страниц и алиасов должны содержать только `[a-z0-9_]`. Никаких дефисов (`how-to-adopt` запрещено, используй `how_to_adopt`).
+- **Главная страница:** Не создавай `page:new` с именем `home` или `/`. Главная страница создается автоматически при `allias:new`. Для записи контента используй `page:write` с именем `__root__`.
+- **`__root__` только для главной:** Если `--parent` передан вместе с `--name='__root__'` — ошибка.
+- **Не пиши в чужой домен:** `page:write` проверяет `domain` по `allowed_domains` из `agent.config`.
 
 ---
+
+ЧАСТЬ 4: МИГРАЦИЯ PAGE-RULES
+Если на диске остались старые `.rules.json` (root `algoritm/.rules.json` или `{dir}/.rules.json`), `structure:check` покажет warning:
+`⚠ Устаревший /X/.rules.json — запустите migrate:page-rules`
+
+Действия:
+1. Предпросмотр: `php bin/cli.php migrate:page-rules --dry`.
+2. Боевой прогон: `php bin/cli.php migrate:page-rules`.
+3. Повторный `structure:check` — warning должен исчезнуть.
+
+Шаги миграции (для понимания):
+1. root: `algoritm/.rules.json` → `algoritm/algoritm.rules.json` (с union `available`).
+2. подпапки: `{dir}/.rules.json` → `{dir}/algoritm_{name}.rules.json` (с union `available`).
+3. нормализация полей (`available`, `auth`, `search`, `default`) для всех `algoritm_*.rules.json`.
+4. создание пустых `.editor.json` для существующих `.php`.
+
+Миграция идемпотентна — повторный запуск даёт `0/0/0`.
+
+---
+
 ЧЕК-ЛИСТ ПЕРЕД СДАЧЕЙ
-1. declare(strict_types=1); + namespace.
-2. Нет echo/print/var_dump.
-3. default() возвращает Node или Response.
-4. Если страница обычная — вызван SchemeRenderer.
-5. service('...') — с instanceof.
-6. Формы — с CSRF. Destructive — POST.
-7. Нет addslashes, str_replace('array (', ...), assert().
-8. Для инфраструктуры — использован CLI, а не ручное создание файлов.
-9. Коммит в git перед правкой существующих файлов.
+1. Ты сгенерировал JSON-массив, а не PHP-код.
+2. В JSON нет висячих запятых.
+3. Имена страниц содержат только `_` (подчеркивания), без дефисов.
+4. Для записи на главную страницу использован `__root__`, без `--parent`.
+5. Для инфраструктуры (создание доменов/страниц) использован CLI через `aicli.php`.
+6. Domain — из `config/agent.config` (иначе будет `Security violation`).
+7. Если видишь warning про устаревший `.rules.json` — сначала `migrate:page-rules`, потом продолжай.
 
 ССЫЛКИ
 MANIFEST.md — канон (✅/🟡/❌, P0/P1/P2).
 cli.md — полный справочник команд.
 architecture.md — жизненный цикл (включая AI-слой).
 contracts.md — контракты и ограничения.
-guide.md — руководство разработчика (Вариант A/B, блоки, схемы).
+guide.md — руководство разработчика.
 
 --- КОНЕЦ ДОКУМЕНТА ---

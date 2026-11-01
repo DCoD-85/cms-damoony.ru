@@ -14,20 +14,23 @@ bin/aicli.php — безопасный фасад (API) для интеграц�
 Жизненный цикл HTTP-запроса
 Kernel — принимает Request, оборачивает выполнение в try/catch, логирует ошибки, возвращает Response. Гарантирует: белых экранов нет.
 
-Middleware — стек: SecurityHeadersMiddleware (CSP, HSTS), RateLimitMiddleware (брутфорс), LanguageCookieMiddleware, SkinCookieMiddleware. Собирается в www/index.php.
+Middleware — стек: SecurityHeadersMiddleware (CSP, HSTS), RateLimitMiddleware (брутфорс), LanguageCookieMiddleware, SkinCookieMiddleware.
 
 FrontController:
-1. DomainResolver::resolve(host) — определяет DomainContext. Нормализует Host (отрезает порт, trailing-dot, lowercase).
+1. DomainResolver::resolve(host) — определяет DomainContext. Нормализует Host (отрезает порт, trailing-dot).
 2. Проверяет доступность домена и алиаса. Если false — 503 из stubs/.
 3. Router::match(path, domain) → RouteMatch. Проверяет флаг auth.
 4. Создаёт RegionContext и передаёт в PageHandler.
 
-Router (FileRouter) — идёт по дереву algoritm/, читает .rules.json, возвращает RouteMatch.
+Router (FileRouter) — идёт по дереву algoritm/. На каждом шаге читает правила текущего класса:
+- root: algoritm/algoritm.rules.json
+- уровень N: algoritm/<pathRel>/algoritm_<pathRel_underscores>.rules.json
+
+Возвращает RouteMatch.
 
 PageHandler — загружает RegionRegistry (через RegionLoader), подключает PHP-файл страницы, вызывает default(). Если страница возвращает null, PageHandler возвращает 204 No Content. Если бросает исключение — в dev отдаёт сообщение, в prod — generic 500.
 
-Важно: PageHandler НЕ оборачивает Node в Document через схему автоматически. Если страница вернула Node, он кладётся в <body> как есть — без шапки/футера/регионов.
-Так как визуальный редактор страниц удален (ради безопасности), разработчик САМ обязан вызвать SchemeLoader + SchemeRenderer в коде страницы (Вариант A из guide.md), если ему нужен каркас. Скрытой магии больше нет.
+Важно: PageHandler НЕ оборачивает Node в Document через схему автоматически. Если страница вернула Node, он кладётся в <body> как есть — без шапки/футера/регионов. Разработчик САМ обязан вызвать SchemeLoader + SchemeRenderer в коде страницы (Вариант A из guide.md), либо использовать AI-команду `page:write --with_schema=1`.
 
 Слой домена и алиаса
 Домен — папка app/<real_domain>/. Входящие хосты мапятся на реальный домен через ConfigDomainResolver.
@@ -35,64 +38,102 @@ PageHandler — загружает RegionRegistry (через RegionLoader), п�
 Инфраструктурные папки скрыты точкой: .alliasglobal/ (блоки), .alliasscheme/ (схемы).
 
 Правило 3 файлов (Архитектурный стандарт)
-Каждый логический элемент системы (Страница, Блок, Филлер, Схема) строго описывается тремя файлами:
+Каждый логический элемент (Страница, Блок, Филлер, Схема) строго описывается тремя файлами:
 1. {name}.php — PHP-код (класс или массив).
-2. {name}.rules.json — Настройки (тип блока, auth, search, enabled).
-3. {name}.editor.json — Данные для UI (деревья вложенности для визуального редактора схем).
+2. {name}.rules.json — Настройки (тип блока, auth, search, available, enabled).
+3. {name}.editor.json — Данные для UI (деревья вложенности).
+
+Для страниц все три файла имеют единый префикс:
+- root: algoritm/algoritm.php + algoritm.rules.json + algoritm.editor.json
+- /about/: algoritm/about/algoritm_about.php + algoritm_about.rules.json + algoritm_about.editor.json
+- /docs/install/: algoritm/docs/install/algoritm_docs_install.php + алгоритм_docs_install.rules.json + algoritm_docs_install.editor.json
+
 Глобальные манифесты (blocks.json, schemes.json) удалены. Источник истины — локальные файлы.
+
+Старая модель (algoritm/.rules.json для root, {dir}/.rules.json для вложенных) мигрируется командой `migrate:page-rules`. Эта команда идемпотентна, шаги: (1) root, (2) подпапки, (3) нормализация полей, (4) создание пустых .editor.json.
+
+Page-слой (резолвинг путей и правил)
+Единый набор хелперов, используемый всеми page-командами (new/write/read/toggle):
+
+- PagePath::resolve(Paths, domain, allias, name, parent): PagePath — возвращает targetRelPath, classChain, pageDir, phpFile, rulesFile, editorFile, а также parentDir, parentPhpFile, parentRulesFile.
+- PageRules::load/save/defaults/withDefaults/withChild — единый источник .rules.json (поля available/auth/search/default).
+- PageNamespace::fromSite(site, domain): string — резолв PHP-namespace из site.config (fallback: str_replace('.', '_', domain)).
+
+Назначение: устранить дублирование формул путей/класса между 4 командами, обеспечить единый формат правил.
 
 Слой UI и Компоненты
 UI — типизированное дерево (не строки): Node, Element, Attrs, Builder, Document, Meta.
-Attrs::release() экранирует значения через htmlspecialchars(ENT_QUOTES | ENT_SUBSTITUTE). Имена атрибутов валидируются (XSS закрыт).
-Document::release() идемпотентен — повторный вызов не дублирует <title>/<link>/<script>.
+Attrs::release() экранирует значения через htmlspecialchars. Имена атрибутов валидируются (XSS закрыт).
+Document::release() идемпотентен — повторный вызов не дублирует теги в <head>.
 
 Регионы, Слоты и Схемы
 Region (RegionInterface): независимый блок контента (шапка, футер). Настройки типа (visual, script, mixed) читаются из {name}.rules.json.
-Slot: узел в схеме для вставки региона. Slot::release() возвращает '' — если слот не заменён регионом, он молча исчезает.
+Slot: узел в схеме для вставки региона. Если слот не заменён регионом, он молча исчезает.
 Scheme: SchemeRenderer собирает каркас из манифеста и слотов.
-Иерархия схем: локальная схема алиаса (www.php) → глобальная схема домена. В prod SchemeLoader бросает RuntimeException, если схемы нет.
-Filler: переопределение региона для конкретного алиаса (top_www.php). Управление — RegionRegistry (disable, useGlobal). Приоритет: disabled → forcedGlobal → filler → base.
+Filler: переопределение региона для конкретного алиаса (top_www.php). Приоритет: disabled → forcedGlobal → filler → base.
 
-Low-Code и Компиляция
-Механика: визуальный редактор (Drag&Drop) оставлен ТОЛЬКО для Схем. Админка сохраняет структуру схемы в scheme.editor.json.
-Схемы: editor.json хранит дерево блоков для UI. При сохранении SchemeCompiler компилирует его в {name}.php (чистый PHP-массив, var_export).
-Страницы, Блоки и Филлеры: визуальные редакторы удалены (закрытие RCE). Редактирование происходит напрямую в PHP-файлах через CodeMirror.
-RegionCompiler: используется для компиляции блоков. Для генерации сырого PHP (блоки custom/if/else/endif) требуется включить security.allow_php_blocks=true в engine.config. По умолчанию заблокировано.
+Low-Code и Компиляция (Zero-Overhead)
+Механика: визуальный редактор (Drag&Drop) оставлен ТОЛЬКО для Схем. Админка сохраняет структуру схемы в scheme.editor.json, а SchemeCompiler компилирует её в {name}.php.
+
+Страницы, Блоки и Филлеры: визуальные редакторы удалены (закрытие RCE). 
+
+Безопасная компиляция контента (PageCompiler):
+Для AI и автоматизации внедрен безопасный PageCompiler. AI передает JSON-массив блоков (h1, text, img и т.д.) через команду `page:write`. PageCompiler конвертирует этот JSON в нативный PHP-код (через Builder), используя var_export для строк. Это исключает RCE (AI не может написать сырой PHP, такой как system()).
+
+PageCompiler::compile(namespace, classChain, blocks, withSchema = false):
+- withSchema = true — генерирует код, который оборачивает контент в схему (SchemeLoader + SchemeRenderer). Используется через page:write --with_schema=1.
+- withSchema = false — «голая» страница (для API, AJAX).
+
+RegionCompiler: используется для компиляции блоков. Для генерации сырого PHP (custom/if) требуется включить security.allow_php_blocks=true в engine.config. По умолчанию заблокировано.
 
 Слой данных
 Только PDO (Connection). SQLite (тесты) / MariaDB (prod).
 MigrationRunner применяет .sql из migrations/, идемпотентен.
-Прямых SQL-запросов в контроллерах — избегать.
 
 Авторизация
 DbAuth (password_hash / password_verify).
-Флаг auth в .rules.json проверяется FrontController → Response::redirect('/login?return=...', 302).
-Админка — отдельная авторизация (config/admin.config).
-Все POST — CSRF. Destructive — POST+CSRF.
+Флаг auth в algoritm_{name}.rules.json проверяется FrontController → Response::redirect('/login?return=...', 302).
+Админка — отдельная авторизация (config/admin.config). Все POST — CSRF.
 
 CLI и Админка
-CLI: 22 команды, возвращают Result (ok, errors), идемпотентны. structure:check — диагностика, structure:repair — восстановление (создает .rules.json и .editor.json).
-Admin: Тонкий клиент. Контроллеры занимаются только рендерингом HTML и валидацией форм. Вся файловая логика делегируется вызовом CLI-команд (например, SchemeRemoveCommand, SchemeSaveCommand).
+CLI: 22 команды, возвращают Result (ok, errors), идемпотентны. structure:check — диагностика (severity-aware), structure:repair — восстановление, migrate:page-rules — миграция .rules.json на новую модель.
+Admin: Тонкий клиент. Контроллеры занимаются только рендерингом HTML и валидацией форм. Вся файловая логика делегируется вызовом CLI-команд.
 Админка и CLI делят бизнес-логику.
 
+Диагностика
+StructureChecker проверяет:
+- наличие всех 3 файлов для каждой страницы (алгоритм_{name}.{php,rules.json,editor.json});
+- наличие алгоритм/algoritm.rules.json (root);
+- устаревшие {dir}/.rules.json (warning → migrate:page-rules);
+- стыковку филлер↔слот;
+- наличие схем и их .rules.json;
+- наличие .php/.rules.json/.editor.json для блоков.
+
+Severity:
+- error: отсутствует .php, отсутствует алгоритм/algoritm.rules.json, отсутствует схема.
+- warning: отсутствует .editor.json, отсутствует .rules.json у блока/схемы, устаревший .rules.json, филлер без слота.
+
+StructureCheckCommand: `$r->ok = true`, если нет errors. Warnings отображаются через `⚠` и не валят команду (exit 0). При errors — `✗` и exit 1.
+
 AI-Слой (Agent Integration)
-Архитектура интеграции LLM (например, локальной Ollama через Gemma 4):
+Архитектура интеграции LLM (например, локальной Ollama через Qwen 2.5 Coder):
 AI (Python/LLM) -> bin/aicli.php -> bin/cli.php -> Файловая система
 
-1. AI генерирует запрос к инструменту (JSON).
-2. Python-скрипт передает JSON в bin/aicli.php через STDIN.
-3. aicli.php проверяет команду по Whitelist (разрешены только безопасные операции).
-4. aicli.php вызывает bin/cli.php с жестко заданными аргументами.
+1. AI генерирует JSON-план (массив команд и блоков).
+2. Python-скрипт очищает JSON от синтаксических ошибок (висячие запятые) и передает в bin/aicli.php через STDIN.
+3. aicli.php проверяет команду по Whitelist (разрешены безопасные операции: domain:new, page:write и т.д.).
+4. aicli.php вызывает bin/cli.php с жестко заданными аргументами (JSON кодируется в base64).
 5. Результат (JSON) возвращается агенту для анализа.
 
 Безопасность AI-слоя:
 - Агент не имеет доступа к shell (exec/shell_exec).
-- Жесткая валидация аргументов (regex).
-- Whitelist команд (например, разрешен filler:toggle, но запрещен user:new или db:migrate).
-- Изоляция доменов (агент может создавать только test-* домены).
+- Жесткая валидация аргументов (regex), включая domain (по whitelist из agent.config), allias/name ([a-z][a-z0-9_]*).
+- Whitelist команд (запрещен user:new или db:migrate).
+- Изоляция доменов (агент может создавать только домены из config/agent.config).
+- Спец. ключ `__root__` используется для записи контента на главную страницу аллиаса (/, так как CLI не принимает пустой аргумент --name). Внутри PageWriteCommand конвертируется в пустой name. `--parent` с `__root__` несовместим (ошибка).
 
 Диагностика и отказоустойчивость
-StructureChecker: проверяет наличие всех 3 файлов для каждого элемента (Страницы, Блоки, Схемы). Проверяет стыковку филлер↔слот.
+StructureChecker: severity-aware (error/warning), см. раздел «Диагностика».
 OverviewController (System Health): древовидный дашборд доменов и алиасов.
 Safe Mode: www/admin/index.php перехватывает фатальные ошибки и отдаёт понятную страницу.
 
@@ -101,10 +142,9 @@ Safe Mode: www/admin/index.php перехватывает фатальные о�
 Пароли — только password_hash.
 CSP из engine.config блокирует inline-скрипты.
 CSRF-токены обязательны на POST. Destructive — POST+CSRF.
-Response::internalError() в PageHandler — в prod отдаёт generic сообщение.
 Session: HttpOnly, SameSite=Lax, Secure при HTTPS.
 
 Что не реализовано
-Headless/REST API для внешних систем (кроме локального aicli), sitemap, hreflang, плагины, SMTP/сброс пароля, Redis/Memcached/CDN, мультиязычность контента, WYSIWYG. См. MANIFEST.md §5.
+Headless/REST API для внешних систем (кроме локального aicli), sitemap, hreflang, плагины, SMTP/сброс пароля, Redis/Memcached/CDN, мультиязычность контента, WYSIWYG. CLI-команды scheme:copy/scheme:remove/scheme:save. См. MANIFEST.md §5.
 
 --- КОНЕЦ ДОКУМЕНТА ---

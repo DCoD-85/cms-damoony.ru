@@ -12,6 +12,8 @@ MariaDB 11+ (или MySQL 8+). SQLite — для тестов, не для produ
 
 Apache 2.4 + mod_rewrite или Nginx + PHP-FPM.
 
+Ollama (опционально, для работы AI-агента, рекомендуется Qwen 2.5 Coder 7B).
+
 Установка
 bash
 git clone <repo-url> damoony
@@ -91,6 +93,18 @@ json
 }
 ⚠️ Пустой password_hash — админка недоступна. Задайте через php bin/cli.php admin:passwd --name=admin --password=<strong>.
 
+config/agent.config — доступ для AI-агента
+Файл для ограничения действий AI (Whitelist доменов). Создайте его, если планируете использовать `bin/aicli.php`.
+
+json
+{
+  "allowed_domains": [
+    "damoony3test.ru",
+    "damoony.ru"
+  ]
+}
+⚠️ Агент сможет вызывать `domain:new`, `page:write` и `allias:new` только для доменов из этого списка. `page:write` проверяет domain по $allowedDomains (закрыт P0 — раньше проверки не было). Это защищает боевые проекты от случайных изменений.
+
 База данных
 Создайте базу:
 
@@ -146,7 +160,22 @@ bash
 php bin/cli.php domain:new --domain=example.ru --namespace=example
 Алиас www создаётся автоматически. Проверьте config/site.config.
 
-⚠️ page:new создаёт страницу без схемы по умолчанию (MANIFEST.md §6.1). Шапки/футера на ней не будет. Для обычной страницы — guide.md §4, Вариант A (вызов SchemeRenderer в коде).
+⚠️ page:new создаёт страницу без схемы по умолчанию (MANIFEST.md §6.1). Шапки/футера на ней не будет. Для обычной страницы — guide.md §4, Вариант A (вызов SchemeRenderer в коде) или используйте `page:write --with_schema=1`.
+
+Модель .rules.json (новая)
+С версии «page-rules unify» каждая страница описывается тремя файлами с единым префиксом:
+- algoritm/about/algoritm_about.php
+- algoritm/about/algoritm_about.rules.json
+- algoritm/about/algoritm_about.editor.json
+Root алиаса: algoritm/algoritm.{php,rules.json,editor.json}.
+
+Старая модель (algoritm/.rules.json + {dir}/.rules.json) больше не используется. Если на диске остались такие файлы — миграция:
+bash
+php bin/cli.php migrate:page-rules --dry   # предпросмотр
+php bin/cli.php migrate:page-rules          # боевой прогон
+Идемпотентна. Шаги: (1) root, (2) подпапки, (3) нормализация полей, (4) создание пустых .editor.json для существующих .php.
+
+⚠️ CLI-команда `page:toggle` теперь принимает `--name` (не `--path`), root — через `--name='__root__'`. Это breaking change относительно старых версий.
 
 Развёртывание по IP (intranet, staging)
 В config/site.config добавьте IP как ключ в domains_real (без порта):
@@ -157,7 +186,7 @@ json
     "example.ru": "example.ru"
 }
 Откройте http://192.168.1.10/. 
-⚠️ Порт и trailing-dot нормализуются автоматически (stage-3). Для нескольких алиасов нужны DNS/hosts (например damoony.local, doc.damoony.local → тот же IP).
+⚠️ Порт и trailing-dot нормализуются автоматически (stage-3). Для нескольких алиасов нужны DNS/hosts.
 
 Разработка и тестирование
 bash
@@ -172,6 +201,11 @@ composer stan
 composer cs
 composer check   # stan + cs + test
 
+Ожидаемые метрики:
+- PHPUnit: 309 тестов, 698 assertions, 1 skipped (LinkTraversalTest — требует dev-сервер 127.0.0.1:8080, прогоняется в CI).
+- PHPStan: level 8, 0 errors.
+- PHP-CS-Fixer: 0 issues.
+
 Безопасность (перед production)
 Пароли — password_hash/password_verify (bcrypt). admin:passwd и user:new делают это.
 CSRF — на всех POST (админка и сайт). Destructive операции защищены.
@@ -180,19 +214,28 @@ Brute-force — бан IP на 15 минут после 5 неудач.
 CSP — блокирует inline-скрипты (CodeMirror локальный из /media/admin/).
 Визуальные редакторы удалены для страниц и блоков (CodeMirror). Drag&Drop оставлен только для Схем.
 Флаг security.allow_php_blocks=false по умолчанию блокирует генерацию сырого PHP.
+AI-агенты ограничены config/agent.config (белый список доменов). Page:write проверяет domain по allowed_domains.
+.htaccess: dev-правило для /tests/ удалено (было в старых версиях).
 
 Проверка после установки
 bash
 php bin/cli.php structure:check
-✅ Проверяет наличие всех 3 файлов (.php, .rules.json, .editor.json) для каждого элемента, стыковку филлер↔слот. Выводит OK или список ошибок.
-Если есть пропущенные файлы — восстановить можно командой:
+✅ Severity-aware:
+- `✗` (error) — критично (exit 1): отсутствует .php, отсутствует algoritm/algoritm.rules.json (root), отсутствует схема.
+- `⚠` (warning) — некритично (exit 0): отсутствует .editor.json, устаревший {dir}/.rules.json, филлер без слота.
+
+Восстановить пропущенные файлы:
 bash
 php bin/cli.php structure:repair --domain=example.ru
+
+Если видите warning про устаревший .rules.json — миграция:
+bash
+php bin/cli.php migrate:page-rules
 
 Полезные ссылки
 MANIFEST.md — канон: ✅/🟡/❌, P0/P1/P2, backlog, видение.
 readme.md — обзор и быстрый старт.
-cli.md — CLI-команды.
+cli.md — CLI-команды (22 команды).
 admin.md — админка.
 guide.md — руководство разработчика.
 architecture.md — жизненный цикл (включая AI-слой).

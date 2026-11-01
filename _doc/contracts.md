@@ -53,11 +53,11 @@ code: int
 Инварианты:
 Роутер не выполняет код контроллера.
 Роутер не рендерит ошибки → RouteMatch с found=false и code.
-Правила — в algoritm_{name}.rules.json рядом со страницами.
+Правила — в algoritm/algoritm.rules.json (root) и algoritm_{name}.rules.json рядом со страницами.
+На каждом шаге роутинга FileRouter читает правила текущего класса (root → промежуточные → leaf).
 
 Ограничения:
 Regex-параметры формата regex|target; @preg_match глушит ошибки — битый regex даст тихий notFound, не диагностику.
-RouteMatch::forbidden() — мёртвый код.
 
 Источник: src/Routing/
 
@@ -79,7 +79,7 @@ get(string $name): ?RegionInterface — приоритет: disabled → forcedG
 Инварианты:
 Регион не знает о других регионах и о схеме. Возвращает Node, не строку.
 Настройки (тип блока: script, visual, mixed) хранятся в {name}.rules.json.
-Источник истины — папки .alliasglobal/*/, а не глобальные манифесты (blocks.json удален).
+Источник истины — папки .alliasglobal/*/, а не глобальные манифесты.
 
 Ограничения:
 RegionContext::service(string): mixed — Service Locator. @template в PHPDoc отсутствует (§6.2) — компенсация через instanceof на стороне вызывающего.
@@ -131,6 +131,55 @@ SchemeCompiler::compile() использует var_export (без str_replace).
 
 Источник: src/Scheme/
 
+Page (Страницы и Page-слой)
+Назначение: единое представление страницы и её файлов (php, rules.json, editor.json).
+
+Базовый класс (src/Algoritm/Page.php):
+Page implements PageInterface
+- __construct(RegionContext, RegionRegistry, array $args)
+- default(): Node|Response|null
+- isAjax(): bool
+- isPost(): bool
+- isAuthenticated(): bool
+- user(): mixed
+- regions(): RegionRegistry
+- setContent(string $slotName, Node $content): self
+
+PageInterface (src/Algoritm/PageInterface.php):
+- __construct(RegionContext, RegionRegistry, array $args)
+- default(): Node|Response|null
+- isAjax(): bool
+- isPost(): bool
+
+Page-слой (src/Page/):
+PagePath::resolve(Paths, domain, allias, name, parent): PagePath
+  Возвращает: targetRelPath, classChain, pageDir, phpFile, rulesFile, editorFile,
+  parentRelPath, parentClassChain, parentDir, parentPhpFile, parentRulesFile.
+
+PageRules::load(string $file): array
+PageRules::save(string $file, array $rules): void
+PageRules::defaults(): array{available: list<string>, auth: bool, search: bool, default: bool}
+PageRules::withDefaults(array $current): array{...}
+PageRules::withChild(array $rules, string $childName): array
+
+PageNamespace::fromSite(array $site, string $domain): string
+
+PageCompiler::compile(namespace, classChain, blocks, withSchema = false): string
+  Компилирует JSON-блоки в PHP-код страницы. withSchema=true → оборачивает в схему.
+
+Инварианты:
+- Один класс = algoritm_{name}.{php,rules.json,editor.json} в одной директории.
+- Root: algoritm/algoritm.{php,rules.json,editor.json}.
+- Все 4 page-команды (new/write/read/toggle) используют PagePath и PageRules — без дублирования формул.
+- __root__ в CLI = пустой name внутри (главная страница). --parent с __root__ — ошибка.
+- page:new создаёт stub через PageCompiler (пустой Builder::div('page-content')).
+
+Ограничения:
+- CLI scheme:copy/scheme:remove/scheme:save не реализованы (файловые операции в SchemeController).
+- Namespace `Damoony\Algoritm` сохранён (P2: переименовать в `Damoony\Page`).
+
+Источник: src/Algoritm/, src/Page/
+
 Auth (Авторизация и Безопасность)
 Назначение: аутентификация и защита от подделки запросов.
 
@@ -138,12 +187,12 @@ Auth (Авторизация и Безопасность)
 AuthInterface: login(), logout(), isAuthenticated(), user()
 DbAuth (база данных)
 Csrf: field(), check()
-Algoritm (Базовый класс): isAuthenticated(): bool, user(): mixed
+Page (Базовый класс): isAuthenticated(): bool, user(): mixed
 
 Инварианты:
 Пароли — только password_hash.
 Все POST защищены CSRF. Без исключений.
-Флаг auth: true в .rules.json автоматически перенаправляет гостя на /login.
+Флаг auth: true в algoritm_{name}.rules.json автоматически перенаправляет гостя на /login.
 Все destructive требуют POST+CSRF. UI переведён на POST-формы.
 Админка использует отдельную авторизацию (config/admin.config), независимую от пользователей сайта.
 
@@ -166,38 +215,53 @@ Low-Code и Компиляторы
 Назначение: превращение JSON-структур в нативный PHP.
 
 Классы:
+PageCompiler: Безопасная компиляция JSON-дерева контента (h1, text, img, etc) в PHP-код (класс Page). Использует только безопасные методы Builder. Применяется через CLI page:write (для AI). withSchema=true оборачивает в схему.
 RegionCompiler: JSON-дерево блока → PHP-класс. Требует флаг security.allow_php_blocks=true для генерации сырого PHP (custom/if).
 SchemeCompiler: массив схемы → {name}.php (var_export).
 
 Инварианты:
 Компиляторы вызываются только в момент сохранения (в админке или CLI).
 На выходе — быстрый PHP с вызовами Builder, без парсинга JSON на лету.
-PageCompiler удален. Страницы редактируются только через CodeMirror (ручной PHP).
+AI (через aicli) не может передать сырой PHP. Он передает только безопасный JSON, который компилируется PageCompiler.
 
 Diagnostics (Диагностика)
 Назначение: проверка целостности системы.
 
 Классы:
-StructureChecker: проверяет наличие всех 3 файлов (.php, .rules.json, .editor.json) для каждого элемента, стыковку филлер↔слот.
+StructureChecker: severity-aware проверка наличия всех 3 файлов для каждого элемента, стыковки филлер↔слот, отсутствия устаревших .rules.json.
+
+Методы:
+checkAllias(domain, allias): list<{level: string, message: string}>
+  level: 'error' | 'warning'
 
 Инварианты:
-Результат — массив (level, message); выводится в CLI (structure:check) и в админке (System Health).
-Проверяет соответствие структуры правилу 3 файлов.
+- error: отсутствует .php, отсутствует algoritm/algoritm.rules.json (root), отсутствует схема.
+- warning: отсутствует .editor.json, отсутствует .rules.json у блока/схемы, устаревший {dir}/.rules.json (→ migrate:page-rules), филлер без слота.
+- Для вложенных страниц используется classChain = algoritm_<rel_with_underscores>, а не basename(dir).
+- Windows-разделители нормализуются в '/' перед вычислением classChain.
 
-Источник: src/Diagnostics/
+CLI structure:check:
+- `$r->ok = true`, если нет errors (warnings допускаются).
+- Вывод: `✗` для error, `⚠` для warning.
+- Exit code: 0 при отсутствии errors, 1 при наличии errors.
 
 CLI, Админка и AI-Слой
 Назначение: интерфейсы управления.
 
-CLI: 22 команды, возвращают Result. Включает диагностику (structure:check), восстановление (structure:repair) и обслуживание. Идемпотентен. Единственный источник истины для файловых операций.
+CLI: 22 команды, возвращают Result. Включает диагностику (structure:check), восстановление (structure:repair), миграцию .rules.json (migrate:page-rules), безопасную запись контента (page:write, page:read) и обслуживание. Идемпотентен. Единственный источник истины для файловых операций.
+Спец. ключ __root__ используется для записи контента на главную страницу (/) аллиаса (т.к. CLI не принимает пустой --name). --parent с __root__ — ошибка.
 
-Admin: Тонкий клиент. Контроллеры делегируют работу CLI-командам (SchemeRemoveCommand, SchemeSaveCommand). CodeMirror для страниц и блоков. Визуальный Drag&Drop только для Схем. POST защищены CSRF.
+Admin: Тонкий клиент. Контроллеры делегируют работу CLI-командам. CodeMirror для страниц и блоков. Визуальный Drag&Drop только для Схем. POST защищены CSRF.
+Исключение (P2): scheme:copy, scheme:remove, scheme:saveVisual — реализованы прямо в SchemeController (файловые операции), а не через CLI.
 
-AI-Слой (bin/aicli.php): Безопасный фасад для LLM. Принимает JSON, проверяет Whitelist, вызывает bin/cli.php. Не имеет доступа к exec/system.
+AI-Слой (bin/aicli.php): Безопасный фасад для LLM. Принимает JSON-план, проверяет Whitelist (domain:new, page:write, page:read, allias:new, page:new, filler_toggle, engine_status, read_test_file), конвертирует JSON-блоки в base64 и вызывает bin/cli.php. Не имеет доступа к exec/system.
+Валидация аргументов: domain — по whitelist из agent.config; allias/name — regex [a-z][a-z0-9_]*; для page:write пустое name конвертируется в __root__.
 
 Инварианты:
 Админка перехватывает фатальные ошибки (Safe Mode) и не падает при битом конфиге.
 Агент не может выполнить запрещенные команды (защита на уровне фасада).
+AI не может внедрить RCE (только безопасные JSON-блоки через PageCompiler).
+page:write в aicli проверяет domain по $allowedDomains (иначе — RuntimeException).
 
 Источник: bin/cli.php, bin/aicli.php, www/admin/index.php, src/Admin/
 

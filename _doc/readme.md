@@ -10,13 +10,13 @@ Damoony Engine — это AI-Native CMS. Она сочетает в себе с�
 
 Главное отличие от классических CMS: 
 1. **CLI-First**: CLI — это единственный источник истины. Админка и AI-агенты — это лишь безопасные обертки над CLI-командами.
-2. **Безопасный Low-Code**: Визуальный Drag&Drop (конструктор) оставлен ТОЛЬКО для Схем (HTML-каркасов). Страницы и Блоки редактируются через CodeMirror. Это исключает RCE-уязвимости.
-3. **AI-Интеграция**: Встроенный слой `bin/aicli.php` позволяет локальным LLM (например, Ollama) безопасно диагностировать систему и управлять ей.
+2. **Безопасный Low-Code**: Визуальный Drag&Drop (конструктор) оставлен ТОЛЬКО для Схем (HTML-каркасов). Страницы и Блоки редактируются через CodeMirror или AI (через безопасный JSON). Это исключает RCE-уязвимости.
+3. **AI-Интеграция**: Встроенный слой `bin/aicli.php` позволяет локальным LLM (например, Ollama) безопасно диагностировать систему и создавать сайты.
 
 Стек
 PHP >= 8.4
 Composer (PSR-4, PSR-3, PSR-11)
-PHPUnit 10 (61 тестовый файл, 288 тестов, 644 assertions — верифицировано; 1 skipped — env-dependent)
+PHPUnit 10 (60 тестовых файлов, 309 тестов, 698 assertions — верифицировано; 1 skipped — env-dependent)
 PHPStan (level 8)
 MariaDB / MySQL (production) через PDO
 SQLite (тесты)
@@ -26,7 +26,7 @@ Nginx + PHP-FPM (или Apache + mod_php)
 text
 bin/cli.php        — точка входа CLI (Ядро)
 bin/aicli.php      — безопасный фасад для AI-агентов
-config/            — JSON-конфиги (site.config, engine.config, admin.config)
+config/            — JSON-конфиги (site.config, engine.config, admin.config, agent.config)
 src/               — исходный код (PSR-4, Damoony)
 lang/              — файлы переводов (ru.php, en.php, zh.php)
 stubs/             — HTML-шаблоны для 503
@@ -40,15 +40,19 @@ _doc/              — документация
 Ключевые особенности
 Мультидоменность: управление многими сайтами из одной админки. Домен (инфраструктура) + Алиас (контент).
 
-Правило 3 файлов: Любая сущность (Страница, Блок, Схема) состоит из трех файлов: .php (код), .rules.json (настройки), .editor.json (данные UI). Никаких глобальных манифестов.
+Правило 3 файлов: Любая сущность (Страница, Блок, Схема) состоит из трех файлов: .php (код), .rules.json (настройки), .editor.json (данные UI). Для страниц все три с единым префиксом: algoritm_{name}.{php,rules.json,editor.json}. Root — algoritm/algoritm.{php,rules.json,editor.json}. Никаких глобальных манифестов.
 
-AI-Агенты: Агент (Gemma 4 26B / Ollama) может автономно проверять структуру, находить ошибки и лечить их через `aicli.php`.
+AI-Агенты: Агент (успешно протестирован на Qwen 2.5 Coder 7B через Ollama) может автономно создавать 10-страничные сайты с меню и стилями за один шаг через `aicli.php`.
 
-Строгая типизация блоков: script, visual, mixed. Настройки хранятся в `.rules.json`.
+Безопасная компиляция: PageCompiler конвертирует JSON-структуру от AI в нативный PHP через Builder (защита от RCE).
+
+Строгая типизация блоков: script, visual, mixed. Настройки хранятся в .rules.json.
 
 UI как дерево: типизированное дерево Node/Element/Attrs с XSS-экранированием.
 
-Диагностика: StructureChecker (проверка наличия всех 3 файлов), CLI structure:check и structure:repair.
+Диагностика: StructureChecker (проверка наличия всех 3 файлов, severity-aware), CLI structure:check и structure:repair.
+
+Миграция: migrate:page-rules — одноразовый перевод старых .rules.json на новую модель (алгоритм_{name}.rules.json). Идемпотентна.
 
 Принципы
 Домен — единица организации. Всё скоупится по домену и алиасу.
@@ -70,6 +74,8 @@ php bin/cli.php user:new --login=admin --email=admin@example.com --password=secr
 
 ⚠️ user:new создаёт пользователя сайта (для страниц с auth), не администратора. Админка использует отдельную авторизацию (admin.config).
 
+⚠️ Если на диске остались старые .rules.json (до рефакторинга) — запустите `php bin/cli.php migrate:page-rules`. Команда идемпотентна и безопасна.
+
 Подробнее: install.md, cli.md, architecture.md, guide.md, admin.md, ai_agent.md.
 
 Статус (по MANIFEST.md §3–4)
@@ -78,35 +84,39 @@ php bin/cli.php user:new --login=admin --email=admin@example.com --password=secr
 
 Безопасность (P0 закрыт): Удалены визуальные редакторы страниц/блоков. В RegionCompiler добавлен флаг `security.allow_php_blocks` (по умолчанию false).
 
-Домен/Алиас: domain:new, allias:new, allias:remove, domains_*, alliases_*.
+Домен/Алиас: domain:new, domain:remove, allias:new, allias:remove, domains_*, alliases_*.
 
-Роутинг: .rules.json, флаги available/auth/search/default, regex-параметры, 404.
+Роутинг: algoritm/algoritm.rules.json (root) и algoritm_{name}.rules.json (вложенные), флаги available/auth/search/default, regex-параметры, 404.
 
 Схемы/Регионы: SchemeLoader, SchemeRenderer, RegionLoader, RegionRegistry, филлеры.
 
-Правило 3 файлов: Внедрено для Страниц, Блоков, Филлеров и Схем.
+Правило 3 файлов: Внедрено для Страниц, Блоков, Филлеров и Схем. Для страниц — единый префикс algoritm_{name}.{php,rules.json,editor.json}, root — algoritm/algoritm.{...}.
+
+Page-слой: PagePath, PageRules, PageNamespace — единый резолвинг путей/правил/namespace для всех page-команд.
+
+Безопасная компиляция: PageCompiler (JSON -> PHP) для страниц.
 
 UI: Node, Element, Attrs, Builder (12 методов), Document, Meta, Form, Field, Table, Button, Message.
 
-Auth: DbAuth, SessionAuth, Csrf, login/logout, логирование, брутфорс-защита.
+Auth: DbAuth, SessionAuth, Csrf, login/logout, логирование, брутфорс-защита. Базовый класс Page.
 
 БД: PDO, MigrationRunner, MariaDB/MySQL.
 
 Админка: Тонкий клиент. CodeMirror для страниц/блоков. Визуальный Drag&Drop для схем. I18n (RU/EN/ZH), System Health, Safe Mode.
 
-AI-Слой: `bin/aicli.php` — безопасный фасад (whitelist команд) для интеграции с Ollama.
+AI-Слой: `bin/aicli.php` — безопасный фасад (whitelist команд) для интеграции с Ollama. Поддерживает page:write (JSON) и page:read.
 
-CLI (22 команды, включая scheme:copy, scheme:remove, scheme:save, structure:check, structure:repair).
+CLI (22 команды): включая domain:remove, page:write, page:read, migrate:page-rules, structure:check, structure:repair.
 
-Качество: PHPUnit (288 тестов, 644 assertions), PHPStan level 8, PHP-CS-Fixer, CI.
+Качество: PHPUnit (309 тестов, 698 assertions), PHPStan level 8, PHP-CS-Fixer, CI.
 
 Частично (🟡)
 I18n фронтенда: middleware и DomainContext->language есть, UI-переключателя и hreflang нет.
 Skins: SkinManager и автоподключение CSS/JS есть, UI-менеджера и переключателя нет.
-AI-Транзакции: AI умеет диагностировать и лечить, но нет отката (Rollback) при падении одной из команд.
+AI-Транзакции: AI умеет диагностировать, лечить и создавать страницы, но нет отката (Rollback) при падении одной из команд в цепочке.
 
 Не реализовано (❌)
-WYSIWYG (свободная вёрстка), Headless/REST/GraphQL API для внешних систем (кроме aicli), sitemap, robots.txt, hreflang, плагины, Schema.org, SMTP/сброс пароля, Redis/Memcached/CDN, WebSocket, мультиязычность контента.
+WYSIWYG (свободная вёрстка), Headless/REST/GraphQL API для внешних систем (кроме aicli), sitemap, robots.txt, hreflang, плагины, Schema.org, SMTP/сброс пароля, Redis/Memcached/CDN, WebSocket, мультиязычность контента. CLI-команды scheme:copy, scheme:remove, scheme:save (сейчас в SchemeController).
 
 Известные проблемы (по MANIFEST.md §7)
 P0 — блокируют production
@@ -116,7 +126,7 @@ P1 — надёжность и безопасность
 Нет. Все 7 P1 закрыты.
 
 P2 — техдолг
-domains_real[$domain] → ConfigDomainResolver::real(); Builder неполон; assert() в prod; @template в RegionContext::service(); мёртвый код (RouteMatch::forbidden, Group); Translator мимо контейнера.
+domains_real[$domain] → ConfigDomainResolver::real(); Builder неполон; assert() в prod; @template в RegionContext::service(); Translator мимо контейнера; PageHandler::applySkin читает $_COOKIE напрямую; namespace Damoony\Algoritm (переименованы только классы); CLI scheme:copy/remove/save.
 
 Производные документы
 MANIFEST.md — канон. Источник истины о намерениях.
@@ -137,8 +147,6 @@ philosophy.md — 10 принципов.
 
 scenarios.md — ключевые сценарии.
 
-ai_agent.md — спецификация интеграции AI-агентов через aicli.php.
-
-ai_agent.md — инструкции для AI-агентов.
+ai_agent.md — инструкции и спецификация для AI-агентов (через aicli.php).
 
 --- КОНЕЦ ДОКУМЕНТА ---
