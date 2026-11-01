@@ -17,7 +17,7 @@ use Damoony\Ainet\UrlGuardException;
  */
 final class OpenverseProvider implements ProviderInterface
 {
-    private const ENDPOINT = 'https://api.openverse.engineering/v1/images/';
+    private const ENDPOINT = 'https://api.openverse.org/v1/images/';
 
     public function __construct(
         private readonly HttpClient $http,

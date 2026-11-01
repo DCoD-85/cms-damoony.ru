@@ -1,5 +1,6 @@
 {
   "allowed_domains": [
+    "api.openverse.org",
     "api.openverse.engineering",
     "api.unsplash.com",
     "images.unsplash.com",
@@ -12,7 +13,7 @@
     "api.github.com"
   ],
   "providers": {
-    "default": "openverse",
+    "default": "wikimedia",
     "keys": {
       "unsplash": "",
       "pexels": ""
@@ -20,7 +21,7 @@
   },
   "timeouts": {
     "connect": 5,
-    "read": 10
+    "read": 20
   },
   "limits": {
     "max_size": 10485760,

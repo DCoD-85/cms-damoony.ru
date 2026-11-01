@@ -2,18 +2,23 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../vendor/autoload.php';
+
+use Damoony\Ainet\AinetFacade;
+
 $input = stream_get_contents(STDIN);
 $input = $input === false ? '' : $input;
 $request = json_decode($input, true);
 
-if (!is_array($request) || !isset($request['command'])) {
-    echo json_encode(['ok' => false, 'error' => 'Invalid JSON request']);
+if (!is_array($request) || !isset($request['command']) || !is_string($request['command'])) {
+    echo json_encode(['ok' => false, 'error' => 'Invalid JSON request', 'hint' => '{"command": "engine_status"}']);
     exit(1);
 }
 
 $command = $request['command'];
-$args = $request['args'] ?? [];
+$args = is_array($request['args'] ?? null) ? $request['args'] : [];
 
+// === agent.config (whitelist доменов для AI) ===
 $agentConfigFile = __DIR__ . '/../config/agent.config';
 $allowedDomains = [];
 if (is_file($agentConfigFile)) {
@@ -24,16 +29,52 @@ if (is_file($agentConfigFile)) {
     }
 }
 
-$allowedCommands = ['read_test_file', 'engine_status', 'filler_toggle', 'domain:new', 'allias:new', 'page:new', 'page:write', 'page:read'];
+// === Whitelist команд ===
+$allowedCommands = [
+    // app/ команды (shell_exec → cli.php)
+    'read_test_file',
+    'engine_status',
+    'filler_toggle',
+    'domain:new',
+    'allias:new',
+    'page:new',
+    'page:write',
+    'page:read',
+    // net/ команды (in-process → AinetFacade; image:download → cli.php media:store)
+    'net:status',
+    'image:search',
+    'image:download',
+    'fetch',
+];
 
 if (!in_array($command, $allowedCommands, true)) {
-    echo json_encode(['ok' => false, 'error' => "Command '{$command}' is not allowed."]);
+    echo json_encode([
+        'ok' => false,
+        'error' => "Command '{$command}' is not allowed.",
+        'hint' => 'Allowed: ' . implode(', ', $allowedCommands),
+    ]);
     exit(1);
 }
 
+// === AINET (lazy, fail-safe: если конфиг битый — net-команды вернут ошибку) ===
+$ainet = null;
+$ainetError = null;
+if (in_array($command, ['net:status', 'image:search', 'image:download', 'fetch'], true)) {
+    try {
+        $ainet = AinetFacade::createFromConfig(
+            __DIR__ . '/../config/ainet.config',
+            __DIR__ . '/../var/ainet-cache',
+        );
+    } catch (\Throwable $e) {
+        $ainetError = 'AINET init failed: ' . $e->getMessage();
+    }
+}
+
 try {
+    // === app/ команды (shell_exec → cli.php) ===
+
     if ($command === 'read_test_file') {
-        $filename = $args['filename'] ?? '';
+        $filename = (string) ($args['filename'] ?? '');
         if (str_contains($filename, '..') || str_contains($filename, '/')) {
             throw new \RuntimeException('Invalid filename.');
         }
@@ -63,10 +104,10 @@ try {
             ]);
         }
     } elseif ($command === 'filler_toggle') {
-        $domain = $args['domain'] ?? '';
-        $allias = $args['allias'] ?? '';
-        $block = $args['block'] ?? '';
-        $value = $args['value'] ?? '0';
+        $domain = (string) ($args['domain'] ?? '');
+        $allias = (string) ($args['allias'] ?? '');
+        $block = (string) ($args['block'] ?? '');
+        $value = (string) ($args['value'] ?? '0');
 
         if (!in_array($domain, $allowedDomains, true)) {
             throw new \RuntimeException("Domain '{$domain}' is not allowed.");
@@ -76,18 +117,18 @@ try {
         }
 
         $output = shell_exec('php ' . __DIR__ . "/cli.php filler:toggle --domain={$domain} --allias={$allias} --block={$block} --value={$value} 2>&1");
-        echo json_encode(['ok' => true, 'data' => ['output' => trim((string)$output)]]);
+        echo json_encode(['ok' => true, 'data' => ['output' => trim((string) $output)]]);
     } elseif ($command === 'domain:new') {
-        $domain = $args['domain'] ?? '';
+        $domain = (string) ($args['domain'] ?? '');
         if (!in_array($domain, $allowedDomains, true)) {
             throw new \RuntimeException("Security violation: Domain '{$domain}' is not in the allowed list.");
         }
         $safeDomain = escapeshellarg($domain);
         $output = shell_exec('php ' . __DIR__ . "/cli.php domain:new --domain={$safeDomain} 2>&1");
-        echo json_encode(['ok' => true, 'data' => ['output' => trim((string)$output)]]);
+        echo json_encode(['ok' => true, 'data' => ['output' => trim((string) $output)]]);
     } elseif ($command === 'allias:new') {
-        $domain = $args['domain'] ?? '';
-        $name = $args['name'] ?? '';
+        $domain = (string) ($args['domain'] ?? '');
+        $name = (string) ($args['name'] ?? '');
 
         if (!in_array($domain, $allowedDomains, true)) {
             throw new \RuntimeException("Security violation: Domain '{$domain}' is not in the allowed list.");
@@ -99,11 +140,11 @@ try {
         $safeName = escapeshellarg($name);
         $safeDomain = escapeshellarg($domain);
         $output = shell_exec('php ' . __DIR__ . "/cli.php allias:new --domain={$safeDomain} --name={$safeName} 2>&1");
-        echo json_encode(['ok' => true, 'data' => ['output' => trim((string)$output)]]);
+        echo json_encode(['ok' => true, 'data' => ['output' => trim((string) $output)]]);
     } elseif ($command === 'page:new') {
-        $domain = $args['domain'] ?? '';
-        $allias = $args['allias'] ?? '';
-        $name = $args['name'] ?? '';
+        $domain = (string) ($args['domain'] ?? '');
+        $allias = (string) ($args['allias'] ?? '');
+        $name = (string) ($args['name'] ?? '');
 
         if (!in_array($domain, $allowedDomains, true)) {
             throw new \RuntimeException("Security violation: Domain '{$domain}' is not in the allowed list.");
@@ -117,13 +158,13 @@ try {
         $safeName = escapeshellarg($name);
 
         $output = shell_exec('php ' . __DIR__ . "/cli.php page:new --domain={$safeDomain} --allias={$safeAllias} --name={$safeName} 2>&1");
-        echo json_encode(['ok' => true, 'data' => ['output' => trim((string)$output)]]);
+        echo json_encode(['ok' => true, 'data' => ['output' => trim((string) $output)]]);
     } elseif ($command === 'page:write') {
-        $domain = $args['domain'] ?? '';
-        $allias = $args['allias'] ?? '';
-        $name = $args['name'] ?? '';
+        $domain = (string) ($args['domain'] ?? '');
+        $allias = (string) ($args['allias'] ?? '');
+        $name = (string) ($args['name'] ?? '');
         $blocks = $args['blocks'] ?? [];
-        $withSchema = $args['with_schema'] ?? '0';
+        $withSchema = (string) ($args['with_schema'] ?? '0');
 
         if (!in_array($domain, $allowedDomains, true)) {
             throw new \RuntimeException("Security violation: Domain '{$domain}' is not in the allowed list.");
@@ -138,24 +179,22 @@ try {
             throw new \RuntimeException('Invalid page name.');
         }
 
-        // Пустое имя = главная страница алиаса (для CLI это __root__)
         $cliName = ($name === '') ? '__root__' : $name;
-
         $json = json_encode($blocks, JSON_UNESCAPED_UNICODE);
-        $encoded = base64_encode((string)$json);
+        $encoded = base64_encode((string) $json);
 
         $safeDomain = escapeshellarg($domain);
         $safeAllias = escapeshellarg($allias);
         $safeName = escapeshellarg($cliName);
         $safeJson = escapeshellarg($encoded);
-        $safeSchema = escapeshellarg((string)$withSchema);
+        $safeSchema = escapeshellarg($withSchema);
 
         $output = shell_exec('php ' . __DIR__ . "/cli.php page:write --domain={$safeDomain} --allias={$safeAllias} --name={$safeName} --json_b64={$safeJson} --with_schema={$safeSchema} 2>&1");
-        echo json_encode(['ok' => true, 'data' => ['output' => trim((string)$output)]]);
+        echo json_encode(['ok' => true, 'data' => ['output' => trim((string) $output)]]);
     } elseif ($command === 'page:read') {
-        $domain = $args['domain'] ?? '';
-        $allias = $args['allias'] ?? '';
-        $name = $args['name'] ?? '';
+        $domain = (string) ($args['domain'] ?? '');
+        $allias = (string) ($args['allias'] ?? '');
+        $name = (string) ($args['name'] ?? '');
 
         if (!in_array($domain, $allowedDomains, true)) {
             throw new \RuntimeException("Security violation: Domain '{$domain}' is not in the allowed list.");
@@ -166,9 +205,127 @@ try {
         $safeName = escapeshellarg($name);
 
         $output = shell_exec('php ' . __DIR__ . "/cli.php page:read --domain={$safeDomain} --allias={$safeAllias} --name={$safeName} 2>&1");
-        echo json_encode(['ok' => true, 'data' => ['output' => trim((string)$output)]]);
+        echo json_encode(['ok' => true, 'data' => ['output' => trim((string) $output)]]);
     }
 
+    // === net/ команды (AinetFacade in-process; image:download → cli.php media:store) ===
+
+    elseif ($command === 'net:status') {
+        if ($ainet === null) {
+            echo json_encode(['ok' => false, 'error' => $ainetError, 'hint' => 'Fix config/ainet.config or create it from ainet.config.example']);
+            exit(1);
+        }
+        echo json_encode($ainet->status(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    } elseif ($command === 'image:search') {
+        if ($ainet === null) {
+            echo json_encode(['ok' => false, 'error' => $ainetError, 'hint' => 'Fix config/ainet.config']);
+            exit(1);
+        }
+        $query = (string) ($args['query'] ?? '');
+        $count = (int) ($args['count'] ?? 5);
+        $provider = isset($args['provider']) && is_string($args['provider']) ? $args['provider'] : null;
+
+        echo json_encode(
+            $ainet->searchImages($query, $count, $provider),
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+        );
+    } elseif ($command === 'fetch') {
+        if ($ainet === null) {
+            echo json_encode(['ok' => false, 'error' => $ainetError, 'hint' => 'Fix config/ainet.config']);
+            exit(1);
+        }
+        $url = (string) ($args['url'] ?? '');
+        $type = (string) ($args['type'] ?? 'json');
+
+        $result = ($type === 'text') ? $ainet->fetchText($url) : $ainet->fetchJson($url);
+        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    } elseif ($command === 'image:download') {
+        if ($ainet === null) {
+            echo json_encode(['ok' => false, 'error' => $ainetError, 'hint' => 'Fix config/ainet.config']);
+            exit(1);
+        }
+        $url = (string) ($args['url'] ?? '');
+        $domain = (string) ($args['domain'] ?? '');
+        $allias = (string) ($args['allias'] ?? 'www');
+        $category = (string) ($args['category'] ?? 'general');
+        $alt = (string) ($args['alt'] ?? '');
+
+        if (!in_array($domain, $allowedDomains, true)) {
+            echo json_encode([
+                'ok' => false,
+                'error' => "Security violation: Domain '{$domain}' is not in the allowed list.",
+                'hint' => 'Add domain to config/agent.config allowed_domains',
+                'context' => ['domain' => $domain],
+            ]);
+            exit(1);
+        }
+
+        // 1. Скачать в память (AINET не пишет на диск)
+        $dl = $ainet->downloadImage($url, $domain, $allias, $category, $alt);
+        if (($dl['ok'] ?? false) !== true) {
+            echo json_encode($dl, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            exit(1);
+        }
+
+        $data = $dl['data'];
+        $bytes = (string) $data['bytes'];
+        $mime = (string) $data['mime'];
+        $ext = (string) $data['ext'];
+
+        // 2. Записать на диск через cli.php media:store (единственный источник истины для FS)
+        $dataB64 = base64_encode($bytes);
+        $safeDomain = escapeshellarg($domain);
+        $safeAllias = escapeshellarg($allias);
+        $safeCategory = escapeshellarg($category);
+        $safeData = escapeshellarg($dataB64);
+        $safeMime = escapeshellarg($mime);
+        $safeAlt = escapeshellarg($alt);
+        $safeSourceUrl = escapeshellarg($url);
+
+        $cmd = 'php ' . __DIR__ . "/cli.php media:store"
+            . " --domain={$safeDomain}"
+            . " --allias={$safeAllias}"
+            . " --category={$safeCategory}"
+            . " --data_b64={$safeData}"
+            . " --mime={$safeMime}"
+            . " --alt={$safeAlt}"
+            . " --source_url={$safeSourceUrl}"
+            . ' 2>&1';
+
+        $output = shell_exec($cmd);
+        $outputStr = trim((string) $output);
+
+        // Определяем успех по строке "OK" в выводе CLI (Result)
+        $storeOk = str_contains($outputStr, 'OK');
+        if (!$storeOk) {
+            echo json_encode([
+                'ok' => false,
+                'error' => 'media:store failed',
+                'hint' => 'Check CLI output',
+                'context' => ['cli_output' => $outputStr],
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            exit(1);
+        }
+
+        $hash = (string) $data['hash'];
+        $localUrl = '/media/' . $domain . '/' . $allias . '/' . $category . '/' . $hash . '.' . $ext;
+
+        echo json_encode([
+            'ok' => true,
+            'data' => [
+                'local_url' => $localUrl,
+                'path' => 'www/media/' . $domain . '/' . $allias . '/' . $category . '/' . $hash . '.' . $ext,
+                'hash' => $hash,
+                'ext' => $ext,
+                'mime' => $mime,
+                'width' => (int) $data['width'],
+                'height' => (int) $data['height'],
+                'size' => (int) $data['size'],
+                'cached' => (bool) $data['cached'],
+                'cli_output' => $outputStr,
+            ],
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
 } catch (\Throwable $e) {
     echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
     exit(1);

@@ -77,30 +77,64 @@ final class AinetFacade
     /** @return array<string, mixed> */
     public function searchImages(string $query, int $count, ?string $providerName = null): array
     {
-        $name = $providerName ?? $this->config->defaultProvider;
-        if (!isset($this->providers[$name])) {
+        $primary = $providerName ?? $this->config->defaultProvider;
+
+        if (!isset($this->providers[$primary])) {
             return $this->error(
-                "Unknown provider '{$name}'",
+                "Unknown provider '{$primary}'",
                 'Available: ' . implode(', ', array_keys($this->providers)),
-                ['provider' => $name],
+                ['provider' => $primary],
             );
         }
 
-        try {
-            $results = $this->providers[$name]->search($query, $count);
-        } catch (ProviderException $e) {
-            return $this->error($e->getMessage(), $e->hint, ['provider' => $name]);
+        // Автофоллбэк только для дефолтного провайдера (явный provider = без fallback)
+        $attempts = [$primary];
+        if ($providerName === null) {
+            foreach (array_keys($this->providers) as $name) {
+                if ($name !== $primary) {
+                    $attempts[] = $name;
+                }
+            }
+        }
+
+        $lastError = null;
+        foreach ($attempts as $name) {
+            try {
+                $results = $this->providers[$name]->search($query, $count);
+                if ($results !== []) {
+                    return [
+                        'ok' => true,
+                        'data' => [
+                            'provider' => $name,
+                            'query' => $query,
+                            'results' => array_map(
+                                static fn (ImageResult $r): array => $r->toArray(),
+                                $results,
+                            ),
+                            'fallback_from' => $name !== $primary ? $primary : null,
+                        ],
+                    ];
+                }
+            } catch (ProviderException $e) {
+                $lastError = $e;
+            }
+        }
+
+        if ($lastError !== null) {
+            return $this->error(
+                $lastError->getMessage(),
+                $lastError->hint,
+                ['provider' => $primary, 'attempted' => $attempts],
+            );
         }
 
         return [
             'ok' => true,
             'data' => [
-                'provider' => $name,
+                'provider' => $primary,
                 'query' => $query,
-                'results' => array_map(
-                    static fn (ImageResult $r): array => $r->toArray(),
-                    $results,
-                ),
+                'results' => [],
+                'fallback_from' => null,
             ],
         ];
     }

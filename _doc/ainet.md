@@ -414,7 +414,7 @@ www/media/
 7. Провайдеры
 
 7.1. Openverse (default, без ключа)
-- Endpoint: `https://api.openverse.engineering/v1/images/`
+- Endpoint: `https://api.openverse.org/v1/images/`
 - Query: `?q=<query>&page_size=<count>`
 - Лицензии: CC0, CC-BY, CC-BY-SA, PD
 - Автор, source — в ответе
@@ -450,8 +450,9 @@ www/media/
 ```json
 {
   "allowed_domains": [
-    "api.openverse.engineering",
-    "api.unsplash.com",
+  "api.openverse.org",
+  "api.openverse.engineering",
+  "api.unsplash.com",
     "images.unsplash.com",
     "api.pexels.com",
     "images.pexels.com",

@@ -12,9 +12,9 @@ final class AinetConfigTest extends TestCase
     public function testDefaults(): void
     {
         $c = AinetConfig::defaults();
-        self::assertSame('openverse', $c->defaultProvider);
+        self::assertSame('wikimedia', $c->defaultProvider);
         self::assertSame(5, $c->connectTimeout);
-        self::assertSame(10, $c->readTimeout);
+        self::assertSame(20, $c->readTimeout);
         self::assertSame(10485760, $c->maxSize);
         self::assertSame(3, $c->maxRedirects);
         self::assertSame(30, $c->ratePerMin);
@@ -91,7 +91,7 @@ final class AinetConfigTest extends TestCase
     public function testFromFileMissingReturnsDefaults(): void
     {
         $c = AinetConfig::fromFile('/nonexistent/path/ainet.config');
-        self::assertSame('openverse', $c->defaultProvider);
+        self::assertSame('wikimedia', $c->defaultProvider);
         self::assertNotEmpty($c->allowedDomains);
     }
 
@@ -101,7 +101,7 @@ final class AinetConfigTest extends TestCase
         file_put_contents($file, 'not json');
         try {
             $c = AinetConfig::fromFile($file);
-            self::assertSame('openverse', $c->defaultProvider);
+            self::assertSame('wikimedia', $c->defaultProvider);
         } finally {
             @unlink($file);
         }

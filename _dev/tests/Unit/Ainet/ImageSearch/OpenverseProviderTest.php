@@ -17,6 +17,7 @@ final class OpenverseProviderTest extends TestCase
     private function http(FakeTransport $t): HttpClient
     {
         $guard = new UrlGuard(new DomainWhitelist([
+            'api.openverse.org',
             'api.openverse.engineering',
         ]));
 

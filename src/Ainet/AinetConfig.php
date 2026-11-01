@@ -97,6 +97,7 @@ final class AinetConfig
     {
         return new self(
             allowedDomains: [
+                'api.openverse.org',
                 'api.openverse.engineering',
                 'api.unsplash.com',
                 'images.unsplash.com',
@@ -108,11 +109,11 @@ final class AinetConfig
                 'en.wikipedia.org',
                 'api.github.com',
             ],
-            defaultProvider: 'openverse',
+            defaultProvider: 'wikimedia',
             unsplashKey: '',
             pexelsKey: '',
             connectTimeout: 5,
-            readTimeout: 10,
+            readTimeout: 20,
             maxSize: 10485760,
             maxRedirects: 3,
             ratePerMin: 30,

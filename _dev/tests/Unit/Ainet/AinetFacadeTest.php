@@ -26,12 +26,14 @@ final class AinetFacadeTest extends TestCase
         $this->transport = new FakeTransport();
         $this->config = AinetConfig::fromArray([
             'allowed_domains' => [
+                'api.openverse.org',
                 'api.openverse.engineering',
                 'commons.wikimedia.org',
                 'upload.wikimedia.org',
                 'ru.wikipedia.org',
                 'api.github.com',
             ],
+            'providers' => ['default' => 'openverse'], // явно, тесты не зависят от defaults
             'cache_ttl_days' => 7,
             'limits' => ['min_image_dimension' => 200],
         ]);
@@ -92,7 +94,7 @@ final class AinetFacadeTest extends TestCase
         self::assertTrue($result['ok']);
         self::assertSame(['openverse', 'wikimedia'], $result['data']['providers']);
         self::assertSame('openverse', $result['data']['default_provider']);
-        self::assertSame(5, $result['data']['whitelist_count']);
+        self::assertSame(6, $result['data']['whitelist_count']);
         self::assertSame(0, $result['data']['cache_entries']);
         self::assertSame(30, $result['data']['rate_limit']['max']);
     }
@@ -140,11 +142,49 @@ final class AinetFacadeTest extends TestCase
             'headers' => [],
             'body' => 'error',
         ]);
-
-        $r = $this->facade()->searchImages('coffee', 5);
+        // Явный provider → без auto-fallback
+        $r = $this->facade()->searchImages('coffee', 5, 'openverse');
         self::assertFalse($r['ok']);
         self::assertStringContainsString('503', $r['error']);
         self::assertSame('openverse', $r['context']['provider']);
+    }
+
+    public function testSearchImagesFallbackToWikimedia(): void
+    {
+        // Openverse (default) → 503, потом fallback на wikimedia → 200
+        $this->transport->queueResponse([
+            'status' => 503,
+            'headers' => [],
+            'body' => 'openverse down',
+        ]);
+        $this->transport->queueResponse([
+            'status' => 200,
+            'headers' => ['content-type' => 'application/json'],
+            'body' => (string) json_encode([
+                'query' => [
+                    'pages' => [
+                        '1' => [
+                            'title' => 'File:Coffee.jpg',
+                            'imageinfo' => [[
+                                'url' => 'https://upload.wikimedia.org/coffee.jpg',
+                                'thumburl' => 'https://upload.wikimedia.org/coffee_thumb.jpg',
+                                'width' => 1200,
+                                'height' => 800,
+                                'extmetadata' => [
+                                    'LicenseShortName' => ['value' => 'CC BY-SA 4.0'],
+                                ],
+                            ]],
+                        ],
+                    ],
+                ],
+            ]),
+        ]);
+
+        $r = $this->facade()->searchImages('coffee', 5);
+        self::assertTrue($r['ok']);
+        self::assertSame('wikimedia', $r['data']['provider']);
+        self::assertSame('openverse', $r['data']['fallback_from']);
+        self::assertCount(1, $r['data']['results']);
     }
 
     // === fetchJson ===
