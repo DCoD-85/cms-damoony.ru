@@ -31,15 +31,15 @@ final class AdminPasswdCommand implements CommandInterface
     {
         $r = new Result();
 
-        $login = $args['name'] ?? 'admin';
-        $password = $args['password'] ?? '';
+        $login = trim((string) ($args['name'] ?? 'admin'));
+        $password = (string) ($args['password'] ?? '');
 
-        if ($login === '') {
-            $r->error('Логин не может быть пустым');
+        if (!preg_match('/^[a-zA-Z0-9_.\-]{3,32}$/', $login)) {
+            $r->error('Некорректный логин (3-32 символа: a-z, A-Z, 0-9, _, ., -)');
             return $r;
         }
-        if ($password === '') {
-            $r->error('Пароль не может быть пустым (--password=...)');
+        if (strlen($password) < 8) {
+            $r->error('Пароль минимум 8 символов');
             return $r;
         }
 

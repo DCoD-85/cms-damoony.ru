@@ -35,7 +35,20 @@ final class DbMigrateCommand implements CommandInterface
     {
         $r = new Result();
 
-        $dir = $args['dir'] ?? ($this->paths->root() . '/migrations');
+        $defaultDir = $this->paths->root() . '/migrations';
+        $dir = (string) ($args['dir'] ?? $defaultDir);
+
+        // Path traversal guard: разрешён только migrations/ внутри проекта
+        if ($dir !== $defaultDir) {
+            $real = realpath($dir);
+            $realDefault = realpath($defaultDir);
+            if ($real === false || $realDefault === false || !str_starts_with($real, $realDefault . '/')) {
+                $r->error('Недопустимый --dir (разрешены только подпапки migrations/)');
+                return $r;
+            }
+            $dir = $real;
+        }
+
         if (!is_dir($dir)) {
             $r->error('Каталог миграций не найден: ' . $dir);
             return $r;

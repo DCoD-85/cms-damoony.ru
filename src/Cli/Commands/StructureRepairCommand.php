@@ -10,6 +10,8 @@ use Damoony\Cli\Result;
 use Damoony\Core\Config;
 use Damoony\Files\Fs;
 use Damoony\Files\Paths;
+use Damoony\Page\PageCompiler;
+use Damoony\Page\PageNamespace;
 
 final class StructureRepairCommand implements CommandInterface
 {
@@ -30,9 +32,9 @@ final class StructureRepairCommand implements CommandInterface
     public function run(array $args, Context $context): Result
     {
         $r = new Result();
-        $domain = $args['domain'] ?? '';
 
-        if ($domain === '') {
+        $domain = (string) ($args['domain'] ?? '');
+        if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain) || str_contains($domain, '..')) {
             $r->error('Укажите --domain=example.ru');
             return $r;
         }
@@ -48,15 +50,17 @@ final class StructureRepairCommand implements CommandInterface
             return $r;
         }
 
-        $domainDir = $this->paths->domain($domain);
+        $realDomain = (string) $site['domains_real'][$domain];
+        $namespace = PageNamespace::fromSite($site, $domain);
+        $domainDir = $this->paths->domain($realDomain);
         $fixed = 0;
 
-        // 1. Восстановление алиасов
+        // 1. Восстановление алиасов (3 файла root-страницы с единым префиксом)
         $alliases = $site['alliases_real'][$domain] ?? ['www' => 'www'];
         $realAliases = array_unique(array_values($alliases));
 
         foreach ($realAliases as $alias) {
-            $alias = (string)$alias;
+            $alias = (string) $alias;
             if ($alias === '') {
                 continue;
             }
@@ -66,18 +70,35 @@ final class StructureRepairCommand implements CommandInterface
                 Fs::mkdir($algoritmDir);
             }
 
-            $rulesFile = $algoritmDir . '/.rules.json';
-            if (!is_file($rulesFile)) {
-                Fs::writeAtomic($rulesFile, json_encode(['available' => []], JSON_PRETTY_PRINT) . "\n");
-                $context->step("Восстановлен .rules.json для алиаса: {$alias}");
+            // 1a. Root PHP — генерируем через PageCompiler (единый шаблон)
+            $phpFile = $algoritmDir . '/algoritm.php';
+            if (!is_file($phpFile)) {
+                $compiler = new PageCompiler();
+                $php = $compiler->compile($namespace . '\\' . $alias, 'algoritm', []);
+                Fs::writeAtomic($phpFile, $php);
+                $context->step("Восстановлен algoritm.php для алиаса: {$alias}");
                 $fixed++;
             }
 
-            $phpFile = $algoritmDir . '/algoritm.php';
-            if (!is_file($phpFile)) {
-                $php = "<?php\n\ndeclare(strict_types=1);\n\nnamespace " . $site['domains_namespace'][$domain] . "\\{$alias};\n\nuse Damoony\\Algoritm\\Algoritm;\nuse Damoony\\Ui\\Builder;\nuse Damoony\\Ui\\Node;\nuse Damoony\\Http\\Response;\n\nfinal class algoritm extends Page\n{\n    public function default(): Node|Response|null\n    {\n        return Builder::div('page')->content('Главная страница');\n    }\n}\n";
-                Fs::writeAtomic($phpFile, $php);
-                $context->step("Восстановлен algoritm.php для алиаса: {$alias}");
+            // 1b. Root rules
+            $rulesFile = $algoritmDir . '/algoritm.rules.json';
+            if (!is_file($rulesFile)) {
+                Fs::writeAtomic(
+                    $rulesFile,
+                    json_encode(
+                        ['available' => [], 'auth' => false, 'search' => true, 'default' => false],
+                        JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE,
+                    ) . "\n",
+                );
+                $context->step("Восстановлен algoritm.rules.json для алиаса: {$alias}");
+                $fixed++;
+            }
+
+            // 1c. Root editor
+            $editorFile = $algoritmDir . '/algoritm.editor.json';
+            if (!is_file($editorFile)) {
+                Fs::writeAtomic($editorFile, "[]\n");
+                $context->step("Восстановлен algoritm.editor.json для алиаса: {$alias}");
                 $fixed++;
             }
         }
@@ -91,27 +112,33 @@ final class StructureRepairCommand implements CommandInterface
                 $rulesFile = $schemesDir . '/' . $name . '.rules.json';
                 if (!is_file($rulesFile)) {
                     Fs::writeAtomic($rulesFile, json_encode(['enabled' => true], JSON_PRETTY_PRINT) . "\n");
-                    $context->step("Восстановлен {$name}.rules.json");
+                    $context->step("Восстановлен {$name}.rules.json для схемы");
                     $fixed++;
                 }
             }
         }
 
-        // 3. Восстановление rules.json и editor.json для блоков (Вместо blocks.json)
+        // 3. Восстановление rules.json и editor.json для блоков
         $blocksDir = $domainDir . '/.alliasglobal';
         if (is_dir($blocksDir)) {
-            $dirs = array_filter(scandir($blocksDir) ?: [], fn ($d) => $d !== '.' && $d !== '..' && is_dir($blocksDir . '/' . $d));
+            $dirs = array_filter(
+                scandir($blocksDir) ?: [],
+                static fn (string $d): bool => $d !== '.' && $d !== '..' && is_dir($blocksDir . '/' . $d),
+            );
             foreach ($dirs as $bName) {
                 $rulesFile = $blocksDir . '/' . $bName . '/' . $bName . '.rules.json';
                 if (!is_file($rulesFile)) {
-                    Fs::writeAtomic($rulesFile, json_encode(['enabled' => true, 'type' => 'mixed'], JSON_PRETTY_PRINT) . "\n");
+                    Fs::writeAtomic(
+                        $rulesFile,
+                        json_encode(['enabled' => true, 'type' => 'mixed'], JSON_PRETTY_PRINT) . "\n",
+                    );
                     $context->step("Восстановлен {$bName}.rules.json");
                     $fixed++;
                 }
 
                 $editorFile = $blocksDir . '/' . $bName . '/' . $bName . '.editor.json';
                 if (!is_file($editorFile)) {
-                    Fs::writeAtomic($editorFile, json_encode([], JSON_PRETTY_PRINT) . "\n");
+                    Fs::writeAtomic($editorFile, "[]\n");
                     $context->step("Восстановлен {$bName}.editor.json");
                     $fixed++;
                 }
@@ -121,7 +148,7 @@ final class StructureRepairCommand implements CommandInterface
         if ($fixed === 0) {
             $context->step('Структура в порядке, исправлений не требуется.');
         } else {
-            $context->step("Ремонт завершен. Исправлено элементов: {$fixed}", true);
+            $context->step("Ремонт завершён. Исправлено элементов: {$fixed}", true);
         }
 
         return $r;

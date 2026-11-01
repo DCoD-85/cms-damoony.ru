@@ -38,6 +38,14 @@ final class StructureRepairCommandTest extends TestCase
         $this->assertStringContainsString('Укажите --domain', $res->errors[0]);
     }
 
+    public function testRejectsPathTraversal(): void
+    {
+        $cmd = new StructureRepairCommand($this->paths);
+        $res = $cmd->run(['domain' => 'a..ru'], new Context(static fn () => null));
+
+        $this->assertFalse($res->ok);
+    }
+
     public function testMissingSiteConfig(): void
     {
         $cmd = new StructureRepairCommand($this->paths);
@@ -68,10 +76,32 @@ final class StructureRepairCommandTest extends TestCase
         $cmd = new StructureRepairCommand($this->paths);
         $res = $cmd->run(['domain' => 'example.ru'], new Context(static fn () => null));
 
-        $this->assertTrue($res->ok);
-        $this->assertDirectoryExists($this->tmpDir . '/app/example.ru/www/algoritm');
-        $this->assertFileExists($this->tmpDir . '/app/example.ru/www/algoritm/.rules.json');
-        $this->assertFileExists($this->tmpDir . '/app/example.ru/www/algoritm/algoritm.php');
+        $this->assertTrue($res->ok, implode('; ', $res->errors));
+
+        $dir = $this->tmpDir . '/app/example.ru/www/algoritm';
+        $this->assertDirectoryExists($dir);
+
+        // Новая модель: algoritm.rules.json + algoritm.editor.json (правило 3 файлов)
+        $this->assertFileExists($dir . '/algoritm.php');
+        $this->assertFileExists($dir . '/algoritm.rules.json');
+        $this->assertFileExists($dir . '/algoritm.editor.json');
+
+        // Старой модели быть не должно
+        $this->assertFileDoesNotExist($dir . '/.rules.json');
+
+        // rules содержит полные дефолты
+        $rules = json_decode((string) file_get_contents($dir . '/algoritm.rules.json'), true);
+        $this->assertIsArray($rules);
+        $this->assertArrayHasKey('available', $rules);
+        $this->assertArrayHasKey('auth', $rules);
+        $this->assertArrayHasKey('search', $rules);
+        $this->assertArrayHasKey('default', $rules);
+
+        // PHP-код должен быть валидным (PageCompiler генерирует extends Page без битого use)
+        $php = (string) file_get_contents($dir . '/algoritm.php');
+        $this->assertStringContainsString('extends Page', $php);
+        $this->assertStringContainsString('namespace example_ru\\www;', $php);
+        $this->assertStringNotContainsString('Damoony\\Algoritm\\Algoritm;', $php);
     }
 
     public function testRestoresMissingSchemeRecord(): void
@@ -87,7 +117,7 @@ final class StructureRepairCommandTest extends TestCase
         $cmd = new StructureRepairCommand($this->paths);
         $res = $cmd->run(['domain' => 'example.ru'], new Context(static fn () => null));
 
-        $this->assertTrue($res->ok);
+        $this->assertTrue($res->ok, implode('; ', $res->errors));
         $this->assertFileExists($this->tmpDir . '/app/example.ru/.alliasscheme/test.rules.json');
     }
 
@@ -103,7 +133,7 @@ final class StructureRepairCommandTest extends TestCase
         $cmd = new StructureRepairCommand($this->paths);
         $res = $cmd->run(['domain' => 'example.ru'], new Context(static fn () => null));
 
-        $this->assertTrue($res->ok);
+        $this->assertTrue($res->ok, implode('; ', $res->errors));
         $this->assertFileExists($this->tmpDir . '/app/example.ru/.alliasglobal/top/top.rules.json');
         $this->assertFileExists($this->tmpDir . '/app/example.ru/.alliasglobal/top/top.editor.json');
     }
@@ -115,15 +145,39 @@ final class StructureRepairCommandTest extends TestCase
             'domains_namespace' => ['example.ru' => 'example_ru'],
             'alliases_real' => ['example.ru' => ['www' => 'www']],
         ]);
-        mkdir($this->tmpDir . '/app/example.ru/www/algoritm', 0o777, true);
-        file_put_contents($this->tmpDir . '/app/example.ru/www/algoritm/.rules.json', '{}');
+
+        $dir = $this->tmpDir . '/app/example.ru/www/algoritm';
+        mkdir($dir, 0o777, true);
+        file_put_contents($dir . '/algoritm.php', "<?php\n");
+        file_put_contents(
+            $dir . '/algoritm.rules.json',
+            json_encode(['available' => [], 'auth' => false, 'search' => true, 'default' => false]),
+        );
+        file_put_contents($dir . '/algoritm.editor.json', "[]\n");
 
         $cmd = new StructureRepairCommand($this->paths);
         $res = $cmd->run(['domain' => 'example.ru'], new Context(static fn () => null));
 
         $this->assertTrue($res->ok);
-        // Проверяем, что лишнего не создалось
+        // Лишних файлов не создано
         $this->assertFileDoesNotExist($this->tmpDir . '/app/example.ru/.alliasscheme/schemes.json');
+        $this->assertFileDoesNotExist($dir . '/.rules.json');
+    }
+
+    public function testIdempotentOnSecondRun(): void
+    {
+        $this->writeSiteConfig([
+            'domains_real' => ['example.ru' => 'example.ru'],
+            'domains_namespace' => ['example.ru' => 'example_ru'],
+            'alliases_real' => ['example.ru' => ['www' => 'www']],
+        ]);
+
+        $cmd = new StructureRepairCommand($this->paths);
+        $cmd->run(['domain' => 'example.ru'], new Context(static fn () => null));
+        $res = $cmd->run(['domain' => 'example.ru'], new Context(static fn () => null));
+
+        $this->assertTrue($res->ok);
+        // Второй запуск — без изменений (все шаги нашли файлы на месте)
     }
 
     private function writeSiteConfig(array $data): void

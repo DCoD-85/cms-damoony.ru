@@ -33,7 +33,7 @@ final class UserNewCommand implements CommandInterface
         $email = (string) ($args['email'] ?? '');
         $password = (string) ($args['password'] ?? '');
 
-        if ($login === '' || !preg_match('/^[a-zA-Z0-9_]{3,32}$/', $login)) {
+        if (!preg_match('/^[a-zA-Z0-9_]{3,32}$/', $login)) {
             $r->error('Некорректный login (3-32, [a-zA-Z0-9_])');
             return $r;
         }
@@ -41,17 +41,26 @@ final class UserNewCommand implements CommandInterface
             $r->error('Некорректный email');
             return $r;
         }
-        if (strlen($password) < 6) {
-            $r->error('Пароль минимум 6 символов');
+        if (strlen($password) < 8) {
+            $r->error('Пароль минимум 8 символов');
             return $r;
         }
 
         $pdo = $this->connection->pdo();
 
-        $check = $pdo->prepare('SELECT id FROM users WHERE login = ?');
+        // Проверка login
+        $check = $pdo->prepare('SELECT id FROM users WHERE login = ? LIMIT 1');
         $check->execute([$login]);
         if ($check->fetch()) {
-            $r->error('Пользователь уже существует');
+            $r->error('Пользователь с таким login уже существует');
+            return $r;
+        }
+
+        // Проверка email
+        $checkEmail = $pdo->prepare('SELECT id FROM users WHERE email = ? LIMIT 1');
+        $checkEmail->execute([$email]);
+        if ($checkEmail->fetch()) {
+            $r->error('Пользователь с таким email уже существует');
             return $r;
         }
 
