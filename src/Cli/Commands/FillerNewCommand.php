@@ -31,11 +31,11 @@ final class FillerNewCommand implements CommandInterface
     {
         $r = new Result();
 
-        $domain = $args['domain'] ?? '';
-        $allias = $args['allias'] ?? '';
-        $block = $args['block'] ?? '';
+        $domain = (string) ($args['domain'] ?? '');
+        $allias = (string) ($args['allias'] ?? '');
+        $block = (string) ($args['block'] ?? '');
 
-        if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain)) {
+        if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain) || str_contains($domain, '..')) {
             $r->error('Некорректный домен');
             return $r;
         }
@@ -58,20 +58,25 @@ final class FillerNewCommand implements CommandInterface
             $r->error('Домен не найден');
             return $r;
         }
+        if (!isset($site['alliases_real'][$domain][$allias])) {
+            $r->error('Алиас не найден в конфиге');
+            return $r;
+        }
 
         $realDomain = (string) $site['domains_real'][$domain];
         $namespace = (string) ($site['domains_namespace'][$realDomain]
             ?? str_replace(['.', '-'], '_', $realDomain));
 
-        $alliasDir = $this->paths->allias($domain, $allias);
+        // Путь по realDomain (папка app/)
+        $alliasDir = $this->paths->allias($realDomain, $allias);
         if (!Fs::isDir($alliasDir)) {
-            $r->error('Алиас не найден');
+            $r->error('Алиас не найден на диске: ' . $realDomain . '/' . $allias);
             return $r;
         }
 
-        $blockDir = $this->paths->domain($domain) . '/.alliasglobal/' . $block;
+        $blockDir = $this->paths->domain($realDomain) . '/.alliasglobal/' . $block;
         if (!Fs::isDir($blockDir)) {
-            $r->error('Блок не найден');
+            $r->error('Блок не найден: ' . $block);
             return $r;
         }
 
@@ -112,15 +117,17 @@ final class FillerNewCommand implements CommandInterface
         Fs::writeAtomic($fillerPhp, $php);
         $r->file(Fs::rel($fillerPhp, $this->paths->root()));
 
-        // Создаем rules.json и editor.json
         Fs::writeAtomic($rulesFile, json_encode(['enabled' => true], JSON_PRETTY_PRINT) . "\n");
         Fs::writeAtomic($editorFile, json_encode([], JSON_PRETTY_PRINT) . "\n");
         $r->file(Fs::rel($rulesFile, $this->paths->root()));
         $r->file(Fs::rel($editorFile, $this->paths->root()));
 
-        // Обновляем site.config (включенность филлера)
+        // Конфиг: fillers[domain][allias][block] = true (по входному домену, как остальные ключи)
         $site['fillers'][$domain][$allias][$block] ??= true;
-        Fs::writeAtomic($siteFile, json_encode($site, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
+        Fs::writeAtomic(
+            $siteFile,
+            json_encode($site, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n",
+        );
         $r->file(Fs::rel($siteFile, $this->paths->root()));
 
         $context->step('Filler создан', true, $className);

@@ -31,16 +31,16 @@ final class BlockNewCommand implements CommandInterface
     {
         $r = new Result();
 
-        $domain = $args['domain'] ?? '';
-        $name = $args['name'] ?? '';
-        $type = (string)($args['type'] ?? 'mixed');
+        $domain = (string) ($args['domain'] ?? '');
+        $name = (string) ($args['name'] ?? '');
+        $type = (string) ($args['type'] ?? 'mixed');
 
         if (!in_array($type, ['script', 'visual', 'mixed'], true)) {
             $r->error('Некорректный тип блока (script, visual, mixed)');
             return $r;
         }
 
-        if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain)) {
+        if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain) || str_contains($domain, '..')) {
             $r->error('Некорректный домен');
             return $r;
         }
@@ -60,11 +60,12 @@ final class BlockNewCommand implements CommandInterface
             return $r;
         }
 
+        // realDomain — папка app/, не входной хост
         $realDomain = (string) $site['domains_real'][$domain];
         $namespace = (string) ($site['domains_namespace'][$realDomain]
             ?? str_replace(['.', '-'], '_', $realDomain));
 
-        $blocksDir = $this->paths->domain($domain) . '/.alliasglobal';
+        $blocksDir = $this->paths->domain($realDomain) . '/.alliasglobal';
         $blockDir = $blocksDir . '/' . $name;
 
         if (Fs::isDir($blockDir)) {
@@ -75,7 +76,6 @@ final class BlockNewCommand implements CommandInterface
         Fs::mkdir($blockDir);
         $r->file(Fs::rel($blockDir, $this->paths->root()));
 
-        // 1. Создаем PHP-класс
         if ($type === 'script') {
             $php = "<?php\n\n"
                 . "declare(strict_types=1);\n\n"
@@ -109,7 +109,6 @@ final class BlockNewCommand implements CommandInterface
         Fs::writeAtomic($blockDir . '/' . $name . '.php', $php);
         $r->file(Fs::rel($blockDir . '/' . $name . '.php', $this->paths->root()));
 
-        // 2. Создаем rules.json
         $rules = [
             'enabled' => true,
             'type' => $type,
@@ -117,7 +116,6 @@ final class BlockNewCommand implements CommandInterface
         Fs::writeAtomic($blockDir . '/' . $name . '.rules.json', json_encode($rules, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
         $r->file(Fs::rel($blockDir . '/' . $name . '.rules.json', $this->paths->root()));
 
-        // 3. Создаем editor.json (пока пустой, для будущего визуального редактора)
         Fs::writeAtomic($blockDir . '/' . $name . '.editor.json', json_encode([], JSON_PRETTY_PRINT) . "\n");
         $r->file(Fs::rel($blockDir . '/' . $name . '.editor.json', $this->paths->root()));
 

@@ -85,6 +85,44 @@ final class TrashClearCommandTest extends TestCase
         self::assertStringContainsString('older', $r->errors[0]);
     }
 
+    public function testCollectsDomainTrash(): void
+    {
+        // app/<domain>_trash_<ts>/  (domain:remove)
+        $trash = $this->root . '/app/example.ru_trash_' . (time() - 3600);
+        mkdir($trash, 0o775, true);
+
+        $cmd = new TrashClearCommand(new Paths($this->root));
+        $cmd->run(['force' => true], $this->ctx());
+
+        self::assertFalse(is_dir($trash), 'domain:remove карантин должен удаляться');
+    }
+
+    public function testCollectsSchemeTrash(): void
+    {
+        // app/<domain>/.alliasscheme/<name>_trash_<ts>/  (scheme:remove)
+        mkdir($this->root . '/app/example.ru/.alliasscheme', 0o775, true);
+        $trash = $this->root . '/app/example.ru/.alliasscheme/main_trash_' . (time() - 3600);
+        mkdir($trash, 0o775, true);
+
+        $cmd = new TrashClearCommand(new Paths($this->root));
+        $cmd->run(['force' => true], $this->ctx());
+
+        self::assertFalse(is_dir($trash), 'scheme:remove карантин должен удаляться');
+    }
+
+    public function testCollectsBlockTrash(): void
+    {
+        // app/<domain>/.alliasglobal/<name>_trash_<ts>/  (block:remove)
+        mkdir($this->root . '/app/example.ru/.alliasglobal', 0o775, true);
+        $trash = $this->root . '/app/example.ru/.alliasglobal/top_trash_' . (time() - 3600);
+        mkdir($trash, 0o775, true);
+
+        $cmd = new TrashClearCommand(new Paths($this->root));
+        $cmd->run(['force' => true], $this->ctx());
+
+        self::assertFalse(is_dir($trash), 'block:remove карантин должен удаляться');
+    }
+
     private function ctx(): Context
     {
         return new Context(static function (string $m, bool $ok, string $d): void {

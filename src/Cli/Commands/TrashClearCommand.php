@@ -12,6 +12,15 @@ use Damoony\Files\Paths;
 
 final class TrashClearCommand implements CommandInterface
 {
+    /**
+     * Карантин может быть на трёх уровнях:
+     *   app/<domain>_trash_<ts>/                       — domain:remove
+     *   app/<domain>/<allias>_trash_<ts>/              — allias:remove
+     *   app/<domain>/.alliasscheme/<name>_trash_<ts>/  — scheme:remove
+     *   app/<domain>/.alliasglobal/<name>_trash_<ts>/  — block:remove (после фикса)
+     */
+    private const TRASH_RE = '/^[a-z0-9][a-z0-9._-]*_trash_(\d+)$/';
+
     public function __construct(private readonly Paths $paths)
     {
     }
@@ -34,7 +43,7 @@ final class TrashClearCommand implements CommandInterface
         $force = isset($args['force']);
         $older = (string) ($args['older'] ?? '');
 
-        if ($domainFilter !== '' && !preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domainFilter)) {
+        if ($domainFilter !== '' && (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domainFilter) || str_contains($domainFilter, '..'))) {
             $r->error('Некорректный домен');
             return $r;
         }
@@ -53,14 +62,14 @@ final class TrashClearCommand implements CommandInterface
             };
         }
 
-        $appDir = $this->paths->root() . '/app';
+        $appDir = $this->paths->appRoot();
         if (!Fs::isDir($appDir)) {
             $r->error('Папка app/ не найдена');
             return $r;
         }
 
         $now = time();
-        $trash = [];
+        $trash = [];  // list<array{path: string, age: int}>
 
         $domains = scandir($appDir) ?: [];
         foreach ($domains as $d) {
@@ -71,29 +80,54 @@ final class TrashClearCommand implements CommandInterface
             if (!is_dir($domDir)) {
                 continue;
             }
+
+            // 1. Карантин домена: app/<domain>_trash_<ts>/
+            if (preg_match(self::TRASH_RE, $d, $m)) {
+                if ($domainFilter === '' || $this->matchesDomain($d, $domainFilter)) {
+                    $this->collect($domDir, (int) $m[1], $now, $olderSeconds, $trash);
+                }
+                continue;  // внутрь карантина не лезем
+            }
+
             if ($domainFilter !== '' && $d !== $domainFilter) {
                 continue;
             }
+
+            // 2. Карантин алиаса: app/<domain>/<allias>_trash_<ts>/
             $entries = scandir($domDir) ?: [];
             foreach ($entries as $e) {
-                if (!preg_match('/^([a-z][a-z0-9_]*)_trash_(\d+)$/', $e, $m)) {
+                if ($e === '.' || $e === '..') {
                     continue;
                 }
                 $path = $domDir . '/' . $e;
                 if (!is_dir($path)) {
                     continue;
                 }
-                $ts = (int) $m[2];
-                $age = $now - $ts;
-                if ($olderSeconds > 0 && $age < $olderSeconds) {
+                if (preg_match(self::TRASH_RE, $e, $m)) {
+                    $this->collect($path, (int) $m[1], $now, $olderSeconds, $trash);
+                }
+            }
+
+            // 3. Карантин схем: app/<domain>/.alliasscheme/<name>_trash_<ts>/
+            // 4. Карантин блоков: app/<domain>/.alliasglobal/<name>_trash_<ts>/
+            foreach (['.alliasscheme', '.alliasglobal'] as $infra) {
+                $infraDir = $domDir . '/' . $infra;
+                if (!is_dir($infraDir)) {
                     continue;
                 }
-                $trash[] = [
-                    'domain' => $d,
-                    'allias' => $m[1],
-                    'path' => $path,
-                    'age' => $age,
-                ];
+                $infraEntries = scandir($infraDir) ?: [];
+                foreach ($infraEntries as $ie) {
+                    if ($ie === '.' || $ie === '..') {
+                        continue;
+                    }
+                    $ipath = $infraDir . '/' . $ie;
+                    if (!is_dir($ipath)) {
+                        continue;
+                    }
+                    if (preg_match(self::TRASH_RE, $ie, $m)) {
+                        $this->collect($ipath, (int) $m[1], $now, $olderSeconds, $trash);
+                    }
+                }
             }
         }
 
@@ -106,12 +140,12 @@ final class TrashClearCommand implements CommandInterface
 
         foreach ($trash as $t) {
             $rel = Fs::rel($t['path'], $this->paths->root());
-            $ageStr = $this->fmtAge((int) $t['age']);
+            $ageStr = $this->fmtAge($t['age']);
             if (!$force) {
                 $context->step(sprintf('[dry] %s (age: %s)', $rel, $ageStr));
                 continue;
             }
-            $this->rmrf((string) $t['path']);
+            $this->rmrf($t['path']);
             $r->file($rel);
             $context->step(sprintf('Удалено: %s (age: %s)', $rel, $ageStr), true);
         }
@@ -123,6 +157,21 @@ final class TrashClearCommand implements CommandInterface
         }
 
         return $r;
+    }
+
+    private function matchesDomain(string $trashName, string $filter): bool
+    {
+        return str_starts_with($trashName, $filter . '_trash_');
+    }
+
+    /** @param list<array{path: string, age: int}> $trash */
+    private function collect(string $path, int $ts, int $now, int $olderSeconds, array &$trash): void
+    {
+        $age = $now - $ts;
+        if ($olderSeconds > 0 && $age < $olderSeconds) {
+            return;
+        }
+        $trash[] = ['path' => $path, 'age' => $age];
     }
 
     private function fmtAge(int $seconds): string
@@ -142,6 +191,11 @@ final class TrashClearCommand implements CommandInterface
 
     private function rmrf(string $dir): void
     {
+        if (is_link($dir)) {
+            @unlink($dir);
+
+            return;
+        }
         if (!is_dir($dir)) {
             return;
         }
@@ -149,8 +203,7 @@ final class TrashClearCommand implements CommandInterface
             if ($i === '.' || $i === '..') {
                 continue;
             }
-            $p = $dir . '/' . $i;
-            is_dir($p) ? $this->rmrf($p) : @unlink($p);
+            $this->rmrf($dir . '/' . $i);
         }
         @rmdir($dir);
     }

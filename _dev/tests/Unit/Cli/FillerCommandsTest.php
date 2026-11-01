@@ -27,6 +27,10 @@ final class FillerCommandsTest extends TestCase
         ]));
         mkdir($this->root . '/app/example.ru/www/algoritm', 0o777, true);
         mkdir($this->root . '/app/example.ru/.alliasglobal/top', 0o777, true);
+        // Файлы блока (нужны для filler:toggle, который проверяет блок на диске)
+        file_put_contents($this->root . '/app/example.ru/.alliasglobal/top/top.php', '<?php');
+        file_put_contents($this->root . '/app/example.ru/.alliasglobal/top/top.rules.json', '{"enabled":true,"type":"mixed"}');
+        file_put_contents($this->root . '/app/example.ru/.alliasglobal/top/top.editor.json', '[]');
     }
 
     protected function tearDown(): void
@@ -62,9 +66,10 @@ final class FillerCommandsTest extends TestCase
         $res = (new FillerNewCommand(new Paths($this->root)))
             ->run(['domain' => 'example.ru', 'allias' => 'www', 'block' => 'top'], $this->ctx($r));
 
-        self::assertTrue($res->ok);
+        self::assertTrue($res->ok, implode('; ', $res->errors));
         self::assertFileExists($this->root . '/app/example.ru/.alliasglobal/top/top_www.php');
         self::assertFileExists($this->root . '/app/example.ru/.alliasglobal/top/top_www.rules.json');
+        self::assertFileExists($this->root . '/app/example.ru/.alliasglobal/top/top_www.editor.json');
 
         $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
         self::assertTrue($site['fillers']['example.ru']['www']['top']);
@@ -76,12 +81,29 @@ final class FillerCommandsTest extends TestCase
         $cmd->run(['domain' => 'example.ru', 'allias' => 'www', 'block' => 'top'], $this->ctx(new Result()));
         $res = $cmd->run(['domain' => 'example.ru', 'allias' => 'www', 'block' => 'top'], $this->ctx(new Result()));
         self::assertFalse($res->ok);
+        self::assertStringContainsString('Filler уже существует', $res->errors[0]);
     }
 
     public function testS06RejectsMissingBlock(): void
     {
         $res = (new FillerNewCommand(new Paths($this->root)))
             ->run(['domain' => 'example.ru', 'allias' => 'www', 'block' => 'ghost'], $this->ctx(new Result()));
+        self::assertFalse($res->ok);
+        self::assertStringContainsString('Блок не найден', $res->errors[0]);
+    }
+
+    public function testS06RejectsMissingAllias(): void
+    {
+        $res = (new FillerNewCommand(new Paths($this->root)))
+            ->run(['domain' => 'example.ru', 'allias' => 'ghost', 'block' => 'top'], $this->ctx(new Result()));
+        self::assertFalse($res->ok);
+        self::assertStringContainsString('Алиас не найден', $res->errors[0]);
+    }
+
+    public function testS06RejectsPathTraversal(): void
+    {
+        $res = (new FillerNewCommand(new Paths($this->root)))
+            ->run(['domain' => 'a..ru', 'allias' => 'www', 'block' => 'top'], $this->ctx(new Result()));
         self::assertFalse($res->ok);
     }
 
@@ -93,7 +115,7 @@ final class FillerCommandsTest extends TestCase
         $res = (new FillerToggleCommand($paths))
             ->run(['domain' => 'example.ru', 'allias' => 'www', 'block' => 'top', 'value' => '0'], $this->ctx(new Result()));
 
-        self::assertTrue($res->ok);
+        self::assertTrue($res->ok, implode('; ', $res->errors));
         $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
         self::assertFalse($site['fillers']['example.ru']['www']['top']);
     }
@@ -106,8 +128,51 @@ final class FillerCommandsTest extends TestCase
         $res = (new FillerToggleCommand($paths))
             ->run(['domain' => 'example.ru', 'allias' => 'www', 'block' => 'top', 'value' => '1'], $this->ctx(new Result()));
 
-        self::assertTrue($res->ok);
+        self::assertTrue($res->ok, implode('; ', $res->errors));
         $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
         self::assertTrue($site['fillers']['example.ru']['www']['top']);
+    }
+
+    public function testS07ToggleIdempotentOnSameValue(): void
+    {
+        $paths = new Paths($this->root);
+        (new FillerToggleCommand($paths))
+            ->run(['domain' => 'example.ru', 'allias' => 'www', 'block' => 'top', 'value' => '0'], $this->ctx(new Result()));
+
+        // Запоминаем состояние файла
+        $siteBefore = (string) file_get_contents($this->root . '/config/site.config');
+
+        // Повторный toggle на то же значение — не должен менять файл
+        $res = (new FillerToggleCommand($paths))
+            ->run(['domain' => 'example.ru', 'allias' => 'www', 'block' => 'top', 'value' => '0'], $this->ctx(new Result()));
+
+        self::assertTrue($res->ok);
+        self::assertSame($siteBefore, (string) file_get_contents($this->root . '/config/site.config'), 'Файл не должен меняться при идемпотентном toggle');
+    }
+
+    public function testS07ToggleRejectsMissingBlock(): void
+    {
+        $res = (new FillerToggleCommand(new Paths($this->root)))
+            ->run(['domain' => 'example.ru', 'allias' => 'www', 'block' => 'ghost', 'value' => '1'], $this->ctx(new Result()));
+
+        self::assertFalse($res->ok);
+        self::assertStringContainsString('Блок не найден', $res->errors[0]);
+    }
+
+    public function testS07ToggleRejectsMissingAllias(): void
+    {
+        $res = (new FillerToggleCommand(new Paths($this->root)))
+            ->run(['domain' => 'example.ru', 'allias' => 'ghost', 'block' => 'top', 'value' => '1'], $this->ctx(new Result()));
+
+        self::assertFalse($res->ok);
+        self::assertStringContainsString('Алиас не найден', $res->errors[0]);
+    }
+
+    public function testS07ToggleRejectsPathTraversal(): void
+    {
+        $res = (new FillerToggleCommand(new Paths($this->root)))
+            ->run(['domain' => 'a..ru', 'allias' => 'www', 'block' => 'top', 'value' => '1'], $this->ctx(new Result()));
+
+        self::assertFalse($res->ok);
     }
 }

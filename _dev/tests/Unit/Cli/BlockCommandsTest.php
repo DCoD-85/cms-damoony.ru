@@ -61,7 +61,7 @@ final class BlockCommandsTest extends TestCase
         $res = (new BlockNewCommand(new Paths($this->root)))
             ->run(['domain' => 'example.ru', 'name' => 'custom'], $this->ctx($r));
 
-        self::assertTrue($res->ok);
+        self::assertTrue($res->ok, implode('; ', $res->errors));
         $dir = $this->root . '/app/example.ru/.alliasglobal/custom';
         self::assertDirectoryExists($dir);
         self::assertFileExists($dir . '/custom.php');
@@ -89,7 +89,31 @@ final class BlockCommandsTest extends TestCase
         self::assertFalse($res->ok);
     }
 
+    public function testS04RejectsPathTraversal(): void
+    {
+        $res = (new BlockNewCommand(new Paths($this->root)))
+            ->run(['domain' => 'a..ru', 'name' => 'custom'], $this->ctx(new Result()));
+        self::assertFalse($res->ok);
+    }
+
     public function testS05RemoveBlock(): void
+    {
+        $paths = new Paths($this->root);
+        (new BlockNewCommand($paths))->run(['domain' => 'example.ru', 'name' => 'custom'], $this->ctx(new Result()));
+
+        $res = (new BlockRemoveCommand($paths))
+            ->run(['domain' => 'example.ru', 'name' => 'custom', 'force' => '1'], $this->ctx(new Result()));
+
+        self::assertTrue($res->ok, implode('; ', $res->errors));
+        self::assertDirectoryDoesNotExist($this->root . '/app/example.ru/.alliasglobal/custom');
+
+        // Карантин есть
+        $trash = glob($this->root . '/app/example.ru/.alliasglobal/custom_trash_*');
+        self::assertNotEmpty($trash, 'Карантин должен существовать');
+        self::assertFileExists($trash[0] . '/custom.php');
+    }
+
+    public function testS05RemoveRequiresForce(): void
     {
         $paths = new Paths($this->root);
         (new BlockNewCommand($paths))->run(['domain' => 'example.ru', 'name' => 'custom'], $this->ctx(new Result()));
@@ -97,14 +121,18 @@ final class BlockCommandsTest extends TestCase
         $res = (new BlockRemoveCommand($paths))
             ->run(['domain' => 'example.ru', 'name' => 'custom'], $this->ctx(new Result()));
 
-        self::assertTrue($res->ok);
-        self::assertDirectoryDoesNotExist($this->root . '/app/example.ru/.alliasglobal/custom');
+        self::assertFalse($res->ok);
+        self::assertStringContainsString('--force', $res->errors[0]);
+        self::assertDirectoryExists($this->root . '/app/example.ru/.alliasglobal/custom');
     }
 
     public function testS05MissingBlock(): void
     {
         $res = (new BlockRemoveCommand(new Paths($this->root)))
-            ->run(['domain' => 'example.ru', 'name' => 'ghost'], $this->ctx(new Result()));
-        self::assertFalse($res->ok);
+            ->run(['domain' => 'example.ru', 'name' => 'ghost', 'force' => '1'], $this->ctx(new Result()));
+
+        // Idempotent: warn + ok
+        self::assertTrue($res->ok);
+        self::assertNotEmpty($res->warnings);
     }
 }

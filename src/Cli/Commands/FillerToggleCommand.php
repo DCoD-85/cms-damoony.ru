@@ -31,12 +31,12 @@ final class FillerToggleCommand implements CommandInterface
     {
         $r = new Result();
 
-        $domain = $args['domain'] ?? '';
-        $allias = $args['allias'] ?? '';
-        $block = $args['block'] ?? '';
+        $domain = (string) ($args['domain'] ?? '');
+        $allias = (string) ($args['allias'] ?? '');
+        $block = (string) ($args['block'] ?? '');
         $value = ($args['value'] ?? '1') === '0' ? false : true;
 
-        if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain)) {
+        if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain) || str_contains($domain, '..')) {
             $r->error('Некорректный домен');
             return $r;
         }
@@ -55,9 +55,32 @@ final class FillerToggleCommand implements CommandInterface
             $r->error('Домен не найден');
             return $r;
         }
+        if (!isset($site['alliases_real'][$domain][$allias])) {
+            $r->error('Алиас не найден');
+            return $r;
+        }
+
+        $realDomain = (string) $site['domains_real'][$domain];
+
+        // Проверяем, что блок существует на диске (не пишем мусор в конфиг)
+        $blockDir = $this->paths->domain($realDomain) . '/.alliasglobal/' . $block;
+        if (!Fs::isDir($blockDir)) {
+            $r->error('Блок не найден: ' . $block);
+            return $r;
+        }
+
+        // Idempotent: если значение не меняется — не пишем конфиг
+        $current = $site['fillers'][$domain][$allias][$block] ?? null;
+        if ($current === $value) {
+            $context->step('Filler уже ' . ($value ? 'включён' : 'выключен'), true, $block . '_' . $allias);
+            return $r;
+        }
 
         $site['fillers'][$domain][$allias][$block] = $value;
-        Fs::writeAtomic($siteFile, json_encode($site, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
+        Fs::writeAtomic(
+            $siteFile,
+            json_encode($site, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n",
+        );
         $r->file(Fs::rel($siteFile, $this->paths->root()));
 
         $context->step('Filler ' . ($value ? 'включён' : 'выключен'), true, $block . '_' . $allias);

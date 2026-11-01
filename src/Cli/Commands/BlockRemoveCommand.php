@@ -7,6 +7,7 @@ namespace Damoony\Cli\Commands;
 use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
+use Damoony\Core\Config;
 use Damoony\Files\Paths;
 
 final class BlockRemoveCommand implements CommandInterface
@@ -22,22 +23,18 @@ final class BlockRemoveCommand implements CommandInterface
 
     public function description(): string
     {
-        return 'Удалить блок alliasglobal';
+        return 'Удалить блок alliasglobal (в карантин)';
     }
 
     public function run(array $args, Context $context): Result
     {
         $r = new Result();
-        $domain = (string)($args['domain'] ?? '');
-        $name = (string)($args['name'] ?? '');
 
-        if ($domain === '' || $name === '') {
-            $r->error('Укажите --domain и --name');
-            return $r;
-        }
+        $domain = (string) ($args['domain'] ?? '');
+        $name = (string) ($args['name'] ?? '');
+        $force = isset($args['force']);
 
-        // ВАЖНО: Защита от Path Traversal (выход за пределы .alliasglobal)
-        if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain)) {
+        if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain) || str_contains($domain, '..')) {
             $r->error('Некорректный домен');
             return $r;
         }
@@ -45,30 +42,39 @@ final class BlockRemoveCommand implements CommandInterface
             $r->error('Некорректное имя блока');
             return $r;
         }
-
-        $blockDir = $this->paths->domain($domain) . '/.alliasglobal/' . $name;
-        if (!is_dir($blockDir)) {
-            $r->error('Блок не найден');
+        if (!$force) {
+            $r->error('Для удаления укажите --force (папка будет перемещена в карантин)');
             return $r;
         }
 
-        $this->rmrf($blockDir);
-        $context->step("Блок {$name} удален", true);
-        return $r;
-    }
+        $siteFile = $this->paths->siteConfig();
+        if (!is_file($siteFile)) {
+            $r->error('site.config не найден');
+            return $r;
+        }
+        $site = Config::fromFile($siteFile)->all();
+        if (!isset($site['domains_real'][$domain])) {
+            $r->error('Домен не найден');
+            return $r;
+        }
+        $realDomain = (string) $site['domains_real'][$domain];
 
-    private function rmrf(string $dir): void
-    {
-        if (!is_dir($dir)) {
-            return;
+        $blockDir = $this->paths->domain($realDomain) . '/.alliasglobal/' . $name;
+        if (!is_dir($blockDir)) {
+            $r->warn("Блок не найден: {$name}");
+            $context->step('Нечего удалять', true);
+            return $r;
         }
-        foreach (scandir($dir) ?: [] as $i) {
-            if ($i === '.' || $i === '..') {
-                continue;
-            }
-            $p = $dir . '/' . $i;
-            is_dir($p) ? $this->rmrf($p) : @unlink($p);
+
+        $trash = $blockDir . '_trash_' . time();
+        if (!@rename($blockDir, $trash)) {
+            $r->error('Не удалось переместить в карантин');
+            return $r;
         }
-        @rmdir($dir);
+
+        $context->step('Блок перемещён в карантин', true, basename($trash));
+        $r->warn('Очистка карантина: php bin/cli.php trash:clear --force --older=7d');
+
+        return $r;
     }
 }
