@@ -2,7 +2,7 @@
 
 Roadmap — План развития Damoony Engine
 Статус: В разработке.
-Дата: 31 октября 2026.
+Дата: 1 ноября 2026.
 Отметка: ⚠️ Документ описывает будущие планы. Текущее состояние проекта — в manifest.md, readme.md, architecture.md.
 
 1. Честная оценка реальности
@@ -10,7 +10,7 @@ Roadmap — План развития Damoony Engine
 Что реально сделать за 1 неделю (быстрые победы)
 - **AI-Слой**: Реализовать механизм транзакций (Rollback) в Python-цикле агента при падении одной из команд — 2–3 дня. Это сделает генерацию сайтов пуленепробиваемой.
 - **AI-Слой**: Разбиение длинных задач на батчи (для слабых моделей типа Qwen 7B) — 1 день.
-- **CLI**: Реализовать scheme:copy, scheme:remove, scheme:save (сейчас логика в SchemeController — не CLI-First) — 1 день.
+- **AICLI**: Расширение whitelist (scheme:copy/remove/save, block:new/remove, filler:new) с валидацией аргументов — 1 день.
 - SEO-модуль (sitemap, robots, meta, OG) — 2–3 дня.
 - Аналитика (GA, Метрика через настройки домена) — 4–6 часов.
 - UTM-автодобавление — 1–2 часа.
@@ -20,6 +20,10 @@ Roadmap — План развития Damoony Engine
 Итог за неделю: Проект становится пригодным для продаж под маркетологов. Realistic.
 
 Что займёт 1–2 месяца (серьёзные модули)
+- **AINET**: Инструмент безопасного выхода агента в интернет (whitelist URL, таймауты, кэш) — 3–5 дней.
+- **Выбор AI**: Бенчмарк 4–5 локальных моделей на GPU 8GB (Qwen 2.5 Coder 7B/14B, Llama 3.1 8B, Mistral 7B, DeepSeek Coder 7B) — 1 неделя.
+- **Тестовый прогон**: Формализовать протокол (5 сценариев, метрики) — 3–5 дней.
+- **UX**: Взаимодействие пользователь — инструкции — агент — обратная связь (UI в админке) — 1–2 недели.
 - Профиль «Магазин» (каталог, корзина, оформление заказа) — 5–7 дней.
 - Кеширование страниц (opcache + HTTP-кеш) — 1–2 дня.
 - SPA-админка (зеркальные URL, fetch без перезагрузки) — 3–5 дней.
@@ -29,7 +33,7 @@ Roadmap — План развития Damoony Engine
 2. План действий (Roadmap)
 
 Фаза 0: Инфраструктура и Архитектурный фундамент (Выполнено)
-- [x] Закрыть все P0/P1 (безопасность, CSRF, RCE).
+- [x] Закрыть все P0/P1 (безопасность, CSRF, RCE, path traversal).
 - [x] Удалить визуальные редакторы для Страниц и Блоков (защита от RCE).
 - [x] Внедрить Правило 3 файлов (.php, .rules.json, .editor.json) для всех сущностей.
 - [x] Удалить глобальные манифесты (blocks.json, schemes.json).
@@ -37,20 +41,33 @@ Roadmap — План развития Damoony Engine
 - [x] Внедрить безопасный PageCompiler (генерация страниц из JSON без RCE).
 - [x] Реализовать команды page:write, page:read, domain:remove.
 - [x] **AI-Слой**: Интеграция локальной модели Qwen 2.5 Coder 7B. Успешная генерация 10-страничного сайта (21 команда за 1 шаг).
-- [x] Настроить CI-защиту: тесты + PHPStan при пуше (309 тестов, 698 assertions).
-- [x] **Page-rules unify**: Единая модель .rules.json (algoritm_{name}.rules.json для страниц, алгоритм/algoritm.rules.json для root). Page-слой (PagePath, PageRules, PageNamespace). Migrate:page-rules. Severity-aware structure:check. Закрыт P0 в aicli (page:write проверяет domain по allowed_domains).
+- [x] Настроить CI-защиту: тесты + PHPStan + CS-Fixer --dry-run (336 тестов, 798 assertions).
+- [x] **Page-rules unify**: Единая модель .rules.json (algoritm_{name}.rules.json для страниц, algoritm/algoritm.rules.json для root). Page-слой (PagePath, PageRules, PageNamespace). Migrate:page-rules. Severity-aware structure:check. Закрыт P0 в aicli (page:write проверяет domain по allowed_domains).
+- [x] **CLI-аудит (24 команды)**: 
+  - scheme:copy/scheme:remove/scheme:save — новые CLI-команды (SchemeController теперь тонкий клиент).
+  - Path traversal guard во всех командах с --domain/--name.
+  - realDomain: пути в app/ строятся по domains_real, а не по входному хосту.
+  - Карантин (`*_trash_<timestamp>/`) для всех destructive-команд.
+  - trash:clear — обход 4 уровней карантина, symlink-safe, флаги --force/--older/--domain.
+  - Idempotent remove: нет папки + нет в конфиге → warning, exit 0.
+  - Полная очистка конфига: domain:remove (16 ключей), allias:remove (8 ключей).
+  - filler:toggle — idempotent, проверяет блок на диске.
+  - db:migrate --dir — path traversal guard.
+  - admin:passwd / user:new — валидация (login/password/email).
+  - structure:repair — root через PageCompiler, algoritm.editor.json, path traversal guard.
+  - VarsExtractCommand — удалён (мёртвый код).
+- [x] **PHPStan/CS-Fixer расширены на bin/ и www/** (204 файла).
 
 Фаза 1: AI-Интеграция и Маркетинг (Ближайший месяц)
-- [ ] **CLI**: Полная доработка CLI (Приоритет 1) — scheme:copy/scheme:remove/scheme:save, аудит всех 22 команд, CI прогоняет PHPStan/CS-Fixer.
 - [ ] **AI-Слой**: Реализовать механизм транзакций (Rollback) в Python-цикле агента при падении одной из команд.
 - [ ] **AI-Слой**: Разбиение длинных задач на батчи (для стабильности Qwen 7B).
 - [ ] **AI-Слой**: Цикл редактирования существующих страниц (агент читает page:read, анализирует и перезаписывает page:write).
-- [ ] **AICLI**: Полная доработка AICLI для взаимодействия ai-aicli-cli (Приоритет 2).
-- [ ] **AINET**: Создание AINET — инструмента безопасного выхода агента в интернет (Приоритет 3).
-- [ ] **AI ↔ AICLI/AINET**: Доработка инструментов взаимодействия (Приоритет 4).
-- [ ] **Выбор AI**: Тестирование с AICLI/AINET на разных локальных моделях (Приоритет 5).
-- [ ] **Тестовый прогон**: Полный прогон агента (Приоритет 6).
-- [ ] **UX**: Взаимодействие пользователь — инструкции — агент — обратная связь (Приоритет 7).
+- [ ] **AICLI**: Расширение whitelist (scheme:copy/remove/save, block:new/remove, filler:new) с валидацией аргументов.
+- [ ] **AINET**: Создание AINET — инструмента безопасного выхода агента в интернет (whitelist URL, таймауты, кэш, SSRF-защита).
+- [ ] **AI ↔ AICLI/AINET**: Доработка инструментов взаимодействия (транзакции, батчи, протокол ошибок).
+- [ ] **Выбор AI**: Бенчмарк локальных моделей на GPU 8GB (Qwen 7B/14B, Llama, Mistral, DeepSeek). Метрики: время, % валидных JSON, шаги до завершения.
+- [ ] **Тестовый прогон**: Формализованный протокол (5 сценариев: 3/10/20 страниц, редактирование, восстановление после ошибки).
+- [ ] **UX**: Взаимодействие пользователь — инструкции — агент — обратная связь (UI в админке: поле ввода, прогресс, результат, инструкции).
 - [ ] SEO-модуль: sitemap.xml, robots.txt, <meta> из настроек страницы.
 - [ ] Подключение GA / Метрики через site.config.
 - [ ] UTM-метки в ссылках.
@@ -78,7 +95,7 @@ Roadmap — План развития Damoony Engine
 - www/index.php → сайт + роутинг /admin через Host/Path.
 - app/admin/ → изолированная админка (Enterprise).
 - config/admin.config → отдельный конфиг с доступами к БД для админки.
-Что останется: API DomainResolver, RegionRegistry, PageHandler, Правило 3 файлов, PageCompiler, Page-слой (PagePath/PageRules/PageNamespace), FileRouter.
+Что останется: API DomainResolver, RegionRegistry, PageHandler, Правило 3 файлов, PageCompiler, Page-слой (PagePath/PageRules/PageNamespace), FileRouter, карантин, path traversal guard.
 
 4. Что переписать в документации после внедрения
 После каждой фазы — обновлять manifest.md, architecture.md, contracts.md, cli.md, guide.md, admin.md, ai_agent.md, readme.md, index.md.
@@ -89,6 +106,7 @@ Roadmap — План развития Damoony Engine
 ❌ Голый Headless (без UI). Наш козырь — CLI-First архитектура + AI-Native интеграция.
 ❌ Плагины в стиле WP. Apps как отдельные алиасы — да, плагины в ядре — нет.
 ❌ Выполнение сырого PHP из UI или от AI. Только через безопасный JSON (PageCompiler) или явный флаг security.allow_php_blocks.
+❌ Прямое удаление файлов без карантина. Все destructive-операции — через `*_trash_<timestamp>/` + `--force`.
 
 6. Как позиционировать проект после внедрения
 - Веб-студии: «Фабрика сайтов» (10+ доменов в одном инстансе).
@@ -98,8 +116,8 @@ Roadmap — План развития Damoony Engine
 - Enterprise: «Headless-безопасность + Low-Code-удобство».
 
 7. Итоговая оценка
-- Сейчас (Фаза 0): Production Ready, AI-Native (CLI-First + AI Generation) — 9.6/10.
-- После Фазы 1 (AI + Маркетинг + полный CLI/AICLI/AINET): «AI-Конструктор для агентств» — 9.9/10.
+- Сейчас (Фаза 0): Production Ready, AI-Native (CLI-First + AI Generation) — 9.7/10.
+- После Фазы 1 (AI + Маркетинг + полный AICLI/AINET): «AI-Конструктор для агентств» — 9.9/10.
 - После Фазы 2 (E-commerce): «SaaS для бизнеса» — 9.9/10.
 - После Фазы 3 (Enterprise): «Корпоративная платформа» — 10/10.
 

@@ -26,18 +26,19 @@ Low-Code: визуальный редактор сохранен ТОЛЬКО д
 Тип блока	script / visual / mixed	—
 Правило 3 файлов	Для всех сущностей: {name}.php (код), {name}.rules.json (настройки), {name}.editor.json (данные UI)	Конфиг
 __root__	Специальное имя для записи в главную страницу аллиаса через CLI	—
+realDomain	Канонический домен (папка в app/), резолвится из site.config	Входной хост
 Запрещено: "module", "plugin", "widget", "template".
 
 3. Реализовано (✅)
 Ядро: DI (PSR-11), Logger (PSR-3), Env, ErrorHandler, Kernel, Middleware (RateLimit, SecurityHeaders, Language, Skin).
 
-Безопасность (P0 закрыт): Удалены визуальные редакторы страниц/блоков (предотвращение RCE). В `RegionCompiler` добавлен флаг `security.allow_php_blocks` (по умолчанию false), блокирующий генерацию сырого PHP.
+Безопасность (P0 закрыт): Удалены визуальные редакторы страниц/блоков (предотвращение RCE). В `RegionCompiler` добавлен флаг `security.allow_php_blocks` (по умолчанию false), блокирующий генерацию сырого PHP. Path traversal guard во всех CLI-командах (domain/allias/block/filler/scheme): проверка `..` и regex.
 
-Домен/Алиас: domain:new, domain:remove, allias:new, allias:remove, domains_*, alliases_*, stubs/*.html.
+Домен/Алиас: domain:new, domain:remove, allias:new, allias:remove, domains_*, alliases_*, stubs/*.html. Все destructive-операции в карантин (`*_trash_<timestamp>/`), требуют `--force`. Idempotent: нет папки + нет в конфиге → warning, exit 0. Полная очистка конфига (16 ключей для домена, 8 для алиаса).
 
 Роутинг: algoritm/algoritm.rules.json (root) и algoritm_{name}.rules.json (вложенные), флаги available/auth/search/default, regex-параметры, 404 для неизвестных путей.
 
-Схемы/Регионы: SchemeLoader, SchemeRenderer, RegionLoader (сканирует .alliasglobal/*/), RegionRegistry, филлеры <name>_<allias>.php.
+Схемы/Регионы: SchemeLoader, SchemeRenderer, RegionLoader (сканирует .alliasglobal/*/), RegionRegistry, филлеры <name>_<allias>.php. CLI scheme:new/copy/remove/save. Копирование и удаление схем — через CLI (было: прямое в SchemeController).
 
 Правило 3 файлов: Внедрено для Страниц, Блоков, Филлеров и Схем. Для страниц все три файла имеют единый префикс: algoritm_{name}.{php,rules.json,editor.json} в одной директории. Root — algoritm/algoritm.{php,rules.json,editor.json}. Глобальные `blocks.json` и `schemes.json` удалены.
 
@@ -47,21 +48,23 @@ Page-слой: PagePath, PageRules, PageNamespace — единый резолв�
 
 UI: Node, Element, Attrs, Text, Fragment, Group, Builder (12 методов), Document, Meta, Form, Field, Table, Button, Message. XSS-экранирование на уровне Attrs/Text.
 
-Auth: DbAuth (password_hash), SessionAuth, Csrf, login/logout, логирование в var/admin_logs.json, brute-force (5 → бан 15 мин). Базовые методы Page::isAuthenticated() и user().
+Auth: DbAuth (password_hash), SessionAuth, Csrf, login/logout, логирование в var/admin_logs.json, brute-force (5 → бан 15 мин). Базовые методы Page::isAuthenticated() и user(). admin:passwd — валидация login (3-32 [a-zA-Z0-9_.-]) + password ≥8. user:new — валидация email, уникальность login и email, password ≥8.
 
-БД: PDO, MigrationRunner, MariaDB/MySQL.
+БД: PDO, MigrationRunner, MariaDB/MySQL. db:migrate — path traversal guard на `--dir` (только подпапки migrations/).
 
 Админка: Вход/выход, профиль, I18n (RU/EN/ZH), Обзор системы, Домены, Алиасы, Блоки, Схемы, Филлеры, Страницы (дерево), Заглушки, Безопасность, Настройки. CodeMirror для всего. Визуальный Drag&Drop оставлен ТОЛЬКО для Схем. Safe Mode.
 
-AI-Слой: `bin/aicli.php` — безопасный фасад (whitelist команд) для управления движком через LLM. Работает по схеме `AI (Python/JSON) -> aicli.php -> bin/cli.php`. Поддерживает автономную диагностику и лечение, создание сайтов (успешно протестировано на модели Qwen 2.5 Coder 7B).
+AI-Слой: `bin/aicli.php` — безопасный фасад (whitelist команд) для управления движком через LLM. Работает по схеме `AI (Python/JSON) -> aicli.php -> bin/cli.php`. Поддерживает автономную диагностику и лечение, создание сайтов (успешно протестировано на модели Qwen 2.5 Coder 7B). page:write проверяет domain по $allowedDomains (P0 закрыт).
 
-Диагностика: StructureChecker (наличие 3 файлов, стыковка филлер↔слот), CLI structure:check (severity-aware: warnings не валят команду), structure:repair, migrate:page-rules (миграция .rules.json на новую модель).
+Диагностика: StructureChecker (наличие 3 файлов, стыковка филлер↔слот), CLI structure:check (severity-aware: warnings не валят команду), structure:repair (root через PageCompiler, editor.json, path traversal guard), migrate:page-rules (миграция .rules.json на новую модель).
 
 Миграция: migrate:page-rules — одноразовая миграция старых .rules.json на новую модель. Идемпотентна. Шаги: (1) root algoritm/.rules.json → algoritm/algoritm.rules.json, (2) подпапки {dir}/.rules.json → {dir}/algoritm_{name}.rules.json, (3) нормализация полей, (4) создание пустых .editor.json для существующих .php.
 
-CLI (22 команды): help, domain:new, domain:remove, allias:new, allias:remove, block:new, block:remove, filler:new, filler:toggle, page:new, page:toggle, page:write, page:read, scheme:new, migrate:page-rules, db:migrate, vars:extract, admin:passwd, user:new, trash:clear, structure:check, structure:repair.
+CLI (24 команды): help, domain:new, domain:remove, allias:new, allias:remove, block:new, block:remove, filler:new, filler:toggle, page:new, page:toggle, page:write, page:read, scheme:new, scheme:copy, scheme:remove, scheme:save, db:migrate, admin:passwd, user:new, trash:clear, structure:check, structure:repair, migrate:page-rules.
 
-Качество: PHPUnit (60 тестовых файлов, 309 тестов, 698 assertions — верифицировано; 1 skipped), PHPStan level 8 (0 errors), PHP-CS-Fixer (0 issues), GitHub Actions CI.
+trash:clear — обход 4 уровней карантина (app/, app/<domain>/, .alliasscheme/, .alliasglobal/), флаги --force/--older/--domain, dry-run по умолчанию, symlink-safe rmrf.
+
+Качество: PHPUnit (336 тестов, 798 assertions — верифицировано; 1 skipped), PHPStan level 8 (0 errors, 204 файла: src/, bin/, www/), PHP-CS-Fixer (0 issues, 204 файла: src/, bin/, www/, tests/), GitHub Actions CI (phpunit + phpstan + cs-fixer --dry-run).
 
 4. Частично реализовано (🟡)
 Фича	Что есть	Что нужно для ✅
@@ -71,7 +74,7 @@ AI-Транзакции	AI умеет диагностировать, созда
 AI-Контекст	Успешная генерация 10 страниц	Разбиение длинных задач на батчи для слабых моделей (Qwen 7B).
 
 5. Не реализовано (❌)
-WYSIWYG (свободная вёрстка), Headless/REST/GraphQL API для внешних систем, Sitemap, robots.txt, hreflang, плагины, Schema.org, SMTP / сброс пароля, Redis/Memcached/CDN, WebSocket, мультиязычность контента. CLI-команды scheme:copy, scheme:remove, scheme:save (сейчас в SchemeController — прямые операции).
+WYSIWYG (свободная вёрстка), Headless/REST/GraphQL API для внешних систем, Sitemap, robots.txt, hreflang, плагины, Schema.org, SMTP / сброс пароля, Redis/Memcached/CDN, WebSocket, мультиязычность контента.
 
 6. Осознанные архитектурные решения и известные дефекты
 6.1. Страницы не идут через схему по умолчанию
@@ -108,9 +111,17 @@ WYSIWYG (свободная вёрстка), Headless/REST/GraphQL API для в
 Проблема: Класс `Algoritm` и интерфейс `AlgoritmInterface` конфликтовали с именами файлов `algoritm.php` из-за регистронезависимости PHP.
 Статус: ✅ Решено (классы). Namespace `Damoony\Algoritm` пока сохранён (P2).
 
-6.27. Старая модель .rules.json (Новое)
+6.27. Старая модель .rules.json
 Проблема: В старых версиях root rules были в algoritm/.rules.json, страницы в {dir}/.rules.json, page:toggle писал в 4-й файл. Это создавало дубли и мёртвые файлы.
 Статус: ✅ Решено. Новая модель: алгоритм_{name}.rules.json для каждой страницы, алгоритм/algoritm.rules.json для root. Миграция — `migrate:page-rules`.
+
+6.28. CLI-First для схем
+Проблема: scheme:copy/remove/saveVisual были реализованы напрямую в SchemeController (файловые операции, не через CLI).
+Статус: ✅ Решено. Новые команды scheme:copy/remove/save. SchemeController — тонкий клиент над CLI.
+
+6.29. VarsExtractCommand (мёртвый код)
+Проблема: Команда парсила `public $available` из PHP-класса (не существует в новой модели) и создавала `.data.json`, который движок не читает.
+Статус: ✅ Удалён (команда + тест). Миграция старой модели — `migrate:page-rules`.
 
 7. Известные баги (требуют исправления)
 7.1. P0 — Блокируют production (6 из 6 закрыто)
@@ -141,7 +152,6 @@ RegionContext::service() — добавить @template в PHPDoc.
 Translator/LanguageNegotiator через контейнер.
 PageHandler::applySkin — не читать $_COOKIE напрямую.
 Переименовать namespace `Damoony\Algoritm` → `Damoony\Page`.
-CLI-команды scheme:copy, scheme:remove, scheme:save (сейчас логика в SchemeController).
 
 8. Инварианты
 Домен ≠ Алиас.
@@ -151,7 +161,7 @@ FileRouter не рендерит ошибки.
 Пароли — password_hash.
 Ядро знает только RegionInterface.
 Kernel ловит Throwable, белых экранов нет.
-Destructive операции — только POST+CSRF.
+Destructive операции — только POST+CSRF (UI) или --force (CLI).
 Host нормализуется.
 default(): null не ломает runtime.
 Имена атрибутов валидируются.
@@ -159,6 +169,10 @@ default(): null не ломает runtime.
 Document::release() идемпотентен.
 Правило 3 файлов: для страниц все три файла имеют единый префикс algoritm_{name}.{php,rules.json,editor.json} в одной директории. Root — algoritm/algoritm.{...}.
 AI не пишет сырой PHP, а использует PageCompiler (JSON).
+CLI-First: все файловые операции (включая scheme:copy/remove/save) вызываются через CLI. Админка — тонкий клиент.
+Path traversal guard: все CLI-команды с `--domain`/`--name` проверяют `..` и regex.
+Карантин: все destructive CLI-операции используют `*_trash_<timestamp>/`, требуют `--force`.
+realDomain: пути в app/ строятся по realDomain из site.config, а не по входному хосту.
 
 9. Источники истины (порядок приоритета)
 Код в src/ — фактическое поведение.
@@ -172,6 +186,8 @@ _doc/ — производная документация.
 Закрыто (текущий): AI успешно генерирует 10 страниц с меню и контентом.
 Закрыто (текущий): Унифицирована модель .rules.json (algoritm_{name}.rules.json), миграция migrate:page-rules.
 Закрыто (текущий): Severity-aware structure:check (warnings не валят команду).
+Закрыто (текущий): CLI-аудит — scheme:copy/remove/save, path traversal guards, realDomain, карантины, idempotent remove, StructureRepairCommand (PageCompiler + editor.json), удалён vars:extract.
+Закрыто (текущий): PHPStan/CS-Fixer расширены на bin/ и www/.
 
 P0 — блокируют production
 Нет. Все закрыты.
@@ -187,12 +203,11 @@ Builder — дополнить.
 assert → явные проверки.
 Фронтенд I18n, Skins.
 Переименовать namespace Damoony\Algoritm.
-CLI scheme:copy/remove/save.
 
 11. Позиция архитектора (финальная)
 Текущее состояние: 98% production-ready.
 0 P0-блокеров. 0 P1-блокеров.
-Оценка 9.6/10 (после унификации page-rules).
+Оценка 9.7/10 (после CLI-аудита).
 Как AI-платформа: 9.8/10 (AI успешно строит сайты за 1 шаг).
 
 12. Видение (6–12 месяцев)

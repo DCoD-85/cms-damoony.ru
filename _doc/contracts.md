@@ -29,6 +29,7 @@ scheme: string — имя схемы (используется в SchemeLoader)
 Резолвер не бросает исключений → DomainContext с available=false.
 Отвечает только за вычисление контекста. Не загружает контроллеры и не рендерит страницы.
 Host нормализуется (порт, trailing-dot отрезаются).
+real — источник истины для путей в app/. Все CLI-команды, которые пишут в app/, строят путь через realDomain, а не через входной хост.
 
 Ограничения (P2):
 domains_real[$domain] работает только при self-mapping ("example.ru": "example.ru"). Без self-mapping → Undefined array key.
@@ -127,7 +128,7 @@ SchemeRenderer::render(array $manifest, RegionRegistry $regions, RegionContext $
 
 Ограничения:
 SchemeCompiler::compile() использует var_export (без str_replace).
-Визуальный редактор (Drag&Drop) сохраняет вложенность и обновляет editor.json, а затем компилирует в php.
+Визуальный редактор (Drag&Drop) сохраняет вложенность и обновляет editor.json, а затем компилирует в php через CLI scheme:save.
 
 Источник: src/Scheme/
 
@@ -166,6 +167,7 @@ PageNamespace::fromSite(array $site, string $domain): string
 
 PageCompiler::compile(namespace, classChain, blocks, withSchema = false): string
   Компилирует JSON-блоки в PHP-код страницы. withSchema=true → оборачивает в схему.
+  Используется в page:write, а также для stub-страниц в domain:new/allias:new/structure:repair.
 
 Инварианты:
 - Один класс = algoritm_{name}.{php,rules.json,editor.json} в одной директории.
@@ -175,7 +177,6 @@ PageCompiler::compile(namespace, classChain, blocks, withSchema = false): string
 - page:new создаёт stub через PageCompiler (пустой Builder::div('page-content')).
 
 Ограничения:
-- CLI scheme:copy/scheme:remove/scheme:save не реализованы (файловые операции в SchemeController).
 - Namespace `Damoony\Algoritm` сохранён (P2: переименовать в `Damoony\Page`).
 
 Источник: src/Algoritm/, src/Page/
@@ -190,11 +191,13 @@ Csrf: field(), check()
 Page (Базовый класс): isAuthenticated(): bool, user(): mixed
 
 Инварианты:
-Пароли — только password_hash.
+Пароли — только password_hash. Минимум 8 символов (admin:passwd, user:new).
 Все POST защищены CSRF. Без исключений.
 Флаг auth: true в algoritm_{name}.rules.json автоматически перенаправляет гостя на /login.
-Все destructive требуют POST+CSRF. UI переведён на POST-формы.
+Все destructive требуют POST+CSRF (UI) или --force (CLI). UI переведён на POST-формы.
 Админка использует отдельную авторизацию (config/admin.config), независимую от пользователей сайта.
+admin:passwd — валидация login (3-32 [a-zA-Z0-9_.-]) и password (≥8).
+user:new — валидация email (FILTER_VALIDATE_EMAIL), уникальность login и email, password ≥8.
 
 Источник: src/Auth/, src/Security/, src/Admin/Auth.php
 
@@ -215,12 +218,12 @@ Low-Code и Компиляторы
 Назначение: превращение JSON-структур в нативный PHP.
 
 Классы:
-PageCompiler: Безопасная компиляция JSON-дерева контента (h1, text, img, etc) в PHP-код (класс Page). Использует только безопасные методы Builder. Применяется через CLI page:write (для AI). withSchema=true оборачивает в схему.
+PageCompiler: Безопасная компиляция JSON-дерева контента (h1, text, img, etc) в PHP-код (класс Page). Использует только безопасные методы Builder. Применяется через CLI page:write (для AI), а также для stub-страниц (domain:new, allias:new, structure:repair). withSchema=true оборачивает в схему.
 RegionCompiler: JSON-дерево блока → PHP-класс. Требует флаг security.allow_php_blocks=true для генерации сырого PHP (custom/if).
-SchemeCompiler: массив схемы → {name}.php (var_export).
+SchemeCompiler: массив схемы → {name}.php (var_export). Вызывается через CLI scheme:save.
 
 Инварианты:
-Компиляторы вызываются только в момент сохранения (в админке или CLI).
+Компиляторы вызываются только в момент сохранения (в админке через CLI или в CLI напрямую).
 На выходе — быстрый PHP с вызовами Builder, без парсинга JSON на лету.
 AI (через aicli) не может передать сырой PHP. Он передает только безопасный JSON, который компилируется PageCompiler.
 
@@ -245,17 +248,40 @@ CLI structure:check:
 - Вывод: `✗` для error, `⚠` для warning.
 - Exit code: 0 при отсутствии errors, 1 при наличии errors.
 
+CLI structure:repair:
+- Восстанавливает отсутствующие root-страницы (algoritm.php через PageCompiler, algoritm.rules.json, algoritm.editor.json), algoritm.rules.json для схем, {name}.rules.json/.editor.json для блоков.
+- Не трогает существующие страницы и настройки в site.config.
+- Path traversal guard на domain (str_contains('..') + regex).
+
 CLI, Админка и AI-Слой
 Назначение: интерфейсы управления.
 
-CLI: 22 команды, возвращают Result. Включает диагностику (structure:check), восстановление (structure:repair), миграцию .rules.json (migrate:page-rules), безопасную запись контента (page:write, page:read) и обслуживание. Идемпотентен. Единственный источник истины для файловых операций.
-Спец. ключ __root__ используется для записи контента на главную страницу (/) аллиаса (т.к. CLI не принимает пустой --name). --parent с __root__ — ошибка.
+CLI: 24 команды, возвращают Result. Единственный источник истины для файловых операций.
+Полный список: help, domain:new, domain:remove, allias:new, allias:remove, block:new, block:remove, filler:new, filler:toggle, page:new, page:toggle, page:write, page:read, scheme:new, scheme:copy, scheme:remove, scheme:save, db:migrate, admin:passwd, user:new, trash:clear, structure:check, structure:repair, migrate:page-rules.
 
-Admin: Тонкий клиент. Контроллеры делегируют работу CLI-командам. CodeMirror для страниц и блоков. Визуальный Drag&Drop только для Схем. POST защищены CSRF.
-Исключение (P2): scheme:copy, scheme:remove, scheme:saveVisual — реализованы прямо в SchemeController (файловые операции), а не через CLI.
+Инварианты CLI:
+- Destructive (domain:remove, allias:remove, block:remove, scheme:remove, trash:clear) — в карантин (`*_trash_<timestamp>/`), требуют --force.
+- Path traversal guard: все команды с --domain/--name проверяют str_contains('..') и regex.
+- Idempotent remove: нет папки + нет в конфиге → warning, exit 0.
+- realDomain: все команды, которые пишут в app/, строят путь по realDomain из site.config, а не по входному хосту.
+- trash:clear — обход 4 уровней карантина (app/, app/<domain>/, .alliasscheme/, .alliasglobal/), symlink-safe rmrf.
+- db:migrate --dir — ограничен подпапками migrations/ (realpath check).
+- admin:passwd — валидация login (3-32 [a-zA-Z0-9_.-]) + password (≥8).
+- user:new — проверка уникальности login и email + password (≥8).
 
-AI-Слой (bin/aicli.php): Безопасный фасад для LLM. Принимает JSON-план, проверяет Whitelist (domain:new, page:write, page:read, allias:new, page:new, filler_toggle, engine_status, read_test_file), конвертирует JSON-блоки в base64 и вызывает bin/cli.php. Не имеет доступа к exec/system.
-Валидация аргументов: domain — по whitelist из agent.config; allias/name — regex [a-z][a-z0-9_]*; для page:write пустое name конвертируется в __root__.
+Admin: Тонкий клиент. Контроллеры делегируют работу CLI-командам (включая scheme:copy/remove/save). CodeMirror для страниц и блоков. Визуальный Drag&Drop только для Схем (через CLI scheme:save). POST защищены CSRF.
+
+AI-Слой (bin/aicli.php): Безопасный фасад для LLM. Принимает JSON-план, проверяет Whitelist, конвертирует JSON-блоки в base64 и вызывает bin/cli.php. Не имеет доступа к exec/system.
+
+Разрешённые команды: read_test_file, engine_status, filler_toggle, domain:new, allias:new, page:new, page:write, page:read.
+
+Запрещены: user:new, db:migrate, admin:passwd, domain:remove, allias:remove, block:remove, block:new, filler:new, trash:clear, migrate:page-rules, scheme:*.
+
+Валидация аргументов:
+- domain — должен быть в $allowedDomains (из config/agent.config).
+- allias, name — regex [a-z][a-z0-9_]*.
+- page:write: пустое name → __root__ (главная страница); --parent с __root__ — ошибка.
+- page:write: domain проверяется по $allowedDomains (P0 закрыт — раньше проверки не было).
 
 Инварианты:
 Админка перехватывает фатальные ошибки (Safe Mode) и не падает при битом конфиге.

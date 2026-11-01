@@ -1,35 +1,35 @@
 --- НАЧАЛО ДОКУМЕНТА ---
 
 Сценарии проекта Damoony
-Ключевые сценарии (Use Cases), которые проверяют работоспособность архитектуры. Сгруппированы по слоям: структура (CLI/файлы), рендеринг (frontend), безопасность, вывод (AJAX), Low-Code, диагностика, миграция и AI-слой.
+Ключевые сценарии (Use Cases), которые проверяют работоспособность архитектуры. Сгруппированы по слоям: структура (CLI/файлы), рендеринг (frontend), безопасность, вывод (AJAX), Low-Code, диагностика, миграция, безопасность CLI и AI-слой.
 
 Легенда:
 ✅ — работает как описано.
 🟡 — работает с оговорками (см. ссылку в MANIFEST.md).
 🔴 — сломан/не реализован.
 
-Тесты: 309 тестов, 698 assertions, 60 файлов (верифицировано; 1 skipped — LinkTraversalTest требует dev-сервер 127.0.0.1:8080, прогоняется в CI).
+Тесты: 336 тестов, 798 assertions, 60 файлов (верифицировано; 1 skipped — LinkTraversalTest требует dev-сервер 127.0.0.1:8080, прогоняется в CI).
 
 Сценарии управления структурой (CLI и файловая система)
 S01. Создание домена — ✅
 bash
 php bin/cli.php domain:new --domain=example.ru --namespace=example
-Ожидание: создана папка app/example.ru/, алиас www, схема www.php, базовый блок center. Обновлён site.config.
+Ожидание: создана папка app/example.ru/, алиас www, root-страница через PageCompiler (algoritm.php, algoritm.rules.json, algoritm.editor.json), схема www, базовый блок center. Обновлён site.config (domains_real/available/namespace, alliases_real/available).
 
 S02. Создание дополнительного алиаса — ✅
 bash
 php bin/cli.php allias:new --domain=example.ru --name=doc
-Ожидание: создана app/example.ru/doc/algoritm/ (с algoritm.php и algoritm.rules.json), обновлён site.config.
+Ожидание: создана app/example.ru/doc/algoritm/ (root через PageCompiler: algoritm.php, algoritm.rules.json, algoritm.editor.json), обновлён site.config (alliases_real, alliases_available).
 
 S03. Создание глобального блока — ✅
 bash
 php bin/cli.php block:new --domain=example.ru --name=top --type=visual
-Ожидание: создана папка .alliasglobal/top/ с тремя файлами: top.php, top.rules.json, top.editor.json.
+Ожидание: создана папка .alliasglobal/top/ с тремя файлами: top.php, top.rules.json, top.editor.json. Путь строится по realDomain.
 
 S04. Создание филлера — ✅
 bash
 php bin/cli.php filler:new --domain=example.ru --allias=www --block=top
-Ожидание: созданы top_www.php, top_www.rules.json, top_www.editor.json. В site.config добавлен fillers.
+Ожидание: созданы top_www.php, top_www.rules.json, top_www.editor.json. В site.config добавлен fillers[domain][allias][block] = true. Проверка алиаса и блока (конфиг + диск).
 
 S05. Создание страницы — ✅
 bash
@@ -41,12 +41,26 @@ S06. Создание схемы — ✅
 bash
 php bin/cli.php scheme:new --domain=example.ru --name=www
 Ожидание: созданы www.php, www.rules.json, www.editor.json.
-(Оговорка: CLI-команды scheme:copy/scheme:remove не реализованы. Копирование и удаление схем доступны в админке — SchemeController::copy/delete.)
+
+S06a. Копирование схемы — ✅
+bash
+php bin/cli.php scheme:copy --domain=example.ru --name=www
+Ожидание: созданы www_copy.php, www_copy.rules.json, www_copy.editor.json. При повторном вызове — www_copy_1, www_copy_2, ... (уникальные имена). Копируется 3 файла. Если .rules.json отсутствует у исходной схемы — создаётся дефолт {"enabled":true}.
+
+S06b. Удаление схемы (в карантин) — ✅
+bash
+php bin/cli.php scheme:remove --domain=example.ru --name=www --force
+Ожидание: 3 файла перемещены в .alliasscheme/www_trash_<timestamp>/. Без --force — отмена. Idempotent: если схемы нет — warning, exit 0. Очистка — trash:clear.
+
+S06c. Сохранение визуальной схемы — ✅
+bash
+php bin/cli.php scheme:save --domain=example.ru --name=www --scheme_json='{"children":[]}'
+Ожидание: обновлён www.editor.json (поле "scheme", "fields" не трогается), скомпилирован www.php через SchemeCompiler. Принимает --scheme_json_b64 (для AI). Требует существующий editor.json.
 
 S07. Удаление домена — ✅
 bash
 php bin/cli.php domain:remove --domain=example.ru --force
-Ожидание: папка домена перемещена в карантин (example.ru_trash_timestamp), конфиг site.config полностью очищен от упоминаний домена.
+Ожидание: папка домена перемещена в карантин (example.ru_trash_timestamp), конфиг site.config полностью очищен (16 ключей: domains_real/available/namespace/titles/skins/skins_allowed/stubs/scheme, alliases_real/available/langs/titles/stubs/skins/skins_allowed, fillers). Без --force — отмена. Idempotent: нет папки + нет в конфиге → warning, exit 0.
 
 S08. Запись контента в страницу — ✅
 bash
@@ -63,7 +77,7 @@ php bin/cli.php page:read --domain=example.ru --allias=www --name=about
 S10. Очистка карантина — ✅
 bash
 php bin/cli.php trash:clear --force --older=7d
-Ожидание: удалены папки trash, старше 7 дней. По умолчанию — dry-run.
+Ожидание: удалены папки trash, старше 7 дней. По умолчанию — dry-run. Обходит 4 уровня карантина: app/, app/<domain>/, .alliasscheme/, .alliasglobal/. Флаги: --force (боевой), --older (7d/24h/30m), --domain (только один домен). Symlink-safe rmrf.
 
 Сценарии рендеринга и роутинга (Frontend)
 S11. Успешный рендеринг главной страницы — ✅
@@ -120,7 +134,7 @@ S22. Редактирование страницы через CodeMirror — ✅
 
 S23. Системная диагностика (Structure Check) — ✅
 Вход: php bin/cli.php structure:check.
-Ожидание: проверяет наличие всех 3 файлов (algoritm_{name}.{php,rules.json,editor.json}), наличие алгоритм/algoritm.rules.json (root), отсутствие устаревших {dir}/.rules.json, стыковку филлер↔слот.
+Ожидание: проверяет наличие всех 3 файлов (algoritm_{name}.{php,rules.json,editor.json}), наличие algoritm/algoritm.rules.json (root), отсутствие устаревших {dir}/.rules.json, стыковку филлер↔слот.
 Severity-aware:
 - `✗` (error) — отсутствует .php, отсутствует root algoritm.rules.json, отсутствует схема.
 - `⚠` (warning) — отсутствует .editor.json, отсутствует .rules.json у блока/схемы, устаревший .rules.json, филлер без слота.
@@ -128,7 +142,7 @@ Severity-aware:
 
 S24. Безопасная смена пароля — ✅
 Вход: профиль админки → текущий пароль, новый.
-Ожидание: пароль изменён.
+Ожидание: пароль изменён (валидация: минимум 8 символов).
 
 S25. Развёртывание по IP — ✅
 Вход: GET http://192.168.1.10:8080/, domains_real["192.168.1.10"] = "example.ru".
@@ -136,7 +150,7 @@ S25. Развёртывание по IP — ✅
 
 S26. Визуальное сохранение схемы с вложенностью — ✅
 Вход: открыть схему (www) в визуальном редакторе, сохранить.
-Фактически: ✅ работает. Дерево сохраняется без схлопывания благодаря www.editor.json и Drag&Drop UI. Это единственный элемент, где остался визуальный редактор.
+Фактически: ✅ работает. Дерево сохраняется без схлопывания благодаря www.editor.json и Drag&Drop UI. Сохранение — через CLI scheme:save.
 
 S27. Переключение Auth/Search в дереве страниц — ✅
 Вход: клик по пилюле Auth (🔒) или Search (🔍) в админке.
@@ -179,6 +193,63 @@ php bin/cli.php page:toggle --domain=example.ru --allias=www --name=about --key=
 Ожидание: обновлён algoritm_about.rules.json. Для главной — --name='__root__'.
 (Старый --path не поддерживается с новой моделью.)
 
+Сценарии безопасности CLI (аудит)
+S39. Карантин на 4 уровнях (trash:clear) — ✅
+bash
+php bin/cli.php trash:clear --force
+Ожидание: находит и удаляет карантины на всех уровнях:
+- app/<domain>_trash_<ts>/ (domain:remove)
+- app/<domain>/<allias>_trash_<ts>/ (allias:remove)
+- app/<domain>/.alliasscheme/<name>_trash_<ts>/ (scheme:remove)
+- app/<domain>/.alliasglobal/<name>_trash_<ts>/ (block:remove)
+Фильтры --older и --domain. Dry-run по умолчанию. Symlink-safe.
+(До аудита: искал только карантины алиасов внутри app/<domain>/, не находил domain:remove).
+
+S40. Карантин блока (block:remove) — ✅
+bash
+php bin/cli.php block:remove --domain=example.ru --name=top --force
+Ожидание: папка .alliasglobal/top/ перемещена в top_trash_<timestamp>/. Без --force — отмена. Idempotent: если блока нет — warning, exit 0.
+(До аудита: удалял сразу без --force).
+
+S41. Filler:toggle idempotent — ✅
+bash
+php bin/cli.php filler:toggle --domain=example.ru --allias=www --block=top --value=1
+Ожидание: если значение уже 1 — файл site.config не перезаписывается. Проверяется, что блок существует на диске (не пишем мусор в конфиг).
+
+S42. Path traversal guard в CLI — ✅
+bash
+php bin/cli.php domain:remove --domain=a..ru --force
+Ожидание: отклонено (error). Все CLI-команды с --domain/--name проверяют str_contains('..') и regex.
+
+S43. realDomain при построении путей — ✅
+Вход: domains_real["damoony3.ru"] = "damoony.ru". Команда block:new --domain=damoony3.ru --name=top.
+Ожидание: папка создана в app/damoony.ru/.alliasglobal/top/, а не в app/damoony3.ru/.
+
+S44. db:migrate --dir path traversal guard — ✅
+bash
+php bin/cli.php db:migrate --dir=/etc
+Ожидание: отклонено. --dir ограничен подпапками migrations/ (realpath check).
+
+S45. admin:passwd валидация — ✅
+bash
+php bin/cli.php admin:passwd --name=admin --password=short
+Ожидание: отклонено (пароль <8 символов). Login — regex 3-32 [a-zA-Z0-9_.-].
+
+S46. user:new валидация — ✅
+bash
+php bin/cli.php user:new --login=admin --email=bad-email --password=short
+Ожидание: отклонено (email не проходит FILTER_VALIDATE_EMAIL, пароль <8). Уникальность login и email.
+
+S47. structure:repair генерирует валидный PHP — ✅
+bash
+php bin/cli.php structure:repair --domain=example.ru
+Ожидание: для отсутствующих root-страниц создаётся algoritm.php через PageCompiler (extends Page, корректный namespace, без битого use Algoritm).
+(До аудита: генерировал битый PHP с use Damoony\Algoritm\Algoritm + extends Page).
+
+S48. VarsExtractCommand удалён — ✅
+Вход: grep -n "vars:extract" bin/cli.php.
+Ожидание: пусто. Команда удалена (мёртвый код), тест удалён. Миграция старой модели — migrate:page-rules.
+
 Сценарии AI-Слоя (Agent Integration)
 S31. Безопасный запрос к AI-фасаду — ✅
 Вход: echo '{"command": "read_test_file", "args": {"filename": "agent_test.txt"}}' | php bin/aicli.php
@@ -202,14 +273,15 @@ S34. Запрет опасных команд для AI — ✅
 Вход: Агент пытается вызвать команду user:new (создать админа) через aicli.php.
 Ожидание: aicli.php возвращает {"ok": false, "error": "Command 'user:new' is not allowed."}. Команда не выполняется.
 
-S38. Защита AI от записи в чужой домен — ✅ (Новое)
+S38. Защита AI от записи в чужой домен — ✅
 Вход: Агент вызывает page:write с domain=example.ru, где example.ru НЕ в config/agent.config (allowed_domains).
 Ожидание: aicli.php возвращает {"ok": false, "error": "Security violation: Domain 'example.ru' is not in the allowed list."}. Команда не выполняется.
 Инвариант: page:write в aicli проверяет domain по $allowedDomains (раньше проверки не было — критический дефект, закрыт).
 
 Покрытие тестами
 Сценарий	Покрыт	Где
-S01–S10	✅	_dev/tests/Unit/Cli/ (BlockCommands, SchemeNew, StructureRepair, PageWrite, PageNew, PageCommands)
+S01–S10	✅	_dev/tests/Unit/Cli/ (BlockCommands, SchemeNew, StructureRepair, PageWrite, PageNew, PageCommands, DomainNew, DomainRemove, AlliasCommands)
+S06a–S06c	✅	_dev/tests/Unit/Cli/SchemeCopyCommandTest, SchemeRemoveCommandTest, SchemeSaveCommandTest
 S11–S15	✅	_dev/tests/Unit/App/ (FrontController), Scenarios/ (AjaxScenario, IndexRenderScenario)
 S16–S19	✅	_dev/tests/Unit/Admin/AuthTest.php, Security/CsrfTest.php
 S20–S21	✅	_dev/tests/Unit/Response/, Scenarios/AjaxScenarioTest
@@ -220,12 +292,22 @@ S35	✅	CLI-прогон + Diagnostics/StructureCheckerTest (legacy .rules.json 
 S36	✅	_dev/tests/Unit/Cli/StructureCheckCommandTest.php
 S37	✅	_dev/tests/Unit/Cli/PageCommandsTest.php
 S38	✅	Тесты aicli.php
+S39	✅	_dev/tests/Unit/Cli/TrashClearCommandTest.php (testCollectsDomainTrash, testCollectsSchemeTrash, testCollectsBlockTrash)
+S40	✅	_dev/tests/Unit/Cli/BlockCommandsTest.php (testS05RemoveBlock, testS05RemoveRequiresForce)
+S41	✅	_dev/tests/Unit/Cli/FillerCommandsTest.php (testS07ToggleIdempotentOnSameValue)
+S42	✅	Тесты всех CLI-команд (testRejectsPathTraversal)
+S43	✅	CLI-прогон (realDomain в block/filler/scheme)
+S44	✅	CLI-прогон (db:migrate --dir)
+S45	✅	CLI-прогон (admin:passwd)
+S46	✅	CLI-прогон (user:new)
+S47	✅	_dev/tests/Unit/Cli/StructureRepairCommandTest.php (testRestoresMissingAlias — проверка extends Page, нет use Algoritm)
+S48	✅	bin/cli.php (grep пуст), VarsExtractScenarioTest удалён
 
 Итог
-Работает как задумано (✅): 38 из 38 сценариев.
+Работает как задумано (✅): 48 из 48 сценариев.
 Частично (🟡): 0.
 Сломано (🔴): 0.
 
-Проект полностью избавился от критических багов. Архитектура CLI-First (с единым источником истины) и AI-Native (с безопасным фасадом) работает предсказуемо. AI успешно генерирует многостраничные сайты через безопасный JSON, не имея доступа к сырому PHP. Модель .rules.json унифицирована (algoritm_{name}.rules.json), миграция автоматизирована (migrate:page-rules).
+Проект полностью избавился от критических багов. Архитектура CLI-First (с единым источником истины) и AI-Native (с безопасным фасадом) работает предсказуемо. AI успешно генерирует многостраничные сайты через безопасный JSON, не имея доступа к сырому PHP. Модель .rules.json унифицирована (algoritm_{name}.rules.json), миграция автоматизирована (migrate:page-rules). CLI-аудит (24 команды) закрыл path traversal, realDomain-баги, карантины на 4 уровнях, idempotent remove.
 
 --- КОНЕЦ ДОКУМЕНТА ---

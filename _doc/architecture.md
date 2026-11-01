@@ -37,6 +37,8 @@ PageHandler — загружает RegionRegistry (через RegionLoader), п�
 Алиас — папка внутри домена (www, doc).
 Инфраструктурные папки скрыты точкой: .alliasglobal/ (блоки), .alliasscheme/ (схемы).
 
+realDomain: все пути в app/ строятся по realDomain из site.config (config: `domains_real[<host>] = <real>`), а не по входному хосту. Если `domains_real["damoony3.ru"] = "damoony.ru"`, то папка будет `app/damoony.ru/`. Все CLI-команды (block:new/remove, filler:new/toggle, scheme:*, structure:repair) резолвят realDomain перед построением пути.
+
 Правило 3 файлов (Архитектурный стандарт)
 Каждый логический элемент (Страница, Блок, Филлер, Схема) строго описывается тремя файлами:
 1. {name}.php — PHP-код (класс или массив).
@@ -84,20 +86,31 @@ PageCompiler::compile(namespace, classChain, blocks, withSchema = false):
 - withSchema = true — генерирует код, который оборачивает контент в схему (SchemeLoader + SchemeRenderer). Используется через page:write --with_schema=1.
 - withSchema = false — «голая» страница (для API, AJAX).
 
+PageCompiler также используется в domain:new, allias:new, structure:repair для генерации stub-страницы (единый шаблон класса).
+
 RegionCompiler: используется для компиляции блоков. Для генерации сырого PHP (custom/if) требуется включить security.allow_php_blocks=true в engine.config. По умолчанию заблокировано.
 
 Слой данных
 Только PDO (Connection). SQLite (тесты) / MariaDB (prod).
 MigrationRunner применяет .sql из migrations/, идемпотентен.
+db:migrate: --dir ограничен подпапками migrations/ (path traversal guard через realpath).
 
 Авторизация
 DbAuth (password_hash / password_verify).
 Флаг auth в algoritm_{name}.rules.json проверяется FrontController → Response::redirect('/login?return=...', 302).
 Админка — отдельная авторизация (config/admin.config). Все POST — CSRF.
+admin:passwd — валидация login (3-32 [a-zA-Z0-9_.-]) и password (≥8).
+user:new — валидация email, уникальность login и email, password ≥8.
 
 CLI и Админка
-CLI: 22 команды, возвращают Result (ok, errors), идемпотентны. structure:check — диагностика (severity-aware), structure:repair — восстановление, migrate:page-rules — миграция .rules.json на новую модель.
-Admin: Тонкий клиент. Контроллеры занимаются только рендерингом HTML и валидацией форм. Вся файловая логика делегируется вызовом CLI-команд.
+CLI: 24 команды, возвращают Result (ok, errors), идемпотентны.
+- Диагностика: structure:check (severity-aware), structure:repair, migrate:page-rules.
+- Destructive: domain:remove, allias:remove, block:remove, scheme:remove, trash:clear — все в карантин (`*_trash_<timestamp>/`), требуют --force.
+- Карантин: 4 уровня (app/, app/<domain>/, .alliasscheme/, .alliasglobal/). Очистка — trash:clear с флагами --force/--older/--domain.
+- Path traversal guard: все команды с --domain/--name проверяют `..` и regex.
+- Idempotent remove: нет папки + нет в конфиге → warning, exit 0.
+
+Admin: Тонкий клиент. Контроллеры занимаются только рендерингом HTML и валидацией форм. Вся файловая логика делегируется вызовом CLI-команд, включая scheme:copy/remove/save (было: прямое в SchemeController). CodeMirror для страниц/блоков. Визуальный Drag&Drop только для Схем. POST защищены CSRF.
 Админка и CLI делят бизнес-логику.
 
 Диагностика
@@ -115,6 +128,8 @@ Severity:
 
 StructureCheckCommand: `$r->ok = true`, если нет errors. Warnings отображаются через `⚠` и не валят команду (exit 0). При errors — `✗` и exit 1.
 
+StructureRepairCommand: восстанавливает отсутствующие root-страницы (algoritm.php через PageCompiler, algoritm.rules.json, algoritm.editor.json), algoritm.rules.json для схем, {name}.rules.json/.editor.json для блоков. Path traversal guard на domain.
+
 AI-Слой (Agent Integration)
 Архитектура интеграции LLM (например, локальной Ollama через Qwen 2.5 Coder):
 AI (Python/LLM) -> bin/aicli.php -> bin/cli.php -> Файловая система
@@ -128,7 +143,7 @@ AI (Python/LLM) -> bin/aicli.php -> bin/cli.php -> Файловая систем
 Безопасность AI-слоя:
 - Агент не имеет доступа к shell (exec/shell_exec).
 - Жесткая валидация аргументов (regex), включая domain (по whitelist из agent.config), allias/name ([a-z][a-z0-9_]*).
-- Whitelist команд (запрещен user:new или db:migrate).
+- Whitelist команд (запрещены user:new, db:migrate, admin:passwd, domain:remove, allias:remove, block:remove, trash:clear, migrate:page-rules, scheme:*).
 - Изоляция доменов (агент может создавать только домены из config/agent.config).
 - Спец. ключ `__root__` используется для записи контента на главную страницу аллиаса (/, так как CLI не принимает пустой аргумент --name). Внутри PageWriteCommand конвертируется в пустой name. `--parent` с `__root__` несовместим (ошибка).
 
@@ -139,12 +154,20 @@ Safe Mode: www/admin/index.php перехватывает фатальные о�
 
 Безопасность
 Экранирование в Attrs и Text (XSS-защита).
-Пароли — только password_hash.
+Пароли — только password_hash. Минимум 8 символов (admin:passwd, user:new).
 CSP из engine.config блокирует inline-скрипты.
-CSRF-токены обязательны на POST. Destructive — POST+CSRF.
+CSRF-токены обязательны на POST. Destructive — POST+CSRF (UI) или --force (CLI).
 Session: HttpOnly, SameSite=Lax, Secure при HTTPS.
+Path traversal guard: все CLI-команды с --domain/--name проверяют `..` и regex. db:migrate --dir ограничен migrations/.
+Карантин: destructive CLI-операции не удаляют сразу, а перемещают в `*_trash_<timestamp>/`.
+
+Качество
+PHPStan level 8: 0 errors, 204 файла (src/, bin/, www/).
+PHP-CS-Fixer: 0 issues, 204 файла (src/, bin/, www/, tests/).
+PHPUnit: 336 тестов, 798 assertions, 1 skipped.
+CI: phpunit + phpstan + cs-fixer --dry-run.
 
 Что не реализовано
-Headless/REST API для внешних систем (кроме локального aicli), sitemap, hreflang, плагины, SMTP/сброс пароля, Redis/Memcached/CDN, мультиязычность контента, WYSIWYG. CLI-команды scheme:copy/scheme:remove/scheme:save. См. MANIFEST.md §5.
+Headless/REST API для внешних систем (кроме локального aicli), sitemap, hreflang, плагины, SMTP/сброс пароля, Redis/Memcached/CDN, мультиязычность контента, WYSIWYG. См. MANIFEST.md §5.
 
 --- КОНЕЦ ДОКУМЕНТА ---

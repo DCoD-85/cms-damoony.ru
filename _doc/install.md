@@ -81,6 +81,8 @@ json
 }
 ⚠️ Обязательно: self-mapping в domains_real. Ключ реального домена должен указывать на себя ("damoony.ru": "damoony.ru"). Без этого CLI-команды упадут с Undefined array key.
 
+⚠️ realDomain: если `domains_real["damoony3.ru"] = "damoony.ru"`, то папка создаётся в `app/damoony.ru/`, а не `app/damoony3.ru/`. Все CLI-команды (block:new/remove, filler:new/toggle, scheme:*, structure:repair) резолвят realDomain перед построением пути. Ошибка в конфиге = файлы не там, где их ищет движок.
+
 config/admin.config — доступ в админку
 Логин, хеш пароля, список разрешённых языков.
 
@@ -91,7 +93,8 @@ json
   "domains_langs": ["ru", "en", "zh"],
   "default_lang": "ru"
 }
-⚠️ Пустой password_hash — админка недоступна. Задайте через php bin/cli.php admin:passwd --name=admin --password=<strong>.
+⚠️ Пустой password_hash — админка недоступна. Задайте через `php bin/cli.php admin:passwd --name=admin --password=<strong>`.
+⚠️ Валидация: login 3-32 символа [a-zA-Z0-9_.-], password минимум 8 символов.
 
 config/agent.config — доступ для AI-агента
 Файл для ограничения действий AI (Whitelist доменов). Создайте его, если планируете использовать `bin/aicli.php`.
@@ -115,6 +118,7 @@ CREATE DATABASE your_database_name CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode
 bash
 php bin/cli.php db:migrate
 Команда идемпотентна. Поддерживает MariaDB/MySQL и SQLite (тесты).
+⚠️ `--dir` ограничен подпапками migrations/ (path traversal guard). Использовать: `--dir=migrations/archive` можно, `--dir=/etc` — нельзя.
 
 Веб-сервер
 Apache
@@ -153,6 +157,9 @@ php bin/cli.php user:new --login=admin --email=admin@example.com --password=<str
 admin:passwd — администратор админки (/admin/).
 user:new — пользователь сайта (для страниц с "auth": true). Это разные учётки. Не путайте.
 
+⚠️ Пароли: минимум 8 символов (и для admin:passwd, и для user:new).
+⚠️ user:new проверяет уникальность login И email, а также FILTER_VALIDATE_EMAIL.
+
 Откройте http://<домен>/ (сайт) и http://<домен>/admin/ (админка).
 
 Создание первого сайта
@@ -161,6 +168,8 @@ php bin/cli.php domain:new --domain=example.ru --namespace=example
 Алиас www создаётся автоматически. Проверьте config/site.config.
 
 ⚠️ page:new создаёт страницу без схемы по умолчанию (MANIFEST.md §6.1). Шапки/футера на ней не будет. Для обычной страницы — guide.md §4, Вариант A (вызов SchemeRenderer в коде) или используйте `page:write --with_schema=1`.
+
+⚠️ `--domain=a..ru` отклоняется (path traversal guard).
 
 Модель .rules.json (новая)
 С версии «page-rules unify» каждая страница описывается тремя файлами с единым префиксом:
@@ -202,20 +211,27 @@ composer cs
 composer check   # stan + cs + test
 
 Ожидаемые метрики:
-- PHPUnit: 309 тестов, 698 assertions, 1 skipped (LinkTraversalTest — требует dev-сервер 127.0.0.1:8080, прогоняется в CI).
-- PHPStan: level 8, 0 errors.
-- PHP-CS-Fixer: 0 issues.
+- PHPUnit: 336 тестов, 798 assertions, 1 skipped (LinkTraversalTest — требует dev-сервер 127.0.0.1:8080, прогоняется в CI).
+- PHPStan: level 8, 0 errors, 204 файла (src/, bin/, www/).
+- PHP-CS-Fixer: 0 issues, 204 файла (src/, bin/, www/, tests/).
 
 Безопасность (перед production)
-Пароли — password_hash/password_verify (bcrypt). admin:passwd и user:new делают это.
+Пароли — password_hash/password_verify (bcrypt). admin:passwd и user:new делают это. Минимум 8 символов.
 CSRF — на всех POST (админка и сайт). Destructive операции защищены.
 Сессии — HttpOnly, SameSite=Lax, Secure при HTTPS.
 Brute-force — бан IP на 15 минут после 5 неудач.
 CSP — блокирует inline-скрипты (CodeMirror локальный из /media/admin/).
-Визуальные редакторы удалены для страниц и блоков (CodeMirror). Drag&Drop оставлен только для Схем.
+Визуальные редакторы удалены для страниц и блоков (CodeMirror). Drag&Drop оставлен только для Схем (через CLI scheme:save).
 Флаг security.allow_php_blocks=false по умолчанию блокирует генерацию сырого PHP.
 AI-агенты ограничены config/agent.config (белый список доменов). Page:write проверяет domain по allowed_domains.
 .htaccess: dev-правило для /tests/ удалено (было в старых версиях).
+
+CLI-безопасность:
+- Path traversal guard во всех командах с --domain/--name (str_contains('..') + regex).
+- Destructive-команды (domain:remove, allias:remove, block:remove, scheme:remove, trash:clear) работают через карантин (`*_trash_<timestamp>/`) и требуют `--force`.
+- Idempotent remove: нет папки + нет в конфиге → warning, exit 0.
+- db:migrate --dir ограничен migrations/.
+- user:new проверяет уникальность login и email.
 
 Проверка после установки
 bash
@@ -227,15 +243,23 @@ php bin/cli.php structure:check
 Восстановить пропущенные файлы:
 bash
 php bin/cli.php structure:repair --domain=example.ru
+Восстанавливает root-страницы через PageCompiler (algoritm.php, algoritm.rules.json, algoritm.editor.json), algoritm.rules.json для схем, {name}.rules.json/.editor.json для блоков. Path traversal guard.
 
 Если видите warning про устаревший .rules.json — миграция:
 bash
 php bin/cli.php migrate:page-rules
 
+Очистка карантина (после destructive-операций):
+bash
+php bin/cli.php trash:clear                          # dry-run
+php bin/cli.php trash:clear --force --older=7d       # только старше 7 дней
+php bin/cli.php trash:clear --force --domain=example.ru
+Обходит 4 уровня: app/, app/<domain>/, .alliasscheme/, .alliasglobal/.
+
 Полезные ссылки
 MANIFEST.md — канон: ✅/🟡/❌, P0/P1/P2, backlog, видение.
 readme.md — обзор и быстрый старт.
-cli.md — CLI-команды (22 команды).
+cli.md — CLI-команды (24 команды).
 admin.md — админка.
 guide.md — руководство разработчика.
 architecture.md — жизненный цикл (включая AI-слой).

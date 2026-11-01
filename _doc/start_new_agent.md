@@ -61,17 +61,20 @@ Production: прямое редактирование /var/www/damoony.ru/ по 
 Git: пуш в main при красных проверках; коммит config/*.config; изменение composer.lock без запроса.
 
 ⚠️ Текущий статус кода (см. MANIFEST.md §7): 
-- Все P0 и P1 закрыты. RCE, CSRF, XSS, Path Traversal — устранены.
+- Все P0 и P1 закрыты. RCE, CSRF, XSS, Path Traversal, SQL injection — устранены.
 - Внедрено **Правило 3 файлов** (.php, .rules.json, .editor.json) для всех сущностей.
   Для страниц все три файла имеют единый префикс: `algoritm_{name}.{php,rules.json,editor.json}` в одной папке.
   Root алиаса: `algoritm/algoritm.{php,rules.json,editor.json}`.
 - Визуальные редакторы для Страниц и Блоков **удалены** (переведены на CodeMirror). Drag&Drop остался только для Схем.
-- Создан безопасный PageCompiler (JSON -> PHP) для генерации страниц AI-агентом (защита от RCE).
+- Создан безопасный PageCompiler (JSON -> PHP) для генерации страниц AI-агентом (защита от RCE). Используется также для stub-страниц (domain:new, allias:new, structure:repair).
 - Создан безопасный AI-фасад (bin/aicli.php), связанный с Ollama (Qwen 2.5 Coder 7B). Успешно генерирует 10-страничные сайты.
 - **Page-слой**: PagePath, PageRules, PageNamespace — единый резолвинг путей/правил/namespace для всех page-команд.
 - **Миграция**: `migrate:page-rules` — одноразовый перевод старых `.rules.json` на новую модель. Идемпотентна.
+- **CLI-аудит** (24 команды): path traversal guard, карантин (`*_trash_<timestamp>/`) для destructive, idempotent remove, realDomain, scheme:copy/remove/save через CLI.
 
 ⚠️ Breaking change: `page:toggle --path` заменён на `--name` + `--parent` (root — `--name='__root__'`).
+
+⚠️ `vars:extract` удалён (мёртвый код). Миграция старой модели — `migrate:page-rules`.
 
 6. Ключевые пути
 Что	Путь
@@ -82,6 +85,7 @@ Git: пуш в main при красных проверках; коммит confi
 Root алиаса	app/<domain>/<allias>/algoritm/algoritm.{php,rules.json,editor.json}
 Глобальные блоки	app/<domain>/.alliasglobal/<name>/ (3 файла)
 Глобальные схемы	app/<domain>/.alliasscheme/<name>/ (3 файла)
+Карантин	app/<domain>_trash_<ts>/, app/<domain>/<allias>_trash_<ts>/, .alliasscheme/<name>_trash_<ts>/, .alliasglobal/<name>_trash_<ts>/
 Конфиги	config/*.config (включая agent.config для AI)
 Переводы	lang/{ru,en,zh}.php
 Заглушки 503	stubs/*.html
@@ -117,7 +121,7 @@ bash
 cd /var/www/damoony.ru && git pull origin main && systemctl reload apache2
 Обновить _doc/, если изменилось поведение/API/конфиги.
 
-Перед destructive-операциями (domain:remove, allias:remove, block:remove, scheme:remove, trash:clear --force, migrate:page-rules, любые правки существующих файлов) — git commit.
+Перед destructive-операциями (domain:remove, allias:remove, block:remove, scheme:remove, trash:clear --force, migrate:page-rules, любые правки существующих файлов) — git commit. Все destructive CLI-команды требуют --force и работают через карантин.
 
 8. Быстрые команды
 bash
@@ -142,8 +146,16 @@ php bin/cli.php structure:repair --domain=example.ru
 php bin/cli.php migrate:page-rules --dry         # предпросмотр
 php bin/cli.php migrate:page-rules                # боевой прогон (идемпотентно)
 
+# Очистка карантина (4 уровня)
+php bin/cli.php trash:clear                       # dry-run
+php bin/cli.php trash:clear --force --older=7d    # только старше 7 дней
+php bin/cli.php trash:clear --force --domain=example.ru
+
 # Миграции БД
 php bin/cli.php db:migrate
+
+# Список всех команд
+php bin/cli.php help                              # 24 команды
 
 # Проверка AI-фасада (требуется настроенный config/agent.config)
 echo '{"command": "engine_status", "args": {}}' | php bin/aicli.php

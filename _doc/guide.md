@@ -5,6 +5,8 @@
 
 ⚠️ Важно перед стартом. Визуальные редакторы для Страниц и Блоков удалены в целях безопасности (предотвращение RCE). Всё редактирование кода происходит через встроенный CodeMirror. Визуальный Drag&Drop оставлен ТОЛЬКО для Схем.
 
+Все destructive CLI-операции (domain:remove, allias:remove, block:remove, scheme:remove, trash:clear) работают через карантин (`*_trash_<timestamp>/`) и требуют `--force`. Перед ними — коммит в git.
+
 1. Концепция и структура
 Архитектура разделена на два уровня:
 
@@ -26,6 +28,8 @@
 - /about/: algoritm/about/algoritm_about.{php,rules.json,editor.json}
 - /docs/install/: algoritm/docs/install/algoritm_docs_install.{php,rules.json,editor.json}
 
+realDomain: если в site.config есть `domains_real["damoony3.ru"] = "damoony.ru"`, то папка в app/ называется `damoony.ru`, а не `damoony3.ru`. Все CLI-команды (block/filler/scheme/domain) резолвят realDomain перед построением пути.
+
 Термины — по MANIFEST.md §2.
 
 2. Создание сайта (Домена)
@@ -37,13 +41,17 @@ php bin/cli.php domain:new --domain=example.ru --namespace=example
 Что создаётся:
 text
 app/example.ru/
-├── .alliasglobal/ (центр)
-├── .alliasscheme/ (схема www)
+├── .alliasglobal/center/  (center.php, center.rules.json, center.editor.json)
+├── .alliasscheme/         (www.php, www.rules.json)
 └── www/
     └── algoritm/
-        ├── algoritm.rules.json
-        ├── algoritm.editor.json
-        └── algoritm.php
+        ├── algoritm.php              (через PageCompiler)
+        ├── algoritm.rules.json       (полные дефолты available/auth/search/default)
+        └── algoritm.editor.json
+
+Обновляется site.config: domains_real, domains_available, domains_namespace, alliases_real, alliases_available.
+
+⚠️ Path traversal guard: `--domain=a..ru` отклоняется.
 
 3. Создание дополнительных алиасов
 bash
@@ -51,9 +59,11 @@ php bin/cli.php allias:new --domain=example.ru --name=doc
 Что создаётся:
 text
 app/example.ru/doc/algoritm/
+├── algoritm.php            (через PageCompiler)
 ├── algoritm.rules.json
-├── algoritm.editor.json
-└── algoritm.php
+└── algoritm.editor.json
+
+Обновляется site.config: alliases_real, alliases_available.
 
 На один домен — сколько угодно алиасов. Но на один IP-хост без DNS работает только один алиас (www), потому что алиас определяется по Host.
 
@@ -62,6 +72,8 @@ app/example.ru/doc/algoritm/
 bash
 php bin/cli.php page:new --domain=example.ru --allias=www --name=about
 Создаётся папка about/ с тремя файлами (algoritm_about.php, algoritm_about.rules.json, algoritm_about.editor.json) и обновляется available в родительских правилах (root: algoritm/algoritm.rules.json).
+
+⚠️ Родительская страница должна существовать. `page:new --parent=ghost` → ошибка «Родительская папка не найдена».
 
 ⚠️ Ключевое: страница без схемы vs со схемой
 page:new создаёт страницу, которая не рендерит схему по умолчанию. Шапки, футера и других регионов на такой странице не будет, только возвращённый Node.
@@ -121,6 +133,7 @@ php bin/cli.php page:write --domain=example.ru --allias=www --name=about --json=
 - Поддерживаемые атрибуты: class, id, style, url (для link), alt (для img).
 - Специальное имя `__root__` используется для перезаписи главной страницы аллиаса (/).
 - Флаг `--with_schema=1` — оборачивает контент в глобальную схему (подтягивает шапку/подвал).
+- `--parent` несовместим с `__root__` (главная страница всегда в корне).
 
 Ручное редактирование кода
 В админке — кнопка «Код» (CodeMirror). Namespace: <домен_с_подчёркиваниями>\<allias>. Класс — algoritm_<путь>. Вывод — только через Node или Response.
@@ -130,8 +143,9 @@ bash
 php bin/cli.php page:toggle --domain=example.ru --allias=www --name=about --key=auth --value=1
 - --key — auth, search или default.
 - --value — 0 или 1.
+- --parent — опционально, для вложенных.
 Для главной страницы — --name='__root__'.
-⚠️ Аргумент --path из старой версии не поддерживается (breaking change после унификации модели).
+⚠️ Аргумент --path из старой версии не поддерживается (breaking change после унификации модели). Пишет в algoritm_{name}.rules.json с полным набором полей.
 
 5. Создание блоков (Регионов)
 bash
@@ -171,7 +185,13 @@ final class alliasglobal_header implements RegionInterface
         return $wrap;
     }
 }
+
 ⚠️ Визуального редактора для блоков нет. Если нужна логика (custom/if) — включите security.allow_php_blocks=true в engine.config (по умолчанию заблокировано).
+
+Удаление блока — в карантин:
+bash
+php bin/cli.php block:remove --domain=example.ru --name=header --force
+Папка .alliasglobal/header/ перемещается в header_trash_<timestamp>/. Без --force — отмена. Очистка карантина — trash:clear.
 
 6. Создание Схем (Каркасов)
 Визуальный редактор Схем работает на Drag&Drop. Разделяет блоки на зоны: Неактивные, Скрипты (только script), Визуал (visual и mixed). Поддерживает вложенность.
@@ -179,6 +199,12 @@ final class alliasglobal_header implements RegionInterface
 - www.php (рендер)
 - www.rules.json (настройки)
 - www.editor.json (дерево для Drag&Drop)
+
+CLI-команды для схем:
+- scheme:new — создать (3 файла).
+- scheme:copy — копировать в scheme_copy / scheme_copy_1 / ... (3 файла).
+- scheme:remove --force — в карантин (.alliasscheme/scheme_trash_<ts>/).
+- scheme:save — сохранить визуальную схему (обновить editor.json + компилировать php через SchemeCompiler).
 
 7. Управление регионами из кода (Runtime API)
 Внутри default():
@@ -218,6 +244,7 @@ foreach ($news as $item) {
 }
 return $ul;
 Миграции — только через CLI: php bin/cli.php db:migrate.
+⚠️ --dir ограничен подпапками migrations/ (path traversal guard).
 
 10. Авторизация и Безопасность
 Чтобы страница требовала вход, добавьте "auth": true в algoritm_{name}.rules.json (через CLI: page:toggle --key=auth).
@@ -230,6 +257,10 @@ if ($this->isAuthenticated()) {
 }
 
 Все POST — с CSRF. Пользователи сайта создаются через user:new. Админка использует отдельную авторизацию.
+
+Валидация:
+- admin:passwd — login 3-32 [a-zA-Z0-9_.-], password минимум 8 символов.
+- user:new — login 3-32 [a-zA-Z0-9_], email FILTER_VALIDATE_EMAIL, password минимум 8, уникальность login и email.
 
 11. Использование AJAX
 Если запрос с X-Requested-With: XMLHttpRequest — можно вернуть JSON:
@@ -247,8 +278,12 @@ if ($this->isAjax()) {
 bash
 php bin/cli.php filler:new --domain=example.ru --allias=admin --block=header
 
-Создаются три файла: header_admin.php, .rules.json, .editor.json. Филлер включается автоматически.
+Создаются три файла: header_admin.php, header_admin.rules.json, header_admin.editor.json. Филлер включается автоматически (site.config: fillers[domain][allias][block] = true).
+Проверяется, что алиас и блок существуют (конфиг + диск).
+
 Выключить: filler:toggle --domain=example.ru --allias=admin --block=header --value=0
+Включить: --value=1.
+Idempotent: если значение не меняется — файл site.config не перезаписывается. Блок проверяется на диске (не пишем мусор в конфиг).
 
 13. Диагностика и миграция
 bash
@@ -262,7 +297,7 @@ Severity-aware. Проверяет:
 `✗` (error) — критично (exit 1): отсутствует .php, отсутствует root .rules.json, отсутствует схема.
 `⚠` (warning) — некритично (exit 0): отсутствует .editor.json, устаревший .rules.json, филлер без слота.
 
-Восстановить пропуски .rules.json/.editor.json:
+Восстановить пропуски (root-страницы через PageCompiler, .rules.json/.editor.json для блоков и схем):
 bash
 php bin/cli.php structure:repair --domain=example.ru
 
@@ -272,13 +307,35 @@ php bin/cli.php migrate:page-rules --dry   # предпросмотр
 php bin/cli.php migrate:page-rules          # боевой прогон
 Идемпотентна. Шаги: (1) root algoritm/.rules.json → algoritm/algoritm.rules.json, (2) подпапки {dir}/.rules.json → {dir}/algoritm_{name}.rules.json, (3) нормализация полей, (4) создание пустых .editor.json.
 
+Очистка карантина:
+bash
+php bin/cli.php trash:clear                          # dry-run
+php bin/cli.php trash:clear --force                  # удалить всё
+php bin/cli.php trash:clear --force --older=7d       # только старше 7 дней
+php bin/cli.php trash:clear --force --domain=example.ru  # только один домен
+Обходит 4 уровня карантина: app/, app/<domain>/, .alliasscheme/, .alliasglobal/.
+
 14. Чек-лист перед деплоем страницы
 1. Схема: страница рендерит схему (Вариант A) или это осознанный API-эндпоинт (Вариант B)?
 2. Правило 3 файлов: у страницы есть algoritm_{name}.php, algoritm_{name}.rules.json, algoritm_{name}.editor.json (единый префикс)? Для root — algoritm/algoritm.{php,rules.json,editor.json}.
 3. default(): не возвращает null (или осознанно — 204 No Content).
-4. POST: с CSRF. Destructive: через POST+CSRF.
+4. POST: с CSRF. Destructive: через POST+CSRF (UI) или --force (CLI).
 5. structure:check: зелёный (без errors; warnings допустимы).
-6. git: коммит перед изменениями.
+6. git: коммит перед изменениями (особенно перед destructive CLI-командами).
+7. realDomain: если domain — входной хост, проверь, что папка в app/ называется по realDomain.
+
+15. Path traversal и безопасность CLI
+Все CLI-команды с `--domain`/`--name` проверяют:
+- regex: domain `[a-z0-9][a-z0-9.-]*\.[a-z]{2,}`, name `[a-z][a-z0-9_]*`.
+- `str_contains($domain, '..')` → error.
+
+Destructive-команды (domain:remove, allias:remove, block:remove, scheme:remove, trash:clear) требуют `--force`. Работают через карантин (`*_trash_<timestamp>/`).
+
+Idempotent remove: нет папки + нет в конфиге → warning, exit 0.
+
+Полная очистка конфига:
+- domain:remove — 16 ключей (domains_*, alliases_*, fillers).
+- allias:remove — 8 ключей (alliases_*, fillers).
 
 Подробнее о состоянии проекта — MANIFEST.md. О командах — cli.md. Об админке — admin.md. О жизненном цикле запроса — architecture.md.
 

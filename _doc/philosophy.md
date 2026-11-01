@@ -21,22 +21,22 @@
 3. Регионы, слоты и Filler (Правило 3 файлов)
 Шаблон домена — именованные регионы (блоки). Схема (каркас страницы) содержит слоты, в которые регионы вставляются. Иерархия схем: локальная алиаса → глобальная домена. Filler — переопределение региона для конкретного алиаса.
 Следствие: регион — единица расширения. Ядро знает только о RegionInterface. Глобальные манифесты (blocks.json, schemes.json) удалены. Каждая сущность описывается тремя файлами: {name}.php, {name}.rules.json, {name}.editor.json.
-Соблюдается: ✅ полностью. RegionRegistry (disabled → forcedGlobal → filler → base) работает образцово.
+Соблюдается: ✅ полностью. RegionRegistry (disabled → forcedGlobal → filler → base) работает образцово. Для страниц — единый префикс algoritm_{name}.{...}.
 Расхождения:
 - Slot::release() возвращает '' — слот без региона молча исчезает (диагностика через structure:check).
 
 4. Роутинг — файловые правила
-Страницы живут в файловой иерархии algoritm/ алиаса. Правила — .rules.json рядом. Роутер читает правила, идёт по сегментам URL, вызывает default(). Regex-параметры, флаг auth, namespace — часть контракта.
+Страницы живут в файловой иерархии algoritm/ алиаса. Правила — algoritm_{name}.rules.json рядом. Роутер читает правила, идёт по сегментам URL, вызывает default(). Regex-параметры, флаг auth, namespace — часть контракта.
 Следствие: никаких routes.php с сотнями строк. Конфигурация роутинга — данные, не код.
 Соблюдается: ✅ полностью.
 Ограничения:
 - @preg_match в RulesMatcher глушит ошибки — битый regex даст тихий notFound, а не диагностику.
 
 5. Low-Code, Zero-Overhead и AI-Генерация
-Визуальный Drag&Drop оставлен ТОЛЬКО для Схем (HTML-каркасов). Админка сохраняет структуру схемы в editor.json и компилирует в {name}.php. 
+Визуальный Drag&Drop оставлен ТОЛЬКО для Схем (HTML-каркасов). Админка сохраняет структуру схемы в editor.json и компилирует в {name}.php через CLI `scheme:save`. 
 Страницы, Блоки и Филлеры визуальных редакторов НЕ ИМЕЮТ (удалены ради безопасности). Они пишутся через CodeMirror (ручной PHP) или генерируются AI-агентом через безопасный JSON (PageCompiler).
 Следствие: мы убрали "магию" генерации кода из UI, закрыв уязвимость RCE. При этом AI может быстро создавать контент, не имея доступа к сырому PHP (только безопасные блоки: h1, text, img и т.д.).
-Соблюдается: ✅ полностью. PageCompiler (JSON -> PHP) доказал свою безопасность и эффективность (генерация 10-страничного сайта за 1 шаг).
+Соблюдается: ✅ полностью. PageCompiler (JSON -> PHP) доказал свою безопасность и эффективность (генерация 10-страничного сайта за 1 шаг). Используется не только в page:write, но и для stub-страниц в domain:new/allias:new/structure:repair.
 Расхождения:
 - Для генерации сырого PHP в Блоках (custom/if) требуется явный флаг security.allow_php_blocks=true (по умолчанию заблокировано).
 
@@ -59,22 +59,20 @@
 
 8. CLI-First (Единый источник истины)
 Любая файловая операция (создание, удаление, компиляция, миграция) вызывается через CLI (bin/cli.php).
-Админка — это "тонкий клиент". Она рендерит HTML и вызывает CLI-команды. 
+Админка — это "тонкий клиент". Она рендерит HTML и вызывает CLI-команды (включая scheme:copy/remove/save — после CLI-аудита).
 AI-агенты используют безопасный фасад bin/aicli.php, который тоже вызывает CLI (page:write, page:read).
 Следствие: бизнес-логика не дублируется. Любое изменение в CLI мгновенно отражается в админке и доступно агентам.
-Соблюдается: ✅ с одним исключением.
-Расхождения:
-- SchemeController::copy/delete/saveVisual выполняет файловые операции напрямую (не через CLI). CLI-команды scheme:copy/scheme:remove/scheme:save пока не реализованы (P2).
+Соблюдается: ✅ полностью. Все 24 команды, включая scheme:copy/remove/save (было: прямое в SchemeController). Destructive-операции — в карантин (`*_trash_<timestamp>/`), требуют `--force`. Path traversal guard во всех командах с `--domain`/`--name`.
 
 9. Безопасность — не фича, а основа
-Пароли — только password_hash. CSRF на всех POST. Удаление — только через POST. Загрузки — whitelist. Сессии — HttpOnly, SameSite. Safe Mode и строгий CSP.
+Пароли — только password_hash. CSRF на всех POST. Удаление — только через POST (UI) или --force (CLI). Загрузки — whitelist. Сессии — HttpOnly, SameSite. Safe Mode и строгий CSP.
 Удалены визуальные редакторы страниц и блоков (защита от RCE). Доступ к AI-агенту ограничен Whitelist-ом в aicli.php и списком доменов в agent.config.
 Следствие: никаких phpinfo(), GET-удалений, паролей в открытом виде, выполнения сырого PHP из UI или от AI (используется PageCompiler).
-Соблюдается: ✅ в основном. Все P0 закрыты.
+Соблюдается: ✅ в основном. Все P0 закрыты. Path traversal guard в CLI (domain/allias/block/filler/scheme/db:migrate). Пароли минимум 8 символов (admin:passwd, user:new). Уникальность email в user:new. Карантин для destructive-команд.
 
 10. Диагностика и отказоустойчивость
 Система сама подсказывает разработчику, что сломано. StructureChecker проверяет наличие всех 3 файлов (.php, .rules.json, .editor.json) для каждого элемента, стыковку блоков и схем. Есть System Health, Safe Mode.
-Следствие: System Health, structure:check (severity-aware), structure:repair, migrate:page-rules.
+Следствие: System Health, structure:check (severity-aware), structure:repair, migrate:page-rules, trash:clear (4 уровня карантина).
 Соблюдается: ✅ в основном.
 Расхождения:
 - Safe Mode работает на уровне bootstrap админки, но ошибки внутри контроллеров ловит Kernel (500, не Safe Mode) — это ожидаемо.
@@ -82,8 +80,9 @@ AI-агенты используют безопасный фасад bin/aicli.p
 Стек
 PHP 8.4
 Composer (PSR-4, PSR-3, PSR-11)
-PHPUnit 10+ (60 тестовых файлов, 309 тестов, 698 assertions — верифицировано)
-PHPStan (level 8)
+PHPUnit 10+ (336 тестов, 798 assertions — верифицировано)
+PHPStan (level 8, 204 файла: src/, bin/, www/)
+PHP-CS-Fixer (204 файла: src/, bin/, www/, tests/)
 PDO (MariaDB / MySQL; SQLite в тестах)
 Nginx + PHP-FPM (или Apache + mod_php)
 Ollama (локальные LLM: Qwen 2.5 Coder 7B для AI-агентов)
@@ -94,14 +93,14 @@ Ollama (локальные LLM: Qwen 2.5 Coder 7B для AI-агентов)
 2	UI — дерево	✅	Builder неполон, Node/ParentNode
 3	Регионы/слоты/filler	✅	Slot без региона молча исчезает
 4	Файловый роутинг	✅	@preg_match глушит ошибки
-5	Low-Code / AI-Генерация	✅	Визуал только для схем, страницы/блоки — JSON (AI) или код
+5	Low-Code / AI-Генерация	✅	Визуал только для схем (через CLI scheme:save), страницы/блоки — JSON (AI) или код
 6	Explicit over implicit	✅	Противоречие §6.1 решено (ручной вызов схемы или --with_schema)
 7	Contract-first	✅	default(): null → 204 (stage-4)
-8	CLI-First	✅	Админка и AI — тонкие клиенты над CLI (22 команды); исключение — схема (P2)
-9	Безопасность — основа	✅	RCE закрыт, AI использует PageCompiler (безопасный JSON)
-10	Диагностика	✅	Severity-aware structure:check, migrate:page-rules
+8	CLI-First	✅	Все 24 команды через CLI, включая scheme:* (было: SchemeController)
+9	Безопасность — основа	✅	RCE закрыт, path traversal guard, карантин, password ≥8
+10	Диагностика	✅	Severity-aware structure:check, structure:repair, migrate:page-rules, trash:clear (4 уровня)
 
-9 принципов соблюдаются полностью или почти. P0-блокеры закрыты. Проект прошел путь от Low-Code конструктора до безопасной AI-Native CMS с архитектурой CLI-First. Архитектура — на 9.6/10.
+10 принципов соблюдаются полностью. P0-блокеры закрыты. Проект прошел путь от Low-Code конструктора до безопасной AI-Native CMS с архитектурой CLI-First. Архитектура — на 9.7/10.
 
 Подробнее о конкретных багах — MANIFEST.md §6–7. О состоянии проекта — readme.md.
 

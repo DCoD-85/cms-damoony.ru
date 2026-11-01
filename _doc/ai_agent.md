@@ -15,12 +15,12 @@
 
 1.1. Главные правила
 - **Только CLI.** Любая операция с файловой структурой — через `php bin/cli.php` (или через `bin/aicli.php`, если ты работаешь как AI-агент).
-- **Коммит в git** перед destructive-операциями (`domain:remove`, `allias:remove`, `block:remove`, `trash:clear --force`, `migrate:page-rules`).
+- **Коммит в git** перед destructive-операциями (`domain:remove`, `allias:remove`, `block:remove`, `scheme:remove`, `trash:clear --force`, `migrate:page-rules`).
 - **Визуальные редакторы (Drag&Drop)** остались ТОЛЬКО для Схем. Страницы и Блоки редактируются через JSON (через AI) или CodeMirror (вручную).
 - **Не пиши сырой PHP.** Ты передаёшь JSON-массив блоков через `page:write`, движок компилирует в PHP через PageCompiler (безопасно, без RCE).
 
 1.2. Структура файлов
-- Домен: папка `app/<domain>/`.
+- Домен: папка `app/<realDomain>/`. realDomain резолвится из `site.config` (`domains_real[<host>]`).
 - Алиасы (www, doc) — подпапки внутри домена.
 - Инфраструктурные папки скрыты точкой: `.alliasglobal` (блоки), `.alliasscheme` (схемы).
 - Страницы алиаса: `app/<domain>/<allias>/algoritm/<path>/algoritm_<path>.{php,rules.json,editor.json}`.
@@ -28,24 +28,38 @@
 
 1.3. Справочник команд (только CLI)
 Домены и алиасы:
-- `domain:new --domain=example.ru` — создать домен (создает www и схему).
-- `domain:remove --domain=example.ru --force` — удалить домен в карантин.
-- `allias:new --domain=example.ru --name=doc` — создать алиас (создает корневую страницу /).
+- `domain:new --domain=example.ru` — создать домен (создает www и схему, root через PageCompiler).
+- `domain:remove --domain=example.ru --force` — удалить домен в карантин (16 ключей конфига).
+- `allias:new --domain=example.ru --name=doc` — создать алиас (root-страница через PageCompiler).
+- `allias:remove --domain=example.ru --name=doc --force` — удалить алиас в карантин (8 ключей конфига).
 
 Блоки, схемы, филлеры:
 - `block:new --domain=example.ru --name=top [--type=visual]` — создать блок (3 файла).
+- `block:remove --domain=example.ru --name=top --force` — в карантин.
+- `filler:new --domain=example.ru --allias=www --block=top` — filler (проверяет алиас/блок).
+- `filler:toggle --domain=example.ru --allias=www --block=top --value=0|1` — idempotent, проверяет блок на диске.
 - `scheme:new --domain=example.ru --name=www` — создать схему (3 файла).
+- `scheme:copy --domain=example.ru --name=www` — копия (www_copy, www_copy_1, ...).
+- `scheme:remove --domain=example.ru --name=www --force` — в карантин.
+- `scheme:save --domain=example.ru --name=www --scheme_json='...'` — сохранить визуальную (обновить editor.json + compile).
 
 Страницы:
-- `page:new --domain=example.ru --allias=doc --name=about [--parent=docs]` — создать страницу (3 файла).
+- `page:new --domain=example.ru --allias=doc --name=about [--parent=docs]` — создать страницу (3 файла, родитель должен существовать).
 - `page:write --domain=example.ru --allias=doc --name=about --json='[...]'` — **ГЛАВНАЯ КОМАНДА ДЛЯ AI**. Записывает контент в страницу.
   - Используй `__root__` в качестве имени (`--name='__root__'`), чтобы записать контент на главную страницу аллиаса (/).
   - `--parent` несовместим с `__root__`.
-- `page:read --domain=example.ru --allias=doc --name=about` — прочитать PHP-код страницы (для проверки).
-- `page:toggle --domain=example.ru --allias=doc --name=about --key=auth --value=1` — переключить флаг (auth/search/default).
+- `page:read --domain=example.ru --allias=doc --name=about` — прочитать PHP-код страницы (для проверки). Для главной — `__root__`.
+- `page:toggle --domain=example.ru --allias=doc --name=about --key=auth --value=1` — переключить флаг (auth/search/default). `--path` не поддерживается (breaking change).
 
-Миграция:
+Диагностика:
+- `structure:check` — severity-aware (error/warning, exit 0 при отсутствии errors).
+- `structure:repair --domain=example.ru` — восстановить отсутствующие файлы (root через PageCompiler, editor.json, path traversal guard).
 - `migrate:page-rules [--dry]` — одноразовая миграция старых `.rules.json` на новую модель. Идемпотентна.
+- `trash:clear [--force] [--older=7d] [--domain=...]` — очистка карантина (4 уровня: app/, app/<domain>/, .alliasscheme/, .alliasglobal/).
+
+Все destructive-команды (domain:remove, allias:remove, block:remove, scheme:remove, trash:clear) работают через карантин (`*_trash_<timestamp>/`) и требуют `--force`.
+
+Path traversal guard: все команды с `--domain`/`--name` проверяют `str_contains('..')` и regex. `db:migrate --dir` ограничен подпапками `migrations/`.
 
 ---
 
@@ -144,17 +158,17 @@ final class alliasglobal_top implements RegionInterface
 - `page:new` (только для разрешенных доменов)
 - `page:write` (только для разрешенных доменов; принимает JSON, упаковывается в base64)
 - `page:read` (только для разрешенных доменов)
-- `filler_toggle`
+- `filler_toggle` (только для разрешенных доменов)
 - `engine_status`
 - `read_test_file`
 
 Запрещены (вызов вернёт `{"ok": false, "error": "Command '<name>' is not allowed."}`):
-- `user:new`, `db:migrate`, `admin:passwd`, `domain:remove`, `allias:remove`, `block:remove`, `trash:clear`, `migrate:page-rules`.
+- `user:new`, `db:migrate`, `admin:passwd`, `domain:remove`, `allias:remove`, `block:new`, `block:remove`, `filler:new`, `trash:clear`, `migrate:page-rules`, `structure:repair`, `structure:check` (кроме engine_status), `scheme:*`.
 
 3.3. Безопасность AI-слоя
 - **Валидация аргументов:** Все аргументы проверяются через строгие Regex. Если ты передашь `../../etc/passwd` — скрипт вернет ошибку.
-- **Whitelist доменов:** `domain` для `page:write`/`page:new`/`page:read`/`allias:new` должен быть в `config/agent.config` (`allowed_domains`). Иначе — `Security violation: Domain 'X' is not in the allowed list.` (P0 закрыт).
-- **Жесткий вызов:** Команды вызываются через `shell_exec` только с валидированными аргументами.
+- **Whitelist доменов:** `domain` для `page:write`/`page:new`/`page:read`/`allias:new`/`filler_toggle` должен быть в `config/agent.config` (`allowed_domains`). Иначе — `Security violation: Domain 'X' is not in the allowed list.` (P0 закрыт).
+- **Жесткий вызов:** Команды вызываются через `shell_exec` только с валидированными аргументами (escapeshellarg + regex).
 - **JSON компиляция:** Твой JSON проходит через `PageCompiler`, который использует только безопасные методы `Builder` и `var_export` для строк.
 
 3.4. Важные нюансы для LLM (Qwen 7B)
@@ -163,6 +177,7 @@ final class alliasglobal_top implements RegionInterface
 - **Главная страница:** Не создавай `page:new` с именем `home` или `/`. Главная страница создается автоматически при `allias:new`. Для записи контента используй `page:write` с именем `__root__`.
 - **`__root__` только для главной:** Если `--parent` передан вместе с `--name='__root__'` — ошибка.
 - **Не пиши в чужой домен:** `page:write` проверяет `domain` по `allowed_domains` из `agent.config`.
+- **Имена блоков/алиасов:** `[a-z][a-z0-9_]*` (начинается с буквы, не с цифры).
 
 ---
 
@@ -185,6 +200,13 @@ final class alliasglobal_top implements RegionInterface
 
 ---
 
+ЧАСТЬ 5: ДИАГНОСТИКА И ОЧИСТКА (CLI-аудит)
+- `structure:check` — severity-aware. `✗` (error) — критично: отсутствует .php, отсутствует root algoritm.rules.json, отсутствует схема. `⚠` (warning) — некритично: отсутствует .editor.json, устаревший .rules.json, филлер без слота. Exit 0 при отсутствии errors.
+- `structure:repair --domain=X` — восстанавливает отсутствующие root-страницы (через PageCompiler), rules.json/editor.json для блоков и схем. Path traversal guard.
+- `trash:clear` — очистка карантина. Обходит 4 уровня: `app/<domain>_trash_<ts>/`, `app/<domain>/<allias>_trash_<ts>/`, `.alliasscheme/<name>_trash_<ts>/`, `.alliasglobal/<name>_trash_<ts>/`. Флаги: `--force` (боевой), `--older` (7d/24h/30m), `--domain` (только один домен). Dry-run по умолчанию.
+
+---
+
 ЧЕК-ЛИСТ ПЕРЕД СДАЧЕЙ
 1. Ты сгенерировал JSON-массив, а не PHP-код.
 2. В JSON нет висячих запятых.
@@ -193,12 +215,13 @@ final class alliasglobal_top implements RegionInterface
 5. Для инфраструктуры (создание доменов/страниц) использован CLI через `aicli.php`.
 6. Domain — из `config/agent.config` (иначе будет `Security violation`).
 7. Если видишь warning про устаревший `.rules.json` — сначала `migrate:page-rules`, потом продолжай.
+8. Для удаления структур (если разрешено владельцем) — карантин + `--force`, не `unlink`.
 
 ССЫЛКИ
 MANIFEST.md — канон (✅/🟡/❌, P0/P1/P2).
-cli.md — полный справочник команд.
+cli.md — полный справочник команд (24 команды).
 architecture.md — жизненный цикл (включая AI-слой).
 contracts.md — контракты и ограничения.
-guide.md — руководство разработчика.
+guide.md — руководство разработчика (включая §15: path traversal и карантин).
 
 --- КОНЕЦ ДОКУМЕНТА ---
