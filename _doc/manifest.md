@@ -71,7 +71,7 @@ MANIFEST — это канонический перечень возможнос
 
 **Админка:** Вход/выход, профиль, I18n (RU/EN/ZH), Обзор системы, Домены, Алиасы, Блоки, Схемы, Филлеры, Страницы (дерево), Заглушки, Безопасность, Настройки. CodeMirror для всего. Визуальный Drag&Drop оставлен ТОЛЬКО для Схем. Safe Mode.
 
-**AI-Слой:** `bin/aicli.php` — единственный безопасный фасад для управления движком через LLM. 9 ролей (`src/Ai/Roles.php`): `parser`, `inspector`, `planner`, `architect`, `executor`, `designer`, `bundler`, `corrector`, `reporter`. Navigator (`src/Ai/Navigator.php`): `next[]` (HATEOAS), `OFFERABLE = [domain:new, allias:new, skin:new, skin:edit, page:new, page:write, page:read, done]`. Роль `*` (default) = union всех ролей + специфичные (`read_test_file`, `filler_toggle`, `net:*`, `skin:remove`, `*:list`). Работает по схеме `AI (Python/JSON) -> aicli.php -> {cli.php, AinetFacade}`. Поддерживает автономную диагностику и лечение, создание сайтов с картинками (успешно протестировано на Qwen 2.5 Coder 7B через `agent_test.py`). Два whitelist доменов: `config/agent.config` (`app/*` + `image:download.domain`) и `config/ainet.config` (URL для `net:*`). `*:list` (6 команд: `domain:list`, `allias:list`, `page:list`, `scheme:list`, `block:list`, `filler:list`) с `--json` (`Result::$data`).
+**AI-Слой:** `bin/aicli.php` — единственный безопасный фасад для управления движком через LLM. 9 ролей (`src/Ai/Roles.php`): `parser`, `inspector`, `planner`, `architect`, `executor`, `designer`, `bundler`, `corrector`, `reporter`. Navigator (`src/Ai/Navigator.php`): `next[]` (HATEOAS), `OFFERABLE = [domain:new, allias:new, skin:new, skin:edit, page:new, page:write, page:read, done]`. Роль `*` (default) = union всех ролей + специфичные (`read_test_file`, `filler_toggle`, `net:*`, `skin:remove`, `*:list`). Работает по схеме `AI (Python/JSON) -> aicli.php -> {cli.php, AinetFacade}`. Поддерживает автономную диагностику и лечение, создание сайтов с картинками (успешно протестировано на Qwen 2.5 Coder 7B через `agent_test.py`). Два whitelist доменов: `config/agent.config` (`app/*` + `image:download.domain`) и `config/ainet.config` (URL для `net:*`). `*:list` (8 команд: `domain:list`, `allias:list`, `page:list`, `scheme:list`, `block:list`, `filler:list`, `content:list`, `skin:list`) с `--json` (`Result::$data`).
 
 **AINET (библиотека, src/Ainet/):** SSRF-защита (UrlGuard: scheme, port, whitelist, private IP, ручные редиректы), HttpClient (GET-only, `CURLOPT_FOLLOWLOCATION=false`, повторный UrlGuard на каждый Location), Cache (`sha256(url)` → file+meta, TTL 7 дней), ImageSearch (OpenverseProvider + WikimediaProvider, автофоллбэк primary → next для default), AinetFacade (`searchImages`/`fetchJson`/`fetchText`/`downloadImage` — bytes в память, без записи). `bin/ainet.php` — standalone-отладка, не в AI-whitelist.
 
@@ -83,13 +83,13 @@ MANIFEST — это канонический перечень возможнос
 
 **Миграция:** `migrate:page-rules` — одноразовая миграция старых `.rules.json` на новую модель. Идемпотентна. Шаги: (1) root `algoritm/.rules.json` → `algoritm/algoritm.rules.json`, (2) подпапки `{dir}/.rules.json` → `{dir}/algoritm_{name}.rules.json`, (3) нормализация полей, (4) создание пустых `.editor.json` для существующих `.php`.
 
-**CLI (37 команд):** `help`, `domain:list`, `domain:new`, `domain:remove`, `allias:list`, `allias:new`, `allias:remove`, `block:list`, `block:new`, `block:remove`, `filler:list`, `filler:new`, `filler:toggle`, `page:list`, `page:new`, `page:toggle`, `page:write`, `page:read`, `scheme:list`, `scheme:new`, `scheme:copy`, `scheme:remove`, `scheme:save`, `db:migrate`, `admin:passwd`, `user:new`, `trash:clear`, `structure:check`, `structure:repair`, `migrate:page-rules`, `content:store`, `content:remove`, `content:list`, `skin:new`, `skin:list`, `skin:edit`, `skin:remove`.
+**CLI (39 команд):** `help`, `domain:list`, `domain:new`, `domain:remove`, `allias:list`, `allias:new`, `allias:remove`, `block:list`, `block:new`, `block:edit`, `block:remove`, `filler:list`, `filler:new`, `filler:edit`, `filler:toggle`, `page:list`, `page:new`, `page:toggle`, `page:write`, `page:read`, `scheme:list`, `scheme:new`, `scheme:copy`, `scheme:remove`, `scheme:save`, `db:migrate`, `admin:passwd`, `user:new`, `trash:clear`, `structure:check`, `structure:repair`, `migrate:page-rules`, `content:store`, `content:remove`, `content:list`, `skin:new`, `skin:list`, `skin:edit`, `skin:remove`.
 
 **trash:clear** — обход 6 уровней карантина (`app/`, `app/<domain>/`, `.alliasscheme/`, `.alliasglobal/`, `/content/.trash/`, `www/media/.trash/`), флаги `--force`/`--older`/`--domain`, dry-run по умолчанию, symlink-safe `Fs::rmrf`.
 
 **Fs:** `mkdir`, `exists`, `isDir`, `isFile`, `read`, `writeAtomic`, `rel`, `rmrf` (Windows-safe, symlink-safe). `rmrf` — единый источник истины для рекурсивного удаления.
 
-**Качество:** PHPUnit (570 тестов, 1671 assertion — верифицировано; 1 skipped), PHPStan level 8 (0 errors, 240 файлов: `src/`, `bin/`, `www/`), PHP-CS-Fixer (0 issues, 240 файлов: `src/`, `bin/`, `www/`, `tests/`), GitHub Actions CI (phpunit + phpstan + cs-fixer --dry-run). Тестовых файлов — 87.
+**Качество:** PHPUnit (570 тестов, 1671 assertion — верифицировано; 1 skipped), PHPStan level 8 (0 errors, 269 файлов: `src/`, `bin/`, `www/`), PHP-CS-Fixer (0 issues, 269 файлов: `src/`, `bin/`, `www/`, `tests/`), GitHub Actions CI (phpunit + phpstan + cs-fixer --dry-run). Тестовых файлов — 87.
 
 ---
 
@@ -214,7 +214,7 @@ WYSIWYG (свободная вёрстка), Headless/REST/GraphQL API для в
 - AINET: парсинг HTML — не реализован (только JSON API и текст).
 - Content: orphan cleanup (неиспользуемые hash) — не реализован.
 - `ai_agent/` (Planner→Builder→Content) — прототип, не используется. Рабочий runner — `agent_test.py`.
-- `block:edit`, `filler:edit`, `skin:bundle` — не реализованы (для полного whitelist `designer`/`bundler`).
+- `skin:bundle` — не реализован.
 
 ---
 
@@ -260,43 +260,12 @@ WYSIWYG (свободная вёрстка), Headless/REST/GraphQL API для в
 
 ## 10. Bug Backlog (по приоритетам)
 
-**Закрыто (текущий):**
+**Закрыто (текущий, 2026-11-02):**
 
-- Удалены глобальные манифесты (`blocks.json`, `schemes.json`).
-- Внедрено правило 3 файлов.
-- Создан AI-фасад (`aicli.php`) и CLI-оркестрация.
-- AI успешно генерирует 10 страниц с меню и контентом.
-- Унифицирована модель `.rules.json` (`algoritm_{name}.rules.json`), миграция `migrate:page-rules`.
-- Severity-aware `structure:check` (warnings не валят команду).
-- CLI-аудит — `scheme:copy/remove/save`, path traversal guards, realDomain, карантины, idempotent remove, `StructureRepairCommand` (PageCompiler + editor.json), удалён `vars:extract`.
-- PHPStan/CS-Fixer расширены на `bin/` и `www/`.
-- AINET — SSRF (UrlGuard), HttpClient, Cache, ImageSearch (Openverse + Wikimedia), AinetFacade, `content:*` CLI (`store/remove/list`), интеграция `net:*` в `aicli.php`, fallback openverse→wikimedia, `read_timeout 20s`.
-- 7 `*:list` команд + CLI `--json` + `Result::$data`.
-- Roles (9) + Navigator (`next[]` HATEOAS) + `aicli --role` + `ai:start`.
-- `/content/` (вне webroot) + `www/content.php` + auth-check. `media:*` → `content:*`.
-- `skin:new/list/edit/remove`. Navigator skin-step. Roles skin.
-- `agent_test.py` — рабочий E2E-оркестратор (Ollama ↔ aicli).
-- `role='*'` = union всех ролей (фикс регрессии).
-- untrack `/content/`, `app/damoony3test.ru/`, `config/ainet.config`, `config/agent.config`.
-
-**P0 — блокируют production:** Нет. Все закрыты.
-
-**P1 — надёжность/безопасность:** Нет. Все закрыты.
-
-**P2 — техдолг:**
-
-- Rollback для AI.
-- Батчи для AI.
-- `domains_real[$domain]` → `ConfigDomainResolver::real()`.
-- Builder — дополнить.
-- `assert` → явные проверки.
-- Фронтенд I18n, Skins (UI-менеджер).
-- Переименовать namespace `Damoony\Algoritm`.
-- AINET rate limit (30/min) — применить в AinetFacade.
-- AINET POST/PUT/DELETE, парсинг HTML.
-- Content: orphan cleanup (неиспользуемые hash).
-- `block:edit`, `filler:edit`, `skin:bundle`.
-- `ai_agent/` (Planner→Builder→Content) — прототип; удалить или переписать под Navigator-loop.
+- `block:edit` / `filler:edit` зарегистрированы в `bin/cli.php` (39 команд).
+- Удалён мёртвый `www/media/admin/page-builder.css` + класс `page-builder-app` из `PageController`.
+- PHPStan/CS-Fixer: 0 errors / 0 issues (269 файлов, 570 тестов).
+- Остальное (page-rules unify, CLI-аудит, AINET, Content, Skin, Roles/Navigator, `agent_test.py`, git-гигиена) — в §3.
 
 ---
 

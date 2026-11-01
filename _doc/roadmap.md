@@ -75,7 +75,7 @@ Roadmap — План развития Damoony Engine
   - `VarsExtractCommand` — удалён (мёртвый код).
   - `Fs::rmrf` — единый рекурсивный метод (Windows-safe, symlink-safe).
 
-- [x] **PHPStan/CS-Fixer расширены на `bin/` и `www/`** (240 файлов).
+- [x] **PHPStan/CS-Fixer расширены на `bin/` и `www/`** (269 файлов).
 - [x] **AINET** (библиотека `src/Ainet/`):
   - UrlGuard: SSRF-защита (scheme/port/whitelist/private IP/ручные редиректы).
   - DomainWhitelist: точный матч, без wildcard, fail-safe.
@@ -99,7 +99,8 @@ Roadmap — План развития Damoony Engine
 - [ ] **AI-Слой**: Разбиение длинных задач на батчи (для стабильности Qwen 7B).
 - [ ] **AI-Слой**: Цикл редактирования существующих страниц (агент читает `page:read`, анализирует и перезаписывает `page:write`).
 - [x] **AICLI**: Расширение whitelist (`scheme:save`, `skin:new/list/edit`, `*:list`) с валидацией аргументов.
-- [ ] **AICLI**: `block:edit`, `filler:edit`, `skin:bundle` (3 команды для полного whitelist designer/bundler).
+- [x] **AICLI**: `block:edit`, `filler:edit` (зарегистрированы в CLI).
+- [ ] **AICLI**: `skin:bundle` — P2.
 - [ ] **AINET**: Rate limit 30/min применить в AinetFacade (сейчас только в конфиге).
 - [ ] **AINET**: POST/PUT/DELETE, парсинг HTML (для скриншотов/документации).
 - [ ] **Content**: orphan cleanup (неиспользуемые hash), CDN для больших сайтов.

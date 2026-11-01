@@ -65,10 +65,6 @@ final class PageController extends BaseController
         $tree = [$rootNode];
 
         $card = Builder::div('admin-card');
-        $link = Builder::el('link', true);
-        $link->attrs()->add('rel', 'stylesheet');
-        $link->attrs()->add('href', '/media/admin/page-builder.css');
-        $card->append($link);
 
         $breadcrumbs = Builder::div('breadcrumbs');
         $breadcrumbs->append(Builder::a('/admin/?p=domain')->content(View::t('domain.bread_domains')));
@@ -242,7 +238,7 @@ final class PageController extends BaseController
             ->add(Field::text('name')->label(View::t('page.name_label'))->placeholder('about, contacts')->required()->value($nameVal))
             ->submit(View::t('domain.new_submit'));
 
-        $card = Builder::div('admin-card page-builder-app');
+        $card = Builder::div('admin-card');
 
         $breadcrumbs = Builder::div('breadcrumbs');
         $breadcrumbs->append(Builder::a('/admin/?p=page&domain=' . urlencode($domain) . '&allias=' . urlencode($allias))->content(View::t('domain.bind_back')));

@@ -119,7 +119,7 @@ if ($role === '*') {
             'skin:remove',
             'domain:list', 'allias:list', 'page:list', 'page:read',
             'scheme:list', 'block:list', 'filler:list', 'skin:list',
-        ]
+        ],
     );
     $allowedCommands = array_values(array_unique($allowedCommands));
 } else {

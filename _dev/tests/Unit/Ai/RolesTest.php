@@ -98,37 +98,37 @@ final class RolesTest extends TestCase
         }
     }
 
-	public function testWildcardIsSupersetOfAllRoles(): void
-	{
-		// Каждая команда каждой роли должна быть доступна в role='*'.
-		// Проверяем через aicli.php: attempt block:new (есть у architect, но не было у *).
-		$aicli = __DIR__ . '/../../../../bin/aicli.php';
-		$payload = json_encode([
-			'command' => 'block:new',
-			'role' => '*',
-			'args' => ['domain' => 'invalid..ru', 'name' => 'x'],
-		]);
-		$proc = proc_open(
-			'php ' . escapeshellarg($aicli),
-			[['pipe', 'r'], ['pipe', 'w'], ['pipe', 'w']],
-			$pipes
-		);
-		self::assertIsResource($proc);
-		fwrite($pipes[0], $payload);
-		fclose($pipes[0]);
-		$out = stream_get_contents($pipes[1]);
-		fclose($pipes[1]);
-		fclose($pipes[2]);
-		proc_close($proc);
+    public function testWildcardIsSupersetOfAllRoles(): void
+    {
+        // Каждая команда каждой роли должна быть доступна в role='*'.
+        // Проверяем через aicli.php: attempt block:new (есть у architect, но не было у *).
+        $aicli = __DIR__ . '/../../../../bin/aicli.php';
+        $payload = json_encode([
+            'command' => 'block:new',
+            'role' => '*',
+            'args' => ['domain' => 'invalid..ru', 'name' => 'x'],
+        ]);
+        $proc = proc_open(
+            'php ' . escapeshellarg($aicli),
+            [['pipe', 'r'], ['pipe', 'w'], ['pipe', 'w']],
+            $pipes,
+        );
+        self::assertIsResource($proc);
+        fwrite($pipes[0], $payload);
+        fclose($pipes[0]);
+        $out = stream_get_contents($pipes[1]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        proc_close($proc);
 
-		$decoded = json_decode((string) $out, true);
-		self::assertIsArray($decoded);
-		// Не должно быть "Command 'block:new' is not allowed for role '*'"
-		self::assertNotSame(
-			'Command \'block:new\' is not allowed for role \'*\'.',
-			$decoded['error'] ?? ''
-		);
-		// Должна быть другая ошибка (валидация домена / конфига), не whitelist
-		self::assertFalse($decoded['ok'] ?? false);
-	}
+        $decoded = json_decode((string) $out, true);
+        self::assertIsArray($decoded);
+        // Не должно быть "Command 'block:new' is not allowed for role '*'"
+        self::assertNotSame(
+            'Command \'block:new\' is not allowed for role \'*\'.',
+            $decoded['error'] ?? '',
+        );
+        // Должна быть другая ошибка (валидация домена / конфига), не whitelist
+        self::assertFalse($decoded['ok'] ?? false);
+    }
 }

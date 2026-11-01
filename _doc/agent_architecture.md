@@ -14,7 +14,7 @@ Roles — whitelist команд по роли (defense in depth).
 CLI — полный набор для человека/админки (без ролей).
 
 2. Точки входа
-- bin/cli.php — полный CLI (33+ команд). Для человека, админки, отладки.
+- bin/cli.php — полный CLI (39 команд, включая help). Для человека, админки, отладки.
 - bin/aicli.php — единственный фасад для AI. Роль + whitelist + next.
 - ai_agent/ — Python orchestrator (позже): читает next, исполняет, повторяет.
 
@@ -155,10 +155,13 @@ agent:run — только CLI (блокирующий, для человека)
 - CLI --json + Result::data
 - Aicli --role
 
-Фаза B (в работе):
-- skin:new/edit/remove/list, scheme:save, block:edit, filler:edit
+Фаза B (готово):
+- skin:new/list/edit/remove, scheme:save
+- block:edit, filler:edit — зарегистрированы в bin/cli.php
+- *:list через --json (Result::$data)
+
+Фаза B (осталось, P2):
 - skin:bundle
-- Повторный парсинг results в aicli (*:list через --json)
 
 Фаза C (P2):
 - ai_agent/ переписать под Navigator-loop (без Planner-импровизации)

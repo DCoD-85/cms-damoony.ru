@@ -141,7 +141,7 @@
 ### Инфраструктура
 
 - ✅ `Fs::rmrf` — единый рекурсивный метод (Windows-safe, symlink-safe), используется в `trash:clear` и Cache.
-- ✅ PHPStan/CS-Fixer расширены на `bin/` и `www/` (240 файлов).
+- ✅ PHPStan/CS-Fixer расширены на `bin/` и `www/` (269 файлов).
 - ✅ Тесты: **570 тестов, 1671 assertion, 87 файлов**.
 
 ### AINET + Content + Skin

@@ -114,7 +114,7 @@ AI-агенты используют единственный безопасны
 
 **Следствие:** бизнес-логика не дублируется. Любое изменение в CLI мгновенно отражается в админке и доступно агентам.
 
-**Соблюдается:** ✅ полностью. Все **37 команд**, включая `scheme:copy/remove/save`, `content:store/remove/list`, `skin:new/list/edit/remove` (было: прямое в SchemeController). Destructive-операции — в карантин (`*_trash_<timestamp>/`), требуют `--force`. Path traversal guard во всех командах с `--domain`/`--name`. AINET не пишет на диск (bytes → CLI `content:store`) — CLI остаётся единственным источником истины для FS.
+**Соблюдается:** ✅ полностью. Все **39 команд**, включая `scheme:copy/remove/save`, `content:store/remove/list`, `skin:new/list/edit/remove` (было: прямое в SchemeController). Destructive-операции — в карантин (`*_trash_<timestamp>/`), требуют `--force`. Path traversal guard во всех командах с `--domain`/`--name`. AINET не пишет на диск (bytes → CLI `content:store`) — CLI остаётся единственным источником истины для FS.
 
 ---
 
@@ -149,8 +149,8 @@ AI-агенты используют единственный безопасны
 - PHP 8.4
 - Composer (PSR-4, PSR-3, PSR-11)
 - PHPUnit 10+ (**570 тестов, 1671 assertion** — верифицировано; 1 skipped; **87 тестовых файлов**)
-- PHPStan (level 8, 240 файлов: `src/`, `bin/`, `www/`)
-- PHP-CS-Fixer (240 файлов: `src/`, `bin/`, `www/`, `tests/`)
+- PHPStan (level 8, 269 файлов: `src/`, `bin/`, `www/`)
+- PHP-CS-Fixer (269 файлов: `src/`, `bin/`, `www/`, `tests/`)
 - PDO (MariaDB / MySQL; SQLite в тестах)
 - Nginx + PHP-FPM (или Apache + mod_php)
 - Ollama (локальные LLM: Qwen 2.5 Coder 7B для AI-агентов)
@@ -169,10 +169,10 @@ AI-агенты используют единственный безопасны
 | 5 | Low-Code / AI-Генерация | ✅ | Визуал только для схем (через CLI `scheme:save`), страницы/блоки — JSON (AI) или код. Роли (9) + Navigator. AINET: только GET, без парсинга HTML |
 | 6 | Explicit over implicit | ✅ | Противоречие §6.1 решено (ручной вызов схемы или `--with_schema`) |
 | 7 | Contract-first | ✅ | `default(): null` → 204 (stage-4). AINET: HttpTransportInterface, ProviderInterface. AI: Roles + Navigator. Content: ContentResponder |
-| 8 | CLI-First | ✅ | Все **37 команд** через CLI, включая `scheme:*`, `content:*`, `skin:*`. AINET не пишет на диск |
+| 8 | CLI-First | ✅ | Все **39 команд** через CLI, включая `scheme:*`, `content:*`, `skin:*`. AINET не пишет на диск |
 | 9 | Безопасность — основа | ✅ | RCE закрыт, path traversal guard, карантин (**6 уровней**), password ≥8, SSRF-защита, **9 ролей + Navigator**, два whitelist, `www/content.php` (auth по `page_refs`) |
 | 10 | Диагностика | ✅ | Severity-aware `structure:check`, `structure:repair`, `migrate:page-rules`, `trash:clear` (**6 уровней**), `content:list`, `skin:list`, `net:status` |
 
-**10 принципов соблюдаются полностью.** P0-блокеры закрыты. Проект прошел путь от Low-Code конструктора до безопасной AI-Native CMS с архитектурой CLI-First и 9 ролями AI-агента. Архитектура — на **9.8/10**.
+**10 принципов соблюдаются полностью (с оговорками MANIFEST §6–7).** P0-блокеры закрыты. Проект прошел путь от Low-Code конструктора до безопасной AI-Native CMS с архитектурой CLI-First и 9 ролями AI-агента. Архитектура — на **9.8/10**.
 
 Подробнее о конкретных багах — MANIFEST.md §6–7. О состоянии проекта — readme.md.

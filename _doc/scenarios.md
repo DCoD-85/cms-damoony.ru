@@ -8,7 +8,7 @@
 - 🟡 — работает с оговорками (см. ссылку в MANIFEST.md).
 - 🔴 — сломан/не реализован.
 
-**Тесты:** 570 тестов, 1671 assertion, 87 тестовых файлов, 240 файлов проверяются PHPStan/CS-Fixer (1 skipped — `LinkTraversalTest` требует dev-сервер `127.0.0.1:8080`, прогоняется в CI).
+**Тесты:** 570 тестов, 1671 assertion, 87 тестовых файлов, 269 файлов проверяются PHPStan/CS-Fixer (1 skipped — `LinkTraversalTest` требует dev-сервер `127.0.0.1:8080`, прогоняется в CI).
 
 ---
 
@@ -389,7 +389,7 @@ php bin/cli.php block:list --domain=example.ru
 php bin/cli.php filler:list --domain=example.ru --allias=www
 ```
 
-**Ожидание:** все команды возвращают `Result` с `data` (массив строк). `--json` даёт машинный вывод. `allias:list` группирует по real (значение), ключ = вариант алиаса (включая `''` → `www`). `domain:list` возвращает уникальные real (без `''`).
+**Ожидание:** все команды возвращают `Result` с `data`. domain/allias/scheme/block/filler:list — массив строк; page:list, content:list, skin:list — массив объектов (разные поля). `--json` даёт машинный вывод. `allias:list` группирует по real (значение), ключ = вариант алиаса (включая `''` → `www`). `domain:list` возвращает уникальные real (без `''`).
 
 ### S78a. `page:list --json` — ✅
 

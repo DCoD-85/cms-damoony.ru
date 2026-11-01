@@ -199,10 +199,10 @@ PageCompiler также используется в `domain:new`, `allias:new`, 
 
 ## CLI и Админка
 
-**CLI: 37 команд**, возвращают `Result` (`ok`, `errors`), идемпотентны.
+**CLI: 39 команд**, возвращают `Result` (`ok`, `errors`), идемпотентны.
 
-- app/ (24): `domain:*`, `allias:*`, `block:*`, `filler:*`, `page:*`, `scheme:*`, `db:migrate`, `admin:passwd`, `user:new`, `trash:clear`, `structure:check`, `structure:repair`, `migrate:page-rules`, `help`.
-- `*:list` (6): `domain:list`, `allias:list`, `page:list`, `scheme:list`, `block:list`, `filler:list` (с `--json` и `Result::$data`).
+- app/ (26): `domain:*`, `allias:*`, `block:*`, `filler:*`, `page:*`, `scheme:*`, `db:migrate`, `admin:passwd`, `user:new`, `trash:clear`, `structure:check`, `structure:repair`, `migrate:page-rules`, `help`.
+- `*:list` (8): `domain:list`, `allias:list`, `page:list`, `scheme:list`, `block:list`, `filler:list`, `content:list`, `skin:list` (с `--json` и `Result::$data`).
 - content/ (3): `content:store`, `content:remove`, `content:list`.
 - skin/ (4): `skin:new`, `skin:list`, `skin:edit`, `skin:remove`.
 - Диагностика: `structure:check` (severity-aware), `structure:repair`, `migrate:page-rules`.
@@ -323,8 +323,8 @@ Safe Mode: `www/admin/index.php` перехватывает фатальные �
 
 ## Качество
 
-- PHPStan level 8: 0 errors, 240 файлов (`src/`, `bin/`, `www/`).
-- PHP-CS-Fixer: 0 issues, 240 файлов (`src/`, `bin/`, `www/`, `tests/`).
+- PHPStan level 8: 0 errors, 269 файлов (`src/`, `bin/`, `www/`).
+- PHP-CS-Fixer: 0 issues, 269 файлов (`src/`, `bin/`, `www/`, `tests/`).
 - PHPUnit: 570 тестов, 1671 assertion, 1 skipped.
 - Тестовых файлов: 87.
 - CI: phpunit + phpstan + cs-fixer `--dry-run`.

@@ -23,8 +23,8 @@ Damoony Engine — это AI-Native CMS. Она сочетает в себе с�
 - PHP >= 8.4
 - Composer (PSR-4, PSR-3, PSR-11)
 - PHPUnit 10 (570 тестов, 1671 assertion — верифицировано; 1 skipped — env-dependent)
-- PHPStan (level 8, 240 файлов: src/, bin/, www/)
-- PHP-CS-Fixer (240 файлов: src/, bin/, www/, tests/)
+- PHPStan (level 8, 269 файлов: src/, bin/, www/)
+- PHP-CS-Fixer (269 файлов: src/, bin/, www/, tests/)
 - MariaDB / MySQL (production) через PDO
 - SQLite (тесты)
 - Nginx + PHP-FPM (или Apache + mod_php)
@@ -50,6 +50,8 @@ stubs/             — HTML-шаблоны для 503
 www/               — публичная директория (index.php, admin/index.php, content.php, media/)
 www/content.php    — front controller /content/ (GET/HEAD, ETag, 304, SVG-CSP, auth)
 www/media/         — git-tracked инфраструктура (admin/, shared/, <domain>/<allias>/skin/)
+                     + runtime-карантин .trash/ (в .gitignore)
+                     + runtime-карантин .trash/ (в .gitignore)
 content/           — runtime AI-контент (вне webroot, .gitignore)
 app/<domain>/      — пользовательские домены
 migrations/        — SQL-миграции
@@ -149,7 +151,7 @@ php bin/cli.php user:new --login=admin --email=admin@example.com --password=<str
 
 **Админка:** Тонкий клиент. CodeMirror для страниц/блоков. Визуальный Drag&Drop для схем (через CLI `scheme:save`). I18n (RU/EN/ZH), System Health, Safe Mode. `SchemeController` — тонкий клиент над CLI (`scheme:*`).
 
-**AI-Слой:** `bin/aicli.php` — единственный безопасный фасад для интеграции с Ollama. 9 ролей (`src/Ai/Roles.php`): `parser`, `inspector`, `planner`, `architect`, `executor`, `designer`, `bundler`, `corrector`, `reporter`. Navigator (`src/Ai/Navigator.php`): `next[]` HATEOAS. Роль `*` (default) = union всех ролей + специфичные. Поддерживает `app/*`, `content:store`, `net:*`, `*:list` (6 команд с `--json`). Два whitelist доменов (`agent.config` + `ainet.config`). Рабочий runner — `agent_test.py` (Ollama ↔ aicli).
+**AI-Слой:** `bin/aicli.php` — единственный безопасный фасад для интеграции с Ollama. 9 ролей (`src/Ai/Roles.php`): `parser`, `inspector`, `planner`, `architect`, `executor`, `designer`, `bundler`, `corrector`, `reporter`. Navigator (`src/Ai/Navigator.php`): `next[]` HATEOAS. Роль `*` (default) = union всех ролей + специфичные. Поддерживает `app/*`, `content:store`, `net:*`, `*:list` (8 команд с `--json`). Два whitelist доменов (`agent.config` + `ainet.config`). Рабочий runner — `agent_test.py` (Ollama ↔ aicli).
 
 **AINET:** Библиотека `src/Ainet/` — UrlGuard (SSRF), HttpClient (GET-only, ручные редиректы), Cache (sha256 → file+meta, TTL 7 дней), ImageSearch (wikimedia default, openverse fallback, автофоллбэк), AinetFacade (bytes в память, без записи). `bin/ainet.php` — standalone-отладка.
 
@@ -157,11 +159,11 @@ php bin/cli.php user:new --login=admin --email=admin@example.com --password=<str
 
 **Skin:** `www/media/<domain>/<allias>/skin/<name>/`. CLI `skin:new/list/edit/remove`. `skin:edit` — только 2 файла, 1 MB.
 
-**CLI (37 команд):** включая `domain:list`, `allias:list`, `page:list`, `scheme:list`, `block:list`, `filler:list`, `domain:remove`, `page:write`, `page:read`, `scheme:copy/remove/save`, `migrate:page-rules`, `structure:check`, `structure:repair`, `trash:clear` (6 уровней), `content:store/remove/list`, `skin:new/list/edit/remove`.
+**CLI (39 команд):** включая `domain:list`, `allias:list`, `page:list`, `scheme:list`, `block:list`, `filler:list`, `domain:remove`, `page:write`, `page:read`, `block:edit`, `filler:edit`, `scheme:copy/remove/save`, `migrate:page-rules`, `structure:check`, `structure:repair`, `trash:clear` (6 уровней), `content:store/remove/list`, `skin:new/list/edit/remove`.
 
 **Fs:** mkdir, exists, isDir, isFile, read, writeAtomic, rel, rmrf (Windows-safe, symlink-safe). `rmrf` — единый источник истины для рекурсивного удаления.
 
-**Качество:** PHPUnit (570 тестов, 1671 assertion), PHPStan level 8 (0 errors, 240 файлов), PHP-CS-Fixer (0 issues, 240 файлов), CI. Тестовых файлов — 87.
+**Качество:** PHPUnit (570 тестов, 1671 assertion), PHPStan level 8 (0 errors, 269 файлов), PHP-CS-Fixer (0 issues, 269 файлов), CI. Тестовых файлов — 87.
 
 ### Частично (🟡)
 
@@ -188,7 +190,7 @@ WYSIWYG (свободная вёрстка), Headless/REST/GraphQL API для в
 
 ### P2 — техдолг
 
-`domains_real[$domain]` → `ConfigDomainResolver::real()`; Builder неполон; `assert()` в prod; `@template` в `RegionContext::service()`; Translator мимо контейнера; `PageHandler::applySkin` читает `$_COOKIE` напрямую; namespace `Damoony\Algoritm` (переименованы только классы). AINET rate limit (30/min) описан в конфиге, но не применяется на уровне AinetFacade. Content: orphan cleanup (неиспользуемые hash). `block:edit`, `filler:edit`, `skin:bundle` — не реализованы. `ai_agent/` (Planner→Builder→Content) — прототип, не используется. Рабочий runner — `agent_test.py`.
+`domains_real[$domain]` → `ConfigDomainResolver::real()`; Builder неполон; `assert()` в prod; `@template` в `RegionContext::service()`; Translator мимо контейнера; `PageHandler::applySkin` читает `$_COOKIE` напрямую; namespace `Damoony\Algoritm` (переименованы только классы). AINET rate limit (30/min) описан в конфиге, но не применяется на уровне AinetFacade. Content: orphan cleanup (неиспользуемые hash). `skin:bundle` — не реализован. `ai_agent/` (Planner→Builder→Content) — прототип, не используется. Рабочий runner — `agent_test.py`.
 
 ---
 
@@ -196,7 +198,7 @@ WYSIWYG (свободная вёрстка), Headless/REST/GraphQL API для в
 
 - `MANIFEST.md` — канон. Источник истины о намерениях.
 - `install.md` — развёртывание.
-- `cli.md` — CLI-команды (37 команд).
+- `cli.md` — CLI-команды (39 команд).
 - `admin.md` — админка.
 - `guide.md` — руководство разработчика (Вариант A/B, блоки, схемы, картинки, AINET).
 - `architecture.md` — жизненный цикл запроса (включая AI-слой, AINET, content, skin).

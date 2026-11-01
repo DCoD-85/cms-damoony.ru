@@ -44,7 +44,7 @@
 | `planner` | План структуры (LLM) | `*:list`, `page:read` |
 | `architect` | Каркас: домен, алиас, блоки, схемы, филлеры | `domain:new`, `allias:new`, `block:new`, `scheme:new`, `filler:new`, `*:list` |
 | `executor` | Контент страниц | `page:new`, `page:write`, `image:search`, `image:download`, `*:list` |
-| `designer` | Стили, вёрстка | `page:write`, `*:list` |
+| `designer` | Стили, вёрстка | `page:write`, `block:edit`, `filler:edit`, `*:list` |
 | `bundler` | Сборка CSS/JS | `structure:check`, `*:list` |
 | `corrector` | Исправление failed | `page:write`, `structure:repair`, `structure:check` |
 | `reporter` | Финальный отчёт | `*:list`, `page:read`, `structure:check` |

@@ -98,7 +98,7 @@ Start Here: Briefing для AI-агента
 - **Skin** (`www/media/<domain>/<allias>/skin/`): git-tracked инфраструктура. Управление через CLI `skin:new/list/edit/remove`. `skin:edit` — только `css/main.css` и `js/main.js`, 1 MB, блок `@import`/`javascript:`.
 - **Page-слой**: PagePath, PageRules, PageNamespace — единый резолвинг путей/правил/namespace для всех page-команд.
 - **Миграция**: `migrate:page-rules` — одноразовый перевод старых `.rules.json` на новую модель. Идемпотентна.
-- **CLI-аудит** (**37 команд**): path traversal guard, карантин (**6 уровней**) для destructive, idempotent remove, realDomain, `scheme:*` через CLI, `content:*` CLI, `skin:*` CLI, `*:list` (6 команд с `--json`), Fs::rmrf (единый рекурсивный).
+- **CLI-аудит** (**39 команд**): path traversal guard, карантин (**6 уровней**) для destructive, idempotent remove, realDomain, `scheme:*` через CLI, `content:*` CLI, `skin:*` CLI, `*:list` (6 команд с `--json`), Fs::rmrf (единый рекурсивный).
 - **Два whitelist доменов**: `config/agent.config` (`app/*` + `image:download.domain`) и `config/ainet.config` (URL `net:*`).
 - **Рабочий E2E-оркестратор**: `agent_test.py` (Ollama ↔ aicli). `ai_agent/` (Planner→Builder→Content) — прототип, не используется (P3).
 - **Git-гигиена**: untrack `/content/`, `app/damoony3test.ru/`, `config/ainet.config`, `config/agent.config`. `.gitignore` — обновлён.

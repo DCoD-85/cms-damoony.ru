@@ -220,8 +220,8 @@ Drag&Drop доступен только в разделе «Схемы».
 
 - CLI: 37 команд.
 - PHPUnit: 570 тестов, 1671 assertion, 1 skipped.
-- PHPStan level 8: 0 errors, 240 файлов (`src/`, `bin/`, `www/`).
-- PHP-CS-Fixer: 0 issues, 240 файлов (`src/`, `bin/`, `www/`, `tests/`).
+- PHPStan level 8: 0 errors, 269 файлов (`src/`, `bin/`, `www/`).
+- PHP-CS-Fixer: 0 issues, 269 файлов (`src/`, `bin/`, `www/`, `tests/`).
 - Тестовых файлов: 87.
 - Карантин: 6 уровней (app + content + skin).
 - Content: дедупликация по hash, только чтение в админке.

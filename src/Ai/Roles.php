@@ -33,6 +33,7 @@ final class Roles
         self::ARCHITECT => [
             'domain:new', 'allias:new',
             'block:new', 'scheme:new', 'filler:new',
+            'block:edit', 'filler:edit',
             'skin:new', 'skin:list',
             'domain:list', 'allias:list', 'scheme:list', 'block:list',
         ],
@@ -44,6 +45,7 @@ final class Roles
         self::DESIGNER => [
             'page:write',
             'skin:edit', 'skin:list',
+            'block:edit', 'filler:edit',
             'scheme:save', 'scheme:list',
             'block:list', 'filler:list', 'page:list', 'page:read',
         ],

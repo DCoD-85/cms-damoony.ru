@@ -427,8 +427,8 @@ composer check   # stan + cs + test
 **Ожидаемые метрики:**
 
 - PHPUnit: **570 тестов, 1671 assertion**, 1 skipped (`LinkTraversalTest` — требует dev-сервер `127.0.0.1:8080`, прогоняется в CI). Тестовых файлов — 87.
-- PHPStan: level 8, 0 errors, 240 файлов (`src/`, `bin/`, `www/`).
-- PHP-CS-Fixer: 0 issues, 240 файлов (`src/`, `bin/`, `www/`, `tests/`).
+- PHPStan: level 8, 0 errors, 269 файлов (`src/`, `bin/`, `www/`).
+- PHP-CS-Fixer: 0 issues, 269 файлов (`src/`, `bin/`, `www/`, `tests/`).
 
 ---
 

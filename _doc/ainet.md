@@ -368,7 +368,7 @@ POST/PUT/DELETE/PATCH — запрещены. Внутри `HttpClient` жёст
 - `timeout_read`: 20s (увеличено с 10 из-за медленных ответов Openverse/Cloudflare из РФ)
 - `max_size`: 10 MB
 - `max_redirects`: 3
-- `rate_limit`: 30 req/min (token bucket)
+- `rate_limit`: 30 req/min (token bucket) — только в конфиге. Применение на уровне AinetFacade — P2 (MANIFEST §7.3).
 - `cache_ttl_days`: 7
 
 ### 4.7. Валидация URL
