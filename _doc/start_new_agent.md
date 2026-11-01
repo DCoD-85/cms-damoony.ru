@@ -273,4 +273,4 @@ curl -I http://example.ru/content/example.ru/www/coffee/<hash>.jpg
 - Собираешься менять `www/content.php` / `ContentResponder` — это front controller и auth по `page_refs` (безопасность).
 - Собираешься менять `skin:edit` whitelist (`css/main.css`, `js/main.js`, 1 MB, `@import`/`javascript:`) — это защита от inline-инъекций.
 
-**Остальные архитектурные ограничения** (P2, Builder неполон, `assert()`, `applySkin` мимо middleware, AINET rate limit не применяется, orphan content, `block:edit`/`filler:edit`/`skin:bundle` не реализованы, `ai_agent/` — прототип) — в `MANIFEST.md` §6–7. Прочитай их до, а не после.
+**Остальные архитектурные ограничения** (P2, Builder неполон, `assert()`, `applySkin` мимо middleware, orphan content, `skin:bundle` не реализован, `ai_agent/` — прототип) — в `MANIFEST.md` §6–7. Прочитай их до, а не после.

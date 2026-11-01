@@ -293,7 +293,7 @@ StructureChecker проверяет:
 - UrlGuard: scheme ∈ {http, https}, port ∈ {80, 443}, host в whitelist, private IP block (127/8, 10/8, 172.16/12, 192.168/16, 169.254/16, ::1, fc00::/7, fe80::/10), no `user:pass`, query ≤ 2048.
 - HttpClient: GET-only, ручные редиректы (`CURLOPT_FOLLOWLOCATION=false`) → повторный UrlGuard на каждый Location.
 - Cache: `sha256(url)` → file+meta, TTL 7 дней.
-- Rate limit: 30 req/min.
+- Rate limit: 30 req/min, **enforced** в `AinetFacade` (`RateLimiter`, `var/ainet-ratelimit.json`, fixed-window, flock).
 - Провайдеры: wikimedia (default, без ключа), openverse (fallback, без ключа). Автофоллбэк primary → next (только для default provider).
 
 ---

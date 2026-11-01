@@ -462,7 +462,7 @@ composer check   # stan + cs + test
 - Запрет scheme (только http/https) и портов (только 80/443).
 - Запрет `user:pass` в URL.
 - Ручные редиректы (`CURLOPT_FOLLOWLOCATION=false`), повторный UrlGuard на каждый Location.
-- Rate limit 30 req/min (в конфиге; применение — P2).
+- Rate limit 30 req/min, enforced в `AinetFacade` (`RateLimiter`, `var/ainet-ratelimit.json`).
 - `max_size` 10 MB, timeout connect 5s / read 20s.
 - Кэш 7 дней (`var/ainet-cache/`).
 

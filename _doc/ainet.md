@@ -130,7 +130,7 @@ src/Ainet/
     "whitelist_count": 15,
     "cache_size_mb": 12.4,
     "cache_entries": 34,
-    "rate_limit": {"used": 3, "max": 30, "window": "1m"}
+    "rate_limit": {"used": 3, "max": 30, "window": 60, "remaining": 27, "reset_in": 42}
   }
 }
 ```
@@ -368,7 +368,7 @@ POST/PUT/DELETE/PATCH — запрещены. Внутри `HttpClient` жёст
 - `timeout_read`: 20s (увеличено с 10 из-за медленных ответов Openverse/Cloudflare из РФ)
 - `max_size`: 10 MB
 - `max_redirects`: 3
-- `rate_limit`: 30 req/min (token bucket) — только в конфиге. Применение на уровне AinetFacade — P2 (MANIFEST §7.3).
+- `rate_limit`: 30 req/min (token bucket). **Enforced** в `AinetFacade` через `src/Ainet/RateLimiter.php` (файл `var/ainet-ratelimit.json`, fixed-window, `flock`). Кэш-хит лимит не тратит.
 - `cache_ttl_days`: 7
 
 ### 4.7. Валидация URL

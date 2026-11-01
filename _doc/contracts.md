@@ -400,7 +400,7 @@ www/media/<domain>/<allias>/skin/<name>/
 - Единственная точка входа для AI — `bin/aicli.php`. `bin/ainet.php` — standalone, не в whitelist.
 - `image:download`: AINET (bytes) → `cli.php content:store` (FS).
 - URL whitelist в `config/ainet.config` (`allowed_domains`), независим от `agent.config` (domain whitelist).
-- Rate limit: 30 req/min (в `AinetConfig`, проверка на уровне AICLI).
+- Rate limit: 30 req/min (`AinetConfig`). **Enforced** в `AinetFacade` через `RateLimiter` (файл `var/ainet-ratelimit.json`, fixed-window, `flock`). Кэш-хит лимит не тратит.
 
 **Ограничения:**
 

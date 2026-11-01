@@ -140,7 +140,7 @@ AI-агенты используют единственный безопасны
 
 **Расхождения:**
 - Safe Mode работает на уровне bootstrap админки, но ошибки внутри контроллеров ловит Kernel (500, не Safe Mode) — это ожидаемо.
-- AINET rate limit (30/min) описан в конфиге, но не применяется на уровне AinetFacade (P2).
+- AINET rate limit (30/min) **enforced** в `AinetFacade` (`RateLimiter`, `var/ainet-ratelimit.json`).
 
 ---
 

@@ -190,7 +190,6 @@ WYSIWYG (свободная вёрстка), Headless/REST/GraphQL API для в
 
 ### P2 — техдолг
 
-`domains_real[$domain]` → `ConfigDomainResolver::real()`; Builder неполон; `assert()` в prod; `@template` в `RegionContext::service()`; Translator мимо контейнера; `PageHandler::applySkin` читает `$_COOKIE` напрямую; namespace `Damoony\Algoritm` (переименованы только классы). AINET rate limit (30/min) описан в конфиге, но не применяется на уровне AinetFacade. Content: orphan cleanup (неиспользуемые hash). `skin:bundle` — не реализован. `ai_agent/` (Planner→Builder→Content) — прототип, не используется. Рабочий runner — `agent_test.py`.
 
 ---
 

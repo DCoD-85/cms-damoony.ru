@@ -606,7 +606,7 @@ php bin/cli.php structure:repair --domain=example.ru
 echo '{"command": "net:status", "args": {}}' | php bin/aicli.php
 ```
 
-**Ожидание:** `{"ok":true,"data":{"providers":["openverse","wikimedia"],"default_provider":"wikimedia","whitelist_count":N,"cache_size_mb":0,"cache_entries":0,"rate_limit":{"max":30,"window":"1m"}}}`.
+**Ожидание:** `{"ok":true,"data":{"providers":["openverse","wikimedia"],"default_provider":"wikimedia","whitelist_count":N,"cache_size_mb":0,"cache_entries":0,"rate_limit":{"used":0,"max":30,"window":60,"remaining":30,"reset_in":0}}}`.
 
 ### S61. image:search (wikimedia default) — ✅
 
