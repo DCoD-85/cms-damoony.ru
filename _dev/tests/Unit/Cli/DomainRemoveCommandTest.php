@@ -22,8 +22,21 @@ final class DomainRemoveCommandTest extends TestCase
 
         file_put_contents($this->root . '/config/site.config', json_encode([
             'domains_real' => ['example.ru' => 'example.ru'],
+            'domains_available' => ['example.ru' => true],
             'domains_namespace' => ['example.ru' => 'example_ru'],
+            'domains_titles' => ['example.ru' => 'Example'],
+            'domains_skins' => ['example.ru' => 'default'],
+            'domains_skins_allowed' => ['example.ru' => ['default']],
+            'domains_stubs' => ['example.ru' => '503'],
+            'domains_scheme' => ['example.ru' => 'www'],
             'alliases_real' => ['example.ru' => ['www' => 'www']],
+            'alliases_available' => ['example.ru' => ['www' => true]],
+            'alliases_langs' => ['example.ru' => ['www' => ['ru']]],
+            'alliases_titles' => ['example.ru' => ['www' => 'Main']],
+            'alliases_stubs' => ['example.ru' => ['www' => '503']],
+            'alliases_skins' => ['example.ru' => ['www' => 'default']],
+            'alliases_skins_allowed' => ['example.ru' => ['www' => ['default']]],
+            'fillers' => ['example.ru' => ['www' => ['top' => true]]],
         ]));
     }
 
@@ -37,18 +50,34 @@ final class DomainRemoveCommandTest extends TestCase
         $paths = new Paths($this->root);
         $cmd = new DomainRemoveCommand($paths);
 
-        $res = $cmd->run(['domain' => 'example.ru', 'force' => true], new Context(static fn () => null));
+        $res = $cmd->run(['domain' => 'example.ru', 'force' => '1'], new Context(static fn () => null));
 
-        $this->assertTrue($res->ok);
-        $this->assertDirectoryDoesNotExist($this->root . '/app/example.ru');
+        self::assertTrue($res->ok, implode('; ', $res->errors));
+        self::assertDirectoryDoesNotExist($this->root . '/app/example.ru');
 
-        // Проверяем, что папка ушла в карантин
         $dirs = glob($this->root . '/app/example.ru_trash_*');
-        $this->assertNotEmpty($dirs);
+        self::assertNotEmpty($dirs);
 
-        // Проверяем, что конфиг очищен
-        $site = json_decode((string)file_get_contents($this->root . '/config/site.config'), true);
-        $this->assertArrayNotHasKey('example.ru', $site['domains_real']);
+        $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
+        self::assertArrayNotHasKey('example.ru', $site['domains_real']);
+    }
+
+    public function testCleansAllConfigKeys(): void
+    {
+        $cmd = new DomainRemoveCommand(new Paths($this->root));
+        $cmd->run(['domain' => 'example.ru', 'force' => '1'], new Context(static fn () => null));
+
+        $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
+
+        $keys = [
+            'domains_real', 'domains_available', 'domains_namespace',
+            'domains_titles', 'domains_skins', 'domains_skins_allowed', 'domains_stubs', 'domains_scheme',
+            'alliases_real', 'alliases_available', 'alliases_langs', 'alliases_titles',
+            'alliases_stubs', 'alliases_skins', 'alliases_skins_allowed', 'fillers',
+        ];
+        foreach ($keys as $k) {
+            self::assertArrayNotHasKey('example.ru', $site[$k] ?? [], "Ключ {$k} не очищен");
+        }
     }
 
     public function testRequiresForce(): void
@@ -56,8 +85,25 @@ final class DomainRemoveCommandTest extends TestCase
         $cmd = new DomainRemoveCommand(new Paths($this->root));
         $res = $cmd->run(['domain' => 'example.ru'], new Context(static fn () => null));
 
-        $this->assertFalse($res->ok);
-        $this->assertStringContainsString('укажите --force', $res->errors[0]);
+        self::assertFalse($res->ok);
+        self::assertStringContainsString('--force', $res->errors[0]);
+    }
+
+    public function testIdempotentOnMissingDomain(): void
+    {
+        $cmd = new DomainRemoveCommand(new Paths($this->root));
+        $res = $cmd->run(['domain' => 'ghost.ru', 'force' => '1'], new Context(static fn () => null));
+
+        self::assertTrue($res->ok);
+        self::assertNotEmpty($res->warnings);
+    }
+
+    public function testRejectsPathTraversal(): void
+    {
+        $cmd = new DomainRemoveCommand(new Paths($this->root));
+        $res = $cmd->run(['domain' => 'a..ru', 'force' => '1'], new Context(static fn () => null));
+
+        self::assertFalse($res->ok);
     }
 
     private function rmrf(string $dir): void

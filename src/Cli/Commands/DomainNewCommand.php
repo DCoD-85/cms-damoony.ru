@@ -10,6 +10,7 @@ use Damoony\Cli\Result;
 use Damoony\Core\Config;
 use Damoony\Files\Fs;
 use Damoony\Files\Paths;
+use Damoony\Page\PageCompiler;
 
 final class DomainNewCommand implements CommandInterface
 {
@@ -32,13 +33,19 @@ final class DomainNewCommand implements CommandInterface
     {
         $r = new Result();
 
-        $domain = $args['domain'] ?? '';
-        if ($domain === '' || !preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain)) {
+        $domain = (string) ($args['domain'] ?? '');
+
+        // 1. Валидация
+        if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain)) {
             $r->error('Некорректный домен');
             return $r;
         }
+        if (str_contains($domain, '..')) {
+            $r->error('Недопустимый домен (содержит "..")');
+            return $r;
+        }
 
-        $namespace = $args['namespace'] ?? str_replace(['.', '-'], '_', $domain);
+        $namespace = (string) ($args['namespace'] ?? str_replace(['.', '-'], '_', $domain));
         if (!preg_match('/^[a-z][a-z0-9_]*$/', $namespace)) {
             $r->error('Некорректный namespace');
             return $r;
@@ -58,26 +65,37 @@ final class DomainNewCommand implements CommandInterface
             return $r;
         }
 
+        // 2. Папки и файлы алиаса www
         Fs::mkdir($domainDir);
         $r->file(Fs::rel($domainDir, $this->paths->root()));
-        $context->step('Домен создан', true, $domain);
 
         $allias = 'www';
         $alliasDir = $this->paths->allias($domain, $allias);
         Fs::mkdir($alliasDir);
+
         $algoritmDir = $this->paths->algoritm($domain, $allias);
         Fs::mkdir($algoritmDir);
 
-        // 1. Создаём .rules.json
-        Fs::writeAtomic($algoritmDir . '/.rules.json', json_encode(['available' => ['']], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
-        $r->file(Fs::rel($algoritmDir . '/.rules.json', $this->paths->root()));
+        // 2a. Страница root: PageCompiler (единый шаблон) + rules + editor (правило 3 файлов)
+        $compiler = new PageCompiler();
+        $rootPhp = $compiler->compile($namespace . '\\' . $allias, 'algoritm', []);
 
-        // 2. Создаём algoritm.php
-        $php = "<?php\n\ndeclare(strict_types=1);\n\nnamespace {$namespace}\\{$allias};\n\nuse Damoony\\Algoritm\\Page;\nuse Damoony\\Ui\\Builder;\nuse Damoony\\Ui\\Node;\nuse Damoony\\Http\\Response;\n\nfinal class algoritm extends Page\n{\n    public function default(): Node|Response|null\n    {\n        return Builder::div('page')->content('Главная страница');\n    }\n}\n";
-        Fs::writeAtomic($algoritmDir . '/algoritm.php', $php);
+        Fs::writeAtomic($algoritmDir . '/algoritm.php', $rootPhp);
         $r->file(Fs::rel($algoritmDir . '/algoritm.php', $this->paths->root()));
 
-        // 3. Создаём глобальную схему www.php
+        Fs::writeAtomic(
+            $algoritmDir . '/algoritm.rules.json',
+            json_encode(
+                ['available' => [], 'auth' => false, 'search' => true, 'default' => false],
+                JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE,
+            ) . "\n",
+        );
+        $r->file(Fs::rel($algoritmDir . '/algoritm.rules.json', $this->paths->root()));
+
+        Fs::writeAtomic($algoritmDir . '/algoritm.editor.json', "[]\n");
+        $r->file(Fs::rel($algoritmDir . '/algoritm.editor.json', $this->paths->root()));
+
+        // 3. Глобальная схема www
         $schemesDir = $domainDir . '/.alliasscheme';
         Fs::mkdir($schemesDir);
         $schemePhp = "<?php\n\nreturn [\n    'tag' => 'div',\n    'class' => 'layout',\n    'children' => [\n        ['tag' => 'main', 'slot' => 'center'],\n    ],\n];\n";
@@ -85,7 +103,7 @@ final class DomainNewCommand implements CommandInterface
         Fs::writeAtomic($schemesDir . '/www.rules.json', json_encode(['enabled' => true], JSON_PRETTY_PRINT) . "\n");
         $r->file(Fs::rel($schemesDir . '/www.php', $this->paths->root()));
 
-        // 4. Создаём глобальный блок center по умолчанию
+        // 4. Глобальный блок center
         $globalDir = $domainDir . '/.alliasglobal/center';
         Fs::mkdir($globalDir);
 
@@ -95,14 +113,20 @@ final class DomainNewCommand implements CommandInterface
         Fs::writeAtomic($globalDir . '/center.editor.json', json_encode([], JSON_PRETTY_PRINT) . "\n");
         $r->file(Fs::rel($globalDir . '/center.php', $this->paths->root()));
 
+        // 5. Конфиг (все ключи)
         $site['domains_real'][$domain] = $domain;
         $site['domains_available'][$domain] = true;
         $site['domains_namespace'][$domain] = $namespace;
         $site['alliases_real'][$domain] ??= ['www' => 'www'];
+        $site['alliases_available'][$domain][$allias] = true;
 
-        Fs::writeAtomic($siteFile, json_encode($site, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
+        Fs::writeAtomic(
+            $siteFile,
+            json_encode($site, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n",
+        );
         $r->file(Fs::rel($siteFile, $this->paths->root()));
 
+        $context->step('Домен создан', true, $domain);
         $context->step('Конфиг обновлён');
 
         return $r;

@@ -13,6 +13,18 @@ use Damoony\Files\Paths;
 
 final class AlliasRemoveCommand implements CommandInterface
 {
+    /** Ключи site.config, где данные скоупятся по домену+алиасу. */
+    private const ALLIAS_KEYS = [
+        'alliases_real',
+        'alliases_available',
+        'alliases_langs',
+        'alliases_titles',
+        'alliases_stubs',
+        'alliases_skins',
+        'alliases_skins_allowed',
+        'fillers',
+    ];
+
     public function __construct(private readonly Paths $paths)
     {
     }
@@ -31,12 +43,17 @@ final class AlliasRemoveCommand implements CommandInterface
     {
         $r = new Result();
 
-        $domain = $args['domain'] ?? '';
-        $name = $args['name'] ?? '';
+        $domain = (string) ($args['domain'] ?? '');
+        $name = (string) ($args['name'] ?? '');
         $force = isset($args['force']);
 
-        if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain) || !preg_match('/^[a-z][a-z0-9_]*$/', $name)) {
-            $r->error('Некорректные параметры');
+        // 1. Валидация
+        if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain) || str_contains($domain, '..')) {
+            $r->error('Некорректный домен');
+            return $r;
+        }
+        if (!preg_match('/^[a-z][a-z0-9_]*$/', $name)) {
+            $r->error('Некорректный алиас');
             return $r;
         }
 
@@ -53,8 +70,16 @@ final class AlliasRemoveCommand implements CommandInterface
         }
 
         $alliasDir = $this->paths->allias($domain, $name);
+        $alliasInConfig = isset($site['alliases_real'][$domain][$name]);
 
-        if (Fs::isDir($alliasDir)) {
+        if (!is_dir($alliasDir) && !$alliasInConfig) {
+            $r->warn("Алиас не найден ни на диске, ни в конфиге: {$domain}/{$name}");
+            $context->step('Нечего удалять', true);
+            return $r;
+        }
+
+        // 2. Карантин
+        if (is_dir($alliasDir)) {
             if (!$force) {
                 $r->error('Отменено пользователем (нужен --force)');
                 return $r;
@@ -65,18 +90,29 @@ final class AlliasRemoveCommand implements CommandInterface
                 return $r;
             }
             $context->step('Перемещено в карантин', true, Fs::rel($trash, $this->paths->root()));
+            $r->warn('Очистка карантина: php bin/cli.php trash:clear --force --older=7d');
         } else {
             $r->warn('Папка алиаса не найдена — чистим только конфиг');
         }
 
-        $before = json_encode($site);
-        unset($site['alliases_real'][$domain][$name]);
-        if (json_encode($site) === $before) {
-            $context->step('В конфиге не было', true);
-        } else {
-            Fs::writeAtomic($siteFile, json_encode($site, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
+        // 3. Полная очистка конфига (все ключи по домену+алиасу)
+        $removed = 0;
+        foreach (self::ALLIAS_KEYS as $key) {
+            if (isset($site[$key][$domain][$name])) {
+                unset($site[$key][$domain][$name]);
+                $removed++;
+            }
+        }
+
+        if ($removed > 0) {
+            Fs::writeAtomic(
+                $siteFile,
+                json_encode($site, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n",
+            );
             $r->file(Fs::rel($siteFile, $this->paths->root()));
-            $context->step('Конфиг обновлён');
+            $context->step("Конфиг обновлён ({$removed} ключей)", true);
+        } else {
+            $context->step('В конфиге не было', true);
         }
 
         return $r;

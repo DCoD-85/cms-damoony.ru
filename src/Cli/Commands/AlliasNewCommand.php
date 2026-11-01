@@ -10,6 +10,8 @@ use Damoony\Cli\Result;
 use Damoony\Core\Config;
 use Damoony\Files\Fs;
 use Damoony\Files\Paths;
+use Damoony\Page\PageCompiler;
+use Damoony\Page\PageNamespace;
 
 final class AlliasNewCommand implements CommandInterface
 {
@@ -31,10 +33,11 @@ final class AlliasNewCommand implements CommandInterface
     {
         $r = new Result();
 
-        $domain = $args['domain'] ?? '';
-        $name = $args['name'] ?? '';
+        $domain = (string) ($args['domain'] ?? '');
+        $name = (string) ($args['name'] ?? '');
 
-        if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain)) {
+        // 1. Валидация
+        if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain) || str_contains($domain, '..')) {
             $r->error('Некорректный домен');
             return $r;
         }
@@ -61,24 +64,41 @@ final class AlliasNewCommand implements CommandInterface
             return $r;
         }
 
+        // 2. Папки и файлы
         Fs::mkdir($alliasDir);
         $r->file(Fs::rel($alliasDir, $this->paths->root()));
 
         $algoritmDir = $this->paths->algoritm($domain, $name);
         Fs::mkdir($algoritmDir);
 
-        // 1. Создаём .rules.json
-        Fs::writeAtomic($algoritmDir . '/.rules.json', json_encode(['available' => ['']], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
-        $r->file(Fs::rel($algoritmDir . '/.rules.json', $this->paths->root()));
+        // 2a. Root страница через PageCompiler + rules + editor
+        $namespace = PageNamespace::fromSite($site, $domain);
+        $compiler = new PageCompiler();
+        $rootPhp = $compiler->compile($namespace . '\\' . $name, 'algoritm', []);
 
-        // 2. Создаём algoritm.php
-        $namespace = (string) ($site['domains_namespace'][$domain] ?? str_replace(['.', '-'], '_', $domain));
-        $php = "<?php\n\ndeclare(strict_types=1);\n\nnamespace {$namespace}\\{$name};\n\nuse Damoony\\Algoritm\\Page;\nuse Damoony\\Ui\\Builder;\nuse Damoony\\Ui\\Node;\nuse Damoony\\Http\\Response;\n\nfinal class algoritm extends Page\n{\n    public function default(): Node|Response|null\n    {\n        return Builder::div('page')->content('Страница {$name}');\n    }\n}\n";
-        Fs::writeAtomic($algoritmDir . '/algoritm.php', $php);
+        Fs::writeAtomic($algoritmDir . '/algoritm.php', $rootPhp);
         $r->file(Fs::rel($algoritmDir . '/algoritm.php', $this->paths->root()));
 
+        Fs::writeAtomic(
+            $algoritmDir . '/algoritm.rules.json',
+            json_encode(
+                ['available' => [], 'auth' => false, 'search' => true, 'default' => false],
+                JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE,
+            ) . "\n",
+        );
+        $r->file(Fs::rel($algoritmDir . '/algoritm.rules.json', $this->paths->root()));
+
+        Fs::writeAtomic($algoritmDir . '/algoritm.editor.json', "[]\n");
+        $r->file(Fs::rel($algoritmDir . '/algoritm.editor.json', $this->paths->root()));
+
+        // 3. Конфиг (все ключи)
         $site['alliases_real'][$domain][$name] = $name;
-        Fs::writeAtomic($siteFile, json_encode($site, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
+        $site['alliases_available'][$domain][$name] = true;
+
+        Fs::writeAtomic(
+            $siteFile,
+            json_encode($site, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n",
+        );
         $r->file(Fs::rel($siteFile, $this->paths->root()));
 
         $context->step('Алиас создан', true, $domain . '/' . $name);

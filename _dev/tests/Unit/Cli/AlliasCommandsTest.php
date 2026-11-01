@@ -24,6 +24,7 @@ final class AlliasCommandsTest extends TestCase
             'domains_available' => ['example.ru' => true],
             'domains_namespace' => ['example.ru' => 'example'],
             'alliases_real' => ['example.ru' => ['www' => 'www']],
+            'alliases_available' => ['example.ru' => ['www' => true]],
         ]));
         mkdir($this->root . '/app/example.ru/www/algoritm', 0o777, true);
     }
@@ -63,12 +64,20 @@ final class AlliasCommandsTest extends TestCase
         $r = new Result();
         $res = $cmd->run(['domain' => 'example.ru', 'name' => 'admin'], $this->context($r));
 
-        self::assertTrue($res->ok);
+        self::assertTrue($res->ok, implode('; ', $res->errors));
         self::assertDirectoryExists($this->root . '/app/example.ru/admin');
-        self::assertFileExists($this->root . '/app/example.ru/admin/algoritm/.rules.json');
+
+        // Новая модель: 3 файла с единым префиксом
+        self::assertFileExists($this->root . '/app/example.ru/admin/algoritm/algoritm.php');
+        self::assertFileExists($this->root . '/app/example.ru/admin/algoritm/algoritm.rules.json');
+        self::assertFileExists($this->root . '/app/example.ru/admin/algoritm/algoritm.editor.json');
+
+        // Старой модели нет
+        self::assertFileDoesNotExist($this->root . '/app/example.ru/admin/algoritm/.rules.json');
 
         $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
         self::assertSame('admin', $site['alliases_real']['example.ru']['admin']);
+        self::assertTrue($site['alliases_available']['example.ru']['admin']);
     }
 
     public function testS02RejectsDuplicate(): void
@@ -94,15 +103,26 @@ final class AlliasCommandsTest extends TestCase
         $r1 = new Result();
         $create->run(['domain' => 'example.ru', 'name' => 'admin'], $this->context($r1));
 
+        // Добавляем связанные ключи, чтобы проверить полную очистку
+        $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
+        $site['alliases_langs']['example.ru']['admin'] = ['ru'];
+        $site['alliases_titles']['example.ru']['admin'] = 'Admin';
+        $site['fillers']['example.ru']['admin'] = ['top' => true];
+        file_put_contents($this->root . '/config/site.config', json_encode($site));
+
         $cmd = new AlliasRemoveCommand($paths);
         $r = new Result();
         $res = $cmd->run(['domain' => 'example.ru', 'name' => 'admin', 'force' => '1'], $this->context($r));
 
-        self::assertTrue($res->ok);
+        self::assertTrue($res->ok, implode('; ', $res->errors));
         self::assertDirectoryDoesNotExist($this->root . '/app/example.ru/admin');
 
         $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
         self::assertArrayNotHasKey('admin', $site['alliases_real']['example.ru']);
+        self::assertArrayNotHasKey('admin', $site['alliases_available']['example.ru']);
+        self::assertArrayNotHasKey('admin', $site['alliases_langs']['example.ru']);
+        self::assertArrayNotHasKey('admin', $site['alliases_titles']['example.ru']);
+        self::assertArrayNotHasKey('admin', $site['fillers']['example.ru']);
     }
 
     public function testS03WithoutForceCancels(): void
@@ -123,6 +143,7 @@ final class AlliasCommandsTest extends TestCase
         $paths = new Paths($this->root);
         $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
         $site['alliases_real']['example.ru']['ghost'] = 'ghost';
+        $site['alliases_available']['example.ru']['ghost'] = true;
         file_put_contents($this->root . '/config/site.config', json_encode($site));
 
         $cmd = new AlliasRemoveCommand($paths);
@@ -132,5 +153,14 @@ final class AlliasCommandsTest extends TestCase
         self::assertTrue($res->ok);
         $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
         self::assertArrayNotHasKey('ghost', $site['alliases_real']['example.ru']);
+        self::assertArrayNotHasKey('ghost', $site['alliases_available']['example.ru']);
+    }
+
+    public function testS03RejectsPathTraversal(): void
+    {
+        $cmd = new AlliasRemoveCommand(new Paths($this->root));
+        $res = $cmd->run(['domain' => 'a..ru', 'name' => 'admin', 'force' => '1'], $this->context(new Result()));
+
+        self::assertFalse($res->ok);
     }
 }
