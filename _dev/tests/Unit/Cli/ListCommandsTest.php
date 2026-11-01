@@ -8,7 +8,6 @@ use Damoony\Cli\Commands\BlockListCommand;
 use Damoony\Cli\Commands\FillerListCommand;
 use Damoony\Cli\Commands\SchemeListCommand;
 use Damoony\Cli\Context;
-use Damoony\Cli\Result;
 use Damoony\Files\Paths;
 use PHPUnit\Framework\TestCase;
 

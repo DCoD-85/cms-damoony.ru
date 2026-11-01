@@ -83,3 +83,7 @@ app/*_trash_*
 !/www/media/admin/
 !/www/media/shared/
 /www/media/.trash/
+
+# ai_agent runtime sessions
+/ai_agent/.session/
+/ai_agent/__pycache__/

@@ -8,7 +8,6 @@ use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
 use Damoony\Core\Config;
-use Damoony\Files\Fs;
 use Damoony\Files\Paths;
 
 final class SchemeListCommand implements CommandInterface

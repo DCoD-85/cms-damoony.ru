@@ -9,7 +9,6 @@ use Damoony\Cli\Context;
 use Damoony\Cli\Result;
 use Damoony\Core\Config;
 use Damoony\Files\Paths;
-use Damoony\Page\PagePath;
 use Damoony\Page\PageRules;
 
 final class PageListCommand implements CommandInterface
@@ -131,7 +130,7 @@ final class PageListCommand implements CommandInterface
     }
 
     /**
-     * @param array{available: list<string>, auth: bool, search: bool, default: bool} $rules
+     * @param array<string, mixed> $rules
      *
      * @return array{name: string, url: string, php: string, available: list<string>, auth: bool, search: bool, default: bool}
      */
@@ -148,9 +147,9 @@ final class PageListCommand implements CommandInterface
             'url' => $url,
             'php' => $php,
             'available' => $available,
-            'auth' => (bool) ($rules['auth'] ?? false),
-            'search' => (bool) ($rules['search'] ?? true),
-            'default' => (bool) ($rules['default'] ?? false),
+            'auth' => isset($rules['auth']) && $rules['auth'] === true,
+            'search' => !isset($rules['search']) || $rules['search'] === true,
+            'default' => isset($rules['default']) && $rules['default'] === true,
         ];
     }
 }

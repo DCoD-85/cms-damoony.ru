@@ -8,6 +8,10 @@ use Damoony\Ai\Navigator;
 use Damoony\Ai\Roles;
 use Damoony\Ainet\AinetFacade;
 
+/**
+ * @param array<string, mixed> $response
+ * @param array<string, mixed> $args
+ */
 function respond(array $response, string $role, ?string $cmd = null, array $args = []): never
 {
     $response['role'] = $role;
@@ -35,6 +39,9 @@ function respond(array $response, string $role, ?string $cmd = null, array $args
     exit(($response['ok'] ?? false) === true ? 0 : 1);
 }
 
+/**
+ * @return array{ok: bool, output: string, error: string, hint: string}
+ */
 function parseCliResult(string $output): array
 {
     $trimmed = trim($output);
@@ -48,6 +55,9 @@ function parseCliResult(string $output): array
         : ['ok' => true, 'output' => $trimmed, 'error' => '', 'hint' => ''];
 }
 
+/**
+ * @return array{ok: bool, output: string, error: string, hint: string}
+ */
 function runCli(string $args): array
 {
     $output = shell_exec('php ' . __DIR__ . '/cli.php ' . $args . ' 2>&1');
@@ -57,6 +67,9 @@ function runCli(string $args): array
 /**
  * Вызов CLI-команды с --json (для *:list).
  * Возвращает декодированный массив (ok/data/created/warnings/errors/steps).
+ */
+/**
+ * @return array<string, mixed>
  */
 function runCliJson(string $args): array
 {
@@ -102,6 +115,7 @@ $allowedCommands = $role === '*'
         'allias:new', 'allias:list',
         'page:new', 'page:write', 'page:read', 'page:list',
         'scheme:list', 'block:list',
+        'skin:new', 'skin:list', 'skin:edit', 'skin:remove',
         'net:status', 'image:search', 'image:download', 'fetch',
     ]
     : array_merge(['ai:start', 'done', 'engine_status'], Roles::whitelist($role));
@@ -286,7 +300,7 @@ try {
             if (!is_array($b)) {
                 continue;
             }
-            if (($b['type'] ?? '') === 'img' && (empty($b['content']) || !is_string($b['content'] ?? null))) {
+            if (($b['type'] ?? '') === 'img' && (empty($b['content']) || !is_string($b['content']))) {
                 foreach (['local_url', 'src', 'url'] as $k) {
                     if (!empty($b[$k]) && is_string($b[$k])) {
                         $b['content'] = $b[$k];
@@ -357,6 +371,71 @@ try {
             throw new \RuntimeException('Invalid domain.');
         }
         respond(runCliJson('block:list --domain=' . escapeshellarg($domain)), $role, $command, $args);
+    }
+
+    if ($command === 'skin:new') {
+        $domain = (string) ($args['domain'] ?? '');
+        $allias = (string) ($args['allias'] ?? '');
+        $name = (string) ($args['name'] ?? 'default');
+        if (!in_array($domain, $allowedDomains, true)) {
+            throw new \RuntimeException("Security violation: Domain '{$domain}' is not in the allowed list.");
+        }
+        if (!preg_match('/^[a-z][a-z0-9_]*$/', $allias) || !preg_match('/^[a-z][a-z0-9_]*$/', $name)) {
+            throw new \RuntimeException('Invalid allias or skin name.');
+        }
+        $r = runCli(
+            'skin:new --domain=' . escapeshellarg($domain)
+            . ' --allias=' . escapeshellarg($allias)
+            . ' --name=' . escapeshellarg($name),
+        );
+        respond($r, $role, $command, $args);
+    }
+
+    if ($command === 'skin:list') {
+        $domain = (string) ($args['domain'] ?? '');
+        $allias = (string) ($args['allias'] ?? '');
+        if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain) || str_contains($domain, '..')) {
+            throw new \RuntimeException('Invalid domain.');
+        }
+        if (!preg_match('/^[a-z][a-z0-9_]*$/', $allias)) {
+            throw new \RuntimeException('Invalid allias.');
+        }
+        respond(
+            runCliJson('skin:list --domain=' . escapeshellarg($domain) . ' --allias=' . escapeshellarg($allias)),
+            $role,
+            $command,
+            $args,
+        );
+    }
+
+    if ($command === 'skin:edit') {
+        $domain = (string) ($args['domain'] ?? '');
+        $allias = (string) ($args['allias'] ?? '');
+        $name = (string) ($args['name'] ?? '');
+        $file = (string) ($args['file'] ?? '');
+        $content = isset($args['content']) ? (string) $args['content'] : '';
+        $contentB64 = isset($args['content_b64']) ? (string) $args['content_b64'] : '';
+        if (!in_array($domain, $allowedDomains, true)) {
+            throw new \RuntimeException("Security violation: Domain '{$domain}' is not in the allowed list.");
+        }
+        if (!preg_match('/^[a-z][a-z0-9_]*$/', $allias) || !preg_match('/^[a-z][a-z0-9_]*$/', $name)) {
+            throw new \RuntimeException('Invalid allias or skin name.');
+        }
+        if (!in_array($file, ['css/main.css', 'js/main.js'], true)) {
+            throw new \RuntimeException('Invalid file (allowed: css/main.css, js/main.js).');
+        }
+        $safeFile = escapeshellarg($file);
+        $contentArg = $contentB64 !== ''
+            ? ' --content_b64=' . escapeshellarg($contentB64)
+            : ' --content=' . escapeshellarg($content);
+        $r = runCli(
+            'skin:edit --domain=' . escapeshellarg($domain)
+            . ' --allias=' . escapeshellarg($allias)
+            . ' --name=' . escapeshellarg($name)
+            . ' --file=' . $safeFile
+            . $contentArg,
+        );
+        respond($r, $role, $command, $args);
     }
 
     if ($command === 'filler:list') {

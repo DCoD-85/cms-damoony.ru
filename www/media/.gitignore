@@ -6,6 +6,10 @@
 
 # Разрешаем системные стили админки
 !admin/
-!admin/*
-!admin/codemirror/
-!admin/codemirror/**
+!admin/**
+
+# Разрешаем скины алиасов: <domain>/<allias>/skin/**
+!*/
+!*/*/
+!*/*/skin/
+!*/*/skin/**

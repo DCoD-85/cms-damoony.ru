@@ -17,6 +17,8 @@ final class Navigator
     private const OFFERABLE = [
         'domain:new',
         'allias:new',
+        'skin:new',
+        'skin:edit',
         'page:new',
         'page:write',
         'page:read',
@@ -73,6 +75,15 @@ final class Navigator
             ],
             'allias:new' => [
                 self::item(
+                    'skin:new',
+                    [
+                        'domain' => (string) ($args['domain'] ?? ''),
+                        'allias' => (string) ($args['name'] ?? ''),
+                        'name' => 'default',
+                    ],
+                    'Создать скин по умолчанию для алиаса',
+                ),
+                self::item(
                     'page:new',
                     [
                         'domain' => (string) ($args['domain'] ?? ''),
@@ -80,6 +91,29 @@ final class Navigator
                         'name' => '<page_name>',
                     ],
                     'Создать страницу в этом алиасе',
+                ),
+                self::item('done', [], 'Завершить'),
+            ],
+            'skin:new' => [
+                self::item(
+                    'skin:edit',
+                    [
+                        'domain' => (string) ($args['domain'] ?? ''),
+                        'allias' => (string) ($args['allias'] ?? ''),
+                        'name' => (string) ($args['name'] ?? 'default'),
+                        'file' => 'css/main.css',
+                        'content' => '',
+                    ],
+                    'Заполнить CSS скина',
+                ),
+                self::item(
+                    'page:new',
+                    [
+                        'domain' => (string) ($args['domain'] ?? ''),
+                        'allias' => (string) ($args['allias'] ?? ''),
+                        'name' => '<page_name>',
+                    ],
+                    'Создать страницу',
                 ),
                 self::item('done', [], 'Завершить'),
             ],

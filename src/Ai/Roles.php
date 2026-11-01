@@ -33,6 +33,7 @@ final class Roles
         self::ARCHITECT => [
             'domain:new', 'allias:new',
             'block:new', 'scheme:new', 'filler:new',
+            'skin:new', 'skin:list',
             'domain:list', 'allias:list', 'scheme:list', 'block:list',
         ],
         self::EXECUTOR => [
@@ -42,10 +43,13 @@ final class Roles
         ],
         self::DESIGNER => [
             'page:write',
-            'scheme:list', 'block:list', 'filler:list', 'page:list', 'page:read',
+            'skin:edit', 'skin:list',
+            'scheme:save', 'scheme:list',
+            'block:list', 'filler:list', 'page:list', 'page:read',
         ],
         self::BUNDLER => [
             'structure:check',
+            'skin:list',
             'domain:list', 'allias:list', 'page:list',
         ],
         self::CORRECTOR => [

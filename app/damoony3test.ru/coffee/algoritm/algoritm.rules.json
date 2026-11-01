@@ -1,0 +1,10 @@
+{
+    "available": [
+        "about",
+        "menu",
+        "contacts"
+    ],
+    "auth": false,
+    "search": true,
+    "default": false
+}
