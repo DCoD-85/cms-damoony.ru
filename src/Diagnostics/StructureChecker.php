@@ -26,8 +26,9 @@ final class StructureChecker
             return [['level' => 'error', 'message' => "Папка algoritm/{$allias} не найдена"]];
         }
 
-        if (!is_file($algoritmDir . '/.rules.json')) {
-            $issues[] = ['level' => 'error', 'message' => "Отсутствует .rules.json в algoritm/{$allias}"];
+        // Новая модель: root rules = algoritm/algoritm.rules.json
+        if (!is_file($algoritmDir . '/algoritm.rules.json')) {
+            $issues[] = ['level' => 'error', 'message' => "Отсутствует algoritm.rules.json в algoritm/ (root алиаса {$allias})"];
         }
 
         if (!is_file($algoritmDir . '/algoritm.php')) {
@@ -75,14 +76,14 @@ final class StructureChecker
             }
         }
 
-        // 2. Проверка страниц (наличие PHP и editor.json)
+        // 2. Проверка страниц (3 файла с единым префиксом)
         $this->checkPagesStructure($algoritmDir, $issues);
 
         // 3. Проверка схем
         $schemesDir = $this->paths->domain($realDomain) . '/.alliasscheme';
         $this->checkSchemesJson($schemesDir, $allias, $issues);
 
-        // 4. Проверка блоков (наличие .rules.json и .editor.json)
+        // 4. Проверка блоков
         $blocksDir = $this->paths->domain($realDomain) . '/.alliasglobal';
         $this->checkBlocksRules($blocksDir, $issues);
 
@@ -92,28 +93,41 @@ final class StructureChecker
     /** @param list<array{level: string, message: string}> $issues */
     private function checkPagesStructure(string $algoritmDir, array &$issues): void
     {
-        $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($algoritmDir, \FilesystemIterator::SKIP_DOTS));
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($algoritmDir, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::SELF_FIRST,
+        );
+
         foreach ($iterator as $file) {
-            if ($file->isDir()) {
-                $dir = $file->getPathname();
-                if (basename($dir) === 'algoritm') {
-                    continue;
-                }
+            if (!$file->isDir()) {
+                continue;
+            }
 
-                $name = basename($dir);
-                $phpFile = $dir . '/algoritm_' . $name . '.php';
-                $rulesFile = $dir . '/algoritm_' . $name . '.rules.json';
-                $editorFile = $dir . '/algoritm_' . $name . '.editor.json';
+            $dir = $file->getPathname();
+            $rel = trim(substr($dir, strlen($algoritmDir)), '/\\');
+            $rel = str_replace('\\', '/', $rel);
+            if ($rel === '') {
+                continue; // root проверен отдельно
+            }
 
-                if (!is_file($phpFile)) {
-                    $issues[] = ['level' => 'error', 'message' => "Нет файла algoritm_{$name}.php в папке " . str_replace($algoritmDir, '', $dir)];
-                }
-                if (!is_file($rulesFile)) {
-                    $issues[] = ['level' => 'warning', 'message' => "Нет файла algoritm_{$name}.rules.json в папке " . str_replace($algoritmDir, '', $dir)];
-                }
-                if (!is_file($editorFile)) {
-                    $issues[] = ['level' => 'warning', 'message' => "Нет файла algoritm_{$name}.editor.json в папке " . str_replace($algoritmDir, '', $dir)];
-                }
+            $classChain = 'algoritm_' . str_replace('/', '_', $rel);
+            $phpFile = $dir . '/' . $classChain . '.php';
+            $rulesFile = $dir . '/' . $classChain . '.rules.json';
+            $editorFile = $dir . '/' . $classChain . '.editor.json';
+
+            if (!is_file($phpFile)) {
+                $issues[] = ['level' => 'error', 'message' => "Нет файла {$classChain}.php в папке /{$rel}"];
+            }
+            if (!is_file($rulesFile)) {
+                $issues[] = ['level' => 'warning', 'message' => "Нет файла {$classChain}.rules.json в папке /{$rel}"];
+            }
+            if (!is_file($editorFile)) {
+                $issues[] = ['level' => 'warning', 'message' => "Нет файла {$classChain}.editor.json в папке /{$rel}"];
+            }
+
+            // Устаревший .rules.json в директории — предупреждение (миграция)
+            if (is_file($dir . '/.rules.json')) {
+                $issues[] = ['level' => 'warning', 'message' => "Устаревший /{$rel}/.rules.json — запустите migrate:page-rules"];
             }
         }
     }

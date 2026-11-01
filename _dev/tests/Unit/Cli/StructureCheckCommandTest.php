@@ -87,7 +87,12 @@ final class StructureCheckCommandTest extends TestCase
         mkdir($domain . '/.alliasglobal', 0o777, true);
         mkdir($domain . '/.alliasscheme', 0o777, true);
 
-        file_put_contents($domain . '/' . $alias . '/algoritm/.rules.json', (string) json_encode(['available' => []]));
+        file_put_contents($domain . '/' . $alias . '/algoritm/algoritm.rules.json', (string) json_encode([
+            'available' => [],
+            'auth' => false,
+            'search' => true,
+            'default' => false,
+        ]));
         file_put_contents($domain . '/' . $alias . '/algoritm/algoritm.php', "<?php\n");
         file_put_contents(
             $domain . '/.alliasscheme/www.php',

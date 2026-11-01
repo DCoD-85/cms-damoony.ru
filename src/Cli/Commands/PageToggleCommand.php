@@ -9,6 +9,8 @@ use Damoony\Cli\Context;
 use Damoony\Cli\Result;
 use Damoony\Files\Fs;
 use Damoony\Files\Paths;
+use Damoony\Page\PagePath;
+use Damoony\Page\PageRules;
 
 final class PageToggleCommand implements CommandInterface
 {
@@ -34,10 +36,12 @@ final class PageToggleCommand implements CommandInterface
 
         $domain = $args['domain'] ?? '';
         $allias = $args['allias'] ?? '';
-        $path = $args['path'] ?? '';
+        $name = $args['name'] ?? '';
+        $parent = trim((string) ($args['parent'] ?? ''), '/');
         $key = $args['key'] ?? '';
         $value = ($args['value'] ?? '1') === '0' ? false : true;
 
+        // 1. Валидация
         if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain)) {
             $r->error('Некорректный домен');
             return $r;
@@ -46,43 +50,41 @@ final class PageToggleCommand implements CommandInterface
             $r->error('Некорректный алиас');
             return $r;
         }
-        if ($path !== '' && !preg_match('#^[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*$#i', $path)) {
-            $r->error('Некорректный путь');
-            return $r;
-        }
         if (!in_array($key, self::KEYS, true)) {
             $r->error('Недопустимый ключ: ' . $key);
             return $r;
         }
 
-        $algoritmDir = $this->paths->algoritm($domain, $allias);
-        $pageDir = $path === '' ? $algoritmDir : $algoritmDir . '/' . $path;
+        // 2. __root__ — главная страница
+        if ($name === '__root__') {
+            if ($parent !== '') {
+                $r->error('--parent несовместим с __root__');
+                return $r;
+            }
+            $name = '';
+        } elseif ($name === '') {
+            $r->error('Укажите --name (или __root__ для главной страницы)');
+            return $r;
+        } elseif ($parent !== '' && !preg_match('#^[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*$#', $parent)) {
+            $r->error('Некорректный путь родительской страницы');
+            return $r;
+        }
 
-        if (!Fs::isDir($pageDir)) {
+        // 3. Резолвинг
+        $page = PagePath::resolve($this->paths, $domain, $allias, $name, $parent);
+
+        if (!Fs::isFile($page->phpFile)) {
             $r->error('Страница не найдена');
             return $r;
         }
 
-        $rulesFile = $pageDir . '/.rules.json';
-        $default = [
-            'available' => [''],
-            'auth' => false,
-            'search' => true,
-            'default' => false,
-        ];
-
-        $current = Fs::isFile($rulesFile)
-            ? json_decode((string) file_get_contents($rulesFile), true)
-            : [];
-        if (!is_array($current)) {
-            $current = [];
-        }
-
-        $merged = array_merge($default, $current);
+        // 4. Обновление rules.json (единый источник — algoritm_{name}.rules.json)
+        $current = PageRules::load($page->rulesFile);
+        $merged = PageRules::withDefaults($current);
         $merged[$key] = $value;
 
-        Fs::writeAtomic($rulesFile, json_encode($merged, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
-        $r->file(Fs::rel($rulesFile, $this->paths->root()));
+        PageRules::save($page->rulesFile, $merged);
+        $r->file(Fs::rel($page->rulesFile, $this->paths->root()));
 
         $context->step('Флаг обновлён', true, "{$key}=" . ($value ? '1' : '0'));
 

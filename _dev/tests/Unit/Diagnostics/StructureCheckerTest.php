@@ -31,7 +31,11 @@ final class StructureCheckerTest extends TestCase
         mkdir($domain . '/.alliasglobal', 0o777, true);
         mkdir($domain . '/.alliasscheme', 0o777, true);
 
-        file_put_contents($domain . '/www/algoritm/.rules.json', json_encode(['available' => []]));
+        // Новая модель: algoritm/algoritm.rules.json
+        file_put_contents(
+            $domain . '/www/algoritm/algoritm.rules.json',
+            json_encode(['available' => [], 'auth' => false, 'search' => true, 'default' => false]),
+        );
         file_put_contents($domain . '/www/algoritm/algoritm.php', "<?php\n");
         file_put_contents($domain . '/.alliasscheme/www.php', "<?php\nreturn ['tag' => 'div', 'children' => []];\n");
         file_put_contents($domain . '/.alliasscheme/www.rules.json', json_encode(['enabled' => true]));
@@ -77,6 +81,99 @@ final class StructureCheckerTest extends TestCase
 
         self::assertCount(1, $match);
         self::assertSame('warning', $match[0]['level']);
+    }
+
+    // === Новая модель: страницы ===
+
+    public function testFlagsMissingRootRulesJson(): void
+    {
+        // Удаляем algoritm/algoritm.rules.json
+        unlink($this->root . '/app/example.ru/www/algoritm/algoritm.rules.json');
+
+        $issues = $this->checker()->checkAllias('example.ru', 'www');
+        $match = array_values(array_filter($issues, fn ($i) => str_contains($i['message'], 'Отсутствует algoritm.rules.json')));
+
+        self::assertCount(1, $match);
+        self::assertSame('error', $match[0]['level']);
+    }
+
+    public function testNestedPageWithCorrectClassChain(): void
+    {
+        $this->writePage('about', 'algoritm_about');
+        $issues = $this->checker()->checkAllias('example.ru', 'www');
+
+        $pageErrors = array_filter($issues, fn ($i) => str_contains($i['message'], 'algoritm_about'));
+        self::assertCount(0, $pageErrors);
+    }
+
+    public function testNestedDeepPageClassChain(): void
+    {
+        $this->writePage('docs', 'algoritm_docs');
+        $this->writePage('docs/install', 'algoritm_docs_install');
+
+        $issues = $this->checker()->checkAllias('example.ru', 'www');
+
+        $match = array_values(array_filter($issues, fn ($i) => str_contains($i['message'], 'algoritm_docs_install')));
+        self::assertCount(0, $match);
+
+        // Проверка, что путь /docs/install — не /install
+        $badMatch = array_values(array_filter($issues, fn ($i) => str_contains($i['message'], 'algoritm_install')));
+        self::assertCount(0, $badMatch);
+    }
+
+    public function testNestedPageMissingFiles(): void
+    {
+        // Папка есть, файлов нет
+        mkdir($this->root . '/app/example.ru/www/algoritm/broken', 0o777, true);
+
+        $issues = $this->checker()->checkAllias('example.ru', 'www');
+        $match = array_values(array_filter($issues, fn ($i) => str_contains($i['message'], 'algoritm_broken')));
+
+        // Должно быть 3 issue: .php (error), .rules.json (warning), .editor.json (warning)
+        self::assertCount(3, $match);
+    }
+
+    public function testFlagsLegacyDotRulesJson(): void
+    {
+        $this->writePage('legacy', 'algoritm_legacy');
+        // Оставляем устаревший .rules.json
+        file_put_contents(
+            $this->root . '/app/example.ru/www/algoritm/legacy/.rules.json',
+            json_encode(['available' => []]),
+        );
+
+        $issues = $this->checker()->checkAllias('example.ru', 'www');
+        $match = array_values(array_filter($issues, fn ($i) => str_contains($i['message'], 'migrate:page-rules')));
+
+        self::assertCount(1, $match);
+        self::assertSame('warning', $match[0]['level']);
+        self::assertStringContainsString('/legacy/.rules.json', $match[0]['message']);
+    }
+
+    public function testFlagsLegacyRootDotRulesJson(): void
+    {
+        // Устаревший root: algoritm/.rules.json (не проверяется как legacy для root — только вложенные)
+        // Но в новой модели root — algoritm/algoritm.rules.json уже есть в setupValidDomain
+        // Проверяем, что root .rules.json сам по себе не даёт ошибки «отсутствует algoritm.rules.json»
+        // (если бы проверялся)
+        $issues = $this->checker()->checkAllias('example.ru', 'www');
+        $match = array_values(array_filter($issues, fn ($i) => str_contains($i['message'], 'Отсутствует algoritm.rules.json')));
+
+        self::assertCount(0, $match);
+    }
+
+    // === Helpers ===
+
+    private function writePage(string $rel, string $classChain): void
+    {
+        $dir = $this->root . '/app/example.ru/www/algoritm/' . $rel;
+        mkdir($dir, 0o777, true);
+        file_put_contents($dir . '/' . $classChain . '.php', "<?php\n");
+        file_put_contents(
+            $dir . '/' . $classChain . '.rules.json',
+            json_encode(['available' => [], 'auth' => false, 'search' => true, 'default' => false]),
+        );
+        file_put_contents($dir . '/' . $classChain . '.editor.json', "[]\n");
     }
 
     private function writeBlockFiles(string $name): void

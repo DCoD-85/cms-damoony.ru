@@ -40,6 +40,15 @@ final class FileRouterTest extends TestCase
         @rmdir($dir);
     }
 
+    /**
+     * Пишет страницу по новой модели:
+     *   {rel}/algoritm_{rel_with_underscores}.php
+     *   {rel}/algoritm_{rel_with_underscores}.rules.json
+     *
+     * Для root ($rel === '') — algoritm/algoritm.php + algoritm/algoritm.rules.json.
+     *
+     * @param array<string, mixed> $rules
+     */
     private function writePage(string $real, string $allias, string $rel, array $rules, bool $withPhp = true): void
     {
         $base = $this->root . '/app/' . $real . '/' . $allias . '/algoritm';
@@ -47,9 +56,9 @@ final class FileRouterTest extends TestCase
         if (!is_dir($dir)) {
             mkdir($dir, 0o777, true);
         }
-        file_put_contents($dir . '/.rules.json', json_encode($rules));
+        $class = 'algoritm' . ($rel === '' ? '' : '_' . str_replace('/', '_', $rel));
+        file_put_contents($dir . '/' . $class . '.rules.json', json_encode($rules));
         if ($withPhp) {
-            $class = 'algoritm' . ($rel === '' ? '' : '_' . str_replace('/', '_', $rel));
             file_put_contents($dir . '/' . $class . '.php', "<?php\n");
         }
     }
@@ -132,5 +141,32 @@ final class FileRouterTest extends TestCase
         self::assertTrue($m->found);
         self::assertSame('algoritm_docs_page', $m->classChain);
         self::assertSame(['page' => 'intro'], $m->args);
+    }
+
+    public function testAuthFromLeafRules(): void
+    {
+        $this->writePage('example.ru', 'www', '', ['available' => ['admin'], 'auth' => false]);
+        $this->writePage('example.ru', 'www', 'admin', ['available' => [''], 'auth' => true]);
+        $m = $this->router()->match('/admin', $this->ctx());
+        self::assertTrue($m->found);
+        self::assertTrue($m->auth);
+    }
+
+    public function testAuthNotInheritedFromRoot(): void
+    {
+        $this->writePage('example.ru', 'www', '', ['available' => ['about'], 'auth' => true]);
+        $this->writePage('example.ru', 'www', 'about', ['available' => ['']]);
+        $m = $this->router()->match('/about', $this->ctx());
+        self::assertTrue($m->found);
+        self::assertFalse($m->auth);
+    }
+
+    public function testMissingChildPhpReturnsNotFound(): void
+    {
+        // available говорит про about, но .php отсутствует
+        $this->writePage('example.ru', 'www', '', ['available' => ['about']]);
+        $this->writePage('example.ru', 'www', 'about', ['available' => ['']], false);
+        $m = $this->router()->match('/about', $this->ctx());
+        self::assertFalse($m->found);
     }
 }

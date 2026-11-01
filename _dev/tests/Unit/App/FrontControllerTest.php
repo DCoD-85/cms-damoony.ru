@@ -142,8 +142,8 @@ final class FrontControllerTest extends TestCase
     {
         $base = $this->root . '/app/example.ru/www/algoritm';
         mkdir($base . '/fc_home', 0o777, true);
-        file_put_contents($base . '/.rules.json', json_encode(['available' => ['fc_home']]));
-        file_put_contents($base . '/fc_home/.rules.json', json_encode(['available' => ['']]));
+        file_put_contents($base . '/algoritm.rules.json', json_encode(['available' => ['fc_home'], 'auth' => false, 'search' => true, 'default' => false]));
+        file_put_contents($base . '/fc_home/algoritm_fc_home.rules.json', json_encode(['available' => [], 'auth' => false, 'search' => true, 'default' => false]));
         file_put_contents($base . '/fc_home/algoritm_fc_home.php', <<<'PHP'
             <?php
             namespace example\www;

@@ -8,6 +8,7 @@ use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
 use Damoony\Files\Paths;
+use Damoony\Page\PagePath;
 
 final class PageReadCommand implements CommandInterface
 {
@@ -28,28 +29,52 @@ final class PageReadCommand implements CommandInterface
     public function run(array $args, Context $context): Result
     {
         $r = new Result();
+
         $domain = $args['domain'] ?? '';
         $allias = $args['allias'] ?? '';
         $name = $args['name'] ?? '';
-        $parent = trim((string)($args['parent'] ?? ''), '/');
+        $parent = trim((string) ($args['parent'] ?? ''), '/');
 
-        if ($domain === '' || $allias === '' || $name === '') {
-            $r->error('Укажите --domain, --allias и --name');
+        // 1. Валидация
+        if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain)) {
+            $r->error('Некорректный домен');
+            return $r;
+        }
+        if (!preg_match('/^[a-z][a-z0-9_]*$/', $allias)) {
+            $r->error('Некорректный алиас');
             return $r;
         }
 
-        $targetRelPath = $parent === '' ? $name : $parent . '/' . $name;
-        $classChain = 'algoritm_' . str_replace('/', '_', $targetRelPath);
-        $file = $this->paths->algoritm($domain, $allias) . '/' . $targetRelPath . '/' . $classChain . '.php';
-
-        if (!is_file($file)) {
-            $r->error('Страница не найдена');
+        // 2. __root__ — для главной страницы алиаса
+        if ($name === '__root__') {
+            if ($parent !== '') {
+                $r->error('--parent несовместим с __root__');
+                return $r;
+            }
+            $name = '';
+        } elseif ($name === '') {
+            $r->error('Укажите --name (или __root__ для главной страницы)');
+            return $r;
+        } elseif ($parent !== '' && !preg_match('#^[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*$#', $parent)) {
+            $r->error('Некорректный путь родительской страницы');
             return $r;
         }
 
-        // Возвращаем сам код через контекст
-        $code = file_get_contents($file);
-        $context->step($code !== false ? $code : 'Error reading file', true);
+        // 3. Резолвинг
+        $page = PagePath::resolve($this->paths, $domain, $allias, $name, $parent);
+
+        if (!is_file($page->phpFile)) {
+            $r->error('Страница не найдена: ' . $page->phpFile);
+            return $r;
+        }
+
+        $code = file_get_contents($page->phpFile);
+        if ($code === false) {
+            $r->error('Не удалось прочитать файл');
+            return $r;
+        }
+
+        $context->step($code, true, $name !== '' ? $name : '__root__');
 
         return $r;
     }

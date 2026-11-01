@@ -26,7 +26,9 @@ final class FileRouter implements RouterInterface
             return RouteMatch::notFound();
         }
 
-        $rootRules = $this->loadRules($base . '/.rules.json');
+        // Модель: класс N хранит свои правила в algoritm/algoritm.rules.json,
+        // класс N+M — в algoritm/<pathRel>/algoritm_<pathRel>.rules.json
+        $rootRules = $this->loadRules($base . '/algoritm.rules.json');
         if ($rootRules === null) {
             return RouteMatch::notFound();
         }
@@ -42,7 +44,7 @@ final class FileRouter implements RouterInterface
         foreach ($segments as $i => $segment) {
             $rules = $i === 0
                 ? $rootRules
-                : $this->loadRules($base . '/' . $pathRel . '/.rules.json');
+                : $this->loadRules($base . '/' . $pathRel . '/' . $classChain . '.rules.json');
 
             if ($rules === null) {
                 return RouteMatch::notFound();
@@ -58,15 +60,14 @@ final class FileRouter implements RouterInterface
             $classChain .= '_' . $target;
             $args = array_merge($args, $segArgs);
 
-            $candidateDir = $base . '/' . $pathRel;
-            $candidatePhp = $candidateDir . '/' . $classChain . '.php';
-            if (!is_dir($candidateDir) && !is_file($candidatePhp)) {
+            $candidatePhp = $base . '/' . $pathRel . '/' . $classChain . '.php';
+            if (!is_file($candidatePhp)) {
                 return RouteMatch::notFound();
             }
         }
 
-        // Читаем правила конечной папки (leaf rules)
-        $leafRules = $this->loadRules($base . '/' . $pathRel . '/.rules.json') ?? [];
+        // Листовые правила = правила последнего класса
+        $leafRules = $this->loadRules($base . '/' . $pathRel . '/' . $classChain . '.rules.json') ?? [];
         $auth = $this->matcher->requiresAuth($leafRules);
 
         return RouteMatch::found($classChain, $pathRel, $args, $auth);

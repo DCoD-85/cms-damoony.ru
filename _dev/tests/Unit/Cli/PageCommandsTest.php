@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Damoony\Tests\Unit\Cli;
 
 use Damoony\Cli\Commands\PageNewCommand;
+use Damoony\Cli\Commands\PageReadCommand;
 use Damoony\Cli\Commands\PageToggleCommand;
+use Damoony\Cli\Commands\PageWriteCommand;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
 use Damoony\Files\Paths;
@@ -25,9 +27,18 @@ final class PageCommandsTest extends TestCase
             'domains_namespace' => ['example.ru' => 'example'],
             'alliases_real' => ['example.ru' => ['www' => 'www']],
         ]));
+
+        // Root stub по новой модели
         $algoritm = $this->root . '/app/example.ru/www/algoritm';
         mkdir($algoritm, 0o777, true);
-        file_put_contents($algoritm . '/.rules.json', json_encode(['available' => ['']]));
+        file_put_contents(
+            $algoritm . '/algoritm.php',
+            "<?php\n\ndeclare(strict_types=1);\n\nnamespace example\\www;\n",
+        );
+        file_put_contents(
+            $algoritm . '/algoritm.rules.json',
+            json_encode(['available' => [], 'auth' => false, 'search' => true, 'default' => false]),
+        );
     }
 
     protected function tearDown(): void
@@ -63,7 +74,7 @@ final class PageCommandsTest extends TestCase
         $res = (new PageNewCommand(new Paths($this->root)))
             ->run(['domain' => 'example.ru', 'allias' => 'www', 'name' => 'about'], $this->ctx($r));
 
-        self::assertTrue($res->ok);
+        self::assertTrue($res->ok, implode('; ', $res->errors));
         $dir = $this->root . '/app/example.ru/www/algoritm/about';
         self::assertDirectoryExists($dir);
         self::assertFileExists($dir . '/algoritm_about.php');
@@ -72,9 +83,15 @@ final class PageCommandsTest extends TestCase
 
         $rules = json_decode((string) file_get_contents($dir . '/algoritm_about.rules.json'), true);
         self::assertIsArray($rules);
+        self::assertArrayHasKey('available', $rules);
+        self::assertArrayHasKey('auth', $rules);
 
-        $parent = json_decode((string) file_get_contents($this->root . '/app/example.ru/www/algoritm/.rules.json'), true);
-        self::assertContains('about', $parent['available']);
+        // Root available в algoritm/algoritm.rules.json
+        $root = json_decode(
+            (string) file_get_contents($this->root . '/app/example.ru/www/algoritm/algoritm.rules.json'),
+            true,
+        );
+        self::assertContains('about', $root['available']);
     }
 
     public function testS08RejectsDuplicate(): void
@@ -95,13 +112,23 @@ final class PageCommandsTest extends TestCase
     public function testS09ToggleAuth(): void
     {
         $paths = new Paths($this->root);
-        (new PageNewCommand($paths))->run(['domain' => 'example.ru', 'allias' => 'www', 'name' => 'about'], $this->ctx(new Result()));
+        (new PageNewCommand($paths))->run(
+            ['domain' => 'example.ru', 'allias' => 'www', 'name' => 'about'],
+            $this->ctx(new Result()),
+        );
 
+        // --name вместо --path
         $res = (new PageToggleCommand($paths))
-            ->run(['domain' => 'example.ru', 'allias' => 'www', 'path' => 'about', 'key' => 'auth', 'value' => '1'], $this->ctx(new Result()));
+            ->run(
+                ['domain' => 'example.ru', 'allias' => 'www', 'name' => 'about', 'key' => 'auth', 'value' => '1'],
+                $this->ctx(new Result()),
+            );
 
-        self::assertTrue($res->ok);
-        $rules = json_decode((string) file_get_contents($this->root . '/app/example.ru/www/algoritm/about/.rules.json'), true);
+        self::assertTrue($res->ok, implode('; ', $res->errors));
+        $rules = json_decode(
+            (string) file_get_contents($this->root . '/app/example.ru/www/algoritm/about/algoritm_about.rules.json'),
+            true,
+        );
         self::assertTrue($rules['auth']);
         self::assertTrue($rules['search']);
         self::assertFalse($rules['default']);
@@ -110,14 +137,100 @@ final class PageCommandsTest extends TestCase
     public function testS09RejectsBadKey(): void
     {
         $res = (new PageToggleCommand(new Paths($this->root)))
-            ->run(['domain' => 'example.ru', 'allias' => 'www', 'path' => '', 'key' => 'weird'], $this->ctx(new Result()));
+            ->run(
+                ['domain' => 'example.ru', 'allias' => 'www', 'name' => '__root__', 'key' => 'weird'],
+                $this->ctx(new Result()),
+            );
         self::assertFalse($res->ok);
     }
 
     public function testS09RejectsMissingPage(): void
     {
         $res = (new PageToggleCommand(new Paths($this->root)))
-            ->run(['domain' => 'example.ru', 'allias' => 'www', 'path' => 'ghost', 'key' => 'auth'], $this->ctx(new Result()));
+            ->run(
+                ['domain' => 'example.ru', 'allias' => 'www', 'name' => 'ghost', 'key' => 'auth'],
+                $this->ctx(new Result()),
+            );
         self::assertFalse($res->ok);
+    }
+
+    public function testWriteCompilesContent(): void
+    {
+        $paths = new Paths($this->root);
+        (new PageNewCommand($paths))->run(
+            ['domain' => 'example.ru', 'allias' => 'www', 'name' => 'about'],
+            $this->ctx(new Result()),
+        );
+
+        $res = (new PageWriteCommand($paths))->run(
+            [
+                'domain' => 'example.ru',
+                'allias' => 'www',
+                'name' => 'about',
+                'json' => '[{"type":"h1","content":"About"}]',
+            ],
+            $this->ctx(new Result()),
+        );
+
+        self::assertTrue($res->ok, implode('; ', $res->errors));
+        $php = (string) file_get_contents(
+            $this->root . '/app/example.ru/www/algoritm/about/algoritm_about.php',
+        );
+        self::assertStringContainsString('About', $php);
+    }
+
+    public function testWriteRejectsMissingPage(): void
+    {
+        $res = (new PageWriteCommand(new Paths($this->root)))->run(
+            [
+                'domain' => 'example.ru',
+                'allias' => 'www',
+                'name' => 'ghost',
+                'json' => '[]',
+            ],
+            $this->ctx(new Result()),
+        );
+        self::assertFalse($res->ok);
+    }
+
+    public function testReadReturnsCode(): void
+    {
+        $paths = new Paths($this->root);
+        (new PageNewCommand($paths))->run(
+            ['domain' => 'example.ru', 'allias' => 'www', 'name' => 'about'],
+            $this->ctx(new Result()),
+        );
+
+        $r = new Result();
+        $res = (new PageReadCommand($paths))->run(
+            ['domain' => 'example.ru', 'allias' => 'www', 'name' => 'about'],
+            $this->ctx($r),
+        );
+
+        self::assertTrue($res->ok, implode('; ', $res->errors));
+        self::assertNotEmpty($r->steps);
+        self::assertStringContainsString('algoritm_about', (string) ($r->steps[0]['message'] ?? ''));
+    }
+
+    public function testRootWriteViaUnderscoreUnderscoreRoot(): void
+    {
+        $paths = new Paths($this->root);
+
+        // __root__ указывает на algoritm/algoritm.php
+        $res = (new PageWriteCommand($paths))->run(
+            [
+                'domain' => 'example.ru',
+                'allias' => 'www',
+                'name' => '__root__',
+                'json' => '[{"type":"h1","content":"Home"}]',
+            ],
+            $this->ctx(new Result()),
+        );
+
+        self::assertTrue($res->ok, implode('; ', $res->errors));
+        $php = (string) file_get_contents(
+            $this->root . '/app/example.ru/www/algoritm/algoritm.php',
+        );
+        self::assertStringContainsString('Home', $php);
     }
 }

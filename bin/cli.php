@@ -21,8 +21,9 @@ use Damoony\Cli\Commands\BlockRemoveCommand;
 use Damoony\Cli\Commands\AlliasNewCommand;
 use Damoony\Cli\Commands\AlliasRemoveCommand;
 use Damoony\Cli\Commands\DomainNewCommand;
-use Damoony\Cli\Commands\DomainRemoveCommand; // <-- ДОБАВЛЕНО
+use Damoony\Cli\Commands\DomainRemoveCommand;
 use Damoony\Cli\Commands\StructureCheckCommand;
+use Damoony\Cli\Commands\MigratePageRulesCommand;
 use Damoony\Cli\Commands\StructureRepairCommand;
 use Damoony\Cli\Commands\TrashClearCommand;
 use Damoony\Cli\Commands\UserNewCommand;
@@ -57,7 +58,7 @@ $siteConfig = is_file($siteConfigFile) ? Config::fromFile($siteConfigFile) : Con
 $registry = new CommandRegistry();
 $registry->add(new HelpCommand($registry));
 $registry->add(new DomainNewCommand($paths));
-$registry->add(new DomainRemoveCommand($paths)); // <-- ЗАРЕГИСТРИРОВАНО
+$registry->add(new DomainRemoveCommand($paths));
 $registry->add(new AlliasNewCommand($paths));
 $registry->add(new AlliasRemoveCommand($paths));
 $registry->add(new BlockNewCommand($paths));
@@ -74,7 +75,8 @@ $registry->add(new VarsExtractCommand($paths));
 $registry->add(new AdminPasswdCommand($paths));
 $registry->add(new TrashClearCommand($paths));
 $registry->add(new StructureRepairCommand($paths));
-$registry->add(new StructureCheckCommand($paths, $siteConfig)); // Оставили только один, с siteConfig
+$registry->add(new StructureCheckCommand($paths, $siteConfig));
+$registry->add(new MigratePageRulesCommand($paths));
 
 $db = new Connection($dbConfig);
 $registry->add(new UserNewCommand($db));

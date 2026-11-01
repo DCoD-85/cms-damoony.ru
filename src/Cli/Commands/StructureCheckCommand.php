@@ -35,7 +35,8 @@ final class StructureCheckCommand implements CommandInterface
         $checker = new StructureChecker($this->paths, $this->site);
 
         $allaliases = $this->site->getByKey(['alliases_real'], []);
-        $totalIssues = 0;
+        $totalErrors = 0;
+        $totalWarnings = 0;
 
         if (is_array($allaliases)) {
             foreach ($allaliases as $domain => $aliases) {
@@ -48,22 +49,39 @@ final class StructureCheckCommand implements CommandInterface
                         continue;
                     }
 
-                    $issues = $checker->checkAllias((string)$domain, (string)$mapped);
-                    if ($issues !== []) {
-                        $totalIssues += count($issues);
-                        $context->step("Алиас: {$domain} / {$mapped}", false);
-                        foreach ($issues as $issue) {
-                            $context->step('  - ' . $issue['message'], false);
-                        }
-                    } else {
+                    $issues = $checker->checkAllias((string) $domain, (string) $mapped);
+
+                    if ($issues === []) {
                         $context->step("Алиас: {$domain} / {$mapped} — OK", true);
+                        continue;
+                    }
+
+                    $errors = array_filter($issues, static fn ($i) => $i['level'] === 'error');
+                    $warnings = array_filter($issues, static fn ($i) => $i['level'] !== 'error');
+
+                    $totalErrors += count($errors);
+                    $totalWarnings += count($warnings);
+
+                    $hasError = $errors !== [];
+                    $mark = $hasError ? '✗' : '⚠';
+                    $context->step("Алиас: {$domain} / {$mapped} {$mark}", !$hasError);
+
+                    foreach ($issues as $issue) {
+                        $issueMark = $issue['level'] === 'error' ? '✗' : '⚠';
+                        $context->step("  {$issueMark} {$issue['message']}", $issue['level'] !== 'error');
                     }
                 }
             }
         }
 
-        if ($totalIssues > 0) {
-            $r->error("Найдено проблем: {$totalIssues}");
+        if ($totalErrors > 0) {
+            $msg = "Найдено ошибок: {$totalErrors}";
+            if ($totalWarnings > 0) {
+                $msg .= ", предупреждений: {$totalWarnings}";
+            }
+            $r->error($msg);
+        } elseif ($totalWarnings > 0) {
+            $context->step("Все критичные проверки пройдены, предупреждений: {$totalWarnings}");
         } else {
             $context->step('Все проверки пройдены успешно!');
         }

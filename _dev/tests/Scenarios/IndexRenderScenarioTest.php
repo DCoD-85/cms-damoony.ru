@@ -26,7 +26,7 @@ final class IndexRenderScenarioTest extends TestCase
         $this->root = sys_get_temp_dir() . '/damoony_s11_' . bin2hex(random_bytes(4));
         $dir = $this->root . '/app/damoony.test/www/algoritm';
         mkdir($dir, 0o777, true);
-        file_put_contents($dir . '/.rules.json', json_encode(['available' => ['']]));
+        file_put_contents($dir . '/algoritm.rules.json', json_encode(['available' => ['']]));
         file_put_contents($dir . '/algoritm.php', <<<'PHP'
             <?php
             namespace damoony_test\www;

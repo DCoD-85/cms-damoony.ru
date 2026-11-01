@@ -20,15 +20,22 @@ final class PageNewCommandTest extends TestCase
         mkdir($this->root . '/config', 0o777, true);
         mkdir($this->root . '/app/example.ru/www/algoritm', 0o777, true);
 
-        // Базовый конфиг
         file_put_contents($this->root . '/config/site.config', json_encode([
             'domains_real' => ['example.ru' => 'example.ru'],
             'domains_namespace' => ['example.ru' => 'example_ru'],
             'alliases_real' => ['example.ru' => ['www' => 'www']],
         ]));
 
-        // Корневой .rules.json
-        file_put_contents($this->root . '/app/example.ru/www/algoritm/.rules.json', json_encode(['available' => ['']]));
+        // Root stub по новой модели (создаётся allias:new)
+        $algoritm = $this->root . '/app/example.ru/www/algoritm';
+        file_put_contents(
+            $algoritm . '/algoritm.php',
+            "<?php\n\ndeclare(strict_types=1);\n\nnamespace example_ru\\www;\n\nuse Damoony\\Algoritm\\Page;\n",
+        );
+        file_put_contents(
+            $algoritm . '/algoritm.rules.json',
+            json_encode(['available' => [], 'auth' => false, 'search' => true, 'default' => false]),
+        );
 
         $this->paths = new Paths($this->root);
     }
@@ -46,18 +53,25 @@ final class PageNewCommandTest extends TestCase
             new Context(static fn () => null),
         );
 
-        $this->assertTrue($res->ok);
+        self::assertTrue($res->ok, implode('; ', $res->errors));
 
         $dir = $this->root . '/app/example.ru/www/algoritm/about';
-        $this->assertDirectoryExists($dir);
-        $this->assertFileExists($dir . '/algoritm_about.php');
-        $this->assertFileExists($dir . '/algoritm_about.rules.json');
-        $this->assertFileExists($dir . '/algoritm_about.editor.json');
+        self::assertDirectoryExists($dir);
+        self::assertFileExists($dir . '/algoritm_about.php');
+        self::assertFileExists($dir . '/algoritm_about.rules.json');
+        self::assertFileExists($dir . '/algoritm_about.editor.json');
 
-        // Проверяем, что класс наследуется от Page
-        $php = file_get_contents($dir . '/algoritm_about.php');
-        $this->assertStringContainsString('extends Page', $php);
-        $this->assertStringContainsString('final class algoritm_about', $php);
+        $php = (string) file_get_contents($dir . '/algoritm_about.php');
+        self::assertStringContainsString('extends Page', $php);
+        self::assertStringContainsString('final class algoritm_about', $php);
+
+        // rules.json создаётся с полными дефолтами
+        $rules = json_decode((string) file_get_contents($dir . '/algoritm_about.rules.json'), true);
+        self::assertIsArray($rules);
+        self::assertArrayHasKey('available', $rules);
+        self::assertArrayHasKey('auth', $rules);
+        self::assertArrayHasKey('search', $rules);
+        self::assertArrayHasKey('default', $rules);
     }
 
     public function testUpdatesParentRules(): void
@@ -68,31 +82,33 @@ final class PageNewCommandTest extends TestCase
             new Context(static fn () => null),
         );
 
-        $rulesFile = $this->root . '/app/example.ru/www/algoritm/.rules.json';
+        // Новая модель: root rules — в algoritm/algoritm.rules.json
+        $rulesFile = $this->root . '/app/example.ru/www/algoritm/algoritm.rules.json';
         $rules = json_decode((string) file_get_contents($rulesFile), true);
 
-        $this->assertContains('about', $rules['available']);
+        self::assertContains('about', $rules['available']);
     }
 
     public function testNestedPage(): void
     {
         $cmd = new PageNewCommand($this->paths);
 
-        // Сначала создаём родителя
         $cmd->run(['domain' => 'example.ru', 'allias' => 'www', 'name' => 'docs'], new Context(static fn () => null));
 
-        // Затем вложенную
         $res = $cmd->run(
             ['domain' => 'example.ru', 'allias' => 'www', 'name' => 'install', 'parent' => 'docs'],
             new Context(static fn () => null),
         );
 
-        $this->assertTrue($res->ok);
-        $this->assertFileExists($this->root . '/app/example.ru/www/algoritm/docs/install/algoritm_docs_install.php');
+        self::assertTrue($res->ok, implode('; ', $res->errors));
+        self::assertFileExists($this->root . '/app/example.ru/www/algoritm/docs/install/algoritm_docs_install.php');
 
-        // Проверяем, что родитель docs узнал о ребёнке install
-        $docsRules = json_decode((string) file_get_contents($this->root . '/app/example.ru/www/algoritm/docs/.rules.json'), true);
-        $this->assertContains('install', $docsRules['available']);
+        // Родительские правила docs узнали о ребёнке — в algoritm_docs.rules.json
+        $docsRules = json_decode(
+            (string) file_get_contents($this->root . '/app/example.ru/www/algoritm/docs/algoritm_docs.rules.json'),
+            true,
+        );
+        self::assertContains('install', $docsRules['available']);
     }
 
     public function testRejectsDuplicate(): void
@@ -102,22 +118,34 @@ final class PageNewCommandTest extends TestCase
 
         $res = $cmd->run(['domain' => 'example.ru', 'allias' => 'www', 'name' => 'about'], new Context(static fn () => null));
 
-        $this->assertFalse($res->ok);
-        $this->assertStringContainsString('Страница уже существует', $res->errors[0]);
+        self::assertFalse($res->ok);
+        self::assertStringContainsString('Страница уже существует', $res->errors[0]);
     }
 
     public function testRejectsPathTraversal(): void
     {
         $cmd = new PageNewCommand($this->paths);
 
-        // Пытаемся создать страницу с именем, содержащим слеши и точки
         $res = $cmd->run(
             ['domain' => 'example.ru', 'allias' => 'www', 'name' => '../../etc/passwd'],
             new Context(static fn () => null),
         );
 
-        $this->assertFalse($res->ok);
-        $this->assertStringContainsString('Некорректное имя страницы', $res->errors[0]);
+        self::assertFalse($res->ok);
+        self::assertStringContainsString('Некорректное имя страницы', $res->errors[0]);
+    }
+
+    public function testRejectsMissingParent(): void
+    {
+        $cmd = new PageNewCommand($this->paths);
+
+        $res = $cmd->run(
+            ['domain' => 'example.ru', 'allias' => 'www', 'name' => 'about', 'parent' => 'ghost'],
+            new Context(static fn () => null),
+        );
+
+        self::assertFalse($res->ok);
+        self::assertStringContainsString('Родительская папка не найдена', $res->errors[0]);
     }
 
     private function rmrf(string $dir): void
@@ -130,8 +158,8 @@ final class PageNewCommandTest extends TestCase
                 continue;
             }
             $p = $dir . '/' . $i;
-            is_dir($p) ? $this->rmrf($p) : unlink($p);
+            is_dir($p) ? $this->rmrf($p) : @unlink($p);
         }
-        rmdir($dir);
+        @rmdir($dir);
     }
 }

@@ -1,0 +1,8 @@
+{
+    "available": [
+        "(.*)|doc"
+    ],
+    "auth": false,
+    "search": true,
+    "default": false
+}
