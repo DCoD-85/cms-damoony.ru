@@ -13,6 +13,8 @@ final class algoritm extends Page
 {
     public function default(): Node|Response|null
     {
-        return Builder::div('page')->content('Главная страница');
+        $content = Builder::div('page-content');
+
+        return $content;
     }
 }

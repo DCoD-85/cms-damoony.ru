@@ -31,7 +31,6 @@ if (is_file($agentConfigFile)) {
 
 // === Whitelist команд ===
 $allowedCommands = [
-    // app/ команды (shell_exec → cli.php)
     'read_test_file',
     'engine_status',
     'filler_toggle',
@@ -40,7 +39,6 @@ $allowedCommands = [
     'page:new',
     'page:write',
     'page:read',
-    // net/ команды (in-process → AinetFacade; image:download → cli.php media:store)
     'net:status',
     'image:search',
     'image:download',
@@ -56,7 +54,7 @@ if (!in_array($command, $allowedCommands, true)) {
     exit(1);
 }
 
-// === AINET (lazy, fail-safe: если конфиг битый — net-команды вернут ошибку) ===
+// === AINET (lazy, fail-safe) ===
 $ainet = null;
 $ainetError = null;
 if (in_array($command, ['net:status', 'image:search', 'image:download', 'fetch'], true)) {
@@ -70,6 +68,42 @@ if (in_array($command, ['net:status', 'image:search', 'image:download', 'fetch']
     }
 }
 
+/**
+ * Парсит вывод CLI (Result) в {ok, output, error, hint}.
+ * CLI печатает "OK" при успехе, "FAILED" + "Ошибки:" + "✗ " при ошибке.
+ */
+function parseCliResult(string $output): array
+{
+    $trimmed = trim($output);
+    $isError = str_contains($trimmed, 'FAILED')
+        || str_contains($trimmed, 'Ошибки:')
+        || str_contains($trimmed, '✗ ')
+        || $trimmed === '';
+
+    if ($isError) {
+        return [
+            'ok' => false,
+            'output' => $trimmed,
+            'error' => $trimmed,
+            'hint' => 'Read output; if "already exists" — skip and continue',
+        ];
+    }
+
+    return [
+        'ok' => true,
+        'output' => $trimmed,
+        'error' => '',
+        'hint' => '',
+    ];
+}
+
+/** Безопасный вызов CLI-команды через shell_exec. */
+function runCli(string $args): array
+{
+    $output = shell_exec('php ' . __DIR__ . '/cli.php ' . $args . ' 2>&1');
+    return parseCliResult((string) $output);
+}
+
 try {
     // === app/ команды (shell_exec → cli.php) ===
 
@@ -80,7 +114,8 @@ try {
         }
         $filePath = __DIR__ . '/../var/' . basename($filename);
         if (!is_file($filePath)) {
-            throw new \RuntimeException("File '{$filename}' not found.");
+            echo json_encode(['ok' => false, 'error' => "File '{$filename}' not found."]);
+            exit(1);
         }
         echo json_encode(['ok' => true, 'data' => ['content' => file_get_contents($filePath)]]);
     } elseif ($command === 'engine_status') {
@@ -97,10 +132,7 @@ try {
             echo json_encode([
                 'ok' => false,
                 'error' => 'Structure check failed',
-                'data' => [
-                    'errors_count' => $errorCount,
-                    'raw_output' => $text,
-                ],
+                'data' => ['errors_count' => $errorCount, 'raw_output' => $text],
             ]);
         }
     } elseif ($command === 'filler_toggle') {
@@ -116,16 +148,16 @@ try {
             throw new \RuntimeException('Invalid arguments for filler_toggle.');
         }
 
-        $output = shell_exec('php ' . __DIR__ . "/cli.php filler:toggle --domain={$domain} --allias={$allias} --block={$block} --value={$value} 2>&1");
-        echo json_encode(['ok' => true, 'data' => ['output' => trim((string) $output)]]);
+        $r = runCli("filler:toggle --domain={$domain} --allias={$allias} --block={$block} --value={$value}");
+        echo json_encode($r, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     } elseif ($command === 'domain:new') {
         $domain = (string) ($args['domain'] ?? '');
         if (!in_array($domain, $allowedDomains, true)) {
             throw new \RuntimeException("Security violation: Domain '{$domain}' is not in the allowed list.");
         }
         $safeDomain = escapeshellarg($domain);
-        $output = shell_exec('php ' . __DIR__ . "/cli.php domain:new --domain={$safeDomain} 2>&1");
-        echo json_encode(['ok' => true, 'data' => ['output' => trim((string) $output)]]);
+        $r = runCli("domain:new --domain={$safeDomain}");
+        echo json_encode($r, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     } elseif ($command === 'allias:new') {
         $domain = (string) ($args['domain'] ?? '');
         $name = (string) ($args['name'] ?? '');
@@ -139,8 +171,8 @@ try {
 
         $safeName = escapeshellarg($name);
         $safeDomain = escapeshellarg($domain);
-        $output = shell_exec('php ' . __DIR__ . "/cli.php allias:new --domain={$safeDomain} --name={$safeName} 2>&1");
-        echo json_encode(['ok' => true, 'data' => ['output' => trim((string) $output)]]);
+        $r = runCli("allias:new --domain={$safeDomain} --name={$safeName}");
+        echo json_encode($r, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     } elseif ($command === 'page:new') {
         $domain = (string) ($args['domain'] ?? '');
         $allias = (string) ($args['allias'] ?? '');
@@ -156,9 +188,8 @@ try {
         $safeDomain = escapeshellarg($domain);
         $safeAllias = escapeshellarg($allias);
         $safeName = escapeshellarg($name);
-
-        $output = shell_exec('php ' . __DIR__ . "/cli.php page:new --domain={$safeDomain} --allias={$safeAllias} --name={$safeName} 2>&1");
-        echo json_encode(['ok' => true, 'data' => ['output' => trim((string) $output)]]);
+        $r = runCli("page:new --domain={$safeDomain} --allias={$safeAllias} --name={$safeName}");
+        echo json_encode($r, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     } elseif ($command === 'page:write') {
         $domain = (string) ($args['domain'] ?? '');
         $allias = (string) ($args['allias'] ?? '');
@@ -189,8 +220,8 @@ try {
         $safeJson = escapeshellarg($encoded);
         $safeSchema = escapeshellarg($withSchema);
 
-        $output = shell_exec('php ' . __DIR__ . "/cli.php page:write --domain={$safeDomain} --allias={$safeAllias} --name={$safeName} --json_b64={$safeJson} --with_schema={$safeSchema} 2>&1");
-        echo json_encode(['ok' => true, 'data' => ['output' => trim((string) $output)]]);
+        $r = runCli("page:write --domain={$safeDomain} --allias={$safeAllias} --name={$safeName} --json_b64={$safeJson} --with_schema={$safeSchema}");
+        echo json_encode($r, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     } elseif ($command === 'page:read') {
         $domain = (string) ($args['domain'] ?? '');
         $allias = (string) ($args['allias'] ?? '');
@@ -204,8 +235,8 @@ try {
         $safeAllias = escapeshellarg($allias);
         $safeName = escapeshellarg($name);
 
-        $output = shell_exec('php ' . __DIR__ . "/cli.php page:read --domain={$safeDomain} --allias={$safeAllias} --name={$safeName} 2>&1");
-        echo json_encode(['ok' => true, 'data' => ['output' => trim((string) $output)]]);
+        $r = runCli("page:read --domain={$safeDomain} --allias={$safeAllias} --name={$safeName}");
+        echo json_encode($r, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
     // === net/ команды (AinetFacade in-process; image:download → cli.php media:store) ===
@@ -272,7 +303,7 @@ try {
         $mime = (string) $data['mime'];
         $ext = (string) $data['ext'];
 
-        // 2. Записать на диск через cli.php media:store (единственный источник истины для FS)
+        // 2. Записать на диск через cli.php media:store
         $dataB64 = base64_encode($bytes);
         $safeDomain = escapeshellarg($domain);
         $safeAllias = escapeshellarg($allias);
@@ -282,7 +313,7 @@ try {
         $safeAlt = escapeshellarg($alt);
         $safeSourceUrl = escapeshellarg($url);
 
-        $cmd = 'php ' . __DIR__ . '/cli.php media:store'
+        $cmd = 'php ' . __DIR__ . "/cli.php media:store"
             . " --domain={$safeDomain}"
             . " --allias={$safeAllias}"
             . " --category={$safeCategory}"
@@ -294,14 +325,13 @@ try {
 
         $output = shell_exec($cmd);
         $outputStr = trim((string) $output);
+        $storeResult = parseCliResult($outputStr);
 
-        // Определяем успех по строке "OK" в выводе CLI (Result)
-        $storeOk = str_contains($outputStr, 'OK');
-        if (!$storeOk) {
+        if (!$storeResult['ok']) {
             echo json_encode([
                 'ok' => false,
                 'error' => 'media:store failed',
-                'hint' => 'Check CLI output',
+                'hint' => $storeResult['hint'],
                 'context' => ['cli_output' => $outputStr],
             ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             exit(1);
@@ -327,6 +357,6 @@ try {
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 } catch (\Throwable $e) {
-    echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
+    echo json_encode(['ok' => false, 'error' => $e->getMessage(), 'hint' => 'Unexpected error']);
     exit(1);
 }
