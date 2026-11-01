@@ -39,6 +39,7 @@ final class Fs
         if ($raw === false) {
             throw new RuntimeException('Cannot read file: ' . $path);
         }
+
         return $raw;
     }
 
@@ -74,6 +75,49 @@ final class Fs
     public static function rel(string $path, string $base): string
     {
         $base = rtrim($base, '/') . '/';
+
         return str_starts_with($path, $base) ? substr($path, strlen($base)) : $path;
+    }
+
+    /**
+     * Рекурсивное удаление файла или директории.
+     *
+     * Windows-safe: clearstatcache() перед каждой проверкой (иначе is_file/is_dir
+     * могут возвращать закешированное значение после rename/unlink).
+     * Symlink-safe: unlink, не следуем за ссылкой.
+     *
+     * Возвращает true, если путь больше не существует после операции.
+     */
+    public static function rmrf(string $path): bool
+    {
+        clearstatcache(true, $path);
+
+        if (is_link($path)) {
+            @unlink($path);
+
+            return !file_exists($path);
+        }
+
+        if (is_file($path)) {
+            @unlink($path);
+
+            return !file_exists($path);
+        }
+
+        if (!is_dir($path)) {
+            return true; // уже нет
+        }
+
+        foreach (scandir($path) ?: [] as $entry) {
+            if ($entry === '.' || $entry === '..') {
+                continue;
+            }
+            self::rmrf($path . '/' . $entry);
+        }
+
+        @rmdir($path);
+        clearstatcache(true, $path);
+
+        return !file_exists($path);
     }
 }

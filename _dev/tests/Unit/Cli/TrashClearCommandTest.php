@@ -123,6 +123,49 @@ final class TrashClearCommandTest extends TestCase
         self::assertFalse(is_dir($trash), 'block:remove карантин должен удаляться');
     }
 
+    public function testCollectsMediaTrash(): void
+    {
+        // www/media/.trash/<domain>_<allias>_<category>_<hash>_trash_<ts>/
+        mkdir($this->root . '/www/media/.trash', 0o775, true);
+        $trash = $this->root . '/www/media/.trash/example.ru_www_coffee_abc123def4567890_trash_' . (time() - 3600);
+        mkdir($trash, 0o775, true);
+        file_put_contents($trash . '/abc123def4567890.png', 'bytes');
+
+        $cmd = new TrashClearCommand(new Paths($this->root));
+        $cmd->run(['force' => true], $this->ctx());
+
+        self::assertFalse(is_dir($trash), 'media:remove карантин должен удаляться');
+    }
+
+    public function testMediaTrashDomainFilter(): void
+    {
+        mkdir($this->root . '/www/media/.trash', 0o775, true);
+        $a = $this->root . '/www/media/.trash/example.ru_www_coffee_abc123def4567890_trash_' . (time() - 3600);
+        $b = $this->root . '/www/media/.trash/other.ru_www_tea_def456abc1237890_trash_' . (time() - 3600);
+        mkdir($a, 0o775, true);
+        mkdir($b, 0o775, true);
+
+        $cmd = new TrashClearCommand(new Paths($this->root));
+        $cmd->run(['force' => true, 'domain' => 'example.ru'], $this->ctx());
+
+        self::assertFalse(is_dir($a), 'example.ru — удалён');
+        self::assertTrue(is_dir($b), 'other.ru — сохранён (не матчит фильтр)');
+    }
+
+    public function testMediaTrashWithoutAppDir(): void
+    {
+        // app/ отсутствует, но www/media/.trash/ есть — не падаем
+        $this->rmrf($this->root . '/app');
+        mkdir($this->root . '/www/media/.trash', 0o775, true);
+        $trash = $this->root . '/www/media/.trash/example.ru_www_coffee_abc123def4567890_trash_' . (time() - 3600);
+        mkdir($trash, 0o775, true);
+
+        $cmd = new TrashClearCommand(new Paths($this->root));
+        $cmd->run(['force' => true], $this->ctx());
+
+        self::assertFalse(is_dir($trash), 'media-карантин работает без app/');
+    }
+
     private function ctx(): Context
     {
         return new Context(static function (string $m, bool $ok, string $d): void {

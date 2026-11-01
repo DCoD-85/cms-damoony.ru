@@ -13,11 +13,12 @@ use Damoony\Files\Paths;
 final class TrashClearCommand implements CommandInterface
 {
     /**
-     * Карантин может быть на трёх уровнях:
-     *   app/<domain>_trash_<ts>/                       — domain:remove
-     *   app/<domain>/<allias>_trash_<ts>/              — allias:remove
-     *   app/<domain>/.alliasscheme/<name>_trash_<ts>/  — scheme:remove
-     *   app/<domain>/.alliasglobal/<name>_trash_<ts>/  — block:remove (после фикса)
+     * Карантин на 5 уровнях:
+     *   1. app/<domain>_trash_<ts>/                                         — domain:remove
+     *   2. app/<domain>/<allias>_trash_<ts>/                                — allias:remove
+     *   3. app/<domain>/.alliasscheme/<name>_trash_<ts>/                    — scheme:remove
+     *   4. app/<domain>/.alliasglobal/<name>_trash_<ts>/                    — block:remove
+     *   5. www/media/.trash/<domain>_<allias>_<category>_<hash>_trash_<ts>/ — media:remove
      */
     private const TRASH_RE = '/^[a-z0-9][a-z0-9._-]*_trash_(\d+)$/';
 
@@ -63,71 +64,98 @@ final class TrashClearCommand implements CommandInterface
         }
 
         $appDir = $this->paths->appRoot();
-        if (!Fs::isDir($appDir)) {
-            $r->error('Папка app/ не найдена');
+        $mediaTrashRoot = $this->paths->mediaRoot() . '/.trash';
+        $appExists = Fs::isDir($appDir);
+        $mediaTrashExists = is_dir($mediaTrashRoot);
+
+        if (!$appExists && !$mediaTrashExists) {
+            $context->step('Карантин пуст');
             return $r;
         }
 
         $now = time();
         $trash = [];  // list<array{path: string, age: int}>
 
-        $domains = scandir($appDir) ?: [];
-        foreach ($domains as $d) {
-            if ($d === '.' || $d === '..') {
-                continue;
-            }
-            $domDir = $appDir . '/' . $d;
-            if (!is_dir($domDir)) {
-                continue;
-            }
-
-            // 1. Карантин домена: app/<domain>_trash_<ts>/
-            if (preg_match(self::TRASH_RE, $d, $m)) {
-                if ($domainFilter === '' || $this->matchesDomain($d, $domainFilter)) {
-                    $this->collect($domDir, (int) $m[1], $now, $olderSeconds, $trash);
+        // 1–4. app/ карантины
+        if ($appExists) {
+            $domains = scandir($appDir) ?: [];
+            foreach ($domains as $d) {
+                if ($d === '.' || $d === '..') {
+                    continue;
                 }
-                continue;  // внутрь карантина не лезем
-            }
+                $domDir = $appDir . '/' . $d;
+                if (!is_dir($domDir)) {
+                    continue;
+                }
 
-            if ($domainFilter !== '' && $d !== $domainFilter) {
-                continue;
-            }
+                // 1. app/<domain>_trash_<ts>/
+                if (preg_match(self::TRASH_RE, $d, $m)) {
+                    if ($domainFilter === '' || $this->matchesDomain($d, $domainFilter)) {
+                        $this->collect($domDir, (int) $m[1], $now, $olderSeconds, $trash);
+                    }
+                    continue;
+                }
 
-            // 2. Карантин алиаса: app/<domain>/<allias>_trash_<ts>/
-            $entries = scandir($domDir) ?: [];
+                if ($domainFilter !== '' && $d !== $domainFilter) {
+                    continue;
+                }
+
+                // 2. app/<domain>/<allias>_trash_<ts>/
+                $entries = scandir($domDir) ?: [];
+                foreach ($entries as $e) {
+                    if ($e === '.' || $e === '..') {
+                        continue;
+                    }
+                    $path = $domDir . '/' . $e;
+                    if (!is_dir($path)) {
+                        continue;
+                    }
+                    if (preg_match(self::TRASH_RE, $e, $m)) {
+                        $this->collect($path, (int) $m[1], $now, $olderSeconds, $trash);
+                    }
+                }
+
+                // 3–4. .alliasscheme / .alliasglobal
+                foreach (['.alliasscheme', '.alliasglobal'] as $infra) {
+                    $infraDir = $domDir . '/' . $infra;
+                    if (!is_dir($infraDir)) {
+                        continue;
+                    }
+                    $infraEntries = scandir($infraDir) ?: [];
+                    foreach ($infraEntries as $ie) {
+                        if ($ie === '.' || $ie === '..') {
+                            continue;
+                        }
+                        $ipath = $infraDir . '/' . $ie;
+                        if (!is_dir($ipath)) {
+                            continue;
+                        }
+                        if (preg_match(self::TRASH_RE, $ie, $m)) {
+                            $this->collect($ipath, (int) $m[1], $now, $olderSeconds, $trash);
+                        }
+                    }
+                }
+            }
+        }
+
+        // 5. www/media/.trash/<domain>_<allias>_<category>_<hash>_trash_<ts>/
+        if ($mediaTrashExists) {
+            $entries = scandir($mediaTrashRoot) ?: [];
             foreach ($entries as $e) {
                 if ($e === '.' || $e === '..') {
                     continue;
                 }
-                $path = $domDir . '/' . $e;
+                $path = $mediaTrashRoot . '/' . $e;
                 if (!is_dir($path)) {
                     continue;
                 }
-                if (preg_match(self::TRASH_RE, $e, $m)) {
-                    $this->collect($path, (int) $m[1], $now, $olderSeconds, $trash);
-                }
-            }
-
-            // 3. Карантин схем: app/<domain>/.alliasscheme/<name>_trash_<ts>/
-            // 4. Карантин блоков: app/<domain>/.alliasglobal/<name>_trash_<ts>/
-            foreach (['.alliasscheme', '.alliasglobal'] as $infra) {
-                $infraDir = $domDir . '/' . $infra;
-                if (!is_dir($infraDir)) {
+                if (!preg_match(self::TRASH_RE, $e, $m)) {
                     continue;
                 }
-                $infraEntries = scandir($infraDir) ?: [];
-                foreach ($infraEntries as $ie) {
-                    if ($ie === '.' || $ie === '..') {
-                        continue;
-                    }
-                    $ipath = $infraDir . '/' . $ie;
-                    if (!is_dir($ipath)) {
-                        continue;
-                    }
-                    if (preg_match(self::TRASH_RE, $ie, $m)) {
-                        $this->collect($ipath, (int) $m[1], $now, $olderSeconds, $trash);
-                    }
+                if ($domainFilter !== '' && !str_starts_with($e, $domainFilter . '_')) {
+                    continue;
                 }
+                $this->collect($path, (int) $m[1], $now, $olderSeconds, $trash);
             }
         }
 
@@ -145,7 +173,7 @@ final class TrashClearCommand implements CommandInterface
                 $context->step(sprintf('[dry] %s (age: %s)', $rel, $ageStr));
                 continue;
             }
-            $this->rmrf($t['path']);
+            Fs::rmrf($t['path']);
             $r->file($rel);
             $context->step(sprintf('Удалено: %s (age: %s)', $rel, $ageStr), true);
         }
@@ -187,24 +215,5 @@ final class TrashClearCommand implements CommandInterface
         }
 
         return sprintf('%dm', $m);
-    }
-
-    private function rmrf(string $dir): void
-    {
-        if (is_link($dir)) {
-            @unlink($dir);
-
-            return;
-        }
-        if (!is_dir($dir)) {
-            return;
-        }
-        foreach (scandir($dir) ?: [] as $i) {
-            if ($i === '.' || $i === '..') {
-                continue;
-            }
-            $this->rmrf($dir . '/' . $i);
-        }
-        @rmdir($dir);
     }
 }
