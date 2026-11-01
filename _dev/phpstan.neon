@@ -2,6 +2,8 @@ parameters:
     level: 8
     paths:
         - ../src
+        - ../bin
+        - ../www
     tmpDir: ../var/phpstan
     checkMissingIterableValueType: true
     checkGenericClassInNonGenericObjectType: true

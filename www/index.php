@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 $start = microtime(true); // Запуск таймера
@@ -7,13 +8,13 @@ use Damoony\App\AppFactory;
 use Damoony\App\FrontController;
 use Damoony\App\PageHandlerInterface;
 use Damoony\Http\Kernel;
+use Damoony\Http\Middleware\LanguageCookieMiddleware;
 use Damoony\Http\Middleware\RateLimitMiddleware;
 use Damoony\Http\Middleware\SecurityHeadersMiddleware;
+use Damoony\Http\Middleware\SkinCookieMiddleware;
 use Damoony\Http\MiddlewareStack;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
-use Damoony\Http\Middleware\SkinCookieMiddleware;
-use Damoony\Http\Middleware\LanguageCookieMiddleware;
 use Damoony\Session\SessionInterface;
 
 require_once __DIR__ . '/../vendor/autoload.php';
@@ -90,16 +91,16 @@ $contentType = (string) ($response->headers['content-type'] ?? '');
 if (str_contains($contentType, 'text/html') && ($app->env()->isDev() || isset($_GET['debug']))) {
     $badge = sprintf(
         '<div style="position:fixed; bottom:12px; right:12px; background:rgba(29,29,31,0.85); color:#fff; padding:6px 12px; border-radius:6px; font-family:monospace; font-size:12px; z-index:99999; box-shadow:0 2px 10px rgba(0,0,0,0.2); pointer-events:none; backdrop-filter: blur(4px);">⚡ %s ms</div>',
-        $time
+        $time,
     );
-    
+
     // Вставляем перед </body>, или просто в конец, если </body> нет
     $body = str_replace('</body>', $badge . '</body>', $response->body);
-    
+
     $response = new Response(
         $body,
         $response->status,
-        $response->headers
+        $response->headers,
     );
 }
 

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 $finder = PhpCsFixer\Finder::create()
     ->in(__DIR__ . '/../src')
+    ->in(__DIR__ . '/../bin')
+    ->in(__DIR__ . '/../www')
     ->in(__DIR__ . '/tests')
     ->exclude('var')
     ->exclude('vendor');
@@ -28,6 +30,5 @@ return (new PhpCsFixer\Config())
         'yoda_style' => false,
         'final_class' => false,
         'final_public_method_for_abstract_class' => true,
-        // 'native_function_invocation' удалён: в namespace-коде даёт шумный `\` перед каждой функцией, выигрыш нулевой
     ])
     ->setFinder($finder);

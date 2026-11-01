@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use Damoony\Admin\AdminRouter;
@@ -12,6 +13,8 @@ use Damoony\Admin\Controller\DomainController;
 use Damoony\Admin\Controller\EditorController;
 use Damoony\Admin\Controller\LoginController;
 use Damoony\Admin\Controller\LogoutController;
+use Damoony\Admin\Controller\OverviewController;
+use Damoony\Admin\Controller\ProfileController;
 use Damoony\Admin\Controller\SecurityController;
 use Damoony\Admin\Controller\StubController;
 use Damoony\Admin\View;
@@ -27,8 +30,6 @@ use Damoony\Http\MiddlewareStack;
 use Damoony\Http\Request;
 use Damoony\Security\Csrf;
 use Damoony\Session\NativeSession;
-use Damoony\Admin\Controller\ProfileController;
-use Damoony\Admin\Controller\OverviewController;
 
 $root = dirname(__DIR__, 2);
 if (is_file($root . '/_dev/.dev')) {
@@ -67,7 +68,7 @@ try {
 
     $view = new View('Damoony Admin');
     \Damoony\Admin\View::setLoggedIn($auth->isLoggedIn());
-    
+
     $adminLangs = $adminConfig->get('domains_langs', ['ru']);
     if (!is_array($adminLangs) || $adminLangs === []) {
         $adminLangs = ['ru'];
@@ -125,8 +126,9 @@ try {
     $router->register('settings', new \Damoony\Admin\Controller\SettingsController($auth, $csrf, $view, $siteConfig, $root));
     $router->register('editor', new EditorController($auth, $csrf, $view, $root));
 
-    $router->register('domain_db', new class($auth, $csrf, $view) extends BaseController {
-        public function index(\Damoony\Http\Request $request): \Damoony\Http\Response {
+    $router->register('domain_db', new class ($auth, $csrf, $view) extends BaseController {
+        public function index(\Damoony\Http\Request $request): \Damoony\Http\Response
+        {
             $domain = (string) $request->query('domain', '');
             $card = \Damoony\Ui\Builder::div('admin-card');
             $card->append(\Damoony\Ui\Builder::h(1)->content('База данных домена: ' . $domain));
@@ -137,7 +139,7 @@ try {
     });
 
     $router->register('allias_scheme', new AliasSchemeController($auth, $csrf, $view, $paths, $siteConfig));
-	$router->register('allias_db', new AliasDbController($auth, $csrf, $view, $engineConfig, $db));
+    $router->register('allias_db', new AliasDbController($auth, $csrf, $view, $engineConfig, $db));
     $router->register('stub', new StubController($auth, $csrf, $view, $paths));
     $router->register('security', new SecurityController($auth, $csrf, $view, $paths, $engineConfig));
 
@@ -145,10 +147,10 @@ try {
     $router->register('profile_clearLogs', new ProfileController($auth, $csrf, $view, $adminConfig, $root));
     $router->register('profile_archiveLogs', new ProfileController($auth, $csrf, $view, $adminConfig, $root));
 
-	$router->register('page_save', new \Damoony\Admin\Controller\PageController($auth, $csrf, $view, $paths));
-	$router->register('overview', new OverviewController($auth, $csrf, $view, $paths, $siteConfig));
+    $router->register('page_save', new \Damoony\Admin\Controller\PageController($auth, $csrf, $view, $paths));
+    $router->register('overview', new OverviewController($auth, $csrf, $view, $paths, $siteConfig));
 
-	
+
     $loopback = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
     $rlWhitelist = $env->isDev() ? $loopback : [];
 
@@ -167,7 +169,7 @@ try {
 
     $handler = static fn (Request $r) => $stack->dispatch(
         $r,
-        static fn (Request $r2) => $router->dispatch($r2)
+        static fn (Request $r2) => $router->dispatch($r2),
     );
 
     $kernel = new Kernel($handler, $logger, $env);
@@ -185,9 +187,9 @@ try {
     http_response_code(500);
     echo "<!DOCTYPE html><html><head><title>Ошибка конфигурации</title></head><body style='font-family:sans-serif; padding:50px;'>";
     echo "<h1 style='color:red;'>Критическая ошибка</h1>";
-    echo "<p>Админка не может загрузиться из-за ошибки в конфигурации или коде.</p>";
-    echo "<pre style='background:#f4f4f4; padding:15px; border:1px solid #ccc; border-radius:4px;'>" . htmlspecialchars($e->getMessage()) . "</pre>";
+    echo '<p>Админка не может загрузиться из-за ошибки в конфигурации или коде.</p>';
+    echo "<pre style='background:#f4f4f4; padding:15px; border:1px solid #ccc; border-radius:4px;'>" . htmlspecialchars($e->getMessage()) . '</pre>';
     echo "<p><a href='/admin/'>Попробовать снова</a></p>";
-    echo "</body></html>";
+    echo '</body></html>';
     exit;
 }
