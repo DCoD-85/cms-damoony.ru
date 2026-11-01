@@ -190,13 +190,11 @@ def parse_tool_calls(message: dict[str, Any]) -> list[ToolCall]:
     stripped = stripped.strip()
 
     candidates: list[Any] = []
-    # 2a. Прямой json.loads
     try:
         candidates.append(json.loads(stripped))
     except json.JSONDecodeError:
         pass
 
-    # 2b. raw_decode: ищем первый валидный JSON-объект/массив внутри текста
     try:
         decoder = json.JSONDecoder()
         for i, ch in enumerate(stripped):
@@ -270,10 +268,10 @@ RULES:
 9. Domain must be in config/agent.config allowed_domains.
 10. Keep each JSON array <= 5 actions (batch limit). For longer plans, do it in multiple steps.
 11. Do NOT repeat commands. Each (command, args) pair appears EXACTLY ONCE per step.
-12. COMPLETENESS: Do NOT stop until EVERY page has content. After page:new you MUST call page:write.
-13. If brief mentions images — you MUST call image:search, then image:download, then use local_url in page:write for EACH page.
-14. If you only created the skeleton (domain/allias/pages) — you are NOT done. Continue with page:write.
-15. Look at previous tool results: if page:write was not called for a page — call it now.
+12. CRITICAL: Call page:write for each page EXACTLY ONCE per run. If a page is already written — do NOT write it again. Look at tool results from previous steps.
+13. When all pages are written — respond with text 'DONE' and nothing else.
+14. Do NOT stop until EVERY page has content. After page:new you MUST call page:write.
+15. If brief mentions images — you MUST call image:search, then image:download, then use local_url in page:write for EACH page.
 """
 
 
@@ -298,8 +296,8 @@ REQUIRED CHECKLIST (do NOT stop until all done):
 Rules:
 - Max 5 actions per step. If checklist not complete -> continue in next step.
 - After creating pages (step 1), you MUST proceed to images and page:write (step 2+).
-- Do NOT output empty response until ALL pages have page:write.
-- Look at tool results from previous steps: what is done, what is missing.
+- Do NOT call page:write twice for the same page.
+- When ALL pages have page:write — respond with text 'DONE' and stop.
 
 Start now with step 1 (skeleton), then continue to step 2 (content)."""
 
@@ -339,7 +337,7 @@ def build_tools() -> list[dict[str, Any]]:
             "description": "Create a page (empty). Root page is auto-created by allias:new.",
             "parameters": {"type": "object", "properties": {"domain": str_prop, "allias": str_prop, "name": str_prop}, "required": ["domain", "allias", "name"]}}},
         {"type": "function", "function": {"name": "page:write",
-            "description": "Write JSON blocks to page. Use name='' for root. For img use local_url from image:download.",
+            "description": "Write JSON blocks to page (ONCE per page). Use name='' for root. For img use local_url from image:download.",
             "parameters": {"type": "object", "properties": {
                 "domain": str_prop, "allias": str_prop, "name": str_prop,
                 "blocks": {"type": "array", "items": {"type": "object", "properties": {
@@ -394,7 +392,12 @@ def run_agent(brief: str, model: str = DEFAULT_MODEL, max_steps: int = DEFAULT_M
     tools = build_tools()
 
     print(f"\n=== Agent started (model: {model}, max_steps: {max_steps}, batch: {batch_size}) ===\n")
-    stats = {"steps": 0, "commands": 0, "errors": 0, "rollbacks": 0, "batches": 0, "wrote_pages": 0}
+    stats = {"steps": 0, "commands": 0, "errors": 0, "rollbacks": 0, "batches": 0,
+             "wrote_pages": 0, "skipped_duplicates": 0}
+
+    # Трекинг по страницам (domain, allias, name) за весь прогон
+    created_pages: set[tuple[str, str, str]] = set()
+    written_pages: set[tuple[str, str, str]] = set()
 
     for step in range(1, max_steps + 1):
         stats["steps"] = step
@@ -433,12 +436,12 @@ def run_agent(brief: str, model: str = DEFAULT_MODEL, max_steps: int = DEFAULT_M
                     continue
                 final = "(agent finished with no text response — all actions done)"
 
-            # Проверка: были ли выполнены page:write за этот прогон?
-            wrote_pages = stats.get("wrote_pages", 0)
             is_done = final.strip().upper().startswith("DONE") or "done" in final.lower()
+            wrote_pages = stats.get("wrote_pages", 0)
 
             print(f"\n=== Final answer from agent ===\n{final}\n")
 
+            # Успех: либо DONE, либо хотя бы одна страница записана
             if not is_done and wrote_pages == 0:
                 return {
                     "ok": False,
@@ -470,15 +473,30 @@ def run_agent(brief: str, model: str = DEFAULT_MODEL, max_steps: int = DEFAULT_M
                     print("  [dry-run] skipped")
                     continue
 
+                # Дедупликация page:write: одна страница — одна запись за прогон
+                if call.name == "page:write":
+                    key = _page_key(call.args)
+                    if key in written_pages:
+                        stats["skipped_duplicates"] += 1
+                        print(f"  [skip] page '{key[2]}' already written in this run")
+                        messages.append({
+                            "role": "tool",
+                            "content": json.dumps(
+                                {"ok": True, "note": f"page '{key[2]}' already written, skipped"},
+                                ensure_ascii=False,
+                            ),
+                        })
+                        continue
+
                 result = client.call_aicli(call.name, call.args)
                 print(f"  [aicli] ok={result.ok}  {_short(result.data or result.error)}")
 
-                if result.ok and call.name == "page:write":
-                    stats["wrote_pages"] += 1
-
                 if not result.ok:
                     if is_already_exists_error(result.error):
-                        print(f"  [skip] already exists: {result.error}")
+                        # Для page:new "уже существует" — это норма, добавляем в created_pages
+                        if call.name == "page:new":
+                            created_pages.add(_page_key(call.args))
+                        print(f"  [skip] already exists")
                         messages.append({
                             "role": "tool",
                             "content": json.dumps({"ok": True, "note": "already exists, skipped"}, ensure_ascii=False),
@@ -501,6 +519,14 @@ def run_agent(brief: str, model: str = DEFAULT_MODEL, max_steps: int = DEFAULT_M
                         "stats": stats,
                     }
 
+                # Успешные операции — трекинг
+                if result.ok:
+                    if call.name == "page:new":
+                        created_pages.add(_page_key(call.args))
+                    elif call.name == "page:write":
+                        stats["wrote_pages"] += 1
+                        written_pages.add(_page_key(call.args))
+
                 _record_undo(tx, call, result)
                 messages.append({
                     "role": "tool",
@@ -514,8 +540,35 @@ def run_agent(brief: str, model: str = DEFAULT_MODEL, max_steps: int = DEFAULT_M
         tx.commit()
         print(f"  [OK] Step {step} complete (committed)\n")
 
+        # Auto-DONE: все созданные/записанные страницы покрыты → работа завершена
+        if written_pages and (not created_pages or created_pages.issubset(written_pages)):
+            missing = created_pages - written_pages
+            if not missing:
+                print(f"\n=== Auto-DONE: all pages written ({len(written_pages)}) ===\n")
+                return {
+                    "ok": True,
+                    "final": f"DONE (auto: {len(written_pages)} pages written)",
+                    "stats": stats,
+                }
+
     print(f"\n[!] Max steps ({max_steps}) reached without final answer.")
-    return {"ok": False, "error": "max_steps reached", "stats": stats}
+    # Если хотя бы одна страница записана — считаем частичным успехом
+    if stats.get("wrote_pages", 0) > 0:
+        return {
+            "ok": True,
+            "final": f"(max_steps reached, {stats['wrote_pages']} pages written — partial success)",
+            "stats": stats,
+        }
+    return {"ok": False, "error": "max_steps reached, no pages written", "stats": stats}
+
+
+def _page_key(args: dict[str, Any]) -> tuple[str, str, str]:
+    """Ключ страницы: (domain, allias, name). Для root — '__root__'."""
+    return (
+        str(args.get("domain", "")),
+        str(args.get("allias", "")),
+        str(args.get("name", "") or "__root__"),
+    )
 
 
 def _record_undo(tx: Transaction, call: ToolCall, result: Result) -> None:
