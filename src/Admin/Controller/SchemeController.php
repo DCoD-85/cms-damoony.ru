@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Damoony\Admin\Controller;
 
 use Damoony\Admin\View;
+use Damoony\Cli\Commands\SchemeCopyCommand;
 use Damoony\Cli\Commands\SchemeNewCommand;
+use Damoony\Cli\Commands\SchemeRemoveCommand;
+use Damoony\Cli\Commands\SchemeSaveCommand;
 use Damoony\Cli\Context;
-use Damoony\Files\Fs;
 use Damoony\Files\Paths;
 use Damoony\Http\Request;
 use Damoony\Http\Response;
-use Damoony\Scheme\SchemeCompiler;
 use Damoony\Ui\Builder;
 use Damoony\Ui\Element;
 use Damoony\Ui\Field;
@@ -46,6 +47,11 @@ final class SchemeController extends BaseController
     private function isValidSchemeName(string $name): bool
     {
         return $name !== '' && preg_match('/^[a-z][a-z0-9_]*$/', $name) === 1;
+    }
+
+    private function nullContext(): Context
+    {
+        return new Context(static fn () => null);
     }
 
     public function index(Request $request): Response
@@ -162,24 +168,8 @@ final class SchemeController extends BaseController
             return $this->redirect('/admin/?p=domain');
         }
 
-        $schemesDir = $this->paths->domain($domain) . '/.alliasscheme';
-        $newName = $name . '_copy';
-        $i = 1;
-        while (is_file($schemesDir . '/' . $newName . '.php')) {
-            $newName = $name . '_copy_' . $i++;
-        }
-
-        if (is_file($schemesDir . '/' . $name . '.php')) {
-            copy($schemesDir . '/' . $name . '.php', $schemesDir . '/' . $newName . '.php');
-            if (is_file($schemesDir . '/' . $name . '.rules.json')) {
-                copy($schemesDir . '/' . $name . '.rules.json', $schemesDir . '/' . $newName . '.rules.json');
-            } else {
-                Fs::writeAtomic($schemesDir . '/' . $newName . '.rules.json', '{}');
-            }
-            if (is_file($schemesDir . '/' . $name . '.editor.json')) {
-                copy($schemesDir . '/' . $name . '.editor.json', $schemesDir . '/' . $newName . '.editor.json');
-            }
-        }
+        $cmd = new SchemeCopyCommand($this->paths);
+        $cmd->run(['domain' => $domain, 'name' => $name], $this->nullContext());
 
         return $this->redirect('/admin/?p=scheme&domain=' . urlencode($domain));
     }
@@ -206,13 +196,9 @@ final class SchemeController extends BaseController
             return $this->redirect('/admin/?p=domain');
         }
 
-        $schemesDir = $this->paths->domain($domain) . '/.alliasscheme';
-        foreach (['.php', '.rules.json', '.editor.json'] as $ext) {
-            $file = $schemesDir . '/' . $name . $ext;
-            if (is_file($file) && !unlink($file)) {
-                // Ошибка удаления не роняет UX: файл остался — structure:check покажет
-            }
-        }
+        // Админ уже подтвердил нажатием кнопки. Передаём force=1 (карантин).
+        $cmd = new SchemeRemoveCommand($this->paths);
+        $cmd->run(['domain' => $domain, 'name' => $name, 'force' => '1'], $this->nullContext());
 
         return $this->redirect('/admin/?p=scheme&domain=' . urlencode($domain));
     }
@@ -240,7 +226,7 @@ final class SchemeController extends BaseController
 
             $nameVal = (string) ($request->post['name'] ?? '');
             $cmd = new SchemeNewCommand($this->paths);
-            $res = $cmd->run(['domain' => $domain, 'name' => $nameVal], new Context(static fn () => null));
+            $res = $cmd->run(['domain' => $domain, 'name' => $nameVal], $this->nullContext());
 
             if ($res->ok) {
                 return $this->redirect('/admin/?p=scheme&domain=' . urlencode($domain));
@@ -286,7 +272,7 @@ final class SchemeController extends BaseController
         }
 
         try {
-            $editorData = json_decode((string)file_get_contents($editorFile), true);
+            $editorData = json_decode((string) file_get_contents($editorFile), true);
             if (!is_array($editorData) || !isset($editorData['scheme'])) {
                 throw new \RuntimeException('Файл правил схемы поврежден.');
             }
@@ -384,7 +370,7 @@ final class SchemeController extends BaseController
         $scriptData = Builder::el('script');
         $scriptData->attrs()->add('type', 'application/json');
         $scriptData->attrs()->add('id', 'sb-init-data');
-        $scriptData->append(Text::raw((string)$initData));
+        $scriptData->append(Text::raw((string) $initData));
         $card->append($scriptData);
 
         return Response::html($this->view->render($card, ['title' => 'Визуальный редактор схем']));
@@ -409,37 +395,19 @@ final class SchemeController extends BaseController
         }
 
         $json = (string) ($request->post['scheme_json'] ?? '');
-        $scheme = json_decode($json, true);
-        if (!is_array($scheme)) {
-            return Response::json(['error' => 'Invalid JSON']);
+        if ($json === '') {
+            return Response::json(['error' => 'Empty scheme_json'], 400);
         }
 
-        $schemesDir = $this->paths->domain($domain) . '/.alliasscheme';
-        $editorFile = $schemesDir . '/' . $name . '.editor.json';
-        $phpFile = $schemesDir . '/' . $name . '.php';
+        $cmd = new SchemeSaveCommand($this->paths);
+        $res = $cmd->run(
+            ['domain' => $domain, 'name' => $name, 'scheme_json' => $json],
+            $this->nullContext(),
+        );
 
-        if (!is_file($editorFile)) {
-            return Response::json(['error' => 'Editor file not found'], 404);
+        if (!$res->ok) {
+            return Response::json(['error' => implode('; ', $res->errors)], 400);
         }
-
-        // 1. Обновляем editor.json
-        $editorData = json_decode((string)file_get_contents($editorFile), true);
-        if (!is_array($editorData)) {
-            return Response::json(['error' => 'Corrupted editor.json'], 500);
-        }
-        $editorData['scheme'] = $scheme;
-        Fs::writeAtomic($editorFile, json_encode($editorData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
-
-        // 2. Компилируем data.php
-        $phpData = [
-            'tag' => 'div',
-            'class' => 'layout',
-            'children' => $scheme['children'] ?? [],
-            'scripts' => $scheme['scripts'] ?? [],
-        ];
-
-        $compiler = new SchemeCompiler();
-        Fs::writeAtomic($phpFile, $compiler->compile($phpData));
 
         return $this->redirect('/admin/?p=scheme:visual&domain=' . urlencode($domain) . '&name=' . urlencode($name) . '&saved=1');
     }

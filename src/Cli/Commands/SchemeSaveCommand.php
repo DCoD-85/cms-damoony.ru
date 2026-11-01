@@ -1,0 +1,119 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Damoony\Cli\Commands;
+
+use Damoony\Cli\CommandInterface;
+use Damoony\Cli\Context;
+use Damoony\Cli\Result;
+use Damoony\Core\Config;
+use Damoony\Files\Fs;
+use Damoony\Files\Paths;
+use Damoony\Scheme\SchemeCompiler;
+
+final class SchemeSaveCommand implements CommandInterface
+{
+    public function __construct(private readonly Paths $paths)
+    {
+    }
+
+    public function name(): string
+    {
+        return 'scheme:save';
+    }
+
+    public function description(): string
+    {
+        return 'Сохранить визуальную схему (JSON → editor.json + compile php)';
+    }
+
+    public function run(array $args, Context $context): Result
+    {
+        $r = new Result();
+        $domain = $args['domain'] ?? '';
+        $name = $args['name'] ?? '';
+
+        if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain)) {
+            $r->error('Некорректный домен');
+            return $r;
+        }
+        if (!preg_match('/^[a-z][a-z0-9_]*$/', $name)) {
+            $r->error('Некорректное имя схемы');
+            return $r;
+        }
+
+        // JSON: --scheme_json (plain) или --scheme_json_b64 (для AI)
+        if (isset($args['scheme_json_b64'])) {
+            $decoded = base64_decode((string) $args['scheme_json_b64'], true);
+            if ($decoded === false) {
+                $r->error('Некорректный base64');
+                return $r;
+            }
+            $json = $decoded;
+        } else {
+            $json = (string) ($args['scheme_json'] ?? '');
+        }
+
+        if ($json === '') {
+            $r->error('Укажите --scheme_json или --scheme_json_b64');
+            return $r;
+        }
+
+        $scheme = json_decode($json, true);
+        if (!is_array($scheme)) {
+            $r->error('Некорректный JSON (ожидается объект схемы)');
+            return $r;
+        }
+
+        $siteFile = $this->paths->siteConfig();
+        if (!is_file($siteFile)) {
+            $r->error('site.config не найден');
+            return $r;
+        }
+        $site = Config::fromFile($siteFile)->all();
+        if (!isset($site['domains_real'][$domain])) {
+            $r->error('Домен не найден');
+            return $r;
+        }
+
+        $schemesDir = $this->paths->domain($domain) . '/.alliasscheme';
+        $editorFile = $schemesDir . '/' . $name . '.editor.json';
+        $phpFile = $schemesDir . '/' . $name . '.php';
+
+        if (!is_file($editorFile)) {
+            $r->error('editor.json не найден: ' . $name . '. Сначала создайте схему (scheme:new).');
+            return $r;
+        }
+
+        // 1. Обновляем editor.json — заменяем только scheme, fields не трогаем
+        $editorData = json_decode((string) file_get_contents($editorFile), true);
+        if (!is_array($editorData)) {
+            $r->error('editor.json повреждён');
+            return $r;
+        }
+        $editorData['scheme'] = $scheme;
+
+        Fs::writeAtomic(
+            $editorFile,
+            json_encode($editorData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n",
+        );
+        $r->file(Fs::rel($editorFile, $this->paths->root()));
+
+        // 2. Компилируем php
+        $phpData = [
+            'tag' => 'div',
+            'class' => 'layout',
+            'children' => is_array($scheme['children'] ?? null) ? $scheme['children'] : [],
+            'scripts' => is_array($scheme['scripts'] ?? null) ? $scheme['scripts'] : [],
+        ];
+
+        $compiler = new SchemeCompiler();
+        Fs::writeAtomic($phpFile, $compiler->compile($phpData));
+        $r->file(Fs::rel($phpFile, $this->paths->root()));
+
+        $context->step('Схема сохранена', true, $name);
+
+        return $r;
+    }
+}
