@@ -87,3 +87,5 @@ app/*_trash_*
 # ai_agent runtime sessions
 /ai_agent/.session/
 /ai_agent/__pycache__/
+# AI content (runtime, вне webroot, только через CLI content:store)
+/content/
