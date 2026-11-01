@@ -10,7 +10,7 @@ use Damoony\Cli\Result;
 use Damoony\Files\Fs;
 use Damoony\Files\Paths;
 
-final class MediaListCommand implements CommandInterface
+final class ContentListCommand implements CommandInterface
 {
     public function __construct(private readonly Paths $paths)
     {
@@ -18,12 +18,12 @@ final class MediaListCommand implements CommandInterface
 
     public function name(): string
     {
-        return 'media:list';
+        return 'content:list';
     }
 
     public function description(): string
     {
-        return 'Список медиа домена/алиаса (опционально category)';
+        return 'Список контента домена/алиаса (опционально category)';
     }
 
     public function run(array $args, Context $context): Result
@@ -48,11 +48,11 @@ final class MediaListCommand implements CommandInterface
         }
 
         $base = $allias === ''
-            ? $this->paths->mediaRoot() . '/' . $domain
-            : $this->paths->media($domain, $allias);
+            ? $this->paths->contentRoot() . '/' . $domain
+            : $this->paths->content($domain, $allias);
 
         if (!is_dir($base)) {
-            $context->step('Медиа не найдено', true);
+            $context->step('Контент не найден', true);
             return $r;
         }
 
@@ -60,8 +60,10 @@ final class MediaListCommand implements CommandInterface
 
         foreach ($entries as $e) {
             $rel = Fs::rel($e['path'], $this->paths->root());
+            $refs = $e['page_refs'];
+            $refsStr = $refs === [] ? '' : ', refs=' . count($refs);
             $context->step(
-                sprintf('%s (%s, %d B)', $rel, $e['mime'], $e['size']),
+                sprintf('%s (%s, %d B%s)', $rel, $e['mime'], $e['size'], $refsStr),
                 true,
                 $e['hash'],
             );
@@ -74,7 +76,7 @@ final class MediaListCommand implements CommandInterface
     }
 
     /**
-     * @return list<array{path: string, hash: string, mime: string, size: int}>
+     * @return list<array{path: string, hash: string, mime: string, size: int, page_refs: list<string>}>
      */
     private function scan(string $base, string $domain, string $categoryFilter): array
     {
@@ -100,20 +102,30 @@ final class MediaListCommand implements CommandInterface
                 continue;
             }
 
-            // Фильтр по category
+            // Фильтр по category (папка над файлом)
             $dir = dirname($path);
             $catName = basename($dir);
             if ($categoryFilter !== '' && $catName !== $categoryFilter) {
                 continue;
             }
 
-            // MIME из meta.json (если есть)
+            // MIME и page_refs из meta.json (если есть)
             $metaFile = $dir . '/' . $hash . '.meta.json';
             $mime = '';
+            $pageRefs = [];
             if (is_file($metaFile)) {
                 $meta = json_decode((string) @file_get_contents($metaFile), true);
-                if (is_array($meta) && isset($meta['mime']) && is_string($meta['mime'])) {
-                    $mime = $meta['mime'];
+                if (is_array($meta)) {
+                    if (isset($meta['mime']) && is_string($meta['mime'])) {
+                        $mime = $meta['mime'];
+                    }
+                    if (isset($meta['page_refs']) && is_array($meta['page_refs'])) {
+                        foreach ($meta['page_refs'] as $ref) {
+                            if (is_string($ref)) {
+                                $pageRefs[] = $ref;
+                            }
+                        }
+                    }
                 }
             }
 
@@ -122,6 +134,7 @@ final class MediaListCommand implements CommandInterface
                 'hash' => $hash,
                 'mime' => $mime !== '' ? $mime : 'unknown',
                 'size' => (int) $file->getSize(),
+                'page_refs' => $pageRefs,
             ];
         }
 

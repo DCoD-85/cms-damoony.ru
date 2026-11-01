@@ -4,25 +4,24 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Cli;
 
-use Damoony\Cli\Commands\MediaListCommand;
-use Damoony\Cli\Commands\MediaStoreCommand;
+use Damoony\Cli\Commands\ContentListCommand;
+use Damoony\Cli\Commands\ContentStoreCommand;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
 use Damoony\Files\Paths;
 use PHPUnit\Framework\TestCase;
 
-final class MediaListCommandTest extends TestCase
+final class ContentListCommandTest extends TestCase
 {
     private string $root;
 
     protected function setUp(): void
     {
-        $this->root = sys_get_temp_dir() . '/damoony_media_list_' . bin2hex(random_bytes(4));
+        $this->root = sys_get_temp_dir() . '/damoony_content_list_' . bin2hex(random_bytes(4));
         mkdir($this->root . '/config', 0o777, true);
         file_put_contents($this->root . '/config/agent.config', json_encode([
             'allowed_domains' => ['example.ru'],
         ]));
-        mkdir($this->root . '/www', 0o777, true);
     }
 
     protected function tearDown(): void
@@ -58,7 +57,7 @@ final class MediaListCommandTest extends TestCase
         $bytes = (string) ob_get_clean();
         imagedestroy($im);
 
-        (new MediaStoreCommand(new Paths($this->root)))->run([
+        (new ContentStoreCommand(new Paths($this->root)))->run([
             'domain' => 'example.ru',
             'allias' => 'www',
             'category' => $category,
@@ -71,7 +70,7 @@ final class MediaListCommandTest extends TestCase
 
     private function execute(array $args): Result
     {
-        return (new MediaListCommand(new Paths($this->root)))
+        return (new ContentListCommand(new Paths($this->root)))
             ->run($args, new Context(static fn () => null));
     }
 
@@ -120,5 +119,14 @@ final class MediaListCommandTest extends TestCase
     {
         $res = $this->execute(['domain' => 'example.ru', 'category' => 'bad cat!']);
         self::assertFalse($res->ok);
+    }
+
+    public function testListsFromContentRootNotMedia(): void
+    {
+        $h = $this->storeImage('coffee');
+
+        $res = $this->execute(['domain' => 'example.ru', 'allias' => 'www']);
+        self::assertTrue($res->ok);
+        self::assertStringContainsString('content/example.ru/www/coffee/' . $h . '.png', implode('|', $res->created));
     }
 }

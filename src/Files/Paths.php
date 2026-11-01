@@ -45,6 +45,9 @@ final class Paths
         return $this->allias($real, $allias) . '/algoritm';
     }
 
+    /**
+     * Инфраструктура (skins, admin, shared). Отдаётся статикой через www/media/.
+     */
     public function mediaRoot(): string
     {
         return $this->root . '/www/media';
@@ -53,5 +56,18 @@ final class Paths
     public function media(string $real, string $allias): string
     {
         return $this->mediaRoot() . '/' . $real . '/' . $allias;
+    }
+
+    /**
+     * AI/user-контент (картинки страниц). Хранится ВНЕ webroot — только через www/content.php.
+     */
+    public function contentRoot(): string
+    {
+        return $this->root . '/content';
+    }
+
+    public function content(string $real, string $allias): string
+    {
+        return $this->contentRoot() . '/' . $real . '/' . $allias;
     }
 }

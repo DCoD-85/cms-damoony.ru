@@ -1,6 +1,9 @@
 RewriteEngine On
 RewriteBase /
 
+# /content/* — через content.php (front controller отдачи с auth-check)
+RewriteRule ^content/ content.php [L,QSA]
+
 # /admin/ и всё внутри — принудительно в admin/index.php
 RewriteRule ^admin(/.*)?$ admin/index.php [L,QSA]
 

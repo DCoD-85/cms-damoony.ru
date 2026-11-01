@@ -332,15 +332,15 @@ try {
             $safeAlt = escapeshellarg($alt);
             $safeSourceUrl = escapeshellarg($url);
 
-            $cmd = 'php ' . __DIR__ . "/cli.php media:store"
-                . " --domain={$safeDomain}"
-                . " --allias={$safeAllias}"
-                . " --category={$safeCategory}"
-                . " --data_file={$safeDataFile}"
-                . " --mime={$safeMime}"
-                . " --alt={$safeAlt}"
-                . " --source_url={$safeSourceUrl}"
-                . ' 2>&1';
+			$cmd = 'php ' . __DIR__ . "/cli.php content:store"
+				. " --domain={$safeDomain}"
+				. " --allias={$safeAllias}"
+				. " --category={$safeCategory}"
+				. " --data_file={$safeDataFile}"
+				. " --mime={$safeMime}"
+				. " --alt={$safeAlt}"
+				. " --source_url={$safeSourceUrl}"
+				. ' 2>&1';
 
             $output = shell_exec($cmd);
             $outputStr = trim((string) $output);
@@ -360,13 +360,13 @@ try {
             exit(1);
         }
 
-        $localUrl = '/media/' . $domain . '/' . $allias . '/' . $category . '/' . $hash . '.' . $ext;
+        $localUrl = '/content/' . $domain . '/' . $allias . '/' . $category . '/' . $hash . '.' . $ext;
 
         echo json_encode([
             'ok' => true,
             'data' => [
                 'local_url' => $localUrl,
-                'path' => 'www/media/' . $domain . '/' . $allias . '/' . $category . '/' . $hash . '.' . $ext,
+                'path' => 'content/' . $domain . '/' . $allias . '/' . $category . '/' . $hash . '.' . $ext,
                 'hash' => $hash,
                 'ext' => $ext,
                 'mime' => $mime,

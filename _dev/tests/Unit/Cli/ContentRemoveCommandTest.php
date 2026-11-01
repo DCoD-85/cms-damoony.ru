@@ -4,24 +4,24 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Cli;
 
-use Damoony\Cli\Commands\MediaRemoveCommand;
-use Damoony\Cli\Commands\MediaStoreCommand;
+use Damoony\Cli\Commands\ContentRemoveCommand;
+use Damoony\Cli\Commands\ContentStoreCommand;
 use Damoony\Cli\Context;
+use Damoony\Cli\Result;
 use Damoony\Files\Paths;
 use PHPUnit\Framework\TestCase;
 
-final class MediaRemoveCommandTest extends TestCase
+final class ContentRemoveCommandTest extends TestCase
 {
     private string $root;
 
     protected function setUp(): void
     {
-        $this->root = sys_get_temp_dir() . '/damoony_media_rm_' . bin2hex(random_bytes(4));
+        $this->root = sys_get_temp_dir() . '/damoony_content_rm_' . bin2hex(random_bytes(4));
         mkdir($this->root . '/config', 0o777, true);
         file_put_contents($this->root . '/config/agent.config', json_encode([
             'allowed_domains' => ['example.ru'],
         ]));
-        mkdir($this->root . '/www', 0o777, true);
     }
 
     protected function tearDown(): void
@@ -56,7 +56,7 @@ final class MediaRemoveCommandTest extends TestCase
         $bytes = (string) ob_get_clean();
         imagedestroy($im);
 
-        (new MediaStoreCommand(new Paths($this->root)))->run([
+        (new ContentStoreCommand(new Paths($this->root)))->run([
             'domain' => 'example.ru',
             'allias' => 'www',
             'category' => 'coffee',
@@ -67,24 +67,31 @@ final class MediaRemoveCommandTest extends TestCase
         return ['hash' => substr(hash('sha256', $bytes), 0, 16), 'bytes' => $bytes];
     }
 
+    private function execute(array $args): Result
+    {
+        return (new ContentRemoveCommand(new Paths($this->root)))
+            ->run($args, new Context(static fn () => null));
+    }
+
     public function testRemovesToTrash(): void
     {
         $img = $this->storeImage();
-        $file = $this->root . '/www/media/example.ru/www/coffee/' . $img['hash'] . '.png';
+        $file = $this->root . '/content/example.ru/www/coffee/' . $img['hash'] . '.png';
         self::assertFileExists($file);
 
-        $res = (new MediaRemoveCommand(new Paths($this->root)))->run([
+        $res = $this->execute([
             'domain' => 'example.ru',
             'allias' => 'www',
             'category' => 'coffee',
             'hash' => $img['hash'],
             'force' => '1',
-        ], new Context(static fn () => null));
+        ]);
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
         self::assertFileDoesNotExist($file);
 
-        $trash = glob($this->root . '/www/media/.trash/example.ru_www_coffee_' . $img['hash'] . '_trash_*');
+        // Карантин в /content/.trash/
+        $trash = glob($this->root . '/content/.trash/example.ru_www_coffee_' . $img['hash'] . '_trash_*');
         self::assertNotEmpty($trash);
         self::assertFileExists($trash[0] . '/' . $img['hash'] . '.png');
         self::assertFileExists($trash[0] . '/' . $img['hash'] . '.meta.json');
@@ -93,12 +100,12 @@ final class MediaRemoveCommandTest extends TestCase
     public function testRejectsWithoutForce(): void
     {
         $img = $this->storeImage();
-        $res = (new MediaRemoveCommand(new Paths($this->root)))->run([
+        $res = $this->execute([
             'domain' => 'example.ru',
             'allias' => 'www',
             'category' => 'coffee',
             'hash' => $img['hash'],
-        ], new Context(static fn () => null));
+        ]);
 
         self::assertFalse($res->ok);
         self::assertStringContainsString('--force', $res->errors[0]);
@@ -106,13 +113,13 @@ final class MediaRemoveCommandTest extends TestCase
 
     public function testIdempotentOnMissing(): void
     {
-        $res = (new MediaRemoveCommand(new Paths($this->root)))->run([
+        $res = $this->execute([
             'domain' => 'example.ru',
             'allias' => 'www',
             'category' => 'coffee',
             'hash' => '0000000000000000',
             'force' => '1',
-        ], new Context(static fn () => null));
+        ]);
 
         self::assertTrue($res->ok);
         self::assertNotEmpty($res->warnings);
@@ -120,13 +127,13 @@ final class MediaRemoveCommandTest extends TestCase
 
     public function testRejectsInvalidHash(): void
     {
-        $res = (new MediaRemoveCommand(new Paths($this->root)))->run([
+        $res = $this->execute([
             'domain' => 'example.ru',
             'allias' => 'www',
             'category' => 'coffee',
             'hash' => 'not-hex-!!',
             'force' => '1',
-        ], new Context(static fn () => null));
+        ]);
 
         self::assertFalse($res->ok);
         self::assertStringContainsString('hash', $res->errors[0]);
@@ -134,14 +141,30 @@ final class MediaRemoveCommandTest extends TestCase
 
     public function testRejectsPathTraversal(): void
     {
-        $res = (new MediaRemoveCommand(new Paths($this->root)))->run([
+        $res = $this->execute([
             'domain' => 'a..ru',
             'allias' => 'www',
             'category' => 'coffee',
             'hash' => '0000000000000000',
             'force' => '1',
-        ], new Context(static fn () => null));
+        ]);
 
         self::assertFalse($res->ok);
+    }
+
+    public function testTrashInContentRootNotMedia(): void
+    {
+        $img = $this->storeImage();
+        $this->execute([
+            'domain' => 'example.ru',
+            'allias' => 'www',
+            'category' => 'coffee',
+            'hash' => $img['hash'],
+            'force' => '1',
+        ]);
+
+        // Карантин — в /content/.trash/, не в www/media
+        self::assertDirectoryExists($this->root . '/content/.trash');
+        self::assertDirectoryDoesNotExist($this->root . '/www/media/.trash');
     }
 }

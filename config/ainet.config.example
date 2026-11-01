@@ -8,6 +8,7 @@
     "images.pexels.com",
     "commons.wikimedia.org",
     "upload.wikimedia.org",
+	"thumb.wikimedia.org",
     "ru.wikipedia.org",
     "en.wikipedia.org",
     "api.github.com"
@@ -24,7 +25,7 @@
     "read": 20
   },
   "limits": {
-    "max_size": 10485760,
+    "max_size": 26214400,
     "max_redirects": 3,
     "rate_per_min": 30,
     "min_image_dimension": 200

@@ -10,7 +10,7 @@ use Damoony\Cli\Result;
 use Damoony\Files\Fs;
 use Damoony\Files\Paths;
 
-final class MediaRemoveCommand implements CommandInterface
+final class ContentRemoveCommand implements CommandInterface
 {
     public function __construct(private readonly Paths $paths)
     {
@@ -18,12 +18,12 @@ final class MediaRemoveCommand implements CommandInterface
 
     public function name(): string
     {
-        return 'media:remove';
+        return 'content:remove';
     }
 
     public function description(): string
     {
-        return 'Удалить медиа в карантин (www/media/.trash/)';
+        return 'Удалить контент в карантин (/content/.trash/)';
     }
 
     public function run(array $args, Context $context): Result
@@ -57,15 +57,15 @@ final class MediaRemoveCommand implements CommandInterface
             return $r;
         }
 
-        $mediaDir = $this->paths->media($domain, $allias) . '/' . $category;
-        $files = glob($mediaDir . '/' . $hash . '.*') ?: [];
+        $contentDir = $this->paths->content($domain, $allias) . '/' . $category;
+        $files = glob($contentDir . '/' . $hash . '.*') ?: [];
         if ($files === []) {
-            $r->warn("Медиа не найдено: {$hash}");
+            $r->warn("Контент не найден: {$hash}");
             $context->step('Нечего удалять', true);
             return $r;
         }
 
-        $trashRoot = $this->paths->mediaRoot() . '/.trash';
+        $trashRoot = $this->paths->contentRoot() . '/.trash';
         $trashDir = $trashRoot . '/' . $domain . '_' . $allias . '_' . $category . '_' . $hash . '_trash_' . time();
         Fs::mkdir($trashDir);
 
@@ -78,7 +78,7 @@ final class MediaRemoveCommand implements CommandInterface
             $r->file(Fs::rel($trashDir . '/' . $basename, $this->paths->root()));
         }
 
-        $context->step('Медиа в карантине', true, Fs::rel($trashDir, $this->paths->root()));
+        $context->step('Контент в карантине', true, Fs::rel($trashDir, $this->paths->root()));
         $r->warn('Очистка: php bin/cli.php trash:clear --force --older=7d');
 
         return $r;

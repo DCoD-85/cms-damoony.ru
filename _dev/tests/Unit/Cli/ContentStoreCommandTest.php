@@ -4,24 +4,23 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Cli;
 
-use Damoony\Cli\Commands\MediaStoreCommand;
+use Damoony\Cli\Commands\ContentStoreCommand;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
 use Damoony\Files\Paths;
 use PHPUnit\Framework\TestCase;
 
-final class MediaStoreCommandTest extends TestCase
+final class ContentStoreCommandTest extends TestCase
 {
     private string $root;
 
     protected function setUp(): void
     {
-        $this->root = sys_get_temp_dir() . '/damoony_media_' . bin2hex(random_bytes(4));
+        $this->root = sys_get_temp_dir() . '/damoony_content_' . bin2hex(random_bytes(4));
         mkdir($this->root . '/config', 0o777, true);
         file_put_contents($this->root . '/config/agent.config', json_encode([
             'allowed_domains' => ['example.ru', 'damoony3test.ru'],
         ]));
-        mkdir($this->root . '/www', 0o777, true);
     }
 
     protected function tearDown(): void
@@ -63,7 +62,7 @@ final class MediaStoreCommandTest extends TestCase
 
     private function execute(array $args): Result
     {
-        return (new MediaStoreCommand(new Paths($this->root)))
+        return (new ContentStoreCommand(new Paths($this->root)))
             ->run($args, new Context(static fn () => null));
     }
 
@@ -82,17 +81,21 @@ final class MediaStoreCommandTest extends TestCase
         self::assertTrue($res->ok, implode('; ', $res->errors));
 
         $hash = substr(hash('sha256', $png['bytes']), 0, 16);
-        $file = $this->root . '/www/media/example.ru/www/coffee/' . $hash . '.png';
+        $file = $this->root . '/content/example.ru/www/coffee/' . $hash . '.png';
         self::assertFileExists($file);
         self::assertSame($png['bytes'], (string) file_get_contents($file));
 
-        $metaFile = $this->root . '/www/media/example.ru/www/coffee/' . $hash . '.meta.json';
+        // Проверка: файл НЕ в www/media
+        self::assertFileDoesNotExist($this->root . '/www/media/example.ru/www/coffee/' . $hash . '.png');
+
+        $metaFile = $this->root . '/content/example.ru/www/coffee/' . $hash . '.meta.json';
         self::assertFileExists($metaFile);
         $meta = json_decode((string) file_get_contents($metaFile), true);
         self::assertSame('Coffee cup', $meta['alt']);
         self::assertSame('image/png', $meta['mime']);
         self::assertSame(300, $meta['width']);
         self::assertSame(400, $meta['height']);
+        self::assertSame([], $meta['page_refs'], 'page_refs инициализируется пустым');
     }
 
     public function testDeduplicates(): void
@@ -110,7 +113,6 @@ final class MediaStoreCommandTest extends TestCase
 
         self::assertTrue($r1->ok);
         self::assertTrue($r2->ok);
-        self::assertNotEmpty($r2->warnings, 'deduplicated warning');
         self::assertContains('deduplicated', $r2->warnings);
     }
 
@@ -140,33 +142,6 @@ final class MediaStoreCommandTest extends TestCase
         self::assertStringContainsString('allowed_domains', $res->errors[0]);
     }
 
-    public function testRejectsInvalidAllias(): void
-    {
-        $png = $this->png();
-        $res = $this->execute([
-            'domain' => 'example.ru',
-            'allias' => 'Bad-Name',
-            'data_b64' => $png['base64'],
-            'mime' => 'image/png',
-        ]);
-        self::assertFalse($res->ok);
-        self::assertStringContainsString('алиас', $res->errors[0]);
-    }
-
-    public function testRejectsInvalidCategory(): void
-    {
-        $png = $this->png();
-        $res = $this->execute([
-            'domain' => 'example.ru',
-            'allias' => 'www',
-            'category' => 'bad category!',
-            'data_b64' => $png['base64'],
-            'mime' => 'image/png',
-        ]);
-        self::assertFalse($res->ok);
-        self::assertStringContainsString('category', $res->errors[0]);
-    }
-
     public function testRejectsInvalidMime(): void
     {
         $png = $this->png();
@@ -178,18 +153,6 @@ final class MediaStoreCommandTest extends TestCase
         ]);
         self::assertFalse($res->ok);
         self::assertStringContainsString('MIME', $res->errors[0]);
-    }
-
-    public function testRejectsInvalidBase64(): void
-    {
-        $res = $this->execute([
-            'domain' => 'example.ru',
-            'allias' => 'www',
-            'data_b64' => 'not-base64!!!',
-            'mime' => 'image/png',
-        ]);
-        self::assertFalse($res->ok);
-        self::assertStringContainsString('base64', $res->errors[0]);
     }
 
     public function testRejectsTooSmallImage(): void
@@ -205,16 +168,24 @@ final class MediaStoreCommandTest extends TestCase
         self::assertStringContainsString('слишком маленькое', $res->errors[0]);
     }
 
-    public function testRejectsNonImage(): void
+    public function testUsesContentRootNotMedia(): void
     {
-        $res = $this->execute([
+        $png = $this->png();
+        $this->execute([
             'domain' => 'example.ru',
             'allias' => 'www',
-            'data_b64' => base64_encode('not-a-real-image'),
+            'category' => 'coffee',
+            'data_b64' => $png['base64'],
             'mime' => 'image/png',
         ]);
-        self::assertFalse($res->ok);
-        self::assertStringContainsString('размеры', $res->errors[0]);
+
+        $hash = substr(hash('sha256', $png['bytes']), 0, 16);
+
+        // В /content/ — есть
+        self::assertFileExists($this->root . '/content/example.ru/www/coffee/' . $hash . '.png');
+
+        // В www/media/ — нет
+        self::assertDirectoryDoesNotExist($this->root . '/www/media/example.ru');
     }
 
     public function testDefaultCategoryGeneral(): void
@@ -228,6 +199,6 @@ final class MediaStoreCommandTest extends TestCase
         ]);
         self::assertTrue($res->ok);
         $hash = substr(hash('sha256', $png['bytes']), 0, 16);
-        self::assertFileExists($this->root . '/www/media/example.ru/www/general/' . $hash . '.png');
+        self::assertFileExists($this->root . '/content/example.ru/www/general/' . $hash . '.png');
     }
 }

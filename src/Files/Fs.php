@@ -74,7 +74,9 @@ final class Fs
 
     public static function rel(string $path, string $base): string
     {
-        $base = rtrim($base, '/') . '/';
+        // Нормализуем разделители (Windows → /) — пути rel() используются в URL
+        $path = str_replace('\\', '/', $path);
+        $base = rtrim(str_replace('\\', '/', $base), '/') . '/';
 
         return str_starts_with($path, $base) ? substr($path, strlen($base)) : $path;
     }

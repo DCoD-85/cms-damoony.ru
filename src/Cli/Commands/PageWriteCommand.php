@@ -100,11 +100,123 @@ final class PageWriteCommand implements CommandInterface
         $compiler = new PageCompiler();
         $php = $compiler->compile($namespace . '\\' . $allias, $page->classChain, $blocks, $withSchema);
 
+        // 7. Читаем старый .php ДО перезаписи (для diff page_refs)
+        $oldPhp = (string) @file_get_contents($page->phpFile);
+
         Fs::writeAtomic($page->phpFile, $php);
         $r->file(Fs::rel($page->phpFile, $this->paths->root()));
 
-        $context->step('Контент страницы обновлен', true, $name !== '' ? $name : '__root__');
+        // 8. Обновить page_refs в meta.json всех /content/... картинок (add new, remove stale)
+        $pageKey = $name !== '' ? $name : '__root__';
+        $this->updateContentRefs($domain, $allias, $pageKey, $oldPhp, $php);
+
+        $context->step('Контент страницы обновлен', true, $pageKey);
 
         return $r;
+    }
+
+    /**
+     * Синхронизирует page_refs: страница упоминается в meta.json тех картинок,
+     * на которые она ссылается (по URL /content/<domain>/<allias>/<category>/<hash>.*).
+     *
+     * - newHashes − oldHashes: добавить pageKey
+     * - oldHashes − newHashes: удалить pageKey
+     */
+    private function updateContentRefs(
+        string $domain,
+        string $allias,
+        string $pageKey,
+        string $oldPhp,
+        string $newPhp,
+    ): void {
+        $oldRefs = $this->extractContentHashes($oldPhp, $domain, $allias);
+        $newRefs = $this->extractContentHashes($newPhp, $domain, $allias);
+
+        $oldKeys = array_map(static fn (array $r): string => $r['category'] . '/' . $r['hash'], $oldRefs);
+        $newKeys = array_map(static fn (array $r): string => $r['category'] . '/' . $r['hash'], $newRefs);
+
+        foreach ($newRefs as $i => $ref) {
+            if (!in_array($newKeys[$i], $oldKeys, true)) {
+                $this->applyPageRef($domain, $allias, $ref['category'], $ref['hash'], $pageKey, 'add');
+            }
+        }
+
+        foreach ($oldRefs as $i => $ref) {
+            if (!in_array($oldKeys[$i], $newKeys, true)) {
+                $this->applyPageRef($domain, $allias, $ref['category'], $ref['hash'], $pageKey, 'remove');
+            }
+        }
+    }
+
+    /**
+     * @return list<array{category: string, hash: string}>
+     */
+    private function extractContentHashes(string $php, string $domain, string $allias): array
+    {
+        $pattern = '#/content/'
+            . preg_quote($domain, '#')
+            . '/'
+            . preg_quote($allias, '#')
+            . '/([a-z0-9_-]{1,32})/([a-f0-9]{16})\.[a-z]+#';
+
+        if (preg_match_all($pattern, $php, $m, PREG_SET_ORDER) === false) {
+            return [];
+        }
+
+        $out = [];
+        $seen = [];
+        foreach ($m as $row) {
+            $key = $row[1] . '/' . $row[2];
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+            $out[] = ['category' => $row[1], 'hash' => $row[2]];
+        }
+
+        return $out;
+    }
+
+    private function applyPageRef(
+        string $domain,
+        string $allias,
+        string $category,
+        string $hash,
+        string $pageKey,
+        string $mode,
+    ): void {
+        $metaFile = $this->paths->content($domain, $allias)
+            . '/' . $category . '/' . $hash . '.meta.json';
+
+        if (!is_file($metaFile)) {
+            return; // картинка не из content:store — пропускаем
+        }
+
+        $raw = @file_get_contents($metaFile);
+        if ($raw === false) {
+            return;
+        }
+        $meta = json_decode($raw, true);
+        if (!is_array($meta)) {
+            return;
+        }
+
+        $refs = is_array($meta['page_refs'] ?? null) ? $meta['page_refs'] : [];
+        $refs = array_values(array_filter($refs, 'is_string'));
+
+        if ($mode === 'add') {
+            if (!in_array($pageKey, $refs, true)) {
+                $refs[] = $pageKey;
+            }
+        } elseif ($mode === 'remove') {
+            $refs = array_values(array_filter($refs, static fn (string $k): bool => $k !== $pageKey));
+        }
+
+        $meta['page_refs'] = $refs;
+
+        Fs::writeAtomic(
+            $metaFile,
+            json_encode($meta, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n",
+        );
     }
 }

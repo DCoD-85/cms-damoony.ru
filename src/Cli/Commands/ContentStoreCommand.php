@@ -7,11 +7,10 @@ namespace Damoony\Cli\Commands;
 use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
-use Damoony\Core\Config;
 use Damoony\Files\Fs;
 use Damoony\Files\Paths;
 
-final class MediaStoreCommand implements CommandInterface
+final class ContentStoreCommand implements CommandInterface
 {
     private const MIME_EXT = [
         'image/jpeg' => 'jpg',
@@ -27,12 +26,12 @@ final class MediaStoreCommand implements CommandInterface
 
     public function name(): string
     {
-        return 'media:store';
+        return 'content:store';
     }
 
     public function description(): string
     {
-        return 'Записать медиа (base64 или data_file) в www/media/<domain>/<allias>/<category>/';
+        return 'Записать контент (base64 или data_file) в /content/<domain>/<allias>/<category>/';
     }
 
     public function run(array $args, Context $context): Result
@@ -101,8 +100,8 @@ final class MediaStoreCommand implements CommandInterface
             return $r;
         }
 
-        // 5. Лимит размера (10 MB)
-        $maxSize = 10485760;
+        // 5. Лимит размера (25 MB — как в ainet.config)
+        $maxSize = 26214400;
         if (strlen($bytes) > $maxSize) {
             $r->error('Файл больше ' . $maxSize . ' байт');
             return $r;
@@ -125,25 +124,25 @@ final class MediaStoreCommand implements CommandInterface
             }
         }
 
-        // 7. Хэш и путь
+        // 7. Хэш и путь (contentRoot, вне webroot)
         $hash = substr(hash('sha256', $bytes), 0, 16);
         $ext = self::MIME_EXT[$mime];
-        $mediaDir = $this->paths->media($domain, $allias) . '/' . $category;
-        $file = $mediaDir . '/' . $hash . '.' . $ext;
-        $metaFile = $mediaDir . '/' . $hash . '.meta.json';
+        $contentDir = $this->paths->content($domain, $allias) . '/' . $category;
+        $file = $contentDir . '/' . $hash . '.' . $ext;
+        $metaFile = $contentDir . '/' . $hash . '.meta.json';
 
         // 8. Дедупликация
         if (is_file($file)) {
             $rel = Fs::rel($file, $this->paths->root());
             $r->file($rel);
-            $context->step('Медиа уже существует (дедуплицировано)', true, $hash);
+            $context->step('Контент уже существует (дедуплицировано)', true, $hash);
             $r->warn('deduplicated');
 
             return $r;
         }
 
         // 9. Запись
-        Fs::mkdir($mediaDir);
+        Fs::mkdir($contentDir);
         Fs::writeAtomic($file, $bytes);
         $r->file(Fs::rel($file, $this->paths->root()));
 
@@ -156,6 +155,7 @@ final class MediaStoreCommand implements CommandInterface
             'height' => $height,
             'hash' => $hash,
             'downloaded_at' => gmdate('Y-m-d\TH:i:s\Z'),
+            'page_refs' => [],
         ];
         Fs::writeAtomic(
             $metaFile,
@@ -163,7 +163,7 @@ final class MediaStoreCommand implements CommandInterface
         );
         $r->file(Fs::rel($metaFile, $this->paths->root()));
 
-        $context->step('Медиа сохранено', true, $hash);
+        $context->step('Контент сохранён', true, $hash);
 
         return $r;
     }
