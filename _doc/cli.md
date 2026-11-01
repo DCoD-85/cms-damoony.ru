@@ -8,7 +8,7 @@ CLI-команды
 Правило 3 файлов: Все сущности (Страницы, Блоки, Схемы) состоят из трех файлов: {name}.php, {name}.rules.json, {name}.editor.json.
 Для страниц все три файла имеют единый префикс: algoritm_{name}.{php,rules.json,editor.json}. Root — algoritm/algoritm.{...}.
 
-⚠️ Перед destructive-командами (allias:remove, trash:clear --force, block:remove, domain:remove, scheme:remove) — коммит в git. Они перемещают/удаляют файлы.
+⚠️ Перед destructive-командами (allias:remove, trash:clear --force, block:remove, domain:remove, scheme:remove, media:remove) — коммит в git. Они перемещают/удаляют файлы.
 
 Все destructive-операции уходят в карантин (`*_trash_<timestamp>/`) и требуют `--force`. Очистка карантина — `trash:clear`.
 
@@ -182,11 +182,13 @@ php bin/cli.php trash:clear
 --force — удалить всё.
 --older=7d — только старше 7 дней (формат: 7d, 24h, 30m).
 --domain=example.ru — только для указанного домена.
-Ищет карантины на 4 уровнях:
+Ищет карантины на 5 уровнях:
 - app/<domain>_trash_<ts>/ (domain:remove)
 - app/<domain>/<allias>_trash_<ts>/ (allias:remove)
 - app/<domain>/.alliasscheme/<name>_trash_<ts>/ (scheme:remove)
 - app/<domain>/.alliasglobal/<name>_trash_<ts>/ (block:remove)
+- www/media/.trash/<domain>_<allias>_<category>_<hash>_trash_<ts>/ (media:remove)
+Symlink-safe Fs::rmrf.
 
 structure:check
 Проверить целостность структуры (severity-aware).
@@ -226,32 +228,75 @@ php bin/cli.php migrate:page-rules [--domain=example.ru] [--dry]
 --dry — предпросмотр без записи.
 --domain — только указанный домен (по умолчанию все).
 
+media:store
+Записать медиа (base64) в www/media/<domain>/<allias>/<category>/. Обычно вызывается из aicli.php (image:download), но можно вручную.
+bash
+php bin/cli.php media:store --domain=example.ru --allias=www --category=coffee --data_b64=<base64> --mime=image/png --alt="Coffee cup" --source_url="https://..."
+--data_b64 — base64 содержимого (bytes).
+--mime — image/jpeg, image/png, image/gif, image/webp, image/svg+xml.
+--category — [a-z0-9_-]{1,32}, по умолчанию general.
+--alt, --source_url — опционально (пишутся в <hash>.meta.json).
+Валидация: domain в config/agent.config.allowed_domains, размер ≤ 10 MB, размеры картинки ≥ 200×200 (для не-SVG), MIME whitelist.
+Дедупликация: если hash уже есть — возвращает существующий путь (warning «deduplicated»).
+Метаданные: www/media/<domain>/<allias>/<category>/<hash>.meta.json.
+
+media:remove
+Удалить медиа в карантин (www/media/.trash/).
+bash
+php bin/cli.php media:remove --domain=example.ru --allias=www --category=coffee --hash=abc123def4567890 --force
+Перемещает <hash>.* + <hash>.meta.json в www/media/.trash/<domain>_<allias>_<category>_<hash>_trash_<ts>/.
+⚠️ Без --force команда отменяется.
+Idempotent: если медиа нет — warning, exit 0.
+Очистка — trash:clear.
+
+media:list
+Список медиа домена/алиаса (опционально category).
+bash
+php bin/cli.php media:list --domain=example.ru [--allias=www] [--category=coffee]
+Выводит: путь, MIME (из meta.json), размер.
+Если --allias не указан — рекурсивный обход по всем алиасам домена.
+
 Специальный слой: bin/aicli.php (AI-фасад)
-Это не команда CLI, а безопасный промежуточный слой для интеграции с локальными LLM (Ollama).
+Не команда CLI, а безопасный промежуточный слой для интеграции с локальными LLM (Ollama). Единственная точка входа для AI. Зеркалит архитектуру: stdin JSON → stdout JSON, whitelist, валидация, no RCE, no SSRF.
 bash
 echo '{"command": "engine_status", "args": {}}' | php bin/aicli.php
-Принимает JSON из STDIN. Имеет жесткий Whitelist команд, защищает систему от несанкционированного доступа AI (запрет exec/system, строгая валидация аргументов).
+Текущий whitelist (12 команд):
+- app/: read_test_file, engine_status, filler_toggle, domain:new, allias:new, page:new, page:write, page:read
+- net/: net:status, image:search, image:download, fetch
 
-Текущий whitelist (что агент может вызывать через aicli):
-- domain:new (только домены из config/agent.config)
-- allias:new (только для разрешенных доменов)
-- page:new (только для разрешенных доменов)
-- page:write (только для разрешенных доменов; пустое name конвертируется в __root__)
-- page:read (только для разрешенных доменов)
-- filler_toggle
-- engine_status
-- read_test_file
+Маршрутизация внутри aicli:
+- app/* → shell_exec → bin/cli.php
+- net:status, image:search, fetch → src/Ainet/AinetFacade (in-process)
+- image:download → AinetFacade (bytes) → shell_exec → bin/cli.php media:store
+
+Запрещены: user:new, db:migrate, admin:passwd, domain:remove, allias:remove, block:*, filler:new, scheme:*, trash:clear, migrate:page-rules, structure:*.
 
 Валидация аргументов:
-- domain — должен быть в $allowedDomains (из config/agent.config).
-- allias, name — regex /^[a-z][a-z0-9_]*$/.
-- Блоки для page:write — должен быть JSON-массив.
-- Пустое name в page:write → __root__ (главная страница).
-- Опасные команды (user:new, db:migrate, admin:passwd, domain:remove, allias:remove, block:remove, trash:clear, migrate:page-rules, scheme:*) — отклоняются.
+- domain — должен быть в config/agent.config.allowed_domains (для page:*, image:download, allias:new, filler_toggle).
+- allias, name, block — regex /^[a-z][a-z0-9_]*$/.
+- blocks для page:write — JSON-массив.
+- Пустое name в page:write → __root__.
+- image:search: query 1-100, count 1-20, provider ∈ {openverse, wikimedia}.
+- image:download: url в whitelist config/ainet.config, allias regex, category [a-z0-9_-]{1,32}.
+
+net: команды (через AINET, in-process)
+net:status — диагностика: провайдеры, whitelist, кэш, rate limit.
+image:search — поиск картинок. Args: query (1-100), count (1-20), provider (опционально, default=wikimedia).
+image:download — скачать и сохранить. Args: url, domain, allias, category, alt. Внутри: AinetFacade → bytes → cli.php media:store.
+fetch — GET к whitelisted URL. Args: url, type (json|text).
+Все net:* защищены: UrlGuard (SSRF), DomainWhitelist (config/ainet.config), rate limit (30/min), TTL кэш (7 дней).
+
+Автофоллбэк: image:search без явного provider → primary (wikimedia по умолчанию) → если 0/ошибка → next (openverse). Явный provider — без fallback.
+
+Специальный слой: bin/ainet.php (standalone-отладка)
+НЕ в whitelist AI. Только для ручной проверки:
+bash
+echo '{"command": "net:status", "args": {}}' | php bin/ainet.php
+echo '{"command": "image:search", "args": {"query": "coffee", "count": 2}}' | php bin/ainet.php
 
 Общие флаги
 --dry — предпросмотр без записи (trash:clear, migrate:page-rules).
---force — без подтверждения (allias:remove, domain:remove, block:remove, scheme:remove, trash:clear).
+--force — без подтверждения (allias:remove, domain:remove, block:remove, scheme:remove, media:remove, trash:clear).
 
 Идемпотентность
 db:migrate — не дублирует миграции.
@@ -260,6 +305,7 @@ structure:repair — безопасен, проверяет наличие пе�
 migrate:page-rules — идемпотентна (повторный запуск 0/0/0).
 filler:toggle — идемпотентна (не перезаписывает файл при том же значении).
 *:remove — идемпотентны (нет папки + нет в конфиге → warning, exit 0).
+media:store — дедуплицирует по hash (не пишет повторно).
 
 Чего в CLI нет (только UI)
 CodeMirror-редактор (/admin/?p=editor).
@@ -267,12 +313,13 @@ CodeMirror-редактор (/admin/?p=editor).
 Профиль администратора и логи.
 Управление банами.
 
-Всего команд: 24 (без help).
+Всего команд: 27 (без help).
 
 Что делать при ошибке
 1. structure:check — базовая диагностика (severity-aware).
 2. structure:repair — умное восстановление структуры.
 3. migrate:page-rules — если есть устаревшие .rules.json (warning в structure:check).
 4. Проверить config/site.config и config/engine.config.
+5. Для net:* ошибок — проверить config/ainet.config (whitelist, провайдеры, таймауты) и `net:status`.
 
 --- КОНЕЦ ДОКУМЕНТА ---

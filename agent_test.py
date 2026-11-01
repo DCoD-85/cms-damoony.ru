@@ -1,191 +1,702 @@
-import json
-import subprocess
-import urllib.request
-import re
-
-OLLAMA_URL = "http://localhost:11434/api/chat"
-MODEL_NAME = "qwen2.5-coder:7b"
-MAX_STEPS = 3
-
-ALLOWED_COMMANDS = ['domain:new', 'allias:new', 'page:new', 'page:write']
-
-messages = [
-    {
-        "role": "system", 
-        "content": "You are a strict AI agent. Use ONLY these commands: 'domain:new', 'allias:new', 'page:new', 'page:write'. Respond with ONE valid JSON array of actions. Do not explain, just output the JSON."
-    },
-    {
-        "role": "user", 
-        "content": """Create a coffee shop with 3 interlinked pages. Add CSS classes and inline styles for design.
-1. domain:new 'damoony3test.ru'
-2. allias:new 'damoony3test.ru', name 'coffee'
-3. page:new for 'about', 'menu', 'contacts' (all in coffee alias)
-4. page:write for each page:
-   - about: blocks=[
-       {type:'h1', content:'About Us', class:'hero-title', style:'color: #6b3e26; font-size: 2.5em; text-align: center;'},
-       {type:'text', content:'Founded in 2024 with a passion for great coffee.', style:'text-align: center; font-size: 1.2em;'},
-       {type:'link', url:'/menu', content:'Our Menu', class:'nav-link', style:'display:inline-block; margin-right:20px; padding:10px; background:#6b3e26; color:#fff; text-decoration:none;'},
-       {type:'link', url:'/contacts', content:'Contact Us', class:'nav-link', style:'display:inline-block; padding:10px; background:#6b3e26; color:#fff; text-decoration:none;'}
-     ]
-   - menu: blocks=[
-       {type:'h1', content:'Our Menu', style:'text-align:center; border-bottom: 2px solid #6b3e26;'},
-       {type:'ul', items:['Espresso - $3','Latte - $4','Cappuccino - $4.5'], class:'menu-list', style:'line-height:2; font-size:1.2em; list-style-type: none;'},
-       {type:'link', url:'/about', content:'About Us', style:'display:inline-block; margin-right:20px; color:#6b3e26;'},
-       {type:'link', url:'/contacts', content:'Contacts', style:'display:inline-block; color:#6b3e26;'}
-     ]
-   - contacts: blocks=[
-       {type:'h1', content:'Contact Us', style:'text-align:center;'},
-       {type:'text', content:'hello@damoony.coffee', style:'font-size:1.5em; color:#0066cc; text-align:center;'},
-       {type:'link', url:'/about', content:'About Us', class:'nav-link', style:'display:inline-block; margin-right:20px;'},
-       {type:'link', url:'/menu', content:'Our Menu', class:'nav-link', style:'display:inline-block;'}
-     ]
 """
-    }
-]
+Damoony AI Agent — Python-цикл для LLM (Ollama) ↔ AICLI ↔ CLI.
 
-tools = [
-    {
-        "type": "function", 
-        "function": {
-            "name": "domain:new", 
-            "description": "Creates a domain", 
-            "parameters": {"type": "object", "properties": {"domain": {"type": "string"}}, "required": ["domain"]}
-        }
-    },
-    {
-        "type": "function", 
-        "function": {
-            "name": "allias:new", 
-            "description": "Creates an alias", 
-            "parameters": {"type": "object", "properties": {"domain": {"type": "string"}, "name": {"type": "string"}}, "required": ["domain", "name"]}
-        }
-    },
-    {
-        "type": "function", 
-        "function": {
-            "name": "page:new", 
-            "description": "Creates a page", 
-            "parameters": {"type": "object", "properties": {"domain": {"type": "string"}, "allias": {"type": "string"}, "name": {"type": "string"}}, "required": ["domain", "allias", "name"]}
-        }
-    },
-    {
-        "type": "function", 
-        "function": {
-            "name": "page:write", 
-            "description": "Writes blocks to a page. Each block supports optional 'class', 'id', 'style' fields.",
-            "parameters": {
-                "type": "object", 
-                "properties": {
-                    "domain": {"type": "string"}, 
-                    "allias": {"type": "string"}, 
-                    "name": {"type": "string"}, 
-                    "blocks": {
-                        "type": "array", 
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "type": {"type": "string", "enum": ["h1", "h2", "h3", "text", "img", "button", "link", "ul"]},
-                                "content": {"type": "string"},
-                                "url": {"type": "string"},
-                                "items": {"type": "array", "items": {"type": "string"}},
-                                "class": {"type": "string", "description": "CSS class(es)"},
-                                "id": {"type": "string"},
-                                "style": {"type": "string", "description": "Inline CSS"},
-                                "alt": {"type": "string", "description": "Alt text for images"}
-                            },
-                            "required": ["type"]
-                        }
-                    }
-                }, 
-                "required": ["domain", "allias", "name", "blocks"]
-            }
-        }
-    }
-]
+Архитектура: AI -> AICLI (единственный фасад) -> {CLI, AINET(lib)} -> CLI(FS)
+Rollback: доверенный Python-код вызывает CLI напрямую (AI не имеет доступа).
 
-def call_ollama(payload):
+Использование:
+    python agent_test.py --brief="Создай сайт кофейни с 3 страницами и картинками"
+    python agent_test.py --brief-file=brief.txt --model=qwen2.5-coder:7b --max-steps=10
+
+Требования:
+    - Ollama запущена локально (http://localhost:11434)
+    - config/agent.config содержит allowed_domains
+    - config/ainet.config (если используем image:*)
+    - PHP 8.4 в PATH, bin/aicli.php и bin/cli.php доступны
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import subprocess
+import sys
+# Форсируем UTF-8 вывод (Windows cp1251 не может печатать Unicode-символы)
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+import urllib.request
+from dataclasses import dataclass, field
+from typing import Any
+
+# === Конфигурация ===
+OLLAMA_URL = "http://localhost:11434/api/chat"
+DEFAULT_MODEL = "qwen2.5-coder:7b"
+DEFAULT_MAX_STEPS = 10
+BATCH_SIZE = 5
+OLLAMA_TIMEOUT = 180  # 3 минуты на один запрос к LLM
+CLI_TIMEOUT = 60  # 1 минута на один CLI-вызов
+
+PROJECT_ROOT = __import__("os").path.dirname(__file__)
+AICLI_PATH = f"{PROJECT_ROOT}/bin/aicli.php"
+CLI_PATH = f"{PROJECT_ROOT}/bin/cli.php"
+
+
+# === Данные ===
+@dataclass
+class ToolCall:
+    name: str
+    args: dict[str, Any]
+
+
+@dataclass
+class Result:
+    ok: bool
+    data: dict[str, Any] | None = None
+    error: str = ""
+    hint: str = ""
+    context: dict[str, Any] = field(default_factory=dict)
+    raw: str = ""
+
+    @classmethod
+    def from_json(cls, raw: str) -> "Result":
+        raw = raw.strip()
+        if not raw:
+            return cls(ok=False, error="Empty response", raw=raw)
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            return cls(ok=False, error=f"Invalid JSON: {raw[:200]}", raw=raw)
+        if not isinstance(data, dict):
+            return cls(ok=False, error="Expected object", raw=raw)
+        return cls(
+            ok=bool(data.get("ok", False)),
+            data=data.get("data"),
+            error=str(data.get("error", "")),
+            hint=str(data.get("hint", "")),
+            context=data.get("context", {}) or {},
+            raw=raw,
+        )
+
+
+# === AICLI Client (единственный канал для AI) ===
+class AicliClient:
+    def __init__(self, aicli_path: str = AICLI_PATH, cli_path: str = CLI_PATH):
+        self.aicli_path = aicli_path
+        self.cli_path = cli_path
+
+    def call_aicli(self, command: str, args: dict[str, Any]) -> Result:
+        """AI-фасад: валидация, whitelist, домены. Только разрешённое."""
+        payload = json.dumps({"command": command, "args": args}, ensure_ascii=False)
+        try:
+            proc = subprocess.run(
+                ["php", self.aicli_path],
+                input=payload,
+                text=True,
+                capture_output=True,
+                encoding="utf-8",
+                timeout=CLI_TIMEOUT,
+            )
+        except subprocess.TimeoutExpired:
+            return Result(ok=False, error=f"Timeout: {command}")
+        except Exception as e:
+            return Result(ok=False, error=f"Subprocess failed: {e}")
+
+        if proc.returncode != 0 and not proc.stdout.strip():
+            return Result(ok=False, error=f"aicli exit {proc.returncode}: {proc.stderr[:200]}")
+
+        return Result.from_json(proc.stdout)
+
+    def call_cli(self, command: str, args: dict[str, Any]) -> Result:
+        """Прямой CLI: для rollback (доверенный Python, не AI)."""
+        cmd = ["php", self.cli_path, command]
+        for k, v in args.items():
+            if isinstance(v, bool):
+                if v:
+                    cmd.append(f"--{k}")
+            else:
+                cmd.append(f"--{k}={v}")
+        try:
+            proc = subprocess.run(
+                cmd,
+                text=True,
+                capture_output=True,
+                encoding="utf-8",
+                timeout=CLI_TIMEOUT,
+            )
+        except Exception as e:
+            return Result(ok=False, error=f"CLI subprocess failed: {e}")
+
+        output = proc.stdout.strip()
+        # CLI возвращает Result с полем ok + текст "OK" в конце
+        ok = "OK" in output and proc.returncode == 0
+        return Result(ok=ok, data={"output": output}, raw=output)
+
+
+# === Transaction (rollback при падении) ===
+class Transaction:
+    """
+    Undo-стек. Записывает откатывающие команды. При rollback — выполняет в обратном порядке.
+    Доверенный Python-код вызывает CLI напрямую (не через aicli) — это разрешено.
+    """
+
+    def __init__(self, client: AicliClient):
+        self.client = client
+        self.undo: list[tuple[str, dict[str, Any]]] = []
+        self.active = True
+
+    def record_domain_new(self, domain: str) -> None:
+        self.undo.append(("domain:remove", {"domain": domain, "force": True}))
+
+    def record_allias_new(self, domain: str, allias: str) -> None:
+        self.undo.append(("allias:remove", {"domain": domain, "name": allias, "force": True}))
+
+    def record_media(self, domain: str, allias: str, category: str, file_hash: str) -> None:
+        self.undo.append((
+            "media:remove",
+            {"domain": domain, "allias": allias, "category": category, "hash": file_hash, "force": True},
+        ))
+
+    def record_page_write_restore(self, domain: str, allias: str, name: str, old_php: str) -> None:
+        """Сохраняем старый PHP-код, восстанавливаем при rollback через прямую запись файла (CLI не поддерживает restore)."""
+        # Восстановление: пишем старый PHP обратно через PHP-код (prostoy) — это не через CLI.
+        # Но это единственный способ. Альтернатива — оставить как warning.
+        # Для v1 — только логируем (не откатываем page:write), т.к. snapshot сложен.
+        pass
+
+    def commit(self) -> None:
+        self.undo = []
+        self.active = False
+
+    def rollback(self) -> list[str]:
+        """Выполняет undo в обратном порядке. Возвращает лог."""
+        log = []
+        for cmd, args in reversed(self.undo):
+            log.append(f"ROLLBACK: {cmd} {args}")
+            self.client.call_cli(cmd, args)
+        self.undo = []
+        self.active = False
+        return log
+
+
+# === Batcher (разбиение длинного плана) ===
+class Batcher:
+    def __init__(self, items: list[ToolCall], size: int = BATCH_SIZE):
+        self.batches = [items[i : i + size] for i in range(0, len(items), size)]
+
+    def __len__(self) -> int:
+        return len(self.batches)
+
+    def __iter__(self):
+        return iter(self.batches)
+
+
+# === Обработка ответа LLM ===
+def parse_tool_calls(message: dict[str, Any]) -> list[ToolCall]:
+    """Парсит tool_calls или JSON-массив из content (Qwen 7B иногда возвращает текст)."""
+    calls: list[ToolCall] = []
+
+    raw_calls = message.get("tool_calls") or []
+    for tc in raw_calls:
+        try:
+            fn = tc.get("function", {})
+            name = fn.get("name", "")
+            args_raw = fn.get("arguments", {})
+            if isinstance(args_raw, str):
+                args = json.loads(args_raw) if args_raw else {}
+            else:
+                args = args_raw
+            if name:
+                calls.append(ToolCall(name=name, args=args or {}))
+        except (json.JSONDecodeError, AttributeError, TypeError):
+            continue
+
+    if calls:
+        return calls
+
+    content = (message.get("content") or "").strip()
+    if not content:
+        return []
+
+    # Fallback: ищем JSON-массив в тексте
+    candidates = []
+    try:
+        candidates.append(json.loads(content))
+    except json.JSONDecodeError:
+        pass
+    match = re.search(r"\[\s*\{.*?\}\s*\]", content, re.DOTALL)
+    if match:
+        try:
+            candidates.append(json.loads(match.group(0)))
+        except json.JSONDecodeError:
+            pass
+
+    for cand in candidates:
+        if not isinstance(cand, list):
+            continue
+        for item in cand:
+            if not isinstance(item, dict):
+                continue
+            name = item.get("name") or (item.get("function") or {}).get("name")
+            args = item.get("arguments") or item.get("args") or {}
+            if isinstance(args, str):
+                try:
+                    args = json.loads(args)
+                except json.JSONDecodeError:
+                    args = {}
+            if name:
+                calls.append(ToolCall(name=name, args=args or {}))
+
+    # Дедупликация: Qwen 7B иногда возвращает одинаковые tool_calls дважды
+    seen: set[tuple[str, str]] = set()
+    unique: list[ToolCall] = []
+    for c in calls:
+        try:
+            key = (c.name, json.dumps(c.args, sort_keys=True, ensure_ascii=False))
+        except TypeError:
+            key = (c.name, str(c.args))
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(c)
+    if len(unique) != len(calls):
+        print(f"  [dedupe] removed {len(calls) - len(unique)} duplicate(s)")
+    return unique
+
+
+def is_already_exists_error(error: str) -> bool:
+    """Idempotent: 'уже существует' — не ошибка, просто пропускаем."""
+    low = error.lower()
+    return (
+        "уже существует" in low
+        or "already exists" in low
+        or "уже создан" in low
+    )
+
+
+# === Prompt Builder ===
+def build_system_prompt() -> str:
+    return """You are Damoony AI Agent. Use ONLY these tools:
+- domain:new, allias:new, page:new, page:write, page:read
+- image:search, image:download, fetch, net:status
+
+RULES:
+1. Output ONLY valid JSON array of actions (no explanations, no markdown).
+2. Page/alias names: lowercase letters, digits, underscores. NO hyphens.
+3. Root page is created automatically by allias:new. Use page:write with name='' to write to root.
+4. NEVER put external URLs in img blocks. Use image:download first, then local_url from its response.
+5. For each image: image:search -> pick url (width/height >= 800, license CC/PD) -> image:download -> page:write with local_url.
+6. Always pass 'alt' to image:download.
+7. If a command returns {ok: false, error, hint} — read hint and self-correct in next step.
+8. If 'already exists' error — skip that command, do not retry.
+9. Domain must be in config/agent.config allowed_domains.
+10. Keep each JSON array <= 5 actions (batch limit). For longer plans, do it in multiple steps.
+11. Do NOT repeat commands. Each (command, args) pair appears EXACTLY ONCE per step.
+12. COMPLETENESS: Do NOT stop until EVERY page has content. After page:new you MUST call page:write.
+13. If brief mentions images — you MUST call image:search, then image:download, then use local_url in page:write for EACH page.
+14. If you only created the skeleton (domain/allias/pages) — you are NOT done. Continue with page:write.
+15. Look at previous tool results: if page:write was not called for a page — call it now.
+
+Example (site with images):
+[
+  {"name": "domain:new", "arguments": {"domain": "example.ru"}},
+  {"name": "allias:new", "arguments": {"domain": "example.ru", "name": "coffee"}},
+  {"name": "page:new", "arguments": {"domain": "example.ru", "allias": "coffee", "name": "about"}},
+  {"name": "image:search", "arguments": {"query": "coffee cup", "count": 3}},
+  {"name": "image:download", "arguments": {"url": "https://upload.wikimedia.org/...jpg", "domain": "example.ru", "allias": "coffee", "category": "coffee", "alt": "Coffee cup"}},
+  {"name": "page:write", "arguments": {"domain": "example.ru", "allias": "coffee", "name": "about", "blocks": [{"type": "h1", "content": "About"}, {"type": "img", "content": "/media/example.ru/coffee/coffee/a3f5c1e9.jpg", "alt": "Coffee cup"}]}}
+]
+"""
+
+
+def build_user_prompt(brief: str, allowed_domains: list[str]) -> str:
+    return f"""BRIEF:
+{brief}
+
+CONTEXT:
+- Allowed domains (from agent.config): {", ".join(allowed_domains) or "NONE"}
+- AINET config: {'present' if _file_exists(f"{PROJECT_ROOT}/config/ainet.config") else 'MISSING'}
+- Use ONLY allowed domains. If domain not allowed -> refuse.
+
+REQUIRED CHECKLIST (do NOT stop until all done):
+1. domain:new (if not exists)
+2. allias:new (if not exists)
+3. page:new for EACH page
+4. image:search for EACH page theme
+5. image:download for EACH chosen image (get local_url)
+6. page:write for EACH page (with local_url in img blocks if applicable)
+
+Rules:
+- Max 5 actions per step. If checklist not complete -> continue in next step.
+- After creating pages (step 1), you MUST proceed to images and page:write (step 2+).
+- Do NOT output empty response until ALL pages have page:write.
+- Look at tool results from previous steps: what is done, what is missing.
+
+Start now with step 1 (skeleton), then continue to step 2 (content)."""
+
+
+def _file_exists(path: str) -> bool:
+    import os
+    return os.path.isfile(path)
+
+
+# === LLM Client ===
+def call_ollama(model: str, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> dict[str, Any]:
+    payload = {
+        "model": model,
+        "messages": messages,
+        "tools": tools,
+        "stream": False,
+        "options": {"temperature": 0, "num_ctx": 32768},
+    }
     req = urllib.request.Request(
         OLLAMA_URL,
         data=json.dumps(payload).encode("utf-8"),
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=180) as resp:
+    with urllib.request.urlopen(req, timeout=OLLAMA_TIMEOUT) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
-print(f"Запуск агента ({MODEL_NAME})...\n")
 
-step = 1
-while step <= MAX_STEPS:
-    print(f"--- Шаг {step} ---")
-    
-    payload = {"model": MODEL_NAME, "messages": messages, "tools": tools, "stream": False, "options": {"temperature": 0}}
-    
+# === Tool definitions для Ollama ===
+def build_tools() -> list[dict[str, Any]]:
+    str_prop = {"type": "string"}
+    return [
+        {
+            "type": "function",
+            "function": {
+                "name": "domain:new",
+                "description": "Create a domain. Domain must be in agent.config allowed_domains.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {"domain": str_prop},
+                    "required": ["domain"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "allias:new",
+                "description": "Create an alias in domain.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {"domain": str_prop, "name": str_prop},
+                    "required": ["domain", "name"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "page:new",
+                "description": "Create a page (empty). Root page is auto-created by allias:new.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {"domain": str_prop, "allias": str_prop, "name": str_prop},
+                    "required": ["domain", "allias", "name"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "page:write",
+                "description": "Write JSON blocks to page. Use name='' for root page. For img use local_url from image:download.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "domain": str_prop,
+                        "allias": str_prop,
+                        "name": str_prop,
+                        "blocks": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "type": {"type": "string", "enum": ["h1", "h2", "h3", "text", "img", "link", "button", "ul"]},
+                                    "content": str_prop,
+                                    "url": str_prop,
+                                    "items": {"type": "array", "items": str_prop},
+                                    "class": str_prop,
+                                    "id": str_prop,
+                                    "style": str_prop,
+                                    "alt": str_prop,
+                                },
+                                "required": ["type"],
+                            },
+                        },
+                    },
+                    "required": ["domain", "allias", "name", "blocks"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "page:read",
+                "description": "Read PHP code of a page.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {"domain": str_prop, "allias": str_prop, "name": str_prop},
+                    "required": ["domain", "allias", "name"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "image:search",
+                "description": "Search images. Returns url, preview_url, width, height, license, author.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": str_prop,
+                        "count": {"type": "integer", "minimum": 1, "maximum": 20},
+                        "provider": {"type": "string", "enum": ["wikimedia", "openverse"]},
+                    },
+                    "required": ["query"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "image:download",
+                "description": "Download image to www/media/. Returns local_url for page:write img.content.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "url": str_prop,
+                        "domain": str_prop,
+                        "allias": str_prop,
+                        "category": str_prop,
+                        "alt": str_prop,
+                    },
+                    "required": ["url", "domain", "allias", "category"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "fetch",
+                "description": "GET whitelisted URL. Returns JSON or text.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "url": str_prop,
+                        "type": {"type": "string", "enum": ["json", "text"]},
+                    },
+                    "required": ["url"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "net:status",
+                "description": "AINET diagnostics: providers, cache, rate limit.",
+                "parameters": {"type": "object", "properties": {}},
+            },
+        },
+    ]
+
+
+# === Основной цикл ===
+def run_agent(
+    brief: str,
+    model: str = DEFAULT_MODEL,
+    max_steps: int = DEFAULT_MAX_STEPS,
+    batch_size: int = BATCH_SIZE,
+    dry_run: bool = False,
+) -> dict[str, Any]:
+    client = AicliClient()
+    tx = Transaction(client)
+
+    # Загружаем allowed_domains для контекста промпта
+    allowed_domains: list[str] = []
     try:
-        data = call_ollama(payload)
-    except Exception as e:
-        print(f"Ошибка: {e}")
-        break
-        
-    message = data.get("message", {})
-    content = message.get("content", "")
-    tool_calls = message.get("tool_calls")
-    
-    # Парсим JSON, если он пришел текстом
-    if not tool_calls and content:
+        with open(f"{PROJECT_ROOT}/config/agent.config", encoding="utf-8") as f:
+            allowed_domains = json.load(f).get("allowed_domains", [])
+    except Exception:
+        pass
+
+    messages: list[dict[str, Any]] = [
+        {"role": "system", "content": build_system_prompt()},
+        {"role": "user", "content": build_user_prompt(brief, allowed_domains)},
+    ]
+    tools = build_tools()
+
+    print(f"\n=== Agent started (model: {model}, max_steps: {max_steps}, batch: {batch_size}) ===\n")
+    stats = {"steps": 0, "commands": 0, "errors": 0, "rollbacks": 0, "batches": 0}
+
+    for step in range(1, max_steps + 1):
+        stats["steps"] = step
+        print(f"--- Step {step}/{max_steps} ---")
+
         try:
-            plan = json.loads(content.strip())
-            if isinstance(plan, list):
-                tool_calls = [{"function": {"name": a["name"], "arguments": a["arguments"]}} for a in plan if "name" in a]
-        except json.JSONDecodeError:
-            match = re.search(r'\[.*\]', content, re.DOTALL)
-            if match:
-                try:
-                    plan = json.loads(match.group(0))
-                    if isinstance(plan, list):
-                        tool_calls = [{"function": {"name": a["name"], "arguments": a["arguments"]}} for a in plan if "name" in a]
-                except json.JSONDecodeError:
-                    print("[!] Не удалось распарсить JSON от агента.")
+            response = call_ollama(model, messages, tools)
+        except Exception as e:
+            print(f"[!] Ollama error: {e}")
+            return {"ok": False, "error": f"Ollama: {e}", "stats": stats}
 
-    if not tool_calls:
-        print("\nФИНАЛЬНЫЙ ОТВЕТ АГЕНТА:")
-        print(content)
-        break
-        
-    messages.append({"role": "assistant", "content": content, "tool_calls": tool_calls})
-    
-    all_success = True
-    for tool_call in tool_calls:
-        cmd_name = tool_call["function"]["name"]
-        cmd_args = tool_call["function"]["arguments"]
-        
-        if cmd_name not in ALLOWED_COMMANDS:
-            print(f"[!] Агент выдумал команду '{cmd_name}'. Пропускаем.")
-            all_success = False
-            messages.append({"role": "tool", "content": "Error: Unknown command.", "name": cmd_name})
+        message = response.get("message", {})
+        calls = parse_tool_calls(message)
+
+        if not calls:
+            final = (message.get("content") or "").strip()
+            if not final:
+                # LLM вернул пустой ответ — спросить «продолжить?»
+                if step < max_steps:
+                    print(f"  [retry] empty response, asking to continue (step {step+1})")
+                    messages.append({"role": "assistant", "content": "(empty)"})
+                    messages.append({
+                        "role": "user",
+                        "content": "You returned empty response. Check tool results from previous steps: did you call page:write for EVERY page? Did you download images? If not — continue with JSON array. If everything is done — respond with text 'DONE'.",
+                    })
+                    continue
+                final = "(agent finished with no text response — all actions done)"
+            print(f"\n=== Final answer from agent ===\n{final}\n")
+            tx.commit()
+            return {"ok": True, "final": final, "stats": stats}
+
+        messages.append({
+            "role": "assistant",
+            "content": message.get("content", ""),
+            "tool_calls": [
+                {"function": {"name": c.name, "arguments": c.args}} for c in calls
+            ],
+        })
+
+        batcher = Batcher(calls, size=batch_size)
+        stats["batches"] += len(batcher)
+        had_errors = False
+
+        for batch_idx, batch in enumerate(batcher, 1):
+            print(f"  Batch {batch_idx}/{len(batcher)}: {len(batch)} command(s)")
+            for call in batch:
+                stats["commands"] += 1
+                print(f"  [AI] -> {call.name}  args={_short(call.args)}")
+
+                if dry_run:
+                    print("  [dry-run] skipped")
+                    continue
+
+                result = client.call_aicli(call.name, call.args)
+                print(f"  [aicli] ok={result.ok}  {_short(result.data or result.error)}")
+
+                if not result.ok:
+                    if is_already_exists_error(result.error):
+                        print(f"  [skip] already exists: {result.error}")
+                        messages.append({
+                            "role": "tool",
+                            "content": json.dumps({"ok": True, "note": "already exists, skipped"}, ensure_ascii=False),
+                        })
+                        continue
+
+                    # Ошибка — транзакция откатывается
+                    stats["errors"] += 1
+                    had_errors = True
+                    print(f"  [ERROR] {result.error}  hint={result.hint}")
+                    rollback_log = tx.rollback()
+                    stats["rollbacks"] += 1
+                    print(f"  [ROLLBACK] {len(rollback_log)} operation(s)")
+                    for line in rollback_log:
+                        print(f"    {line}")
+                    return {
+                        "ok": False,
+                        "error": result.error,
+                        "hint": result.hint,
+                        "context": result.context,
+                        "stats": stats,
+                    }
+
+                # Успех — записываем undo
+                _record_undo(tx, call, result)
+
+                # Возвращаем результат в LLM
+                messages.append({
+                    "role": "tool",
+                    "content": json.dumps(_compact(result.data), ensure_ascii=False),
+                })
+
+        if had_errors:
+            print("[!] Some commands failed, continuing to next step...")
             continue
-            
-        print(f"[AI] Вызывает: {cmd_name}")
-        
-        php_input = json.dumps({"command": cmd_name, "args": cmd_args})
-        result = subprocess.run(
-            ["php", "bin/aicli.php"],
-            input=php_input, text=True, capture_output=True, encoding='utf-8'
-        )
-        
-        out = result.stdout.strip()
-        print(f"[Safe-CLI] Ответ: {out[:100]}...")
-        
-        if '"ok":false' in out and 'уже существует' not in out and 'already exists' not in out:
-            all_success = False
-            
-        messages.append({"role": "tool", "content": out, "name": cmd_name})
-        
-    if all_success:
-        print("\n✅ Все команды выполнены. Завершаем.")
-        break
-        
-    step += 1
 
-if step > MAX_STEPS:
-    print(f"\n⚠️ Лимит шагов ({MAX_STEPS}) достигнут.")
+        print(f"  [OK] Step {step} complete (no errors)\n")
+
+    print(f"\n[!] Max steps ({max_steps}) reached without final answer.")
+    return {"ok": False, "error": "max_steps reached", "stats": stats}
+
+
+def _record_undo(tx: Transaction, call: ToolCall, result: Result) -> None:
+    """Регистрирует undo-операцию для успешной команды."""
+    if call.name == "domain:new":
+        tx.record_domain_new(call.args.get("domain", ""))
+    elif call.name == "allias:new":
+        tx.record_allias_new(call.args.get("domain", ""), call.args.get("name", ""))
+    elif call.name == "image:download":
+        data = result.data or {}
+        if isinstance(data, dict) and data.get("hash"):
+            tx.record_media(
+                domain=call.args.get("domain", ""),
+                allias=call.args.get("allias", ""),
+                category=call.args.get("category", ""),
+                file_hash=data["hash"],
+            )
+
+
+def _short(v: Any, n: int = 120) -> str:
+    s = json.dumps(v, ensure_ascii=False) if not isinstance(v, str) else v
+    return s if len(s) <= n else s[:n] + "..."
+
+
+def _compact(data: Any) -> Any:
+    """Убираем bytes (base64) из ответа — они не нужны LLM."""
+    if isinstance(data, dict):
+        return {k: _compact(v) for k, v in data.items() if k != "bytes" and k != "cli_output"}
+    if isinstance(data, list):
+        return [_compact(x) for x in data]
+    return data
+
+
+# === CLI ===
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Damoony AI Agent")
+    parser.add_argument("--brief", type=str, default="", help="Task description")
+    parser.add_argument("--brief-file", type=str, default="", help="Read brief from file")
+    parser.add_argument("--model", type=str, default=DEFAULT_MODEL, help=f"Ollama model (default: {DEFAULT_MODEL})")
+    parser.add_argument("--max-steps", type=int, default=DEFAULT_MAX_STEPS)
+    parser.add_argument("--batch-size", type=int, default=BATCH_SIZE)
+    parser.add_argument("--dry-run", action="store_true", help="Don't execute commands")
+    args = parser.parse_args()
+
+    brief = args.brief
+    if args.brief_file:
+        with open(args.brief_file, encoding="utf-8") as f:
+            brief = f.read()
+
+    if not brief.strip():
+        print("ERROR: --brief or --brief-file required")
+        return 1
+
+    result = run_agent(
+        brief=brief,
+        model=args.model,
+        max_steps=args.max_steps,
+        batch_size=args.batch_size,
+        dry_run=args.dry_run,
+    )
+
+    print("\n=== Stats ===")
+    print(json.dumps(result.get("stats", {}), indent=2))
+    print(f"\nResult: {'OK' if result.get('ok') else 'FAILED'}")
+    return 0 if result.get("ok") else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

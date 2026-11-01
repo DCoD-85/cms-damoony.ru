@@ -4,7 +4,7 @@
 Документ описывает развёртывание Damoony Engine с нуля. Проект находится в состоянии 98% production-ready (0 P0-блокеров). Перед деплоем прочитайте MANIFEST.md.
 
 Требования
-PHP >= 8.4 (расширения: mbstring, json, pdo_mysql, openssl, fileinfo, tokenizer, xml, curl).
+PHP >= 8.4 (расширения: mbstring, json, pdo_mysql, openssl, fileinfo, tokenizer, xml, curl, gd).
 
 Composer.
 
@@ -14,11 +14,26 @@ Apache 2.4 + mod_rewrite или Nginx + PHP-FPM.
 
 Ollama (опционально, для работы AI-агента, рекомендуется Qwen 2.5 Coder 7B).
 
+curl + openssl (для AINET — обязательны).
+
+gd (для media:store — проверка размеров картинок; без gd не работает валидация «≥ 200×200»).
+
 Установка
 bash
 git clone <repo-url> damoony
 cd damoony
 composer install
+
+Проверка расширений:
+bash
+php -m | grep -iE "curl|json|openssl|mbstring|pdo|gd"
+php -r "var_dump(function_exists('curl_init'), function_exists('imagecreatetruecolor'));"
+
+Если `curl` или `gd` отсутствуют — включите в `php.ini`:
+ini
+extension=curl
+extension=openssl
+extension=gd
 
 Конфигурация
 config/engine.config — главный конфиг движка
@@ -81,7 +96,7 @@ json
 }
 ⚠️ Обязательно: self-mapping в domains_real. Ключ реального домена должен указывать на себя ("damoony.ru": "damoony.ru"). Без этого CLI-команды упадут с Undefined array key.
 
-⚠️ realDomain: если `domains_real["damoony3.ru"] = "damoony.ru"`, то папка создаётся в `app/damoony.ru/`, а не `app/damoony3.ru/`. Все CLI-команды (block:new/remove, filler:new/toggle, scheme:*, structure:repair) резолвят realDomain перед построением пути. Ошибка в конфиге = файлы не там, где их ищет движок.
+⚠️ realDomain: если `domains_real["damoony3.ru"] = "damoony.ru"`, то папка создаётся в `app/damoony.ru/`, а не `app/damoony3.ru/`. Все CLI-команды (block/filler/scheme/domain/media) резолвят realDomain перед построением пути. Ошибка в конфиге = файлы не там, где их ищет движок.
 
 config/admin.config — доступ в админку
 Логин, хеш пароля, список разрешённых языков.
@@ -106,7 +121,67 @@ json
     "damoony.ru"
   ]
 }
-⚠️ Агент сможет вызывать `domain:new`, `page:write` и `allias:new` только для доменов из этого списка. `page:write` проверяет domain по $allowedDomains (закрыт P0 — раньше проверки не было). Это защищает боевые проекты от случайных изменений.
+⚠️ Агент сможет вызывать `domain:new`, `page:write`, `allias:new`, `image:download` только для доменов из этого списка. `page:write`/`image:download` проверяют domain по $allowedDomains (закрыт P0). Это защищает боевые проекты от случайных изменений.
+
+config/ainet.config — доступ для AINET (сеть)
+Файл для безопасного выхода AI в интернет. Создайте копию из `config/ainet.config.example`:
+
+bash
+cp config/ainet.config.example config/ainet.config
+
+⚠️ Не коммитится (в .gitignore). Содержит whitelist URL-доменов (для `fetch`, `image:search`, `image:download`).
+
+json
+{
+  "allowed_domains": [
+    "api.openverse.org",
+    "api.openverse.engineering",
+    "api.unsplash.com",
+    "images.unsplash.com",
+    "api.pexels.com",
+    "images.pexels.com",
+    "commons.wikimedia.org",
+    "upload.wikimedia.org",
+    "ru.wikipedia.org",
+    "en.wikipedia.org",
+    "api.github.com"
+  ],
+  "providers": {
+    "default": "wikimedia",
+    "keys": {
+      "unsplash": "",
+      "pexels": ""
+    }
+  },
+  "timeouts": {"connect": 5, "read": 20},
+  "limits": {
+    "max_size": 10485760,
+    "max_redirects": 3,
+    "rate_per_min": 30,
+    "min_image_dimension": 200
+  },
+  "cache_ttl_days": 7,
+  "block_private_ips": true,
+  "allowed_schemes": ["http", "https"],
+  "allowed_ports": [80, 443],
+  "allowed_mimes": [
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    "image/svg+xml"
+  ]
+}
+
+⚠️ Fail-safe: если `ainet.config` отсутствует или битый — `net:*` команды вернут `{"ok":false,"error":"AINET init failed: ..."}`. Без конфига интернет для AI полностью заблокирован.
+
+⚠️ Whitelist URL (ainet.config) независим от whitelist доменов (agent.config). Оба проверяются для `image:download` (domain + url).
+
+⚠️ Провайдеры: `wikimedia` — default (без ключа). `openverse` — fallback (без ключа). Unsplash/Pexels — опционально, если заполнить `keys`. Автофоллбэк primary → next работает только для default provider (при явном `--provider=...` fallback отключён).
+
+⚠️ URL whitelist: `upload.wikimedia.org` и `thumb.wikimedia.org` — разные хосты. Если добавили один — добавьте оба. Аналогично для `commons.wikimedia.org`.
+
+⚠️ `read_timeout: 20` — увеличено с 10 из-за медленных ответов Openverse/Cloudflare в РФ.
 
 База данных
 Создайте базу:
@@ -150,6 +225,7 @@ server {
 Первый запуск
 bash
 composer install
+cp config/ainet.config.example config/ainet.config
 php bin/cli.php db:migrate
 php bin/cli.php admin:passwd --name=admin --password=<strong>
 php bin/cli.php user:new --login=admin --email=admin@example.com --password=<strong>
@@ -186,6 +262,32 @@ php bin/cli.php migrate:page-rules          # боевой прогон
 
 ⚠️ CLI-команда `page:toggle` теперь принимает `--name` (не `--path`), root — через `--name='__root__'`. Это breaking change относительно старых версий.
 
+Медиа (www/media/) — структура
+Три зоны (не смешиваются):
+```
+www/media/
+├── admin/                          # инфраструктура (git, руками)
+├── shared/                         # инфраструктура (git, руками)
+├── .trash/                         # карантин медиа (runtime, .gitignore)
+├── <domain>/skin/                  # скины (git, руками)
+└── <domain>/<allias>/<category>/   # AI-контент (runtime, .gitignore)
+    ├── <hash>.<ext>
+    └── <hash>.meta.json
+```
+
+⚠️ Не путайте: `www/media/<domain>/skin/` — git, руками. `www/media/<domain>/<allias>/<category>/` — runtime, только через CLI `media:store`. Смешивание = потеря файлов при очистке карантина или случайный коммит AI-медиа в git.
+
+⚠️ `.gitignore` в `www/media/` — локальный, с `*` + `!` un-ignore для `admin/`, `shared/`, `skin/`, `.trash/`. Не редактируйте root `.gitignore` для media — используйте локальный.
+
+Проверка `.gitignore`:
+bash
+git check-ignore -v www/media/example.ru/www/coffee/abc123.png
+# → www/media/.gitignore:2:*  www/media/example.ru/www/coffee/abc123.png (ignored)
+
+git check-ignore -v www/media/damoony.ru/skin/default/css/main.css
+# → (пусто, NOT ignored)
+```
+
 Развёртывание по IP (intranet, staging)
 В config/site.config добавьте IP как ключ в domains_real (без порта):
 
@@ -211,9 +313,9 @@ composer cs
 composer check   # stan + cs + test
 
 Ожидаемые метрики:
-- PHPUnit: 336 тестов, 798 assertions, 1 skipped (LinkTraversalTest — требует dev-сервер 127.0.0.1:8080, прогоняется в CI).
-- PHPStan: level 8, 0 errors, 204 файла (src/, bin/, www/).
-- PHP-CS-Fixer: 0 issues, 204 файла (src/, bin/, www/, tests/).
+- PHPUnit: 472 теста, 1157 assertions, 1 skipped (LinkTraversalTest — требует dev-сервер 127.0.0.1:8080, прогоняется в CI).
+- PHPStan: level 8, 0 errors, 240 файлов (src/, bin/, www/).
+- PHP-CS-Fixer: 0 issues, 240 файлов (src/, bin/, www/, tests/).
 
 Безопасность (перед production)
 Пароли — password_hash/password_verify (bcrypt). admin:passwd и user:new делают это. Минимум 8 символов.
@@ -223,15 +325,34 @@ Brute-force — бан IP на 15 минут после 5 неудач.
 CSP — блокирует inline-скрипты (CodeMirror локальный из /media/admin/).
 Визуальные редакторы удалены для страниц и блоков (CodeMirror). Drag&Drop оставлен только для Схем (через CLI scheme:save).
 Флаг security.allow_php_blocks=false по умолчанию блокирует генерацию сырого PHP.
-AI-агенты ограничены config/agent.config (белый список доменов). Page:write проверяет domain по allowed_domains.
+AI-агенты ограничены config/agent.config (домены) + config/ainet.config (URL). Page:write и image:download проверяют domain по allowed_domains.
 .htaccess: dev-правило для /tests/ удалено (было в старых версиях).
 
 CLI-безопасность:
 - Path traversal guard во всех командах с --domain/--name (str_contains('..') + regex).
-- Destructive-команды (domain:remove, allias:remove, block:remove, scheme:remove, trash:clear) работают через карантин (`*_trash_<timestamp>/`) и требуют `--force`.
+- Destructive-команды (domain:remove, allias:remove, block:remove, scheme:remove, media:remove, trash:clear) работают через карантин (`*_trash_<timestamp>/`) и требуют `--force`.
 - Idempotent remove: нет папки + нет в конфиге → warning, exit 0.
 - db:migrate --dir ограничен migrations/.
 - user:new проверяет уникальность login и email.
+
+AINET-безопасность (SSRF):
+- Только GET (CURLOPT_HTTPGET=true). POST/PUT/DELETE запрещены.
+- Whitelist URL-доменов (config/ainet.config.allowed_domains), точный матч, без wildcard.
+- Блок private IP (127/8, 10/8, 172.16/12, 192.168/16, 169.254/16, ::1, fc00::/7, fe80::/10).
+- Запрет scheme (только http/https) и портов (только 80/443).
+- Запрет user:pass в URL.
+- Ручные редиректы (CURLOPT_FOLLOWLOCATION=false), повторный UrlGuard на каждый Location.
+- Rate limit 30 req/min (в конфиге; применение — P2).
+- max_size 10 MB, timeout connect 5s / read 20s.
+- Кэш 7 дней (var/ainet-cache/).
+
+Media-безопасность:
+- Запись только через CLI media:store (AINET не пишет на диск).
+- MIME whitelist (image/jpeg, image/png, image/gif, image/webp, image/svg+xml).
+- Размер ≤ 10 MB, размеры ≥ 200×200 (для не-SVG).
+- Дедупликация по hash (sha256, 16 символов).
+- domain — из config/agent.config.allowed_domains.
+- Удаление — только через media:remove --force (в карантин www/media/.trash/).
 
 Проверка после установки
 bash
@@ -249,21 +370,35 @@ php bin/cli.php structure:repair --domain=example.ru
 bash
 php bin/cli.php migrate:page-rules
 
-Очистка карантина (после destructive-операций):
+Очистка карантина (5 уровней, после destructive-операций):
 bash
 php bin/cli.php trash:clear                          # dry-run
 php bin/cli.php trash:clear --force --older=7d       # только старше 7 дней
 php bin/cli.php trash:clear --force --domain=example.ru
-Обходит 4 уровня: app/, app/<domain>/, .alliasscheme/, .alliasglobal/.
+Обходит 5 уровней: app/, app/<domain>/, .alliasscheme/, .alliasglobal/, www/media/.trash/.
+
+Проверка AINET:
+bash
+echo '{"command": "net:status", "args": {}}' | php bin/aicli.php
+# Ожидаемо: {"ok":true,"data":{"providers":["openverse","wikimedia"],"default_provider":"wikimedia",...}}
+
+echo '{"command": "image:search", "args": {"query": "coffee", "count": 2}}' | php bin/aicli.php
+# Ожидаемо: {"ok":true,"data":{"provider":"wikimedia","results":[...]}}
+
+Проверка media:
+bash
+php bin/cli.php media:list --domain=example.ru
+# Ожидаемо: пустой список или существующие файлы
 
 Полезные ссылки
 MANIFEST.md — канон: ✅/🟡/❌, P0/P1/P2, backlog, видение.
 readme.md — обзор и быстрый старт.
-cli.md — CLI-команды (24 команды).
+cli.md — CLI-команды (27 команд).
 admin.md — админка.
 guide.md — руководство разработчика.
-architecture.md — жизненный цикл (включая AI-слой).
-ai_agent.md — интеграция AI-агентов.
+architecture.md — жизненный цикл (включая AI-слой, AINET, media).
+ai_agent.md — интеграция AI-агентов (сценарий «сайт с картинками»).
+ainet.md — дизайн AINET (SSRF, HttpClient, Cache, ImageSearch, Facade).
 contracts.md — контракты и ограничения.
 
 --- КОНЕЦ ДОКУМЕНТА ---

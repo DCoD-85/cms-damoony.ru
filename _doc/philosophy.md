@@ -6,8 +6,8 @@
 ⚠️ Честно: не все принципы соблюдаются в текущем коде. Где есть расхождение — это указано явно. Истина о фактическом поведении — MANIFEST.md §7. Этот документ — о намерениях.
 
 1. Домен и Алиас — разделение инфраструктуры и контента
-Всё вращается вокруг Домена и Алиаса. Домен — инфраструктура (настройки, привязки хостов, глобальные схемы и блоки). Алиас — контент (страницы, локальные схемы, переопределения блоков).
-Следствие: DomainResolver как точка входа; никакого хардкода имён доменов; админка и файловая структура строго разделяют уровни.
+Всё вращается вокруг Домена и Алиаса. Домен — инфраструктура (настройки, привязки хостов, глобальные схемы и блоки). Алиас — контент (страницы, локальные схемы, переопределения блоков, медиа).
+Следствие: DomainResolver как точка входа; никакого хардкода имён доменов; админка и файловая структура строго разделяют уровни. Медиа (`www/media/<domain>/<allias>/`) зеркалит структуру `app/<domain>/<allias>/`.
 Соблюдается: ✅ полностью. Это самый крепкий принцип проекта.
 
 2. UI — это дерево, а не текст
@@ -35,10 +35,11 @@
 5. Low-Code, Zero-Overhead и AI-Генерация
 Визуальный Drag&Drop оставлен ТОЛЬКО для Схем (HTML-каркасов). Админка сохраняет структуру схемы в editor.json и компилирует в {name}.php через CLI `scheme:save`. 
 Страницы, Блоки и Филлеры визуальных редакторов НЕ ИМЕЮТ (удалены ради безопасности). Они пишутся через CodeMirror (ручной PHP) или генерируются AI-агентом через безопасный JSON (PageCompiler).
-Следствие: мы убрали "магию" генерации кода из UI, закрыв уязвимость RCE. При этом AI может быстро создавать контент, не имея доступа к сырому PHP (только безопасные блоки: h1, text, img и т.д.).
+Следствие: мы убрали "магию" генерации кода из UI, закрыв уязвимость RCE. При этом AI может быстро создавать контент, не имея доступа к сырому PHP (только безопасные блоки: h1, text, img и т.д.). С AINET AI также может безопасно получать картинки и данные из интернета (без RCE, без SSRF).
 Соблюдается: ✅ полностью. PageCompiler (JSON -> PHP) доказал свою безопасность и эффективность (генерация 10-страничного сайта за 1 шаг). Используется не только в page:write, но и для stub-страниц в domain:new/allias:new/structure:repair.
 Расхождения:
 - Для генерации сырого PHP в Блоках (custom/if) требуется явный флаг security.allow_php_blocks=true (по умолчанию заблокировано).
+- AI не может делать POST/PUT/DELETE (только GET), не может парсить HTML (только JSON API и текст) — это осознанные ограничения AINET.
 
 6. Explicit over implicit
 Никаких $GLOBALS, статических кэшей, магии __get, скрытых зависимостей. Всё передаётся явно через конструктор. Контейнер — удобство сборки, не источник состояния.
@@ -50,42 +51,44 @@
 - Главное противоречие §6.1 РЕШЕНО: страницы создаются как "голые" (только код), разработчик явно вызывает SchemeRenderer, если нужен каркас (или --with_schema для AI).
 
 7. Contract-first
-Публичный API — интерфейсы (AuthInterface, RegionInterface, CommandInterface, PageInterface), не классы. Реализация — деталь. Каждый модуль — один публичный вход.
-Следствие: расширение публичного API — только через новые интерфейсы.
+Публичный API — интерфейсы (AuthInterface, RegionInterface, CommandInterface, PageInterface, HttpTransportInterface, ProviderInterface), не классы. Реализация — деталь. Каждый модуль — один публичный вход.
+Следствие: расширение публичного API — только через новые интерфейсы. AINET: HttpTransportInterface (CurlTransport для prod, FakeTransport для тестов), ProviderInterface (OpenverseProvider, WikimediaProvider).
 Соблюдается: ✅ в основном.
 Расхождения:
 - RegionContext::service() возвращает mixed — контракт размыт (§6.2).
 - PageInterface::default(): Node|Response|null разрешает null, но PageHandler::toResponse() на null возвращает 204 No Content (stage-4).
 
 8. CLI-First (Единый источник истины)
-Любая файловая операция (создание, удаление, компиляция, миграция) вызывается через CLI (bin/cli.php).
-Админка — это "тонкий клиент". Она рендерит HTML и вызывает CLI-команды (включая scheme:copy/remove/save — после CLI-аудита).
-AI-агенты используют безопасный фасад bin/aicli.php, который тоже вызывает CLI (page:write, page:read).
+Любая файловая операция (создание, удаление, компиляция, миграция, запись медиа) вызывается через CLI (bin/cli.php).
+Админка — это "тонкий клиент". Она рендерит HTML и вызывает CLI-команды (включая scheme:copy/remove/save и media:* — после CLI-аудита).
+AI-агенты используют единственный безопасный фасад bin/aicli.php, который вызывает CLI (для app/* и media:store) или AinetFacade (для net:*).
 Следствие: бизнес-логика не дублируется. Любое изменение в CLI мгновенно отражается в админке и доступно агентам.
-Соблюдается: ✅ полностью. Все 24 команды, включая scheme:copy/remove/save (было: прямое в SchemeController). Destructive-операции — в карантин (`*_trash_<timestamp>/`), требуют `--force`. Path traversal guard во всех командах с `--domain`/`--name`.
+Соблюдается: ✅ полностью. Все 27 команд, включая scheme:copy/remove/save и media:store/remove/list (было: прямое в SchemeController). Destructive-операции — в карантин (`*_trash_<timestamp>/`), требуют `--force`. Path traversal guard во всех командах с `--domain`/`--name`. AINET не пишет на диск (bytes → CLI media:store) — CLI остаётся единственным источником истины для FS.
 
 9. Безопасность — не фича, а основа
 Пароли — только password_hash. CSRF на всех POST. Удаление — только через POST (UI) или --force (CLI). Загрузки — whitelist. Сессии — HttpOnly, SameSite. Safe Mode и строгий CSP.
-Удалены визуальные редакторы страниц и блоков (защита от RCE). Доступ к AI-агенту ограничен Whitelist-ом в aicli.php и списком доменов в agent.config.
+Удалены визуальные редакторы страниц и блоков (защита от RCE). Доступ к AI-агенту ограничен Whitelist-ом (12 команд) в aicli.php и двумя списками доменов (agent.config для app/* и image:download.domain, ainet.config для URL net:*).
 Следствие: никаких phpinfo(), GET-удалений, паролей в открытом виде, выполнения сырого PHP из UI или от AI (используется PageCompiler).
-Соблюдается: ✅ в основном. Все P0 закрыты. Path traversal guard в CLI (domain/allias/block/filler/scheme/db:migrate). Пароли минимум 8 символов (admin:passwd, user:new). Уникальность email в user:new. Карантин для destructive-команд.
+Соблюдается: ✅ в основном. Все P0 закрыты. Path traversal guard в CLI (domain/allias/block/filler/scheme/media/db:migrate). Пароли минимум 8 символов (admin:passwd, user:new). Уникальность email в user:new. Карантин для destructive-команд (5 уровней). SSRF-защита в AINET (UrlGuard: scheme/port/whitelist/private IP, ручные редиректы, только GET). MIME whitelist и размеры в media:store.
 
 10. Диагностика и отказоустойчивость
 Система сама подсказывает разработчику, что сломано. StructureChecker проверяет наличие всех 3 файлов (.php, .rules.json, .editor.json) для каждого элемента, стыковку блоков и схем. Есть System Health, Safe Mode.
-Следствие: System Health, structure:check (severity-aware), structure:repair, migrate:page-rules, trash:clear (4 уровня карантина).
+Следствие: System Health, structure:check (severity-aware), structure:repair, migrate:page-rules, trash:clear (5 уровней), media:list, net:status.
 Соблюдается: ✅ в основном.
 Расхождения:
 - Safe Mode работает на уровне bootstrap админки, но ошибки внутри контроллеров ловит Kernel (500, не Safe Mode) — это ожидаемо.
+- AINET rate limit (30/min) описан в конфиге, но не применяется на уровне AinetFacade (P2).
 
 Стек
 PHP 8.4
 Composer (PSR-4, PSR-3, PSR-11)
-PHPUnit 10+ (336 тестов, 798 assertions — верифицировано)
-PHPStan (level 8, 204 файла: src/, bin/, www/)
-PHP-CS-Fixer (204 файла: src/, bin/, www/, tests/)
+PHPUnit 10+ (472 теста, 1157 assertions — верифицировано)
+PHPStan (level 8, 240 файлов: src/, bin/, www/)
+PHP-CS-Fixer (240 файлов: src/, bin/, www/, tests/)
 PDO (MariaDB / MySQL; SQLite в тестах)
 Nginx + PHP-FPM (или Apache + mod_php)
 Ollama (локальные LLM: Qwen 2.5 Coder 7B для AI-агентов)
+curl + openssl (AINET)
 
 Итог: соблюдение принципов
 #	Принцип	Статус	Ключевое расхождение
@@ -93,14 +96,14 @@ Ollama (локальные LLM: Qwen 2.5 Coder 7B для AI-агентов)
 2	UI — дерево	✅	Builder неполон, Node/ParentNode
 3	Регионы/слоты/filler	✅	Slot без региона молча исчезает
 4	Файловый роутинг	✅	@preg_match глушит ошибки
-5	Low-Code / AI-Генерация	✅	Визуал только для схем (через CLI scheme:save), страницы/блоки — JSON (AI) или код
+5	Low-Code / AI-Генерация	✅	Визуал только для схем (через CLI scheme:save), страницы/блоки — JSON (AI) или код. AINET: только GET, без парсинга HTML
 6	Explicit over implicit	✅	Противоречие §6.1 решено (ручной вызов схемы или --with_schema)
-7	Contract-first	✅	default(): null → 204 (stage-4)
-8	CLI-First	✅	Все 24 команды через CLI, включая scheme:* (было: SchemeController)
-9	Безопасность — основа	✅	RCE закрыт, path traversal guard, карантин, password ≥8
-10	Диагностика	✅	Severity-aware structure:check, structure:repair, migrate:page-rules, trash:clear (4 уровня)
+7	Contract-first	✅	default(): null → 204 (stage-4). AINET: HttpTransportInterface, ProviderInterface
+8	CLI-First	✅	Все 27 команд через CLI, включая scheme:* и media:*. AINET не пишет на диск
+9	Безопасность — основа	✅	RCE закрыт, path traversal guard, карантин (5 уровней), password ≥8, SSRF-защита, два whitelist
+10	Диагностика	✅	Severity-aware structure:check, structure:repair, migrate:page-rules, trash:clear (5 уровней), net:status
 
-10 принципов соблюдаются полностью. P0-блокеры закрыты. Проект прошел путь от Low-Code конструктора до безопасной AI-Native CMS с архитектурой CLI-First. Архитектура — на 9.7/10.
+10 принципов соблюдаются полностью. P0-блокеры закрыты. Проект прошел путь от Low-Code конструктора до безопасной AI-Native CMS с архитектурой CLI-First. Архитектура — на 9.8/10.
 
 Подробнее о конкретных багах — MANIFEST.md §6–7. О состоянии проекта — readme.md.
 

@@ -70,3 +70,16 @@ app/*_trash_*
 
 # python venv (локальная разработка)
 /venv/
+
+# AI media (генерируется через media:store, runtime)
+/www/media/*/*/
+!/www/media/*/skin/
+!/www/media/admin/
+!/www/media/shared/
+
+# AI media (генерируется через media:store, runtime)
+/www/media/*/*/
+!/www/media/*/skin/
+!/www/media/admin/
+!/www/media/shared/
+/www/media/.trash/

@@ -1,14 +1,14 @@
 --- НАЧАЛО ДОКУМЕНТА ---
 
 Сценарии проекта Damoony
-Ключевые сценарии (Use Cases), которые проверяют работоспособность архитектуры. Сгруппированы по слоям: структура (CLI/файлы), рендеринг (frontend), безопасность, вывод (AJAX), Low-Code, диагностика, миграция, безопасность CLI и AI-слой.
+Ключевые сценарии (Use Cases), которые проверяют работоспособность архитектуры. Сгруппированы по слоям: структура (CLI/файлы), рендеринг (frontend), безопасность, вывод (AJAX), Low-Code, диагностика, миграция, медиа, AINET, безопасность CLI и AI-слой.
 
 Легенда:
 ✅ — работает как описано.
 🟡 — работает с оговорками (см. ссылку в MANIFEST.md).
 🔴 — сломан/не реализован.
 
-Тесты: 336 тестов, 798 assertions, 60 файлов (верифицировано; 1 skipped — LinkTraversalTest требует dev-сервер 127.0.0.1:8080, прогоняется в CI).
+Тесты: 472 теста, 1157 assertions, 240 файлов проверяются PHPStan/CS-Fixer (1 skipped — LinkTraversalTest требует dev-сервер 127.0.0.1:8080, прогоняется в CI).
 
 Сценарии управления структурой (CLI и файловая система)
 S01. Создание домена — ✅
@@ -77,7 +77,37 @@ php bin/cli.php page:read --domain=example.ru --allias=www --name=about
 S10. Очистка карантина — ✅
 bash
 php bin/cli.php trash:clear --force --older=7d
-Ожидание: удалены папки trash, старше 7 дней. По умолчанию — dry-run. Обходит 4 уровня карантина: app/, app/<domain>/, .alliasscheme/, .alliasglobal/. Флаги: --force (боевой), --older (7d/24h/30m), --domain (только один домен). Symlink-safe rmrf.
+Ожидание: удалены папки trash, старше 7 дней. По умолчанию — dry-run. Обходит 5 уровней карантина: app/, app/<domain>/, .alliasscheme/, .alliasglobal/, www/media/.trash/. Флаги: --force (боевой), --older (7d/24h/30m), --domain (только один домен). Symlink-safe Fs::rmrf.
+
+Сценарии медиа (Media: www/media/)
+S50. Запись медиа через CLI — ✅
+bash
+php bin/cli.php media:store --domain=example.ru --allias=www --category=coffee --data_b64=<base64> --mime=image/png --alt="Coffee cup"
+Ожидание: создан www/media/example.ru/www/coffee/<hash>.png + <hash>.meta.json (source_url, alt, size, mime, width, height, downloaded_at). Валидация: domain в config/agent.config.allowed_domains, размер ≤ 10 MB, размеры ≥ 200×200, MIME ∈ {image/jpeg, image/png, image/gif, image/webp, image/svg+xml}.
+
+S51. Дедупликация медиа — ✅
+bash
+php bin/cli.php media:store --domain=example.ru --allias=www --category=coffee --data_b64=<те_же_байты> --mime=image/png
+Ожидание: если hash уже есть — возвращает существующий путь (warning «deduplicated»), файл не перезаписывается.
+
+S52. Удаление медиа (в карантин) — ✅
+bash
+php bin/cli.php media:remove --domain=example.ru --allias=www --category=coffee --hash=a3f5c1e9 --force
+Ожидание: <hash>.* + <hash>.meta.json перемещены в www/media/.trash/example.ru_www_coffee_a3f5c1e9_trash_<ts>/. Без --force — отмена. Idempotent: если медиа нет — warning, exit 0. Очистка — trash:clear.
+
+S53. Список медиа — ✅
+bash
+php bin/cli.php media:list --domain=example.ru [--allias=www] [--category=coffee]
+Ожидание: список {path, mime (из meta.json), size, hash}. Без --allias — рекурсивный обход по всем алиасам. Без --category — все категории.
+
+S54. Структура www/media/ — три зоны не смешиваются — ✅
+Ожидание:
+- www/media/admin/ — инфраструктура (git, руками).
+- www/media/shared/ — инфраструктура (git, руками).
+- www/media/<domain>/skin/ — скины (git, руками).
+- www/media/<domain>/<allias>/<category>/ — runtime AI-контент (.gitignore).
+- www/media/.trash/ — карантин (runtime, .gitignore).
+Тест: `git check-ignore www/media/example.ru/www/coffee/abc.png` → ignored; `git check-ignore www/media/damoony.ru/skin/default/css/main.css` → NOT ignored.
 
 Сценарии рендеринга и роутинга (Frontend)
 S11. Успешный рендеринг главной страницы — ✅
@@ -184,7 +214,7 @@ php bin/cli.php migrate:page-rules [--dry]
 S36. Severity-aware structure:check — ✅
 bash
 php bin/cli.php structure:check
-Ожидание: `✗` только для критических (отсутствует .php, отсутствует root algoritm.rules.json, отсутствует схема). `⚠` для предупреждений (отсутствует .editor.json, устаревший .rules.json, филлер без слота).
+Ожидание: `✗` только для критических (отсутствует .php, отсутствует root algoritm.rules.json, отсутствует схема). `⚠` для предупреждений.
 Если только warnings — команда возвращает OK (exit 0).
 
 S37. Toggle через --name — ✅
@@ -194,7 +224,7 @@ php bin/cli.php page:toggle --domain=example.ru --allias=www --name=about --key=
 (Старый --path не поддерживается с новой моделью.)
 
 Сценарии безопасности CLI (аудит)
-S39. Карантин на 4 уровнях (trash:clear) — ✅
+S39. Карантин на 5 уровнях (trash:clear) — ✅
 bash
 php bin/cli.php trash:clear --force
 Ожидание: находит и удаляет карантины на всех уровнях:
@@ -202,14 +232,13 @@ php bin/cli.php trash:clear --force
 - app/<domain>/<allias>_trash_<ts>/ (allias:remove)
 - app/<domain>/.alliasscheme/<name>_trash_<ts>/ (scheme:remove)
 - app/<domain>/.alliasglobal/<name>_trash_<ts>/ (block:remove)
-Фильтры --older и --domain. Dry-run по умолчанию. Symlink-safe.
-(До аудита: искал только карантины алиасов внутри app/<domain>/, не находил domain:remove).
+- www/media/.trash/<domain>_<allias>_<category>_<hash>_trash_<ts>/ (media:remove)
+Фильтры --older и --domain. Dry-run по умолчанию. Symlink-safe Fs::rmrf.
 
 S40. Карантин блока (block:remove) — ✅
 bash
 php bin/cli.php block:remove --domain=example.ru --name=top --force
 Ожидание: папка .alliasglobal/top/ перемещена в top_trash_<timestamp>/. Без --force — отмена. Idempotent: если блока нет — warning, exit 0.
-(До аудита: удалял сразу без --force).
 
 S41. Filler:toggle idempotent — ✅
 bash
@@ -244,11 +273,14 @@ S47. structure:repair генерирует валидный PHP — ✅
 bash
 php bin/cli.php structure:repair --domain=example.ru
 Ожидание: для отсутствующих root-страниц создаётся algoritm.php через PageCompiler (extends Page, корректный namespace, без битого use Algoritm).
-(До аудита: генерировал битый PHP с use Damoony\Algoritm\Algoritm + extends Page).
 
 S48. VarsExtractCommand удалён — ✅
 Вход: grep -n "vars:extract" bin/cli.php.
 Ожидание: пусто. Команда удалена (мёртвый код), тест удалён. Миграция старой модели — migrate:page-rules.
+
+S49. Fs::rmrf — единый источник истины — ✅
+Вход: тест FsTest::testRmrfRemovesDirWithFiles (папка с файлами внутри).
+Ожидание: файлы внутри удаляются, папка удаляется. Windows-safe (clearstatcache), symlink-safe (unlink, не следуем). Используется в trash:clear и Cache. (До рефакторинга был баг: файлы внутри карантина не удалялись.)
 
 Сценарии AI-Слоя (Agent Integration)
 S31. Безопасный запрос к AI-фасаду — ✅
@@ -269,14 +301,92 @@ S33. Генерация многостраничного сайта агенто
 4. PageCompiler генерирует безопасный PHP-код страниц.
 Фактически: ✅ работает (протестировано на Qwen 2.5 Coder 7B). Сайт создается за один шаг.
 
+S33a. Генерация сайта с картинками (AINET) — ✅ (Новое)
+Вход: Python-цикл отправляет бриф: "Создай сайт приюта с картинками животных".
+Шаги:
+1. AI вызывает image:search --query="dogs shelter" --count=3 → wikimedia results.
+2. AI выбирает url (width/height ≥ 800, license CC/PD).
+3. AI вызывает image:download --url=<url> --domain=example.ru --allias=shelter --category=dogs --alt="Собака" → aicli: AINET (bytes) → shell_exec → cli.php media:store → local_url.
+4. AI вызывает page:write --json='[{"type":"h1",...},{"type":"img","content":"<local_url>","alt":"Собака"}]'.
+Фактически: ✅ работает. Картинки локальные (www/media/), URL стабильны.
+
 S34. Запрет опасных команд для AI — ✅
 Вход: Агент пытается вызвать команду user:new (создать админа) через aicli.php.
-Ожидание: aicli.php возвращает {"ok": false, "error": "Command 'user:new' is not allowed."}. Команда не выполняется.
+Ожидание: aicli.php возвращает {"ok": false, "error": "Command 'user:new' is not allowed.", "hint": "Allowed: ..."}. Команда не выполняется.
 
 S38. Защита AI от записи в чужой домен — ✅
 Вход: Агент вызывает page:write с domain=example.ru, где example.ru НЕ в config/agent.config (allowed_domains).
 Ожидание: aicli.php возвращает {"ok": false, "error": "Security violation: Domain 'example.ru' is not in the allowed list."}. Команда не выполняется.
-Инвариант: page:write в aicli проверяет domain по $allowedDomains (раньше проверки не было — критический дефект, закрыт).
+
+S39a. Whitelist AI: 8 → 12 команд — ✅ (Новое)
+Вход: bin/aicli.php whitelist.
+Ожидание: app/* (read_test_file, engine_status, filler_toggle, domain:new, allias:new, page:new, page:write, page:read) + net/* (net:status, image:search, image:download, fetch). Запрещены: user:new, db:migrate, admin:passwd, domain:remove, allias:remove, block:*, filler:new, scheme:*, trash:clear, migrate:page-rules, structure:*, media:* (кроме внутреннего вызова).
+
+Сценарии AINET (Сеть, SSRF)
+S60. net:status — ✅ (Новое)
+bash
+echo '{"command": "net:status", "args": {}}' | php bin/aicli.php
+Ожидание: {"ok":true,"data":{"providers":["openverse","wikimedia"],"default_provider":"wikimedia","whitelist_count":N,"cache_size_mb":0,"cache_entries":0,"rate_limit":{"max":30,"window":"1m"}}}.
+
+S61. image:search (wikimedia default) — ✅ (Новое)
+bash
+echo '{"command": "image:search", "args": {"query": "coffee", "count": 2}}' | php bin/aicli.php
+Ожидание: {"ok":true,"data":{"provider":"wikimedia","results":[{"url":"https://upload.wikimedia.org/...","preview_url":"https://thumb.wikimedia.org/...","width":1600,"height":1200,"license":"CC BY-SA 2.0","author":"...","source":"wikimedia","title":"File:..."}]}}.
+Автофоллбэк: wikimedia (default) → openverse. Если wikimedia timeout/0 → openverse. Если оба fail — error.
+
+S62. image:search (явный provider) — ✅ (Новое)
+bash
+echo '{"command": "image:search", "args": {"query": "coffee", "count": 2, "provider": "openverse"}}' | php bin/aicli.php
+Ожидание: явный provider = без fallback. Если Openverse timeout — error (не fallback).
+
+S63. image:download через aicli (AINET → CLI) — ✅ (Новое)
+bash
+echo '{"command": "image:download", "args": {"url": "https://upload.wikimedia.org/...", "domain": "example.ru", "allias": "www", "category": "coffee", "alt": "Coffee cup"}}' | php bin/aicli.php
+Ожидание: {"ok":true,"data":{"local_url":"/media/example.ru/www/coffee/<hash>.png","hash":"...","path":"www/media/example.ru/www/coffee/<hash>.png","size":...,"mime":"image/png","width":...,"height":...,"cached":false}}. Внутри: AinetFacade.downloadImage (bytes) → shell_exec('cli.php media:store ...') → FS.
+
+S64. image:download с чужим доменом — ✅ (Новое)
+bash
+echo '{"command": "image:download", "args": {"url": "https://upload.wikimedia.org/x.jpg", "domain": "evil.com", "category": "test"}}' | php bin/aicli.php
+Ожидание: {"ok":false,"error":"Security violation: Domain 'evil.com' is not in the allowed list.","hint":"Add domain to config/agent.config allowed_domains"}.
+
+S65. fetch (Wikipedia JSON) — ✅ (Новое)
+bash
+echo '{"command": "fetch", "args": {"url": "https://ru.wikipedia.org/api/rest_v1/page/summary/Кофе", "type": "json"}}' | php bin/aicli.php
+Ожидание: {"ok":true,"data":{"json":{...},"status":200,"cached":false}}. Второй вызов → cached:true (Cache TTL 7 дней).
+
+S66. fetch не из whitelist — ✅ (Новое)
+bash
+echo '{"command": "fetch", "args": {"url": "https://evil.com/x"}}' | php bin/aicli.php
+Ожидание: {"ok":false,"error":"Domain 'evil.com' not in whitelist","hint":"Add 'evil.com' to config/ainet.config allowed_domains"}.
+
+S67. SSRF-защита (private IP) — ✅ (Новое)
+Вход: url = "http://127.0.0.1/admin" или "http://169.254.169.254/latest/meta-data".
+Ожидание: {"ok":false,"error":"Private IP blocked: 127.0.0.1","hint":"SSRF protection: cannot fetch internal resources"}.
+
+S68. SSRF-защита (redirect на private IP) — ✅ (Новое)
+Вход: api.github.com отвечает 302 → http://127.0.0.1/admin.
+Ожидание: HttpClient не следует редиректу автоматически (CURLOPT_FOLLOWLOCATION=false), UrlGuard.validate(Location) → Private IP blocked → error.
+
+S69. Whitelist URL в config/ainet.config — ✅ (Новое)
+Вход: config/ainet.config.allowed_domains = ['commons.wikimedia.org'].
+Ожидание: fetch к api.github.com → error «Domain 'api.github.com' not in whitelist».
+
+S70. AINET init failed (fail-safe) — ✅ (Новое)
+Вход: config/ainet.config битый (invalid JSON), команда net:status.
+Ожидание: {"ok":false,"error":"AINET init failed: ...","hint":"Fix config/ainet.config or create it from ainet.config.example"}. Не падает, не пускает.
+
+S71. Cache hit — ✅ (Новое)
+Вход: два одинаковых image:search или fetch.
+Ожидание: первый → cached:false (HTTP), второй → cached:true (Cache), HTTP-запрос один раз.
+
+S72. openverse 301 → .org — ✅ (Новое)
+Вход: image:search с provider=openverse.
+Ожидание: OpenverseProvider.ENDPOINT = https://api.openverse.org/v1/images/. Старый .engineering → 301 (redirect), но мы уже на .org. Timeout из РФ → fallback на wikimedia (для default provider).
+
+S73. bin/ainet.php standalone — ✅ (Новое)
+bash
+echo '{"command": "net:status", "args": {}}' | php bin/ainet.php
+Ожидание: работает как отдельный фасад для отладки. НЕ в whitelist aicli.php. AI не знает про этот файл.
 
 Покрытие тестами
 Сценарий	Покрыт	Где
@@ -287,27 +397,32 @@ S16–S19	✅	_dev/tests/Unit/Admin/AuthTest.php, Security/CsrfTest.php
 S20–S21	✅	_dev/tests/Unit/Response/, Scenarios/AjaxScenarioTest
 S22–S23	✅	_dev/tests/Unit/Cli/StructureCheckCommandTest.php, Diagnostics/StructureCheckerTest.php
 S24–S30	✅	Закрыто, регрессии покрыты
-S31–S34	✅ (defensive)	Тесты aicli.php (безопасность, валидация, JSON-парсинг)
+S31–S34	✅ (defensive)	_dev/tests/Unit/Ai/AicliTest.php (proc_open, offline)
 S35	✅	CLI-прогон + Diagnostics/StructureCheckerTest (legacy .rules.json warning)
 S36	✅	_dev/tests/Unit/Cli/StructureCheckCommandTest.php
 S37	✅	_dev/tests/Unit/Cli/PageCommandsTest.php
-S38	✅	Тесты aicli.php
-S39	✅	_dev/tests/Unit/Cli/TrashClearCommandTest.php (testCollectsDomainTrash, testCollectsSchemeTrash, testCollectsBlockTrash)
-S40	✅	_dev/tests/Unit/Cli/BlockCommandsTest.php (testS05RemoveBlock, testS05RemoveRequiresForce)
-S41	✅	_dev/tests/Unit/Cli/FillerCommandsTest.php (testS07ToggleIdempotentOnSameValue)
+S38	✅	_dev/tests/Unit/Ai/AicliTest.php (testImageDownloadDomainNotInAgentConfig, testPageWritePathTraversalInDomain)
+S39	✅	_dev/tests/Unit/Cli/TrashClearCommandTest.php (testCollectsDomainTrash, testCollectsSchemeTrash, testCollectsBlockTrash, testCollectsMediaTrash)
+S40	✅	_dev/tests/Unit/Cli/BlockCommandsTest.php
+S41	✅	_dev/tests/Unit/Cli/FillerCommandsTest.php
 S42	✅	Тесты всех CLI-команд (testRejectsPathTraversal)
 S43	✅	CLI-прогон (realDomain в block/filler/scheme)
 S44	✅	CLI-прогон (db:migrate --dir)
 S45	✅	CLI-прогон (admin:passwd)
 S46	✅	CLI-прогон (user:new)
-S47	✅	_dev/tests/Unit/Cli/StructureRepairCommandTest.php (testRestoresMissingAlias — проверка extends Page, нет use Algoritm)
+S47	✅	_dev/tests/Unit/Cli/StructureRepairCommandTest.php
 S48	✅	bin/cli.php (grep пуст), VarsExtractScenarioTest удалён
+S49	✅	_dev/tests/Unit/Files/FsTest.php (6 тестов)
+S50–S53	✅	_dev/tests/Unit/Cli/MediaStoreCommandTest, MediaRemoveCommandTest, MediaListCommandTest
+S54	✅	www/media/.gitignore (git check-ignore вручную)
+S60–S72	✅	_dev/tests/Unit/Ainet/ (UrlGuardTest, DomainWhitelistTest, HttpClientTest, CacheTest, AinetConfigTest, AinetFacadeTest, ImageSearch/*) + _dev/tests/Unit/Ai/AicliTest.php (testNetStatusIsWhitelisted, testNetCommandsInWhitelistHint)
+S73	✅	CLI-прогон (php -l + echo net:status)
 
 Итог
-Работает как задумано (✅): 48 из 48 сценариев.
+Работает как задумано (✅): 67 из 67 сценариев.
 Частично (🟡): 0.
 Сломано (🔴): 0.
 
-Проект полностью избавился от критических багов. Архитектура CLI-First (с единым источником истины) и AI-Native (с безопасным фасадом) работает предсказуемо. AI успешно генерирует многостраничные сайты через безопасный JSON, не имея доступа к сырому PHP. Модель .rules.json унифицирована (algoritm_{name}.rules.json), миграция автоматизирована (migrate:page-rules). CLI-аудит (24 команды) закрыл path traversal, realDomain-баги, карантины на 4 уровнях, idempotent remove.
+Проект полностью избавился от критических багов. Архитектура CLI-First (с единым источником истины) и AI-Native (с безопасным фасадом) работает предсказуемо. AI успешно генерирует многостраничные сайты через безопасный JSON, не имея доступа к сырому PHP. Модель .rules.json унифицирована (algoritm_{name}.rules.json), миграция автоматизирована (migrate:page-rules). CLI-аудит (27 команд) закрыл path traversal, realDomain-баги, карантины на 5 уровнях, idempotent remove. AINET добавил безопасный выход в интернет (SSRF-защита, whitelist, кэш), media — локальное хранилище картинок (дедупликация по hash, три зоны).
 
 --- КОНЕЦ ДОКУМЕНТА ---

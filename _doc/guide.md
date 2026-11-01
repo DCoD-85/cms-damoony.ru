@@ -1,11 +1,11 @@
 --- НАЧАЛО ДОКУМЕНТА ---
 
 Руководство разработчика
-В этом руководстве описано, как с нуля создать сайт, добавить страницы, блоки, схемы и написать логику. Разработка ведётся тремя путями: через CLI (инфраструктура), через JSON-контент (для AI-агентов) или через PHP-код (для разработчиков). Перед началом прочитайте MANIFEST.md.
+В этом руководстве описано, как с нуля создать сайт, добавить страницы, блоки, схемы, картинки и написать логику. Разработка ведётся тремя путями: через CLI (инфраструктура), через JSON-контент (для AI-агентов) или через PHP-код (для разработчиков). Перед началом прочитайте MANIFEST.md.
 
 ⚠️ Важно перед стартом. Визуальные редакторы для Страниц и Блоков удалены в целях безопасности (предотвращение RCE). Всё редактирование кода происходит через встроенный CodeMirror. Визуальный Drag&Drop оставлен ТОЛЬКО для Схем.
 
-Все destructive CLI-операции (domain:remove, allias:remove, block:remove, scheme:remove, trash:clear) работают через карантин (`*_trash_<timestamp>/`) и требуют `--force`. Перед ними — коммит в git.
+Все destructive CLI-операции (domain:remove, allias:remove, block:remove, scheme:remove, media:remove, trash:clear) работают через карантин (`*_trash_<timestamp>/`) и требуют `--force`. Перед ними — коммит в git.
 
 1. Концепция и структура
 Архитектура разделена на два уровня:
@@ -28,7 +28,9 @@
 - /about/: algoritm/about/algoritm_about.{php,rules.json,editor.json}
 - /docs/install/: algoritm/docs/install/algoritm_docs_install.{php,rules.json,editor.json}
 
-realDomain: если в site.config есть `domains_real["damoony3.ru"] = "damoony.ru"`, то папка в app/ называется `damoony.ru`, а не `damoony3.ru`. Все CLI-команды (block/filler/scheme/domain) резолвят realDomain перед построением пути.
+realDomain: если в site.config есть `domains_real["damoony3.ru"] = "damoony.ru"`, то папка в app/ называется `damoony.ru`, а не `damoony3.ru`. Все CLI-команды (block/filler/scheme/domain/media) резолвят realDomain перед построением пути.
+
+Медиа (www/media/): зеркалит app/<domain>/<allias>/. Файл = `<hash>.<ext>` (sha256, 16 символов) + `<hash>.meta.json`. Дедупликация по hash. Запись только через CLI media:store.
 
 Термины — по MANIFEST.md §2.
 
@@ -138,7 +140,30 @@ php bin/cli.php page:write --domain=example.ru --allias=www --name=about --json=
 Ручное редактирование кода
 В админке — кнопка «Код» (CodeMirror). Namespace: <домен_с_подчёркиваниями>\<allias>. Класс — algoritm_<путь>. Вывод — только через Node или Response.
 
-4.2. Переключение флагов страницы
+4.2. Картинки через AINET + media (рекомендуемый сценарий)
+Сначала ищем картинку в AINET (Wikimedia/Openverse), потом скачиваем в `www/media/` через CLI, потом вставляем `local_url` в `page:write`.
+
+Шаг 1 — поиск (in-process, через aicli — net:search; вручную — через bin/ainet.php):
+bash
+echo '{"command": "image:search", "args": {"query": "coffee cup", "count": 3}}' | php bin/ainet.php
+# → {"ok":true,"data":{"provider":"wikimedia","results":[{"url":"...","preview_url":"...","width":1600,"height":1200,"license":"CC BY-SA 2.0","author":"...","source":"wikimedia","title":"..."}]}}
+
+Шаг 2 — скачивание (bytes → CLI media:store):
+bash
+echo '{"command": "image:download", "args": {"url": "<url_из_шага_1>", "domain": "example.ru", "allias": "www", "category": "coffee", "alt": "Coffee cup on table"}}' | php bin/ainet.php
+# → {"ok":true,"data":{"local_url":"/media/example.ru/www/coffee/a3f5c1e9.jpg",...}}
+
+Или напрямую через CLI (media:store), если AINET не используется:
+bash
+php bin/cli.php media:store --domain=example.ru --allias=www --category=coffee --data_b64=<base64> --mime=image/jpeg --alt="Coffee cup"
+
+Шаг 3 — вставка в страницу:
+bash
+php bin/cli.php page:write --domain=example.ru --allias=www --name=about --json='[{"type":"h1","content":"О нас"},{"type":"img","content":"/media/example.ru/www/coffee/a3f5c1e9.jpg","alt":"Coffee cup on table","style":"width:100%;max-width:600px;"}]'
+
+⚠️ Для `img` всегда используйте `local_url` из `media:store` (или `image:download`), а не внешний URL.
+
+4.3. Переключение флагов страницы
 bash
 php bin/cli.php page:toggle --domain=example.ru --allias=www --name=about --key=auth --value=1
 - --key — auth, search или default.
@@ -285,7 +310,7 @@ php bin/cli.php filler:new --domain=example.ru --allias=admin --block=header
 Включить: --value=1.
 Idempotent: если значение не меняется — файл site.config не перезаписывается. Блок проверяется на диске (не пишем мусор в конфиг).
 
-13. Диагностика и миграция
+13. Диагностика, миграция и медиа
 bash
 php bin/cli.php structure:check
 Severity-aware. Проверяет:
@@ -307,13 +332,19 @@ php bin/cli.php migrate:page-rules --dry   # предпросмотр
 php bin/cli.php migrate:page-rules          # боевой прогон
 Идемпотентна. Шаги: (1) root algoritm/.rules.json → algoritm/algoritm.rules.json, (2) подпапки {dir}/.rules.json → {dir}/algoritm_{name}.rules.json, (3) нормализация полей, (4) создание пустых .editor.json.
 
-Очистка карантина:
+Очистка карантина (5 уровней):
 bash
 php bin/cli.php trash:clear                          # dry-run
 php bin/cli.php trash:clear --force                  # удалить всё
 php bin/cli.php trash:clear --force --older=7d       # только старше 7 дней
 php bin/cli.php trash:clear --force --domain=example.ru  # только один домен
-Обходит 4 уровня карантина: app/, app/<domain>/, .alliasscheme/, .alliasglobal/.
+Уровни: app/<domain>_trash_<ts>/, app/<domain>/<allias>_trash_<ts>/, .alliasscheme/<name>_trash_<ts>/, .alliasglobal/<name>_trash_<ts>/, www/media/.trash/<domain>_<allias>_<category>_<hash>_trash_<ts>/. Symlink-safe Fs::rmrf.
+
+Медиа (список / удаление):
+bash
+php bin/cli.php media:list --domain=example.ru [--allias=www] [--category=coffee]
+php bin/cli.php media:remove --domain=example.ru --allias=www --category=coffee --hash=a3f5c1e9 --force
+media:remove перемещает <hash>.* + <hash>.meta.json в www/media/.trash/, не удаляет сразу.
 
 14. Чек-лист перед деплоем страницы
 1. Схема: страница рендерит схему (Вариант A) или это осознанный API-эндпоинт (Вариант B)?
@@ -323,13 +354,14 @@ php bin/cli.php trash:clear --force --domain=example.ru  # только один
 5. structure:check: зелёный (без errors; warnings допустимы).
 6. git: коммит перед изменениями (особенно перед destructive CLI-командами).
 7. realDomain: если domain — входной хост, проверь, что папка в app/ называется по realDomain.
+8. Картинки: img-блоки используют local_url из media:store, а не внешний URL. Файл лежит в www/media/<domain>/<allias>/<category>/<hash>.<ext> + meta.json.
 
 15. Path traversal и безопасность CLI
 Все CLI-команды с `--domain`/`--name` проверяют:
 - regex: domain `[a-z0-9][a-z0-9.-]*\.[a-z]{2,}`, name `[a-z][a-z0-9_]*`.
 - `str_contains($domain, '..')` → error.
 
-Destructive-команды (domain:remove, allias:remove, block:remove, scheme:remove, trash:clear) требуют `--force`. Работают через карантин (`*_trash_<timestamp>/`).
+Destructive-команды (domain:remove, allias:remove, block:remove, scheme:remove, media:remove, trash:clear) требуют `--force`. Работают через карантин (`*_trash_<timestamp>/`).
 
 Idempotent remove: нет папки + нет в конфиге → warning, exit 0.
 
@@ -337,6 +369,23 @@ Idempotent remove: нет папки + нет в конфиге → warning, exi
 - domain:remove — 16 ключей (domains_*, alliases_*, fillers).
 - allias:remove — 8 ключей (alliases_*, fillers).
 
-Подробнее о состоянии проекта — MANIFEST.md. О командах — cli.md. Об админке — admin.md. О жизненном цикле запроса — architecture.md.
+AINET (сеть, SSRF):
+- Только GET (POST/PUT/DELETE запрещены).
+- Whitelist доменов (config/ainet.config).
+- Блок private IP (127/8, 10/8, 172.16/12, 192.168/16, 169.254/16, ::1, fc00::/7, fe80::/10).
+- Запрет scheme (только http/https) и портов (только 80/443).
+- Запрет user:pass в URL.
+- Ручные редиректы (CURLOPT_FOLLOWLOCATION=false), повторный UrlGuard на каждый Location.
+- Rate limit 30/min, max_size 10 MB, timeout connect 5s / read 20s.
+- Кэш 7 дней (var/ainet-cache/).
+
+Media (FS):
+- Запись только через CLI media:store (AINET не пишет на диск).
+- MIME whitelist (image/jpeg, image/png, image/gif, image/webp, image/svg+xml).
+- Размер ≤ 10 MB, размеры ≥ 200×200 (для не-SVG).
+- Дедупликация по hash.
+- domain — из config/agent.config.allowed_domains.
+
+Подробнее о состоянии проекта — MANIFEST.md. О командах — cli.md. Об админке — admin.md. О жизненном цикле запроса — architecture.md. О AINET — ainet.md.
 
 --- КОНЕЦ ДОКУМЕНТА ---
