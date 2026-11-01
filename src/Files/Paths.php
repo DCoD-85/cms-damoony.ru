@@ -44,4 +44,14 @@ final class Paths
     {
         return $this->allias($real, $allias) . '/algoritm';
     }
+
+    public function mediaRoot(): string
+    {
+        return $this->root . '/www/media';
+    }
+
+    public function media(string $real, string $allias): string
+    {
+        return $this->mediaRoot() . '/' . $real . '/' . $allias;
+    }
 }
