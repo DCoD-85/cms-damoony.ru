@@ -57,7 +57,7 @@ Roadmap — План развития Damoony Engine
 - [x] Настроить CI-защиту: тесты + PHPStan + CS-Fixer `--dry-run` (**570 тестов, 1671 assertion, 87 файлов**).
 - [x] **Page-rules unify**: Единая модель `.rules.json` (`algoritm_{name}.rules.json` для страниц, `algoritm/algoritm.rules.json` для root). Page-слой (PagePath, PageRules, PageNamespace). `migrate:page-rules`. Severity-aware `structure:check`. Закрыт P0 в aicli (`page:write` проверяет domain по `allowed_domains`).
 
-- [x] **CLI-аудит (37 команд)**:
+- [x] **CLI-аудит (39 команд)**:
   - `scheme:copy/scheme:remove/scheme:save` — новые CLI-команды (SchemeController теперь тонкий клиент).
   - `*:list` (6 команд: `domain:list`, `allias:list`, `page:list`, `scheme:list`, `block:list`, `filler:list`) — `--json` + `Result::$data`.
   - `content:store/content:remove/content:list` — runtime-хранилище `/content/` (вне webroot).

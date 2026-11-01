@@ -236,7 +236,7 @@ php bin/cli.php filler:list --domain=example.ru --allias=www
 php bin/cli.php db:migrate
 
 # Список всех команд
-php bin/cli.php help                              # 37 команд
+php bin/cli.php help                              # 39 команд
 
 # Проверка AI-фасада (требуется config/agent.config + config/ainet.config)
 echo '{"command": "engine_status", "args": {}}' | php bin/aicli.php

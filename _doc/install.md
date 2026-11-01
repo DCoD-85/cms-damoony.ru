@@ -560,7 +560,7 @@ echo '{"command": "ai:start", "role": "architect"}' | php bin/aicli.php
 
 - `MANIFEST.md` — канон: ✅/🟡/❌, P0/P1/P2, backlog, видение.
 - `readme.md` — обзор и быстрый старт.
-- `cli.md` — CLI-команды (37 команд).
+- `cli.md` — CLI-команды (39 команд).
 - `admin.md` — админка.
 - `guide.md` — руководство разработчика.
 - `architecture.md` — жизненный цикл (включая AI-слой, AINET, content, skin).
