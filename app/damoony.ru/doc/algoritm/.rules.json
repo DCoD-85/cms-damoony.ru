@@ -1,4 +1,0 @@
-{
-    "available": ["login", "logout", "(.*)|doc"],
-    "auth": false
-}
