@@ -282,7 +282,7 @@ try {
         $safeAlt = escapeshellarg($alt);
         $safeSourceUrl = escapeshellarg($url);
 
-        $cmd = 'php ' . __DIR__ . "/cli.php media:store"
+        $cmd = 'php ' . __DIR__ . '/cli.php media:store'
             . " --domain={$safeDomain}"
             . " --allias={$safeAllias}"
             . " --category={$safeCategory}"
