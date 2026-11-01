@@ -107,18 +107,24 @@ if (!Roles::isValid($role)) {
     exit(1);
 }
 
-$allowedCommands = $role === '*'
-    ? [
-        'ai:start', 'done',
-        'read_test_file', 'engine_status', 'filler_toggle',
-        'filler:list', 'domain:new', 'domain:list',
-        'allias:new', 'allias:list',
-        'page:new', 'page:write', 'page:read', 'page:list',
-        'scheme:list', 'block:list',
-        'skin:new', 'skin:list', 'skin:edit', 'skin:remove',
-        'net:status', 'image:search', 'image:download', 'fetch',
-    ]
-    : array_merge(['ai:start', 'done', 'engine_status'], Roles::whitelist($role));
+if ($role === '*') {
+    $allowedCommands = ['ai:start', 'done', 'read_test_file', 'engine_status', 'filler_toggle'];
+    foreach (Roles::all() as $roleName) {
+        $allowedCommands = array_merge($allowedCommands, Roles::whitelist($roleName));
+    }
+    $allowedCommands = array_merge(
+        $allowedCommands,
+        [
+            'net:status', 'image:search', 'image:download', 'fetch',
+            'skin:remove',
+            'domain:list', 'allias:list', 'page:list', 'page:read',
+            'scheme:list', 'block:list', 'filler:list', 'skin:list',
+        ]
+    );
+    $allowedCommands = array_values(array_unique($allowedCommands));
+} else {
+    $allowedCommands = array_merge(['ai:start', 'done', 'engine_status'], Roles::whitelist($role));
+}
 
 if (!in_array($command, $allowedCommands, true)) {
     respond([
