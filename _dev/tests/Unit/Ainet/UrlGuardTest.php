@@ -149,4 +149,56 @@ final class UrlGuardTest extends TestCase
         self::assertSame('api.github.com', $r['host']);
         self::assertSame('https', $r['scheme']);
     }
+
+    public function testRejectsBracketedIpv6Loopback(): void
+    {
+        // parse_url keeps brackets: host='[::1]'. Before fix:
+        // filter_var('[::1]') returned false -> step 7 skipped ->
+        // only whitelist saved us. After fix: isPrivateIp catches.
+        try {
+            $this->guard()->validate('http://[::1]/admin');
+            self::fail('Ожидалось исключение');
+        } catch (UrlGuardException $e) {
+            self::assertStringContainsString('private', strtolower($e->getMessage()));
+        }
+    }
+
+    public function testRejectsPrivateIpv6(): void
+    {
+        // fc00::/7 — ULA (private), fe80::/10 — link-local.
+        foreach (['http://[fc00::1]/', 'http://[fe80::1]/'] as $url) {
+            try {
+                $this->guard()->validate($url);
+                self::fail("Ожидалось исключение для {$url}");
+            } catch (UrlGuardException $e) {
+                self::assertStringContainsString('private', strtolower($e->getMessage()));
+            }
+        }
+    }
+
+    public function testRejectsIpv4MappedIpv6(): void
+    {
+        // ::ffff:127.0.0.1 is IPv4-mapped loopback.
+        try {
+            $this->guard()->validate('http://[::ffff:127.0.0.1]/');
+            self::fail('Ожидалось исключение');
+        } catch (UrlGuardException $e) {
+            self::assertStringContainsString('private', strtolower($e->getMessage()));
+        }
+    }
+
+    public function testDnsFailureFailsClosed(): void
+    {
+        // .invalid is a reserved TLD (RFC 2606); never resolves.
+        // Add it to whitelist to reach assertNotPrivateIp.
+        $w = new DomainWhitelist(['api.github.com', 'nonexistent-abc.invalid']);
+        $guard = new UrlGuard($w, ['http', 'https'], [80, 443], true);
+
+        try {
+            $guard->validate('https://nonexistent-abc.invalid/x');
+            self::fail('Ожидалось исключение (DNS fail-closed)');
+        } catch (UrlGuardException $e) {
+            self::assertStringContainsString('dns', strtolower($e->getMessage()));
+        }
+    }
 }

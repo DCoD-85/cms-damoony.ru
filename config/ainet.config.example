@@ -32,7 +32,7 @@
   },
   "cache_ttl_days": 7,
   "block_private_ips": true,
-  "allowed_schemes": ["http", "https"],
+  "allowed_schemes": ["https"],
   "allowed_ports": [80, 443],
   "allowed_mimes": [
     "image/jpeg",

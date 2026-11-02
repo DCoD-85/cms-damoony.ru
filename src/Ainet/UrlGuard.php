@@ -81,7 +81,12 @@ final class UrlGuard
             );
         }
 
-        $host = strtolower((string) $parts['host']);
+        // Strip trailing dot from FQDN ('api.github.com.' -> 'api.github.com').
+        // Whitelist stores canonical names without trailing dot.
+        $host = rtrim(strtolower((string) $parts['host']), '.');
+        if ($host === '') {
+            throw new UrlGuardException('Empty host after normalization', 'URL must contain hostname');
+        }
 
         // 6. Port
         $port = $parts['port'] ?? null;
@@ -92,11 +97,14 @@ final class UrlGuard
             );
         }
 
-        // 7. Прямой IP — private check ДО whitelist (без DNS)
-        if ($this->blockPrivateIps && filter_var($host, FILTER_VALIDATE_IP)) {
-            if ($this->isPrivateIp($host)) {
+        // 7. Прямой IP — private check ДО whitelist (без DNS).
+        // parse_url() keeps brackets for IPv6: 'http://[::1]/' -> host '[::1]'.
+        // Strip them so FILTER_VALIDATE_IP recognizes the address.
+        $hostForIp = (string) preg_replace('/^\[(.+)\]$/', '$1', $host);
+        if ($this->blockPrivateIps && filter_var($hostForIp, FILTER_VALIDATE_IP)) {
+            if ($this->isPrivateIp($hostForIp)) {
                 throw new UrlGuardException(
-                    "Private IP blocked: {$host}",
+                    "Private IP blocked: {$hostForIp}",
                     'SSRF protection: cannot fetch internal resources',
                 );
             }
@@ -116,9 +124,11 @@ final class UrlGuard
             throw new UrlGuardException('Query string too long (max 2048)', 'Shorten the query');
         }
 
-        // 10. Hostname — DNS-резолв + private IP check
-        if ($this->blockPrivateIps && !filter_var($host, FILTER_VALIDATE_IP)) {
-            $this->assertNotPrivateIp($host);
+        // 10. Hostname — DNS-резолв + private IP check.
+        // Use hostForIp: bracketed IPv6 was already caught in step 7 if it was
+        // a private direct IP; if we got here with brackets, it's a public one.
+        if ($this->blockPrivateIps && !filter_var($hostForIp, FILTER_VALIDATE_IP)) {
+            $this->assertNotPrivateIp($hostForIp);
         }
 
         // 11. Пересборка без fragment
@@ -136,10 +146,15 @@ final class UrlGuard
     {
         $records = @dns_get_record($host, DNS_A | DNS_AAAA);
         if (!is_array($records) || $records === []) {
-            // Не смогли резолвить — curl вернёт ошибку позже. Не блокируем здесь.
-            return;
+            // Fail-closed: нельзя подтвердить публичность → блокируем.
+            // Иначе TOCTOU: dns_get_record пуст, curl резолвит иначе.
+            throw new UrlGuardException(
+                "DNS resolution failed for '{$host}'",
+                'SSRF protection: cannot verify host is public',
+            );
         }
 
+        $foundIp = false;
         foreach ($records as $rec) {
             $ip = null;
             if (isset($rec['ip']) && is_string($rec['ip'])) {
@@ -148,8 +163,9 @@ final class UrlGuard
                 $ip = $rec['ipv6'];
             }
             if ($ip === null) {
-                continue;
+                continue; // CNAME / MX / TXT — no IP to check
             }
+            $foundIp = true;
             if ($this->isPrivateIp($ip)) {
                 throw new UrlGuardException(
                     "Private IP blocked: {$host} → {$ip}",
@@ -157,26 +173,50 @@ final class UrlGuard
                 );
             }
         }
+
+        if (!$foundIp) {
+            // DNS returned records but none with A/AAAA — cannot verify.
+            // Fail-closed: same rationale as empty dns_get_record.
+            throw new UrlGuardException(
+                "DNS returned no A/AAAA records for '{$host}'",
+                'SSRF protection: cannot verify host is public',
+            );
+        }
     }
 
     private function isPrivateIp(string $ip): bool
     {
         // filter_var с FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
-        // вернёт false для приватных и резервных IP
+        // вернёт false для приватных и резервных IP.
         $isPublic = filter_var(
             $ip,
             FILTER_VALIDATE_IP,
             FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE,
         );
+        if ($isPublic !== false) {
+            return false; // definitely public
+        }
 
-        return $isPublic === false;
+        // Defense-in-depth: PHP filter_var behavior for IPv4-mapped IPv6
+        // (::ffff:a.b.c.d) has changed across versions (bug #54217). If
+        // filter_var said "not public", explicitly unwrap and re-check.
+        if (preg_match('/^::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/i', $ip, $m) === 1) {
+            return filter_var(
+                $m[1],
+                FILTER_VALIDATE_IP,
+                FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE,
+            ) === false;
+        }
+
+        // Not a valid IP at all, or private/reserved: treat as private.
+        return true;
     }
 
     /** @param array<string, mixed> $parts */
     private function rebuild(array $parts): string
     {
         $scheme = (string) ($parts['scheme'] ?? 'https');
-        $host = (string) ($parts['host'] ?? '');
+        $host = rtrim(strtolower((string) ($parts['host'] ?? '')), '.');
         $port = isset($parts['port']) ? ':' . $parts['port'] : '';
         $path = (string) ($parts['path'] ?? '');
         $query = isset($parts['query']) ? '?' . $parts['query'] : '';
