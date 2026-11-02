@@ -11,12 +11,13 @@ namespace Damoony\Ainet;
 interface HttpTransportInterface
 {
     /**
-     * GET-запрос. Без follow redirects (это делает HttpClient).
+     * HTTP-запрос. Без follow redirects (это делает HttpClient).
      *
      * @param array{
      *     connect_timeout: int,
      *     read_timeout: int,
      *     max_size: int,
+     *     method?: string,
      *     user_agent?: string
      * } $options
      *

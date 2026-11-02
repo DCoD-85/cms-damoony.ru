@@ -6,7 +6,7 @@ namespace Damoony\Ainet;
 
 /**
  * Единственная реализация HttpTransportInterface — curl.
- * Только GET. Без follow redirects (это делает HttpClient с повторной UrlGuard).
+ * Поддерживает GET и HEAD.
  */
 final class CurlTransport implements HttpTransportInterface
 {
@@ -17,15 +17,15 @@ final class CurlTransport implements HttpTransportInterface
         $connectTimeout = $options['connect_timeout'];
         $readTimeout = $options['read_timeout'];
         $maxSize = $options['max_size'];
+        $method = strtoupper((string)($options['method'] ?? 'GET'));
         $userAgent = $options['user_agent'] ?? 'Damoony-AINET/1.0';
 
         $headers = [];
         $body = '';
         $truncated = false;
 
-        curl_setopt_array($ch, [
+        $curlOptions = [
             CURLOPT_URL => $url,
-            CURLOPT_HTTPGET => true,
             CURLOPT_FOLLOWLOCATION => false,
             CURLOPT_RETURNTRANSFER => false,
             CURLOPT_CONNECTTIMEOUT => $connectTimeout,
@@ -55,13 +55,20 @@ final class CurlTransport implements HttpTransportInterface
                 $body .= $chunk;
                 if (strlen($body) > $maxSize) {
                     $truncated = true;
-
                     return 0;
                 }
 
                 return strlen($chunk);
             },
-        ]);
+        ];
+
+        if ($method === 'HEAD') {
+            $curlOptions[CURLOPT_NOBODY] = true;
+        } else {
+            $curlOptions[CURLOPT_HTTPGET] = true;
+        }
+
+        curl_setopt_array($ch, $curlOptions);
 
         $ok = curl_exec($ch);
         $errno = curl_errno($ch);

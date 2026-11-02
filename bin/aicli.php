@@ -58,8 +58,48 @@ function parseCliResult(string $output): array
  */
 function runCli(string $args): array
 {
-    $output = shell_exec('php ' . __DIR__ . '/cli.php ' . $args . ' 2>&1');
-    return parseCliResult((string) $output);
+    $cmd = 'php ' . __DIR__ . '/cli.php ' . $args . ' 2>&1';
+    $descriptors = [
+        0 => ['pipe', 'r'],
+        1 => ['pipe', 'w'],
+        2 => ['pipe', 'w'],
+    ];
+    $proc = proc_open($cmd, $descriptors, $pipes, __DIR__ . '/../');
+    
+    if (!is_resource($proc)) {
+        return ['ok' => false, 'error' => 'Failed to start CLI process', 'hint' => '', 'output' => ''];
+    }
+
+    fclose($pipes[0]);
+    stream_set_blocking($pipes[1], false);
+    stream_set_blocking($pipes[2], false);
+
+    $output = '';
+    $start = time();
+    $timeout = 120; // 2 минуты максимум на 1 команду
+
+    while (true) {
+        $status = proc_get_status($proc);
+        $output .= stream_get_contents($pipes[1]);
+        $output .= stream_get_contents($pipes[2]);
+
+        if (!$status['running']) {
+            break;
+        }
+
+        if (time() - $start > $timeout) {
+            proc_terminate($proc, 9);
+            return ['ok' => false, 'error' => 'CLI timeout', 'hint' => 'Command took too long', 'output' => $output];
+        }
+        
+        usleep(100000); // 0.1 сек
+    }
+
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+    proc_close($proc);
+
+    return parseCliResult(trim($output));
 }
 
 /**

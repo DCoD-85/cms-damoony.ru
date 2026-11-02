@@ -4,15 +4,6 @@ declare(strict_types=1);
 
 namespace Damoony\Ainet;
 
-/**
- * HTTP-клиент с SSRF-защитой и ручными редиректами.
- *
- * - UrlGuard::validate() — ДО запроса
- * - CURLOPT_FOLLOWLOCATION=false — редиректы вручную
- * - Каждый Location → повторная UrlGuard::validate()
- * - max_redirects — лимит
- * - Относительные Location → резолвинг через базовый URL
- */
 final class HttpClient
 {
     public function __construct(
@@ -26,20 +17,25 @@ final class HttpClient
     ) {
     }
 
-    /**
-     * @throws UrlGuardException
-     * @throws HttpTransportException
-     * @throws HttpClientException
-     */
     public function get(string $url): HttpResponse
+    {
+        return $this->request($url, 'GET');
+    }
+
+    public function head(string $url): HttpResponse
+    {
+        return $this->request($url, 'HEAD');
+    }
+
+    private function request(string $url, string $method): HttpResponse
     {
         $currentUrl = $url;
 
         for ($redirect = 0; $redirect <= $this->maxRedirects; $redirect++) {
-            // Валидация URL (включая после редиректа)
             $this->guard->validate($currentUrl);
 
             $raw = $this->transport->get($currentUrl, [
+                'method' => $method,
                 'connect_timeout' => $this->connectTimeout,
                 'read_timeout' => $this->readTimeout,
                 'max_size' => $this->maxSize,
@@ -71,18 +67,12 @@ final class HttpClient
         );
     }
 
-    /**
-     * Резолвинг Location: абсолютный или относительный.
-     * RFC 3986: https://www.rfc-editor.org/rfc/rfc3986#section-5.2
-     */
     private function resolveRedirect(string $baseUrl, string $location): string
     {
-        // Абсолютный URL
         if (preg_match('#^[a-z][a-z0-9+.-]*://#i', $location) === 1) {
             return $location;
         }
 
-        // Относительный — нужен базовый URL
         $base = parse_url($baseUrl);
         if ($base === false || !isset($base['scheme'], $base['host'])) {
             throw new HttpClientException(
@@ -96,17 +86,14 @@ final class HttpClient
         $port = isset($base['port']) ? ':' . $base['port'] : '';
         $path = (string) ($base['path'] ?? '/');
 
-        // //example.com/path — protocol-relative
         if (str_starts_with($location, '//')) {
             return $scheme . ':' . $location;
         }
 
-        // /path — от корня
         if (str_starts_with($location, '/')) {
             return $scheme . '://' . $host . $port . $location;
         }
 
-        // path — относительно текущей директории
         $dir = substr($path, 0, (int) strrpos($path, '/')) . '/';
 
         return $scheme . '://' . $host . $port . $dir . $location;
