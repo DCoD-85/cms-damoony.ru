@@ -199,9 +199,9 @@ PageCompiler также используется в `domain:new`, `allias:new`, 
 
 ## CLI и Админка
 
-**CLI: 39 команд**, возвращают `Result` (`ok`, `errors`), идемпотентны.
+**CLI: 40 команд**, возвращают `Result` (`ok`, `errors`), идемпотентны.
 
-- app/ (26): `domain:*`, `allias:*`, `block:*` (с `edit`), `filler:*` (с `edit`), `page:*`, `scheme:*`, `db:migrate`, `admin:passwd`, `user:new`, `trash:clear`, `structure:check`, `structure:repair`, `migrate:page-rules`, `help`.
+- app/ (27): `domain:*`, `allias:*`, `block:*` (с `edit`), `filler:*` (с `edit`), `page:*`, `scheme:*`, `db:migrate`, `admin:passwd`, `user:new`, `trash:clear`, `structure:check`, `structure:repair`, `migrate:page-rules`, `help`.
 - `*:list` (8): `domain:list`, `allias:list`, `page:list`, `scheme:list`, `block:list`, `filler:list`, `content:list`, `skin:list` (с `--json` и `Result::$data`).
 - content/ (3): `content:store`, `content:remove`, `content:list`.
 - skin/ (4): `skin:new`, `skin:list`, `skin:edit`, `skin:remove`.

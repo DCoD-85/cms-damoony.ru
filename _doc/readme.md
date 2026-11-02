@@ -159,7 +159,7 @@ php bin/cli.php user:new --login=admin --email=admin@example.com --password=<str
 
 **Skin:** `www/media/<domain>/<allias>/skin/<name>/`. CLI `skin:new/list/edit/remove`. `skin:edit` — только 2 файла, 1 MB.
 
-**CLI (39 команд):** включая `domain:list`, `allias:list`, `page:list`, `scheme:list`, `block:list`, `filler:list`, `domain:remove`, `page:write`, `page:read`, `block:edit`, `filler:edit`, `scheme:copy/remove/save`, `migrate:page-rules`, `structure:check`, `structure:repair`, `trash:clear` (6 уровней), `content:store/remove/list`, `skin:new/list/edit/remove`.
+**CLI (40 команд):** включая `domain:list`, `allias:list`, `page:list`, `scheme:list`, `block:list`, `filler:list`, `domain:remove`, `page:write`, `page:read`, `block:edit`, `filler:edit`, `scheme:copy/remove/save`, `migrate:page-rules`, `structure:check`, `structure:repair`, `trash:clear` (6 уровней), `content:store/remove/list`, `content:gc`, `skin:new/list/edit/remove`.
 
 **Fs:** mkdir, exists, isDir, isFile, read, writeAtomic, rel, rmrf (Windows-safe, symlink-safe). `rmrf` — единый источник истины для рекурсивного удаления.
 
@@ -197,7 +197,7 @@ WYSIWYG (свободная вёрстка), Headless/REST/GraphQL API для в
 
 - `MANIFEST.md` — канон. Источник истины о намерениях.
 - `install.md` — развёртывание.
-- `cli.md` — CLI-команды (39 команд).
+- `cli.md` — CLI-команды (40 команд).
 - `admin.md` — админка.
 - `guide.md` — руководство разработчика (Вариант A/B, блоки, схемы, картинки, AINET).
 - `architecture.md` — жизненный цикл запроса (включая AI-слой, AINET, content, skin).

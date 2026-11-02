@@ -291,6 +291,20 @@ php bin/cli.php content:list --domain=example.ru [--allias=www] [--category=coff
 Выводит: путь, MIME (из meta.json), размер, page_refs.
 Если --allias не указан — рекурсивный обход по всем алиасам домена.
 
+content:gc
+Найти и убрать в карантин orphan-контент.
+bash
+php bin/cli.php content:gc --dry --force
+php bin/cli.php content:gc --force --older=7d
+php bin/cli.php content:gc --force --domain=example.ru
+--dry — предпросмотр (не трогает файлы).
+--force — переместить orphan в /content/.trash/ (обязателен, если не --dry).
+--older=7d — только meta.json старше N (формат: 7d, 24h, 30m).
+--domain — только указанный домен.
+Orphan = page_refs: [] ИЛИ все refs указывают на несуществующие <page>/algoritm_<page>.php.
+<hash>.<ext> без meta.json → warning, не трогаем.
+Карантин: /content/.trash/<d>_<a>_<c>_<hash>_trash_<ts>/ (совместим с content:remove/trash:clear).
+
 skin:new
 Создать скин алиаса.
 bash
@@ -381,7 +395,7 @@ CodeMirror-редактор (/admin/?p=editor).
 Профиль администратора и логи.
 Управление банами.
 
-Всего команд: 39 (включая help).
+Всего команд: 40 (включая help).
 
 Что делать при ошибке
 1. structure:check — базовая диагностика (severity-aware).

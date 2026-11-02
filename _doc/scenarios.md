@@ -748,6 +748,6 @@ echo '{"command": "net:status", "args": {}}' | php bin/ainet.php
 
 **Модель `.rules.json` унифицирована** (`algoritm_{name}.rules.json`), миграция автоматизирована (`migrate:page-rules`).
 
-**CLI-аудит (39 команд)** закрыл path traversal, realDomain-баги, карантины на **6 уровнях**, idempotent remove. **Content (`/content/`)** — вне webroot, отдаётся через `www/content.php` (GET/HEAD, ETag, 304, SVG-CSP, auth по `page_refs`). **Skin (`www/media/.../skin/`)** — git-tracked, управляется через `skin:*`.
+**CLI-аудит (40 команд)** закрыл path traversal, realDomain-баги, карантины на **6 уровнях**, idempotent remove. **Content (`/content/`)** — вне webroot, отдаётся через `www/content.php` (GET/HEAD, ETag, 304, SVG-CSP, auth по `page_refs`). **Skin (`www/media/.../skin/`)** — git-tracked, управляется через `skin:*`.
 
 **AINET** добавил безопасный выход в интернет (SSRF-защита, whitelist, кэш, `default=wikimedia`, `read_timeout 20s`), **content** — локальное хранилище картинок (дедупликация по hash, две зоны с skin).

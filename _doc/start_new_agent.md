@@ -98,7 +98,7 @@ Start Here: Briefing для AI-агента
 - **Skin** (`www/media/<domain>/<allias>/skin/`): git-tracked инфраструктура. Управление через CLI `skin:new/list/edit/remove`. `skin:edit` — только `css/main.css` и `js/main.js`, 1 MB, блок `@import`/`javascript:`.
 - **Page-слой**: PagePath, PageRules, PageNamespace — единый резолвинг путей/правил/namespace для всех page-команд.
 - **Миграция**: `migrate:page-rules` — одноразовый перевод старых `.rules.json` на новую модель. Идемпотентна.
-- **CLI-аудит** (**39 команд**): path traversal guard, карантин (**6 уровней**) для destructive, idempotent remove, realDomain, `scheme:*` через CLI, `content:*` CLI, `skin:*` CLI, `*:list` (6 команд с `--json`), Fs::rmrf (единый рекурсивный).
+- **CLI-аудит** (**40 команд**): path traversal guard, карантин (**6 уровней**) для destructive, idempotent remove, realDomain, `scheme:*` через CLI, `content:*` CLI, `skin:*` CLI, `*:list` (6 команд с `--json`), Fs::rmrf (единый рекурсивный).
 - **Два whitelist доменов**: `config/agent.config` (`app/*` + `image:download.domain`) и `config/ainet.config` (URL `net:*`).
 - **Рабочий E2E-оркестратор**: `agent_test.py` (Ollama ↔ aicli). `ai_agent/` (Planner→Builder→Content) — прототип, не используется (P3).
 - **Git-гигиена**: untrack `/content/`, `app/damoony3test.ru/`, `config/ainet.config`, `config/agent.config`. `.gitignore` — обновлён.
@@ -236,7 +236,7 @@ php bin/cli.php filler:list --domain=example.ru --allias=www
 php bin/cli.php db:migrate
 
 # Список всех команд
-php bin/cli.php help                              # 39 команд
+php bin/cli.php help                              # 40 команд
 
 # Проверка AI-фасада (требуется config/agent.config + config/ainet.config)
 echo '{"command": "engine_status", "args": {}}' | php bin/aicli.php
@@ -273,4 +273,4 @@ curl -I http://example.ru/content/example.ru/www/coffee/<hash>.jpg
 - Собираешься менять `www/content.php` / `ContentResponder` — это front controller и auth по `page_refs` (безопасность).
 - Собираешься менять `skin:edit` whitelist (`css/main.css`, `js/main.js`, 1 MB, `@import`/`javascript:`) — это защита от inline-инъекций.
 
-**Остальные архитектурные ограничения** (P2, Builder неполон, `assert()`, `applySkin` мимо middleware, orphan content, `skin:bundle` не реализован, `ai_agent/` — прототип) — в `MANIFEST.md` §6–7. Прочитай их до, а не после.
+**Остальные архитектурные ограничения** (P2, Builder неполон, `assert()`, `applySkin` мимо middleware, `skin:bundle` не реализован, `ai_agent/` — прототип) — в `MANIFEST.md` §6–7. Прочитай их до, а не после.

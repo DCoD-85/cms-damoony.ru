@@ -664,7 +664,7 @@ www/media/                          # git-tracked инфраструктура
 13. `bin/aicli.php` — whitelist `net:*`, диспетчеризация на `AinetFacade`. Готово.
 14. `bin/ainet.php` — standalone-фасад для отладки. Готово.
 15. Тесты: UrlGuardTest, DomainWhitelistTest, HttpClientTest, CacheTest, ContentStoreCommandTest, ContentResponderTest. Готово (6 файлов, 30+ тестов).
-16. Документация: `ai_agent.md`, `architecture.md`, `contracts.md`, `cli.md` (39 команд). Готово.
+16. Документация: `ai_agent.md`, `architecture.md`, `contracts.md`, `cli.md` (40 команд). Готово.
 
 **Оценка:** 5–6 дней (закрыто).
 

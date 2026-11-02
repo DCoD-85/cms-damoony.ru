@@ -120,7 +120,7 @@
 - ✅ FileRouter — читает `algoritm_{name}.rules.json` на каждом шаге.
 - ✅ Закрыт P0 в aicli: `page:write` теперь проверяет domain по `$allowedDomains`.
 
-### CLI-аудит (39 команд)
+### CLI-аудит (40 команд)
 
 - `scheme:copy/scheme:remove/scheme:save` — новые CLI-команды; SchemeController теперь тонкий клиент.
 - `*:list` (6 команд: `domain:list`, `allias:list`, `page:list`, `scheme:list`, `block:list`, `filler:list`) + `--json` + `Result::$data`.

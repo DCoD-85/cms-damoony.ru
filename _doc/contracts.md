@@ -451,9 +451,9 @@ www/media/<domain>/<allias>/skin/<name>/
 
 **Назначение:** интерфейсы управления.
 
-**CLI: 39 команд**, возвращают `Result`. Единственный источник истины для файловых операций.
+**CLI: 40 команд**, возвращают `Result`. Единственный источник истины для файловых операций.
 
-**Полный список (39):** `help`, `domain:list`, `domain:new`, `domain:remove`, `allias:list`, `allias:new`, `allias:remove`, `block:list`, `block:new`, `block:edit`, `block:remove`, `filler:list`, `filler:new`, `filler:edit`, `filler:toggle`, `page:list`, `page:new`, `page:toggle`, `page:write`, `page:read`, `scheme:list`, `scheme:new`, `scheme:copy`, `scheme:remove`, `scheme:save`, `db:migrate`, `admin:passwd`, `user:new`, `trash:clear`, `structure:check`, `structure:repair`, `migrate:page-rules`, `content:store`, `content:remove`, `content:list`, `skin:new`, `skin:list`, `skin:edit`, `skin:remove`.
+**Полный список (40):** `help`, `domain:list`, `domain:new`, `domain:remove`, `allias:list`, `allias:new`, `allias:remove`, `block:list`, `block:new`, `block:edit`, `block:remove`, `filler:list`, `filler:new`, `filler:edit`, `filler:toggle`, `page:list`, `page:new`, `page:toggle`, `page:write`, `page:read`, `scheme:list`, `scheme:new`, `scheme:copy`, `scheme:remove`, `scheme:save`, `db:migrate`, `admin:passwd`, `user:new`, `trash:clear`, `structure:check`, `structure:repair`, `migrate:page-rules`, `content:store`, `content:remove`, `content:list`, `content:gc`, `skin:new`, `skin:list`, `skin:edit`, `skin:remove`.
 
 **Инварианты CLI:**
 

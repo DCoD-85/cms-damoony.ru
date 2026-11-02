@@ -218,7 +218,7 @@ Drag&Drop доступен только в разделе «Схемы».
 
 ## Метрики (для ориентира)
 
-- CLI: 39 команд.
+- CLI: 40 команд.
 - PHPUnit: 570 тестов, 1671 assertion, 1 skipped.
 - PHPStan level 8: 0 errors, 269 файлов (`src/`, `bin/`, `www/`).
 - PHP-CS-Fixer: 0 issues, 269 файлов (`src/`, `bin/`, `www/`, `tests/`).

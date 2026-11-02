@@ -83,7 +83,7 @@ MANIFEST — это канонический перечень возможнос
 
 **Миграция:** `migrate:page-rules` — одноразовая миграция старых `.rules.json` на новую модель. Идемпотентна. Шаги: (1) root `algoritm/.rules.json` → `algoritm/algoritm.rules.json`, (2) подпапки `{dir}/.rules.json` → `{dir}/algoritm_{name}.rules.json`, (3) нормализация полей, (4) создание пустых `.editor.json` для существующих `.php`.
 
-**CLI (39 команд):** `help`, `domain:list`, `domain:new`, `domain:remove`, `allias:list`, `allias:new`, `allias:remove`, `block:list`, `block:new`, `block:edit`, `block:remove`, `filler:list`, `filler:new`, `filler:edit`, `filler:toggle`, `page:list`, `page:new`, `page:toggle`, `page:write`, `page:read`, `scheme:list`, `scheme:new`, `scheme:copy`, `scheme:remove`, `scheme:save`, `db:migrate`, `admin:passwd`, `user:new`, `trash:clear`, `structure:check`, `structure:repair`, `migrate:page-rules`, `content:store`, `content:remove`, `content:list`, `skin:new`, `skin:list`, `skin:edit`, `skin:remove`.
+**CLI (40 команд):** `help`, `domain:list`, `domain:new`, `domain:remove`, `allias:list`, `allias:new`, `allias:remove`, `block:list`, `block:new`, `block:edit`, `block:remove`, `filler:list`, `filler:new`, `filler:edit`, `filler:toggle`, `page:list`, `page:new`, `page:toggle`, `page:write`, `page:read`, `scheme:list`, `scheme:new`, `scheme:copy`, `scheme:remove`, `scheme:save`, `db:migrate`, `admin:passwd`, `user:new`, `trash:clear`, `structure:check`, `structure:repair`, `migrate:page-rules`, `content:store`, `content:remove`, `content:list`, `content:gc`, `skin:new`, `skin:list`, `skin:edit`, `skin:remove`.
 
 **trash:clear** — обход 6 уровней карантина (`app/`, `app/<domain>/`, `.alliasscheme/`, `.alliasglobal/`, `/content/.trash/`, `www/media/.trash/`), флаги `--force`/`--older`/`--domain`, dry-run по умолчанию, symlink-safe `Fs::rmrf`.
 
@@ -211,7 +211,6 @@ WYSIWYG (свободная вёрстка), Headless/REST/GraphQL API для в
 - Переименовать namespace `Damoony\Algoritm` → `Damoony\Page`.
 - AINET: POST/PUT/DELETE — не реализованы (только GET).
 - AINET: парсинг HTML — не реализован (только JSON API и текст).
-- Content: orphan cleanup (неиспользуемые hash) — не реализован.
 - `ai_agent/` (Planner→Builder→Content) — прототип, не используется. Рабочий runner — `agent_test.py`.
 - `skin:bundle` — не реализован.
 
@@ -261,7 +260,7 @@ WYSIWYG (свободная вёрстка), Headless/REST/GraphQL API для в
 
 **Закрыто (текущий, 2026-11-02):**
 
-- `block:edit` / `filler:edit` зарегистрированы в `bin/cli.php` (39 команд).
+- `block:edit` / `filler:edit` зарегистрированы в `bin/cli.php` (40 команд).
 - Удалён мёртвый `www/media/admin/page-builder.css` + класс `page-builder-app` из `PageController`.
 - PHPStan/CS-Fixer: 0 errors / 0 issues (269 файлов, 570 тестов).
 - Остальное (page-rules unify, CLI-аудит, AINET, Content, Skin, Roles/Navigator, `agent_test.py`, git-гигиена) — в §3.

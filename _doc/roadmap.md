@@ -17,7 +17,7 @@ Roadmap — План развития Damoony Engine
 - **AI-Слой**: Разбиение длинных задач на батчи (для слабых моделей типа Qwen 7B) — 1 день.
 - **AICLI**: Расширение whitelist (`block:edit`, `filler:edit`, `skin:bundle`) с валидацией аргументов — 1 день.
 - **AINET**: Rate limit 30/min применить на уровне AinetFacade (сейчас только в конфиге) — 4 часа.
-- **Media/Content**: orphan cleanup (неиспользуемые hash) — 4–6 часов.
+- ✅ **Media/Content**: orphan cleanup — выполнено (`content:gc`, 40-я CLI-команда).
 - SEO-модуль (sitemap, robots, meta, OG) — 2–3 дня.
 - Аналитика (GA, Метрика через настройки домена) — 4–6 часов.
 - UTM-автодобавление — 1–2 часа.
@@ -32,7 +32,7 @@ Roadmap — План развития Damoony Engine
 - **Тестовый прогон**: Формализовать протокол (5 сценариев, метрики) — 3–5 дней.
 - **UX**: Взаимодействие пользователь — инструкции — агент — обратная связь (UI в админке) — 1–2 недели.
 - **AINET**: POST/PUT/DELETE, парсинг HTML (для скриншотов/документации) — 1 неделя.
-- **Content**: orphan cleanup (неиспользуемые hash), CDN для больших сайтов — 3–5 дней.
+- **Content**: CDN для больших сайтов — 3–5 дней (orphan cleanup — ✅ `content:gc`).
 - **Skin**: UI-менеджер скинов в админке (CLI уже есть) — 3–5 дней.
 - Профиль «Магазин» (каталог, корзина, оформление заказа) — 5–7 дней.
 - Кеширование страниц (opcache + HTTP-кеш) — 1–2 дня.
@@ -57,7 +57,7 @@ Roadmap — План развития Damoony Engine
 - [x] Настроить CI-защиту: тесты + PHPStan + CS-Fixer `--dry-run` (**570 тестов, 1671 assertion, 87 файлов**).
 - [x] **Page-rules unify**: Единая модель `.rules.json` (`algoritm_{name}.rules.json` для страниц, `algoritm/algoritm.rules.json` для root). Page-слой (PagePath, PageRules, PageNamespace). `migrate:page-rules`. Severity-aware `structure:check`. Закрыт P0 в aicli (`page:write` проверяет domain по `allowed_domains`).
 
-- [x] **CLI-аудит (39 команд)**:
+- [x] **CLI-аудит (40 команд)**:
   - `scheme:copy/scheme:remove/scheme:save` — новые CLI-команды (SchemeController теперь тонкий клиент).
   - `*:list` (6 команд: `domain:list`, `allias:list`, `page:list`, `scheme:list`, `block:list`, `filler:list`) — `--json` + `Result::$data`.
   - `content:store/content:remove/content:list` — runtime-хранилище `/content/` (вне webroot).
@@ -103,7 +103,8 @@ Roadmap — План развития Damoony Engine
 - [ ] **AICLI**: `skin:bundle` — P2.
 - [ ] **AINET**: Rate limit 30/min применить в AinetFacade (сейчас только в конфиге).
 - [ ] **AINET**: POST/PUT/DELETE, парсинг HTML (для скриншотов/документации).
-- [ ] **Content**: orphan cleanup (неиспользуемые hash), CDN для больших сайтов.
+- [x] **Content**: orphan cleanup (`content:gc`).
+- [ ] **Content**: CDN для больших сайтов.
 - [ ] **Skin**: UI-менеджер скинов в админке (CLI уже есть).
 - [ ] **AI ↔ AICLI/AINET**: Доработка инструментов взаимодействия (транзакции, батчи, протокол ошибок).
 - [ ] **Выбор AI**: Бенчмарк локальных моделей на GPU 8GB (Qwen 7B/14B, Llama, Mistral, DeepSeek). Метрики: время, % валидных JSON, шаги до завершения.

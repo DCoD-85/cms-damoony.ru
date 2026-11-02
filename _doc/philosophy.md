@@ -114,7 +114,7 @@ AI-агенты используют единственный безопасны
 
 **Следствие:** бизнес-логика не дублируется. Любое изменение в CLI мгновенно отражается в админке и доступно агентам.
 
-**Соблюдается:** ✅ полностью. Все **39 команд**, включая `scheme:copy/remove/save`, `content:store/remove/list`, `skin:new/list/edit/remove` (было: прямое в SchemeController). Destructive-операции — в карантин (`*_trash_<timestamp>/`), требуют `--force`. Path traversal guard во всех командах с `--domain`/`--name`. AINET не пишет на диск (bytes → CLI `content:store`) — CLI остаётся единственным источником истины для FS.
+**Соблюдается:** ✅ полностью. Все **40 команд**, включая `scheme:copy/remove/save`, `content:store/remove/list`, `skin:new/list/edit/remove` (было: прямое в SchemeController). Destructive-операции — в карантин (`*_trash_<timestamp>/`), требуют `--force`. Path traversal guard во всех командах с `--domain`/`--name`. AINET не пишет на диск (bytes → CLI `content:store`) — CLI остаётся единственным источником истины для FS.
 
 ---
 
@@ -169,7 +169,7 @@ AI-агенты используют единственный безопасны
 | 5 | Low-Code / AI-Генерация | ✅ | Визуал только для схем (через CLI `scheme:save`), страницы/блоки — JSON (AI) или код. Роли (9) + Navigator. AINET: только GET, без парсинга HTML |
 | 6 | Explicit over implicit | ✅ | Противоречие §6.1 решено (ручной вызов схемы или `--with_schema`) |
 | 7 | Contract-first | ✅ | `default(): null` → 204 (stage-4). AINET: HttpTransportInterface, ProviderInterface. AI: Roles + Navigator. Content: ContentResponder |
-| 8 | CLI-First | ✅ | Все **39 команд** через CLI, включая `scheme:*`, `content:*`, `skin:*`. AINET не пишет на диск |
+| 8 | CLI-First | ✅ | Все **40 команд** через CLI, включая `scheme:*`, `content:*`, `skin:*`. AINET не пишет на диск |
 | 9 | Безопасность — основа | ✅ | RCE закрыт, path traversal guard, карантин (**6 уровней**), password ≥8, SSRF-защита, **9 ролей + Navigator**, два whitelist, `www/content.php` (auth по `page_refs`) |
 | 10 | Диагностика | ✅ | Severity-aware `structure:check`, `structure:repair`, `migrate:page-rules`, `trash:clear` (**6 уровней**), `content:list`, `skin:list`, `net:status` |
 
