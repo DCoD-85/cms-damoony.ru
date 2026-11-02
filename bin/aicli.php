@@ -26,13 +26,11 @@ function respond(array $response, string $role, ?string $cmd = null, array $args
         $next = [];
     }
 
-    if ($role !== '*') {
-        $whitelist = Roles::whitelist($role);
-        $next = array_values(array_filter(
-            $next,
-            static fn (array $n): bool => $n['cmd'] === 'done' || in_array($n['cmd'], $whitelist, true),
-        ));
-    }
+    $whitelist = Roles::whitelist($role);
+    $next = array_values(array_filter(
+        $next,
+        static fn (array $n): bool => $n['cmd'] === 'done' || in_array($n['cmd'], $whitelist, true),
+    ));
 
     $response['next'] = $next;
     echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -64,10 +62,6 @@ function runCli(string $args): array
     return parseCliResult((string) $output);
 }
 
-/**
- * Вызов CLI-команды с --json (для *:list).
- * Возвращает декодированный массив (ok/data/created/warnings/errors/steps).
- */
 /**
  * @return array<string, mixed>
  */
@@ -107,24 +101,7 @@ if (!Roles::isValid($role)) {
     exit(1);
 }
 
-if ($role === '*') {
-    $allowedCommands = ['ai:start', 'done', 'read_test_file', 'engine_status', 'filler_toggle'];
-    foreach (Roles::all() as $roleName) {
-        $allowedCommands = array_merge($allowedCommands, Roles::whitelist($roleName));
-    }
-    $allowedCommands = array_merge(
-        $allowedCommands,
-        [
-            'net:status', 'image:search', 'image:download', 'fetch',
-            'skin:remove',
-            'domain:list', 'allias:list', 'page:list', 'page:read',
-            'scheme:list', 'block:list', 'filler:list', 'skin:list',
-        ],
-    );
-    $allowedCommands = array_values(array_unique($allowedCommands));
-} else {
-    $allowedCommands = array_merge(['ai:start', 'done', 'engine_status'], Roles::whitelist($role));
-}
+$allowedCommands = Roles::whitelist($role);
 
 if (!in_array($command, $allowedCommands, true)) {
     respond([
@@ -187,18 +164,6 @@ try {
 
     if ($command === 'done') {
         respond(['ok' => true, 'data' => ['done' => true]], $role, $command, $args);
-    }
-
-    if ($command === 'read_test_file') {
-        $filename = (string) ($args['filename'] ?? '');
-        if (str_contains($filename, '..') || str_contains($filename, '/')) {
-            throw new \RuntimeException('Invalid filename.');
-        }
-        $filePath = __DIR__ . '/../var/' . basename($filename);
-        if (!is_file($filePath)) {
-            respond(['ok' => false, 'error' => "File '{$filename}' not found."], $role, $command, $args);
-        }
-        respond(['ok' => true, 'data' => ['content' => file_get_contents($filePath)]], $role, $command, $args);
     }
 
     if ($command === 'engine_status') {

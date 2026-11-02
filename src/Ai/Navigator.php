@@ -6,10 +6,6 @@ namespace Damoony\Ai;
 
 /**
  * Граф состояний для AI и UI (HATEOAS).
- *
- * Единственный источник «что можно дальше». Каждая команда возвращает
- * next[] — контекстные разрешённые шаги. Агент выбирает из next,
- * не выдумывает. Человек (wizard) рисует кнопки из next.
  */
 final class Navigator
 {
@@ -22,12 +18,13 @@ final class Navigator
         'page:new',
         'page:write',
         'page:read',
+        'image:search',
+        'image:download',
         'done',
     ];
 
     /**
      * @param array{domains?: list<string>} $state
-     *
      * @return list<array{cmd: string, args: array<string, mixed>, hint: string}>
      */
     public static function start(array $state): array
@@ -59,7 +56,6 @@ final class Navigator
 
     /**
      * @param array<string, mixed> $args
-     *
      * @return list<array{cmd: string, args: array<string, mixed>, hint: string}>
      */
     public static function after(string $cmd, array $args): array
@@ -128,7 +124,37 @@ final class Navigator
                     ],
                     'Наполнить страницу контентом (JSON-блоки)',
                 ),
+                self::item(
+                    'image:search',
+                    ['query' => '<search_query>', 'count' => 3],
+                    'Найти картинку для страницы (опционально)',
+                ),
                 self::item('done', [], 'Завершить'),
+            ],
+            'image:search' => [
+                self::item(
+                    'image:download',
+                    [
+                        'url' => '<url_from_results>',
+                        'domain' => (string) ($args['domain'] ?? ''),
+                        'allias' => (string) ($args['allias'] ?? ''),
+                        'category' => 'general',
+                        'alt' => '',
+                    ],
+                    'Скачать картинку локально и получить local_url',
+                ),
+            ],
+            'image:download' => [
+                self::item(
+                    'page:write',
+                    [
+                        'domain' => (string) ($args['domain'] ?? ''),
+                        'allias' => (string) ($args['allias'] ?? ''),
+                        'name' => (string) ($args['name'] ?? ''),
+                        'blocks' => [],
+                    ],
+                    'Вставить local_url в page:write (тип "img")',
+                ),
             ],
             'page:write' => [
                 self::item(
@@ -182,7 +208,6 @@ final class Navigator
 
     /**
      * @param array<string, mixed> $args
-     *
      * @return array{cmd: string, args: array<string, mixed>, hint: string}
      */
     private static function item(string $cmd, array $args, string $hint): array

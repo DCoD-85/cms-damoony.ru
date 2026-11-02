@@ -117,13 +117,13 @@ final class AicliTest extends TestCase
         }
     }
 
-    public function testReadTestFilePathTraversal(): void
+    public function testReadTestFileIsNotAllowed(): void
     {
         $r = $this->invoke(['command' => 'read_test_file', 'args' => ['filename' => '../../etc/passwd']]);
         self::assertSame(1, $r['exit']);
         self::assertIsArray($r['output']);
         self::assertFalse($r['output']['ok']);
-        self::assertStringContainsString('Invalid filename', $r['output']['error']);
+        self::assertStringContainsString('is not allowed', $r['output']['error']);
     }
 
     public function testImageDownloadDomainNotInAgentConfig(): void

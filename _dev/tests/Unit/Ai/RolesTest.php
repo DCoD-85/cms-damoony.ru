@@ -20,7 +20,17 @@ final class RolesTest extends TestCase
     public function testStarIsValid(): void
     {
         self::assertTrue(Roles::isValid('*'));
-        self::assertSame([], Roles::whitelist('*'));
+        $wl = Roles::whitelist('*');
+        self::assertNotEmpty($wl);
+        self::assertContains('domain:new', $wl);
+        self::assertContains('net:status', $wl);
+        
+        // Проверяем инвариант: роль '*' должна содержать все команды из всех ролей
+        foreach (Roles::all() as $role) {
+            foreach (Roles::whitelist($role) as $cmd) {
+                self::assertContains($cmd, $wl, "Role '*' is missing '{$cmd}' from role '{$role}'");
+            }
+        }
     }
 
     public function testUnknownInvalid(): void

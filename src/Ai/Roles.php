@@ -65,9 +65,24 @@ final class Roles
         ],
     ];
 
-    /** @return list<string> */
+    /**
+     * @return list<string>
+     */
     public static function whitelist(string $role): array
     {
+        if ($role === '*') {
+            $all = [];
+            foreach (self::MAP as $cmds) {
+                $all = array_merge($all, $cmds);
+            }
+            return array_values(array_unique(array_merge($all, [
+                'ai:start', 'done', 'engine_status',
+                'net:status', 'image:search', 'image:download', 'fetch',
+                'skin:remove',
+                'domain:list', 'allias:list', 'page:list', 'page:read',
+                'scheme:list', 'block:list', 'filler:list', 'skin:list',
+            ])));
+        }
         return self::MAP[$role] ?? [];
     }
 
