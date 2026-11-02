@@ -43,7 +43,7 @@ final class Roles
             'domain:list', 'allias:list',
         ],
         self::DESIGNER => [
-            'page:write',
+            'page:write', 'block:write', 'filler:write',
             'skin:edit', 'skin:list',
             'block:edit', 'filler:edit',
             'scheme:save', 'scheme:list',
@@ -78,7 +78,7 @@ final class Roles
             return array_values(array_unique(array_merge($all, [
                 'ai:start', 'done', 'engine_status',
                 'net:status', 'image:search', 'image:download', 'fetch',
-                'skin:remove',
+                'skin:remove', 'block:write', 'filler:write',
                 'domain:list', 'allias:list', 'page:list', 'page:read',
                 'scheme:list', 'block:list', 'filler:list', 'skin:list',
             ])));

@@ -23,6 +23,9 @@ final class alliasglobal_bottom implements RegionInterface
 
     public function render(RegionContext $context): Node
     {
+        $cssUrl = '/media/' . $context->domain->real . '/' . $context->domain->allias . '/skin/default/css/bottom.css';
+        $context->meta->addCss($cssUrl);
+
         $wrap = Builder::div('bottom');
         $wrap->append(Builder::p()->content('Блок bottom (visual)'));
         return $wrap;

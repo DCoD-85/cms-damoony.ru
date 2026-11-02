@@ -1,34 +1,4 @@
 {
-    "fields": [
-        {
-            "name": "bottom",
-            "type": "visual"
-        },
-        {
-            "name": "center",
-            "type": "mixed"
-        },
-        {
-            "name": "left",
-            "type": "visual"
-        },
-        {
-            "name": "menu",
-            "type": "visual"
-        },
-        {
-            "name": "policy",
-            "type": "visual"
-        },
-        {
-            "name": "right",
-            "type": "visual"
-        },
-        {
-            "name": "top",
-            "type": "visual"
-        }
-    ],
     "scheme": {
         "children": [
             {

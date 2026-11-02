@@ -23,6 +23,9 @@ final class alliasglobal_left implements RegionInterface
 
     public function render(RegionContext $context): Node
     {
+        $cssUrl = '/media/' . $context->domain->real . '/' . $context->domain->allias . '/skin/default/css/left.css';
+        $context->meta->addCss($cssUrl);
+
         $wrap = Builder::div('left');
         $wrap->append(Builder::p()->content('Блок left (visual)'));
         return $wrap;

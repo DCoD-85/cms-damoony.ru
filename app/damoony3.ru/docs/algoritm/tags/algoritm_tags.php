@@ -18,10 +18,10 @@ final class algoritm_tags extends Page
     {
         $content = Builder::div('page-content');
 
-        $el = Builder::h(1)->content('Список тегов');
+        $el = Builder::h(1)->content('Теги');
         $content->append($el);
 
-        $el = Builder::p()->content('Теги.');
+        $el = Builder::p()->content('Список тегов.');
         $content->append($el);
 
         $this->setContent('center', $content);

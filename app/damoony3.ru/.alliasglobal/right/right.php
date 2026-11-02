@@ -23,6 +23,9 @@ final class alliasglobal_right implements RegionInterface
 
     public function render(RegionContext $context): Node
     {
+        $cssUrl = '/media/' . $context->domain->real . '/' . $context->domain->allias . '/skin/default/css/right.css';
+        $context->meta->addCss($cssUrl);
+
         $wrap = Builder::div('right');
         $wrap->append(Builder::p()->content('Блок right (visual)'));
         return $wrap;

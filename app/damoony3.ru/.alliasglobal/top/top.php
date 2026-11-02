@@ -23,6 +23,9 @@ final class alliasglobal_top implements RegionInterface
 
     public function render(RegionContext $context): Node
     {
+        $cssUrl = '/media/' . $context->domain->real . '/' . $context->domain->allias . '/skin/default/css/top.css';
+        $context->meta->addCss($cssUrl);
+
         $wrap = Builder::div('top');
         $wrap->append(Builder::p()->content('Блок top (visual)'));
         return $wrap;

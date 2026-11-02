@@ -117,6 +117,8 @@ final class alliasglobal_header implements RegionInterface
 
 PageCompiler использует только безопасные методы `Builder` и `var_export`, что исключает выполнение вредоносного кода (RCE).
 
+Блоки и Филлеры: Аналогично страницам, контент блоков и филлеров (меню, шапки) можно безопасно записывать через block:write и filler:write. Внутри используется BlockCompiler, который превращает JSON-массив (с типами h1, text, ul, button и т.д.) в безопасный PHP-код на основе Builder.
+
 ---
 
 ## 5. Content и Skin (Медиа и Стили)
@@ -136,6 +138,10 @@ Git-tracked инфраструктура (CSS/JS темы). Управление
 $this->context->meta->addCss('/media/example.ru/www/skin/default/css/main.css');
 $this->context->meta->addJs('/media/example.ru/www/skin/default/js/main.js');
 ```
+### 5.3. Автогенерация стилей (Системный подход)
+Движок автоматически управляет базовыми стилями, чтобы страницы не оставались «голыми»:
+- **Базовые стили и скрипты:** При создании любой схемы (`scheme:new`) в неё автоматически прописываются пути к общим файлам: `/media/shared/css/main.css` и `/media/shared/scripts/jquery.min.js`. Они выводятся в `<head>` при рендеринге.
+- **Стили блоков:** При создании блока (`block:new`) движок генерирует для него CSS-файл в базовом скине (`www/media/{domain}/www/skin/default/css/{block}.css`) и автоматически подключает его в PHP-классе блока через `$context->meta->addCss()`.
 
 ---
 

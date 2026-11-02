@@ -43,10 +43,12 @@
 - `block:edit --domain=[d] --name=[n] --json='...'` — правка `.rules.json` / `.editor.json` (PHP не трогает, защита от RCE).
 - `block:remove --domain=[d] --name=[n] --force` — в карантин.
 - `block:list --domain=[d]` — список глобальных блоков.
+- block:write --domain=[d] --name=[n] --json='[...]' — безопасная запись JSON-контента в блок.
 - `filler:new --domain=[d] --allias=[a] --block=[b]` — создаёт 3 файла `[block]_[allias].*`.
 - `filler:toggle --domain=[d] --allias=[a] --block=[b] --value=1|0` — idempotent (не перезаписывает файл, если значение не меняется). Проверяет блок на диске.
 - `filler:edit --domain=[d] --allias=[a] --block=[b] --json='...'` — правка правил.
 - `filler:list --domain=[d] --allias=[a]` — список филлеров.
+- filler:write --domain=[d] --allias=[a] --block=[b] --json='[...]' — безопасная запись JSON-контента в филлер.
 
 ## 5. Схемы (Scheme)
 

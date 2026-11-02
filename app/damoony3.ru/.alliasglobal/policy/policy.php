@@ -23,6 +23,9 @@ final class alliasglobal_policy implements RegionInterface
 
     public function render(RegionContext $context): Node
     {
+        $cssUrl = '/media/' . $context->domain->real . '/' . $context->domain->allias . '/skin/default/css/policy.css';
+        $context->meta->addCss($cssUrl);
+
         $wrap = Builder::div('policy');
         $wrap->append(Builder::p()->content('Блок policy (visual)'));
         return $wrap;
