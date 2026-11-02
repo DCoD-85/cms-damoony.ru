@@ -14,6 +14,13 @@ use Damoony\Scheme\SchemeCompiler;
 
 final class SchemeSaveCommand implements CommandInterface
 {
+    /** HTML tags allowed in scheme (builder-safe subset; no script/iframe/style/form). */
+    private const SAFE_TAGS = [
+        'div', 'span', 'section', 'article', 'header', 'footer', 'main', 'aside', 'nav',
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'ul', 'ol', 'li',
+        'a', 'img', 'button', 'figure', 'figcaption', 'blockquote', 'hr', 'br',
+    ];
+
     public function __construct(private readonly Paths $paths)
     {
     }
@@ -34,11 +41,11 @@ final class SchemeSaveCommand implements CommandInterface
         $domain = $args['domain'] ?? '';
         $name = $args['name'] ?? '';
 
-        if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain)) {
+        if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain) || str_contains($domain, '..')) {
             $r->error('Некорректный домен');
             return $r;
         }
-        if (!preg_match('/^[a-z][a-z0-9_]*$/', $name)) {
+        if (!preg_match('/^[a-z][a-z0-9_]*$/', $name) || str_contains($name, '..')) {
             $r->error('Некорректное имя схемы');
             return $r;
         }
@@ -132,13 +139,21 @@ final class SchemeSaveCommand implements CommandInterface
             }
 
             if (($child['type'] ?? '') === 'slot') {
+                $slotName = (string) ($child['name'] ?? '');
+                if (!preg_match('/^[a-z][a-z0-9_]*$/', $slotName)) {
+                    continue; // skip malformed slot
+                }
                 $result[] = [
                     'tag' => 'div',
-                    'slot' => (string) ($child['name'] ?? ''),
+                    'slot' => $slotName,
                 ];
             } elseif (($child['type'] ?? '') === 'element' || isset($child['tag'])) {
+                $tag = (string) ($child['tag'] ?? 'div');
+                if (!in_array($tag, self::SAFE_TAGS, true)) {
+                    continue; // skip script/iframe/style/object/embed/link/meta/form/input
+                }
                 $element = [
-                    'tag' => (string) ($child['tag'] ?? 'div'),
+                    'tag' => $tag,
                 ];
                 if (isset($child['class'])) {
                     $element['class'] = (string) $child['class'];

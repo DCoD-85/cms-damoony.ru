@@ -135,4 +135,64 @@ final class SchemeSaveCommandTest extends TestCase
         self::assertFalse($res->ok);
         self::assertStringContainsString('Некорректный JSON', $res->errors[0]);
     }
+
+    public function testDropsUnsafeTag(): void
+    {
+        // <script>/<iframe>/<style>/<form> etc. must not reach compiled .php
+        $scheme = [
+            'children' => [
+                ['tag' => 'div', 'class' => 'wrap'],
+                ['tag' => 'script', 'class' => 'evil'],
+                ['tag' => 'iframe', 'class' => 'evil'],
+                ['tag' => 'style', 'class' => 'evil'],
+                ['tag' => 'form', 'class' => 'evil'],
+            ],
+        ];
+
+        $res = (new SchemeSaveCommand(new Paths($this->root)))
+            ->run(
+                ['domain' => 'example.ru', 'name' => 'main', 'scheme_json' => json_encode($scheme)],
+                $this->ctx(new Result()),
+            );
+
+        self::assertTrue($res->ok, implode('; ', $res->errors));
+
+        $php = require $this->root . '/app/example.ru/.alliasscheme/main.php';
+        self::assertIsArray($php);
+        // Only 'div' survived
+        self::assertCount(1, $php['children']);
+        self::assertSame('div', $php['children'][0]['tag']);
+
+        // Defense-in-depth: no banned tag anywhere in the compiled file
+        $compiled = (string) file_get_contents($this->root . '/app/example.ru/.alliasscheme/main.php');
+        foreach (['script', 'iframe', 'style', 'form'] as $banned) {
+            self::assertStringNotContainsString("'" . $banned . "'", $compiled, "{$banned} leak in compiled php");
+        }
+    }
+
+    public function testDropsInvalidSlotName(): void
+    {
+        // Slot name with path traversal / uppercase / dashes must be skipped
+        $scheme = [
+            'children' => [
+                ['type' => 'slot', 'name' => 'top'],
+                ['type' => 'slot', 'name' => '../etc'],
+                ['type' => 'slot', 'name' => 'Bad Name'],
+                ['type' => 'slot', 'name' => 'a-b'],
+            ],
+        ];
+
+        $res = (new SchemeSaveCommand(new Paths($this->root)))
+            ->run(
+                ['domain' => 'example.ru', 'name' => 'main', 'scheme_json' => json_encode($scheme)],
+                $this->ctx(new Result()),
+            );
+
+        self::assertTrue($res->ok, implode('; ', $res->errors));
+
+        $php = require $this->root . '/app/example.ru/.alliasscheme/main.php';
+        self::assertIsArray($php);
+        self::assertCount(1, $php['children'], 'only valid slot survived');
+        self::assertSame('top', $php['children'][0]['slot']);
+    }
 }

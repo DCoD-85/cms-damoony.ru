@@ -233,4 +233,66 @@ final class PageCommandsTest extends TestCase
         );
         self::assertStringContainsString('Home', $php);
     }
+
+    public function testWriteRejectsPathTraversalInName(): void
+    {
+        $res = (new PageWriteCommand(new Paths($this->root)))->run(
+            [
+                'domain' => 'example.ru',
+                'allias' => 'www',
+                'name' => '../../etc/passwd',
+                'json' => '[]',
+            ],
+            $this->ctx(new Result()),
+        );
+
+        self::assertFalse($res->ok);
+        self::assertStringContainsString('Некорректное имя страницы', $res->errors[0]);
+    }
+
+    public function testWriteRejectsInvalidName(): void
+    {
+        $res = (new PageWriteCommand(new Paths($this->root)))->run(
+            [
+                'domain' => 'example.ru',
+                'allias' => 'www',
+                'name' => 'BadName',
+                'json' => '[]',
+            ],
+            $this->ctx(new Result()),
+        );
+
+        self::assertFalse($res->ok);
+        self::assertStringContainsString('Некорректное имя страницы', $res->errors[0]);
+    }
+
+    public function testReadRejectsPathTraversalInName(): void
+    {
+        $res = (new PageReadCommand(new Paths($this->root)))->run(
+            [
+                'domain' => 'example.ru',
+                'allias' => 'www',
+                'name' => '../../etc/passwd',
+            ],
+            $this->ctx(new Result()),
+        );
+
+        self::assertFalse($res->ok);
+        self::assertStringContainsString('Некорректное имя страницы', $res->errors[0]);
+    }
+
+    public function testReadRejectsInvalidName(): void
+    {
+        $res = (new PageReadCommand(new Paths($this->root)))->run(
+            [
+                'domain' => 'example.ru',
+                'allias' => 'www',
+                'name' => 'BadName',
+            ],
+            $this->ctx(new Result()),
+        );
+
+        self::assertFalse($res->ok);
+        self::assertStringContainsString('Некорректное имя страницы', $res->errors[0]);
+    }
 }

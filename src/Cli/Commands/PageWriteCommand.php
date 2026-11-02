@@ -40,7 +40,7 @@ final class PageWriteCommand implements CommandInterface
         $parent = trim((string) ($args['parent'] ?? ''), '/');
 
         // 1. Валидация
-        if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain)) {
+        if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain) || str_contains($domain, '..')) {
             $r->error('Некорректный домен');
             return $r;
         }
@@ -59,7 +59,12 @@ final class PageWriteCommand implements CommandInterface
         } elseif ($name === '') {
             $r->error('Укажите --name (или __root__ для главной страницы)');
             return $r;
-        } elseif ($parent !== '' && !preg_match('#^[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*$#', $parent)) {
+        } elseif (!preg_match('/^[a-z][a-z0-9_]*$/', $name)) {
+            $r->error('Некорректное имя страницы (a-z, 0-9, _; начинается с буквы)');
+            return $r;
+        }
+
+        if ($parent !== '' && !preg_match('#^[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*$#', $parent)) {
             $r->error('Некорректный путь родительской страницы');
             return $r;
         }
