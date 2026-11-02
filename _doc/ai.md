@@ -68,16 +68,7 @@ AI не имеет прямого доступа к терминалу. Он о�
 Скрипт `src/Ai/Navigator.php` формирует массив `next[]` на основе текущего состояния.
 
 - `OFFERABLE` = `[domain:new, allias:new, skin:new, skin:edit, page:new, page:write, page:read, image:search, image:download, done]`.
-- `next[]` фильтруется по whitelist роли (если роль `executor`, она не увидит `domain:new`).
-
-**Порядок шагов (Architect -> Executor):**
-1. `ai:start` -> `domain:new`
-2. `domain:new` -> `allias:new`
-3. `allias:new` -> `page:new` (или `skin:new`)
-4. `page:new` -> `page:write` (или `image:search`, если нужны картинки)
-5. `image:search` -> `image:download` (скачать выбранную картинку)
-6. `image:download` -> `page:write` (вставить `local_url`)
-7. `page:write` -> `page:new` (следующая страница) или `done`
+- `next[]` фильтруется по whitelist роли.
 
 ---
 
@@ -88,12 +79,7 @@ AI не имеет прямого доступа к терминалу. Он о�
 **Поддерживаемые типы:** `h1`, `h2`, `h3`, `text`, `img`, `link`, `button`, `ul`, `nav`.
 **Атрибуты:** `class`, `id`, `style`, `url`, `alt`.
 
-*Правила:*
-- JSON должен быть валидным (без висячих запятых).
-- Имена страниц/алиасов: `[a-z][a-z0-9_]*` (без дефисов).
-- Для главной страницы: `--name=__root__`. Флаг `--parent` с `__root__` несовместим.
-- Для меню используй тип `nav` с массивом `{"title": "...", "url": "..."}`.
-- Для карточек товаров комбинируй блоки: `img` -> `h3` -> `text` -> `button`.
+*Особенность:* `PageCompiler` и `BlockCompiler` используют `Text::raw()` для безопасного вывода тегов `<a>` и `<strong>` (сгенерированных Markdown-парсером), но жестко фильтруют остальные теги (`strip_tags`), исключая XSS.
 
 ---
 
@@ -104,7 +90,7 @@ AI не имеет прямого доступа к терминалу. Он о�
 ### Команды:
 - `net:status` — диагностика (провайдеры, лимиты, кэш).
 - `image:search` — поиск картинок (`--query="..." --count=5`). Провайдеры: `wikimedia` (default), `openverse` (fallback).
-- `image:download` — скачивание картинки в `/content/`. Аргументы: `url`, `domain`, `allias`, `category`, `alt`. Возвращает `local_url`.
+- `image:download` — скачивание картинки в `/content/`. Возвращает `local_url`.
 - `fetch` — GET-запрос к API (`--url="..." --type=json|text`).
 
 ### Безопасность (SSRF):
@@ -118,34 +104,17 @@ AI не имеет прямого доступа к терминалу. Он о�
 
 ## 6. Мультиагентная генерация (E2E)
 
-Для автономной генерации сайтов используется Python-скрипт `ai_agent/brain.py`. Архитектура построена на паттерне Map-Reduce (очистка контекста LLM на каждом шаге):
+Для автономной сборки используется Python-скрипт `ai_agent/brain.py`. Архитектура построена на паттерне Map-Reduce (очистка контекста LLM на каждом шаге):
 
-1. **Architect 1 (Structure):** Создает карту сайта и список страниц, определяет базовые слоты (`top`, `center`, `bottom`).
-2. **Builder:** Вызывает CLI для создания структуры папок (`domain:new`, `allias:new`, `page:new`), базовых блоков (`block:new`), меню (`filler:new`/`write`) и схемы (`scheme:save`).
-3. **Architect 2 & Content Workers:** Для каждой страницы детализирует список блоков (`h1`, `text`, `img`) и генерирует текст с привязкой CSS-классов.
-4. **Lead Designer:** Собирает все использованные классы и генерирует единый файл `css/main.css` со стилями для всего сайта (включая шапку и меню).
+1. **Architect (Structure):** Создает карту сайта, включая вложенные страницы (через параметр `parent`), и заголовки на языке брифа.
+2. **Plan Corrector (Validator):** Детерминированная функция `validate_plan()`. Исправляет ошибки нейросети (например, склеивание имен `care_guide_documentation` -> `documentation`) до отправки в CLI.
+3. **Builder:** Вызывает CLI для создания структуры папок (с учетом вложенности), блоков, меню и схемы. Меню автоматически строит правильные URL (например, `/care_guide/documentation`).
+4. **Content Workers (Markdown Mode):** LLM генерирует текст в формате Markdown. Python-парсер разбирает его на блоки, конвертирует Markdown-ссылки в безопасный HTML (`<a>`, `<strong>`) и скачивает картинки через AINET.
+5. **Modular Designer:** LLM анализирует классы и генерирует модульные CSS-файлы: `main.css` (переменные), `top.css` (меню), `center.css` (контент). Базовый layout (сетка, ограничение картинок) зашит в Python-код.
 
 **Запуск:**
 ```bash
 python -m ai_agent.brain <domain> <allias> "<brief>" <model_name>
 ```
-*(Рекомендуется использовать `gemma4:e4b` для быстрой работы или `gemma4:26b` для глубокого контента).*
-
-**Схема работы:** `LLM (Architect)` -> `CLI (FS)` -> `LLM (Writer)` -> `CLI (page:write)` -> `LLM (Designer)` -> `CLI (skin:edit)`.
-
----
-
-## 7. Чек-лист для AI (перед отправкой команды)
-
-1. Ты передаешь JSON-массив (не PHP-код).
-2. Нет висячих запятых в JSON.
-3. Имена без дефисов и пробелов.
-4. Для главной страницы используется `__root__` (без `--parent`).
-5. Домен находится в `config/agent.config` (иначе `Security violation`).
-6. URL картинки находится в `config/ainet.config` (иначе `Domain not in whitelist`).
-7. Если `ok: false` — прочитай `hint`, исправь ошибку и попробуй снова.
-8. Для создания меню используй тип `nav` с массивом `{"title": "...", "url": "..."}`.
-9. Для карточек товаров комбинируй блоки: `img` -> `h3` -> `text` -> `button`.
-10. Для записи блоков и филлеров используй `block:write` и `filler:write`.
 
 --- КОНЕЦ ФАЙЛА ---

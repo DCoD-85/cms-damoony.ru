@@ -1,5 +1,5 @@
 """
-Production Multi-Agent: Architect -> Builder -> Markdown Parser -> Modular Designer.
+Production Multi-Agent: Architect -> Validator -> Builder -> Markdown Parser -> Modular Designer.
 """
 import json
 import sys
@@ -19,17 +19,33 @@ Output ONLY a JSON object:
   "pages": [
     {
       "name": "<MUST BE ONLY ENGLISH LETTERS, lowercase or __root__>",
-      "title": "<page title>",
+      "title": "<human-readable page title IN RUSSIAN>",
       "parent": "<parent page name or null>",
-      "layout": ["top", "left", "center", "right", "bottom", "policy"]
+      "layout": ["top", "center", "bottom"]
     }
   ]
 }
 Rules:
 - Include __root__ (home page).
 - CRITICAL: "name" must be ONLY English letters, numbers, and underscores.
-- CRITICAL: "parent" must be the name of the parent page (e.g., "services" for "services/install"), or null for top-level pages.
-- Output ONLY the JSON object."""
+- CRITICAL: "title" MUST be written in RUSSIAN (e.g., "О нас", "Уход за собаками").
+
+CRITICAL NESTING RULES (READ CAREFULLY):
+If you create a sub-page (e.g., Documentation inside Care Guide), you MUST separate the parent and the child:
+Correct:  {"name": "documentation", "title": "Документация", "parent": "care_guide"}
+INCORRECT: {"name": "care_guide_documentation", "title": "Документация", "parent": "care_guide"}
+
+Here is an example of a valid structure:
+{
+  "pages": [
+    {"name": "__root__", "title": "Главная", "parent": null, "layout": ["top", "center"]},
+    {"name": "about_us", "title": "О нас", "parent": null, "layout": ["top", "center"]},
+    {"name": "care_guide", "title": "Уход за собаками", "parent": null, "layout": ["top", "center"]},
+    {"name": "documentation", "title": "Документация", "parent": "care_guide", "layout": ["top", "center"]}
+  ]
+}
+
+Output ONLY the JSON object."""
 
 WRITER_MARKDOWN_PROMPT = """You are a professional copywriter.
 Write a detailed, engaging article for the page "{page_title}".
@@ -99,6 +115,25 @@ class Transaction:
             self.client.call_cli(cmd, args)
 
 # --- ХЕЛПЕРЫ ---
+def validate_plan(plan: dict) -> dict:
+    """Прослойка: детерминированно исправляет ошибки нейросети в плане."""
+    pages = plan.get("pages", [])
+    
+    # 1. Исправляем склеенные имена (care_guide_documentation -> documentation)
+    for page in pages:
+        parent = page.get("parent")
+        name = page.get("name", "")
+        if parent and name.startswith(parent + "_"):
+            page["name"] = name[len(parent)+1:]
+            
+    # 2. Если у страницы указан parent, но такой страницы нет в плане — обнуляем parent
+    names = {p["name"] for p in pages}
+    for page in pages:
+        if page.get("parent") and page["parent"] not in names:
+            page["parent"] = None
+            
+    return plan
+
 def safe_chat(llm: OllamaClient, model: str, messages: list, retries: int = 3) -> dict:
     for i in range(retries):
         try:
@@ -205,13 +240,27 @@ def run_multi_agent(brief: str, domain: str, allias: str, model: str = "qwen2.5-
         res = safe_chat(llm, model, [{"role": "user", "content": f"BRIEF: {brief}\n\n{ARCHITECT_STRUCTURE_PROMPT}"}])
         plan_text = res.get("message", {}).get("content", "").strip().removeprefix("```json").removesuffix("```").strip()
         plan = json.loads(plan_text)
+        
+        # ПРОСЛОЙКА: Валидация и исправление плана
+        plan = validate_plan(plan)
 
         for p in plan.get("pages", []):
             if p["name"] != "__root__":
                 clean_name = re.sub(r'[^a-z0-9_]', '', p["name"].lower())
                 p["name"] = clean_name if clean_name else "page"
 
-        valid_urls = ["/"] + [f"/{p['name']}" for p in plan.get("pages", []) if p["name"] != "__root__"]
+        # Строим карту правильных путей для ссылок (учитывая вложенность)
+        path_map = {}
+        for _ in range(3): # Несколько проходов для разрешения вложенности
+            for p in plan.get("pages", []):
+                if p["name"] == "__root__" or p["name"] in path_map:
+                    continue
+                if not p.get("parent"):
+                    path_map[p["name"]] = f"/{p['name']}"
+                elif p["parent"] in path_map:
+                    path_map[p["name"]] = f"{path_map[p['parent']]}/{p['name']}"
+
+        valid_urls = ["/"] + list(path_map.values())
         urls_str = ", ".join(valid_urls)
         print(f"  [Time] Step 1: {time.time() - step_start:.2f}s")
 
@@ -235,7 +284,13 @@ def run_multi_agent(brief: str, domain: str, allias: str, model: str = "qwen2.5-
             client.call_aicli("block:new", {"domain": domain, "name": b, "type": "visual"})
         
         client.call_aicli("filler:new", {"domain": domain, "allias": allias, "block": "top"})
-        menu_items = [{"title": "Главная", "url": "/"}] + [{"title": p["title"], "url": f"/{p['name']}"} for p in plan.get("pages", []) if p["name"] != "__root__"]
+        
+        # Собираем меню с правильными вложенными путями
+        menu_items = [{"title": "Главная", "url": "/"}]
+        for p in plan.get("pages", []):
+            if p["name"] != "__root__":
+                url = path_map.get(p["name"], f"/{p['name']}")
+                menu_items.append({"title": p["title"], "url": url})
         
         client.call_aicli("filler:write", {
             "domain": domain, "allias": allias, "block": "top", 
@@ -267,7 +322,7 @@ def run_multi_agent(brief: str, domain: str, allias: str, model: str = "qwen2.5-
         used_classes = set(["main-navigation"])
         
         for page in plan.get("pages", []):
-            page_start = time.time() # <--- ТАЙМЕР ДЛЯ КАЖДОЙ СТРАНИЦЫ
+            page_start = time.time()
             page_name = page["name"]
             page_title = page["title"]
             print(f"  -> Writing: {page_title}")

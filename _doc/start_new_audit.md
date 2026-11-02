@@ -11,8 +11,8 @@
 ## 1. Идентификация
 
 - **Проект:** Damoony Engine — PHP 8.4 multi-domain CMS.
-- **Версия:** v1.1.0 (Production Ready + Multi-Agent AI).
-- **Архитектура:** CLI-First (CLI — единственный источник истины для FS), AI-Native (aicli + 9 ролей + Navigator), Content (`/content/`, вне webroot) + Skin (`www/media/[domain]/[allias]/skin/`, git).
+- **Версия:** v2.0.0 (Production Ready + Multi-Agent AI + Markdown Parser).
+- **Архитектура:** CLI-First (CLI — единственный источник истины для FS), AI-Native (aicli + 9 ролей + Navigator + `ai_agent/brain.py`), Content (`/content/`, вне webroot) + Skin (`www/media/[domain]/[allias]/skin/`, git).
 - **Репозиторий:** https://github.com/DCoD-85/cms-damoony.ru/
 - **Ветка:** `main`.
 - **Стек:** PHP 8.4, MariaDB 11.8, Apache 2, Composer (PSR-4/3/11), PHPUnit 10, PHPStan 8, PHP-CS-Fixer, Python 3 (для `ai_agent/brain.py`), Ollama (Qwen 2.5 Coder 7B / Gemma 4), curl + openssl + gd.
@@ -25,7 +25,7 @@
 2. `_doc/ARCH.md` — жизненный цикл, слои, инварианты, контракты, 10 принципов, P2.
 3. `_doc/CLI.md` — 44 команды, флаги, guards, карантин.
 4. `_doc/DEV.md` — how-to: страница (A/B), блок, схема, скин, контент, компиляция.
-5. `_doc/AI.md` — aicli (HATEOAS, роли, Navigator), AINET (SSRF, провайдеры), мультиагентная генерация (`brain.py`).
+5. `_doc/AI.md` — aicli (HATEOAS, роли, Navigator), AINET (SSRF, провайдеры), мультиагентная генерация (`brain.py`), Markdown-парсер и валидатор.
 6. `_doc/INSTALL.md` — развёртывание (только установка с нуля).
 7. `_doc/ADMIN.md` — UI админки (что можно, что только через CLI).
 8. `_doc/readme.md` — обзор и быстрый старт.
@@ -143,7 +143,7 @@ php bin/cli.php trash:clear --force --older=7d
 # Запуск мультиагента (E2E генерация сайта)
 python -m ai_agent.brain <domain> <allias> "<brief>" <model_name>
 # Например:
-python -m ai_agent.brain damoony3test.ru coffee "Сделай лендинг IT-агентства" gemma4:e4b
+python -m ai_agent.brain damoony3test.ru coffee "Сделай сайт приюта для собак с разделом о нас" qwen2.5-coder:7b
 
 # Проверка AI-слоя (нужны config/agent.config + config/ainet.config)
 echo '{"command": "ai:start", "role": "architect"}' | php bin/aicli.php
