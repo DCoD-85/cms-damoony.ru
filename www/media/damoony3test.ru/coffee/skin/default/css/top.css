@@ -1,0 +1,79 @@
+/* Main Navigation Styles */
+.main-navigation {
+    background-color: #333;
+    color: #fff;
+    padding: 10px 0;
+    font-family: 'Arial', sans-serif;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.main-navigation .logo {
+    max-width: 150px;
+    height: auto;
+    margin-left: 20px;
+}
+
+.main-navigation ul {
+    list-style: none;
+    display: flex;
+    margin: 0;
+    padding: 0;
+}
+
+.main-navigation li {
+    margin-left: 20px;
+}
+
+.main-navigation a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+    padding: 10px 15px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.main-navigation a:hover {
+    background-color: #555;
+}
+
+.main-navigation .menu-toggle {
+    display: none;
+    cursor: pointer;
+    color: #fff;
+    font-size: 24px;
+    margin-right: 20px;
+}
+
+@media (max-width: 768px) {
+    .main-navigation ul {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+        background-color: #444;
+        position: absolute;
+        top: 60px;
+        left: 0;
+        padding: 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    .main-navigation li {
+        margin: 10px 0;
+    }
+
+    .main-navigation a {
+        display: block;
+        text-align: center;
+    }
+
+    .main-navigation .menu-toggle {
+        display: block;
+    }
+
+    .main-navigation.active ul {
+        display: flex;
+    }
+}

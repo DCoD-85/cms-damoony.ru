@@ -432,8 +432,8 @@ try {
         if (!preg_match('/^[a-z][a-z0-9_]*$/', $allias) || !preg_match('/^[a-z][a-z0-9_]*$/', $name)) {
             throw new \RuntimeException('Invalid allias or skin name.');
         }
-        if (!in_array($file, ['css/main.css', 'js/main.js'], true)) {
-            throw new \RuntimeException('Invalid file (allowed: css/main.css, js/main.js).');
+        if (!preg_match('/^(css\/[a-z0-9_]+\.css|js\/main\.js)$/', $file)) {
+            throw new \RuntimeException('Invalid file (allowed: css/*.css, js/main.js).');
         }
         $safeFile = escapeshellarg($file);
         $contentArg = $contentB64 !== ''

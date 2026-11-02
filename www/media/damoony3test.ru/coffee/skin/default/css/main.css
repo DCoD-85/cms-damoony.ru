@@ -1,2 +1,25 @@
 :root {
+  --primary-color: #FF6347; /* Tomato */
+  --secondary-color: #87CEEB; /* Sky Blue */
+  --text-color: #333333; /* Dark Gray */
+  --bg-color: #FFFFFF; /* White */
 }
+
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: var(--bg-color);
+  margin: 0;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+
+/* Global safety net for images */
+img, .img-fluid { max-width: 100% !important; height: auto !important; display: block; border-radius: 8px; }
+.layout { display: flex; flex-direction: column; min-height: 100vh; max-width: 1200px; margin: 0 auto; background: #fff; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
+.page-content { padding: 40px; flex-grow: 1; }
+.top { background: var(--bg-color, #f8f9fa); padding: 0; }
+.left, .right, .bottom, .policy { padding: 20px; }

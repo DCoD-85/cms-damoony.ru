@@ -1,10 +1,11 @@
 """
-Production Multi-Agent: Architect -> Builder -> Markdown Parser -> Designer.
+Production Multi-Agent: Architect -> Builder -> Markdown Parser -> Modular Designer.
 """
 import json
 import sys
 import re
 import time
+import base64
 from typing import Any
 
 from .models import OllamaClient
@@ -19,13 +20,15 @@ Output ONLY a JSON object:
     {
       "name": "<MUST BE ONLY ENGLISH LETTERS, lowercase or __root__>",
       "title": "<page title>",
-      "layout": ["top", "center", "bottom"]
+      "parent": "<parent page name or null>",
+      "layout": ["top", "left", "center", "right", "bottom", "policy"]
     }
   ]
 }
 Rules:
 - Include __root__ (home page).
 - CRITICAL: "name" must be ONLY English letters, numbers, and underscores.
+- CRITICAL: "parent" must be the name of the parent page (e.g., "services" for "services/install"), or null for top-level pages.
 - Output ONLY the JSON object."""
 
 WRITER_MARKDOWN_PROMPT = """You are a professional copywriter.
@@ -40,10 +43,12 @@ RULES:
 4. Use - for bullet lists.
 5. Where an image is needed, use the exact format: [IMG: 1-3 word topic]
 6. Use [LINK: /url | Link Text] for links.
+7. You can use **bold** text for emphasis.
+8. CRITICAL: Write the article in the SAME LANGUAGE as the brief (Context). If the brief is in Russian, write in Russian.
 
 Example output:
 # Welcome to Our Site
-This is a great paragraph.
+This is a **great** paragraph.
 
 [IMG: happy dog]
 
@@ -54,13 +59,26 @@ This is a great paragraph.
 [LINK: /contact | Contact Us]
 """
 
-LEAD_DESIGNER_PROMPT = """You are the Lead Web Designer.
-Website brief: {brief}
-Here are the custom CSS classes used across the site: {classes}
+DESIGNER_BASE_PROMPT = """You are an expert UI/UX Web Designer.
+Write ONLY the base CSS variables for the site based on this brief: {brief}
+Output ONLY valid CSS. No HTML, no markdown.
+Include :root {{ --primary-color: ...; --secondary-color: ...; --text-color: ...; --bg-color: ...; }}
+And style the body {{ font-family, background, margin: 0; }}
+Ensure all images are responsive (use max-width: 100%; height: auto;)
+"""
 
-Write a beautiful, modern CSS based on these classes.
-Output ONLY valid CSS code. No HTML, no JSON, no markdown fences, no explanations. Just the CSS.
-Include styles for body, basic tags (h1, h2, p, ul, a), and ALL the custom classes listed above."""
+DESIGNER_BLOCK_PROMPT = """You are an expert UI/UX Web Designer.
+Website brief: {brief}
+You are styling the block "{block_name}".
+Here are the CSS classes used in this block: {classes}
+
+Write COMPLETE CSS for these specific classes.
+CRITICAL RULES:
+1. Output ONLY valid CSS. No HTML, no JSON, no markdown fences.
+2. Use nice colors, padding, and layout.
+3. Ensure all {{ and }} braces are perfectly balanced.
+4. Ensure images do not overflow their container (use max-width: 100%; height: auto;)
+"""
 
 # --- ТРАНЗАКЦИИ ---
 class Transaction:
@@ -105,54 +123,58 @@ def fetch_image(client: AicliClient, domain: str, allias: str, category: str, th
     return "https://via.placeholder.com/800x600?text=Download+Failed"
 
 def parse_markdown_to_blocks(md_text: str, client: AicliClient, domain: str, allias: str, category: str, used_classes: set) -> list:
-    """Превращает Markdown от LLM в JSON-блоки для CLI."""
     blocks = []
     lines = md_text.split('\n')
-    
     current_list = []
     current_text = []
+
+    def parse_inline(text: str) -> str:
+        # Убираем пробелы внутри ссылок
+        def replace_link(m):
+            url = m.group(1).strip()
+            label = m.group(2).strip()
+            return f'<a href="{url}">{label}</a>'
+        
+        text = re.sub(r'\[LINK:\s*([^|\]]+)\s*\|\s*([^\]]+)\]', replace_link, text)
+        text = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', text)
+        return text.strip()
 
     def flush_text():
         if current_text:
             text = " ".join(current_text).strip()
             if text:
-                blocks.append({"type": "text", "content": text, "class": "paragraph"})
+                blocks.append({"type": "text", "content": parse_inline(text), "class": "paragraph"})
                 used_classes.add("paragraph")
             current_text.clear()
 
     def flush_list():
         if current_list:
-            blocks.append({"type": "ul", "items": list(current_list), "class": "features-list"})
+            cleaned_items = [parse_inline(item) for item in current_list]
+            blocks.append({"type": "ul", "items": cleaned_items, "class": "features-list"})
             used_classes.add("features-list")
             current_list.clear()
 
     for line in lines:
         line = line.strip()
         if not line:
-            flush_text()
-            flush_list()
-            continue
+            flush_text(); flush_list(); continue
 
-        # Заголовки
-        if line.startswith('# '):
-            flush_text(); flush_list()
-            blocks.append({"type": "h1", "content": line[2:].strip(), "class": "hero-title"})
-            used_classes.add("hero-title")
-        elif line.startswith('## '):
-            flush_text(); flush_list()
-            blocks.append({"type": "h2", "content": line[3:].strip(), "class": "section-title"})
-            used_classes.add("section-title")
-        elif line.startswith('### '):
-            flush_text(); flush_list()
-            blocks.append({"type": "h3", "content": line[4:].strip(), "class": "sub-title"})
-            used_classes.add("sub-title")
-            
-        # Списки
+        if line.startswith('#'):
+            level = len(line) - len(line.lstrip('#'))
+            content = line.lstrip('#').strip()
+            if content:
+                flush_text(); flush_list()
+                if level == 1:
+                    blocks.append({"type": "h1", "content": parse_inline(content), "class": "hero-title"})
+                    used_classes.add("hero-title")
+                elif level == 2:
+                    blocks.append({"type": "h2", "content": parse_inline(content), "class": "section-title"})
+                    used_classes.add("section-title")
+                elif level >= 3:
+                    blocks.append({"type": "h3", "content": parse_inline(content), "class": "sub-title"})
+                    used_classes.add("sub-title")
         elif line.startswith('- ') or line.startswith('* '):
-            flush_text()
-            current_list.append(line[2:].strip())
-
-        # Картинки
+            flush_text(); current_list.append(line[2:].strip())
         elif line.startswith('[IMG:') and line.endswith(']'):
             flush_text(); flush_list()
             topic = line[5:-1].strip()
@@ -160,45 +182,28 @@ def parse_markdown_to_blocks(md_text: str, client: AicliClient, domain: str, all
             local_url = fetch_image(client, domain, allias, category, topic)
             blocks.append({"type": "img", "content": local_url, "alt": topic, "class": "img-fluid"})
             used_classes.add("img-fluid")
-
-        # Ссылки/Кнопки
-        elif line.startswith('[LINK:') and line.endswith(']'):
-            flush_text(); flush_list()
-            inner = line[6:-1].strip()
-            if '|' in inner:
-                url, label = inner.split('|', 1)
-                blocks.append({"type": "button", "url": url.strip(), "content": label.strip(), "class": "primary-btn"})
-                used_classes.add("primary-btn")
-            else:
-                blocks.append({"type": "link", "url": inner, "content": inner, "class": "text-link"})
-                used_classes.add("text-link")
-
-        # Обычный текст
         else:
-            flush_list()
-            current_text.append(line)
+            flush_list(); current_text.append(line)
 
-    flush_text()
-    flush_list()
-    
-    # Убедимся, что H1 есть в начале
+    flush_text(); flush_list()
     if not blocks or blocks[0]["type"] != "h1":
         blocks.insert(0, {"type": "h1", "content": "Welcome", "class": "hero-title"})
-
     return blocks
 
 
-def run_multi_agent(brief: str, domain: str, allias: str, model: str = "gemma4:e4b"):
+def run_multi_agent(brief: str, domain: str, allias: str, model: str = "qwen2.5-coder:7b"):
     llm = OllamaClient(timeout=180)
     client = AicliClient()
     tx = Transaction(client)
     
+    total_start = time.time()
+    
     try:
-        # 1. ARCHITECT (СТРУКТУРА)
-        print("[1/4] Architect is planning the high-level structure...")
+        # 1. ARCHITECT
+        step_start = time.time()
+        print("[1/5] Architect is planning the high-level structure...")
         res = safe_chat(llm, model, [{"role": "user", "content": f"BRIEF: {brief}\n\n{ARCHITECT_STRUCTURE_PROMPT}"}])
         plan_text = res.get("message", {}).get("content", "").strip().removeprefix("```json").removesuffix("```").strip()
-        
         plan = json.loads(plan_text)
 
         for p in plan.get("pages", []):
@@ -208,20 +213,23 @@ def run_multi_agent(brief: str, domain: str, allias: str, model: str = "gemma4:e
 
         valid_urls = ["/"] + [f"/{p['name']}" for p in plan.get("pages", []) if p["name"] != "__root__"]
         urls_str = ", ".join(valid_urls)
+        print(f"  [Time] Step 1: {time.time() - step_start:.2f}s")
 
-        # 2. BUILDER (КАРКАС)
-        print("[2/4] Creating skeleton...")
+        # 2. BUILDER
+        step_start = time.time()
+        print("[2/5] Creating skeleton...")
         client.call_cli("domain:new", {"domain": domain})
         tx.record_domain(domain) 
-        
         client.call_cli("allias:new", {"domain": domain, "name": allias})
         tx.record_allias(domain, allias) 
-        
         client.call_aicli("skin:new", {"domain": domain, "allias": allias, "name": "default"})
         
         for page in plan.get("pages", []):
             if page["name"] != "__root__":
-                client.call_cli("page:new", {"domain": domain, "allias": allias, "name": page["name"]})
+                args = {"domain": domain, "allias": allias, "name": page["name"]}
+                if page.get("parent"):
+                    args["parent"] = page["parent"]
+                client.call_cli("page:new", args)
 
         for b in ["top", "left", "right", "bottom", "policy"]:
             client.call_aicli("block:new", {"domain": domain, "name": b, "type": "visual"})
@@ -237,71 +245,102 @@ def run_multi_agent(brief: str, domain: str, allias: str, model: str = "gemma4:e
         scheme_json = {
             "children": [{"type": "slot", "name": s} for s in ["top", "left", "center", "right", "bottom", "policy"]],
             "meta": {
-                "css": [
-                    "/media/shared/css/main.css",
-                    f"/media/{domain}/{allias}/skin/default/css/main.css"
-                ], 
+                "css": ["/media/shared/css/main.css", f"/media/{domain}/{allias}/skin/default/css/main.css"], 
                 "js": ["/media/shared/scripts/jquery.min.js"]
             }
         }
         client.call_aicli("scheme:save", {"domain": domain, "name": allias, "scheme_json": scheme_json})
 
-        # 3. CONTENT WORKERS (WRITER + MARKDOWN PARSER)
-        print("[3/4] Generating content (Markdown mode)...")
+        # Создаем пустые файлы для блоков
+        for b in ["top", "left", "right", "bottom", "policy", "center"]:
+            empty_css = f"/* {b}.css - Generated by AI */\n"
+            b64 = base64.b64encode(empty_css.encode('utf-8')).decode('utf-8')
+            client.call_aicli("skin:edit", {
+                "domain": domain, "allias": allias, "name": "default", 
+                "file": f"css/{b}.css", "content_b64": b64
+            })
+        print(f"  [Time] Step 2: {time.time() - step_start:.2f}s")
+
+        # 3. CONTENT WORKERS
+        step_start = time.time()
+        print("[3/5] Generating content (Markdown mode)...")
         used_classes = set(["main-navigation"])
         
         for page in plan.get("pages", []):
+            page_start = time.time() # <--- ТАЙМЕР ДЛЯ КАЖДОЙ СТРАНИЦЫ
             page_name = page["name"]
             page_title = page["title"]
-            
             print(f"  -> Writing: {page_title}")
             
-            # ОДИН запрос на генерацию Markdown
-            writer_prompt = WRITER_MARKDOWN_PROMPT.format(
-                page_title=page_title, brief=brief, valid_urls=urls_str
-            )
+            writer_prompt = WRITER_MARKDOWN_PROMPT.format(page_title=page_title, brief=brief, valid_urls=urls_str)
             r = safe_chat(llm, model, [{"role": "user", "content": writer_prompt}])
             md_text = r.get("message", {}).get("content", "").strip()
 
-            # Парсинг в JSON
             final_blocks = parse_markdown_to_blocks(md_text, client, domain, allias, page_name or "__root__", used_classes)
 
-            # Запись в CLI
             cli_name = "" if page_name == "__root__" else page_name
             client.call_aicli("page:write", {
                 "domain": domain, "allias": allias, "name": cli_name, "blocks": final_blocks, "with_schema": "1"
             })
-
-        # 4. LEAD DESIGNER
-        print("[4/4] Designer is creating the main.css...")
-        classes_str = ", ".join(used_classes)
-        ld_prompt = LEAD_DESIGNER_PROMPT.format(brief=brief, classes=classes_str)
-        
-        css_written = False
-        for attempt in range(2):
-            r = safe_chat(llm, model, [{"role": "user", "content": ld_prompt}])
-            css_code = r.get("message", {}).get("content", "").strip().removeprefix("```css").removesuffix("```").strip()
-
-            if not css_code:
-                continue
-
-            res = client.call_aicli("skin:edit", {
-                "domain": domain, "allias": allias, "name": "default", 
-                "file": "css/main.css", "content": css_code
-            })
+            print(f"     [Time] Page '{page_title}': {time.time() - page_start:.2f}s")
             
-            if res.ok:
-                print("  [OK] main.css written.")
-                css_written = True
-                break
-            else:
-                print(f"  [!] CLI rejected CSS: {res.error}. Retrying...")
-                ld_prompt += "\n\nYour previous answer was rejected. Output ONLY valid CSS with balanced { and } braces."
+        print(f"  [Time] Step 3: {time.time() - step_start:.2f}s")
 
-        if not css_written:
-            print("  [ERROR] Could not generate valid CSS. Skipping.")
+        # 4. DESIGNER (Базовые переменные)
+        step_start = time.time()
+        print("[4/5] Designer is creating base CSS variables...")
+        base_prompt = DESIGNER_BASE_PROMPT.format(brief=brief)
+        r = safe_chat(llm, model, [{"role": "user", "content": base_prompt}])
+        base_css = r.get("message", {}).get("content", "").strip().removeprefix("```css").removesuffix("```").strip()
+        
+        layout_css = """
+/* Global safety net for images */
+img, .img-fluid { max-width: 100% !important; max-height: 500px !important; object-fit: cover; display: block; border-radius: 8px; margin: 20px 0; }
+.layout { display: flex; flex-direction: column; min-height: 100vh; max-width: 1200px; margin: 0 auto; background: #fff; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
+.page-content { padding: 40px; flex-grow: 1; }
+.top { background: var(--bg-color, #f8f9fa); padding: 0; }
+.left, .right, .bottom, .policy { padding: 20px; }
+"""
+        full_main_css = base_css + "\n\n" + layout_css
+        b64_main = base64.b64encode(full_main_css.encode('utf-8')).decode('utf-8')
+        client.call_aicli("skin:edit", {
+            "domain": domain, "allias": allias, "name": "default", 
+            "file": "css/main.css", "content_b64": b64_main
+        })
+        print(f"  [Time] Step 4: {time.time() - step_start:.2f}s")
 
-        print("Done!")
+        # 5. DESIGNER (Стили для блоков)
+        step_start = time.time()
+        print("[5/5] Designer is creating CSS for blocks...")
+        
+        # top.css (Меню)
+        print("  -> Styling top.css (navigation)")
+        top_prompt = DESIGNER_BLOCK_PROMPT.format(brief=brief, block_name="top (header navigation)", classes="main-navigation")
+        r = safe_chat(llm, model, [{"role": "user", "content": top_prompt}])
+        top_css = r.get("message", {}).get("content", "").strip().removeprefix("```css").removesuffix("```").strip()
+        if top_css:
+            b64_top = base64.b64encode(top_css.encode('utf-8')).decode('utf-8')
+            client.call_aicli("skin:edit", {
+                "domain": domain, "allias": allias, "name": "default", 
+                "file": "css/top.css", "content_b64": b64_top
+            })
+
+        # center.css (Контент)
+        center_classes = [c for c in used_classes if c not in ["main-navigation"]]
+        if center_classes:
+            print("  -> Styling center.css (content)")
+            center_prompt = DESIGNER_BLOCK_PROMPT.format(brief=brief, block_name="center (page content)", classes=", ".join(center_classes))
+            r = safe_chat(llm, model, [{"role": "user", "content": center_prompt}])
+            center_css = r.get("message", {}).get("content", "").strip().removeprefix("```css").removesuffix("```").strip()
+            if center_css:
+                b64_center = base64.b64encode(center_css.encode('utf-8')).decode('utf-8')
+                client.call_aicli("skin:edit", {
+                    "domain": domain, "allias": allias, "name": "default", 
+                    "file": "css/center.css", "content_b64": b64_center
+                })
+        print(f"  [Time] Step 5: {time.time() - step_start:.2f}s")
+
+        print(f"\nDone! Total time: {time.time() - total_start:.2f}s")
         
     except Exception as e:
         print(f"\n[!] Fatal error: {e}")
@@ -314,6 +353,6 @@ if __name__ == "__main__":
         sys.exit(1)
         
     domain, allias, brief = sys.argv[1], sys.argv[2], sys.argv[3]
-    model = sys.argv[4] if len(sys.argv) > 4 else "gemma4:e4b"
+    model = sys.argv[4] if len(sys.argv) > 4 else "qwen2.5-coder:7b"
     
     run_multi_agent(brief, domain, allias, model=model)

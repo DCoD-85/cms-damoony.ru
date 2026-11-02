@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Damoony\Region;
 
+use Damoony\Ui\Text;
+
 final class BlockCompiler
 {
     /**
@@ -16,13 +18,15 @@ final class BlockCompiler
         $code .= "use Damoony\\Region\\RegionContext;\n";
         $code .= "use Damoony\\Region\\RegionInterface;\n";
         $code .= "use Damoony\\Ui\\Builder;\n";
-        $code .= "use Damoony\\Ui\\Node;\n\n";
+        $code .= "use Damoony\\Ui\\Node;\n";
+        $code .= "use Damoony\\Ui\\Text;\n\n";
 
         $code .= "final class {$className} implements RegionInterface\n{\n";
         $code .= "    public function name(): string\n    {\n        return '{$blockName}';\n    }\n\n";
         $code .= "    public function enabled(): bool\n    {\n        return true;\n    }\n\n";
         $code .= "    public function render(RegionContext \$context): Node\n    {\n";
-
+        $code .= "        \$cssUrl = '/media/' . \$context->domain->real . '/' . \$context->domain->allias . '/skin/default/css/{$blockName}.css';\n";
+        $code .= "        \$context->meta->addCss(\$cssUrl);\n\n";
         $code .= "        \$content = Builder::div('{$blockName}');\n\n";
 
         foreach ($blocks as $block) {
@@ -57,25 +61,25 @@ final class BlockCompiler
                     if (is_array($item) && isset($item['url'], $item['title'])) {
                         $itemUrl = var_export($item['url'], true);
                         $itemTitle = var_export($item['title'], true);
-                        $code .= "        \$el->append(Builder::li()->append(Builder::a({$itemUrl})->content({$itemTitle})));\n";
+                        $code .= "        \$el->append(Builder::li()->append(Builder::a({$itemUrl})->append(Text::raw(strip_tags({$itemTitle}, '<a><strong>')))));\n";
                     }
                 }
                 $code .= $attrsCode;
                 $code .= "        \$content->append(\$el);\n\n";
             } elseif ($type === 'h1') {
-                $code .= '        $el = Builder::h(1)->content(' . var_export($content, true) . ");\n";
+                $code .= '        $el = Builder::h(1)->append(Text::raw(strip_tags(' . var_export($content, true) . ", '<a><strong>')));\n";
                 $code .= $attrsCode;
                 $code .= "        \$content->append(\$el);\n\n";
             } elseif ($type === 'h2') {
-                $code .= '        $el = Builder::h(2)->content(' . var_export($content, true) . ");\n";
+                $code .= '        $el = Builder::h(2)->append(Text::raw(strip_tags(' . var_export($content, true) . ", '<a><strong>')));\n";
                 $code .= $attrsCode;
                 $code .= "        \$content->append(\$el);\n\n";
             } elseif ($type === 'h3') {
-                $code .= '        $el = Builder::h(3)->content(' . var_export($content, true) . ");\n";
+                $code .= '        $el = Builder::h(3)->append(Text::raw(strip_tags(' . var_export($content, true) . ", '<a><strong>')));\n";
                 $code .= $attrsCode;
                 $code .= "        \$content->append(\$el);\n\n";
             } elseif ($type === 'text') {
-                $code .= '        $el = Builder::p()->content(' . var_export($content, true) . ");\n";
+                $code .= '        $el = Builder::p()->append(Text::raw(strip_tags(' . var_export($content, true) . ", '<a><strong>')));\n";
                 $code .= $attrsCode;
                 $code .= "        \$content->append(\$el);\n\n";
             } elseif ($type === 'img') {
@@ -83,13 +87,13 @@ final class BlockCompiler
                 $code .= $attrsCode;
                 $code .= "        \$content->append(\$el);\n\n";
             } elseif ($type === 'button' || $type === 'link') {
-                $code .= '        $el = Builder::a(' . var_export($url, true) . ')->content(' . var_export($content, true) . ");\n";
+                $code .= '        $el = Builder::a(' . var_export($url, true) . ')->append(Text::raw(strip_tags(' . var_export($content, true) . ", '<a><strong>')));\n";
                 $code .= $attrsCode;
                 $code .= "        \$content->append(Builder::p()->append(\$el));\n\n";
             } elseif ($type === 'ul') {
                 $code .= "        \$el = Builder::ul();\n";
                 foreach ($items as $item) {
-                    $code .= '        $el->append(Builder::li()->content(' . var_export($item, true) . "));\n";
+                    $code .= '        $el->append(Builder::li()->append(Text::raw(strip_tags(' . var_export($item, true) . ", '<a><strong>'))));\n";
                 }
                 $code .= $attrsCode;
                 $code .= "        \$content->append(\$el);\n\n";

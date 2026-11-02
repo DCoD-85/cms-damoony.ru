@@ -1,0 +1,48 @@
+.hero-title {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #333;
+    text-align: center;
+    padding: 2rem 0;
+    background-color: #f4f4f4;
+}
+
+.paragraph {
+    font-size: 1rem;
+    color: #666;
+    line-height: 1.6;
+    padding: 1rem 0;
+}
+
+.img-fluid {
+    max-width: 100%;
+    height: auto;
+}
+
+.section-title {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #333;
+    text-align: center;
+    padding: 2rem 0;
+}
+
+.features-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.features-list li {
+    font-size: 1rem;
+    color: #666;
+    line-height: 1.6;
+    padding: 0.5rem 0;
+}
+
+.sub-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+    text-align: center;
+    padding: 1rem 0;
+}
