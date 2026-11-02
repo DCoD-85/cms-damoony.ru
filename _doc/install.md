@@ -1,3 +1,5 @@
+--- НАЧАЛО ФАЙЛА ---
+
 # Установка и развёртывание
 
 Документ описывает установку Damoony Engine с нуля. Для написания кода после установки читайте `DEV.md`, для управления — `CLI.md`.
@@ -10,7 +12,8 @@
 - **Composer**.
 - **MariaDB 11+** (или MySQL 8+). SQLite — только для тестов.
 - **Apache 2.4** + `mod_rewrite` или **Nginx** + PHP-FPM.
-- **Ollama** (опционально, для AI-агента).
+- **Python 3.10+** (для запуска мультиагентной системы `ai_agent/brain.py`).
+- **Ollama** (опционально, для AI-агента, рекомендуется Gemma 4 или Qwen 2.5).
 - `curl` + `openssl` (обязательны для AINET).
 - `gd` (для `content:store` — проверка размеров картинок).
 
@@ -97,7 +100,7 @@ php -r "var_dump(function_exists('curl_init'), function_exists('imagecreatetruec
   "allowed_domains": ["damoony.ru"]
 }
 ```
-Ограничивает домены, в которых AI может вызывать `page:write` и `image:download`.
+Ограничивает домены, в которых AI может вызывать `page:write`, `block:write` и `image:download`.
 
 ### 3.5. `config/ainet.config` — доступ в интернет (AINET)
 ```bash
@@ -141,8 +144,9 @@ server {
         try_files $uri $uri/ /admin/index.php?$query_string;
     }
 
+    # Front controller для отдачи контента (картинок)
     location /content/ {
-        try_files $uri $uri/ /content.php?query_string;
+        try_files $uri $uri/ /content.php?$query_string;
     }
 
     location ~ \.php$ {
@@ -164,7 +168,7 @@ server {
 Пользователь веб-сервера (например, `www-data`) должен иметь права на запись в:
 - `var/` (логи, кэш, rate-limit)
 - `content/` (runtime-контент AI)
-- `www/media/` (скины, если админка их редактирует)
+- `www/media/` (скины, сгенерированные CSS)
 
 ```bash
 chown -R www-data:www-data var/ content/ www/media/
@@ -186,12 +190,20 @@ php bin/cli.php user:new --login=admin --email=admin@example.com --password=[str
 
 ---
 
-## 8. Создание первого сайта
+## 8. Создание первого сайта (вручную или через AI)
 
+**Вручную:**
 ```bash
 php bin/cli.php domain:new --domain=example.ru --namespace=example
 ```
-Алиас `www` создастся автоматически. 
+
+**Через AI (E2E):**
+Убедитесь, что Ollama запущена (`ollama run gemma4:e4b`), и выполните:
+```bash
+python -m ai_agent.brain <domain> <allias> "<brief>" <model_name>
+# Пример:
+python -m ai_agent.brain damoony3test.ru coffee "Сделай лендинг IT-агентства" gemma4:e4b
+```
 
 ---
 
@@ -201,3 +213,5 @@ php bin/cli.php domain:new --domain=example.ru --namespace=example
 php bin/cli.php structure:check
 ```
 Команда проверит наличие всех 3 файлов, корневых правил и схем. Ожидаемый результат: `✓ Все проверки пройдены успешно!`.
+
+--- КОНЕЦ ФАЙЛА ---

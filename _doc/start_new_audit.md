@@ -1,3 +1,5 @@
+--- НАЧАЛО ФАЙЛА ---
+
 # Start Here: Briefing для нового аудитора
 
 Точка входа для аудитора, контрибьютора или AI-агента. Прочитай целиком до любых действий.
@@ -9,23 +11,24 @@
 ## 1. Идентификация
 
 - **Проект:** Damoony Engine — PHP 8.4 multi-domain CMS.
+- **Версия:** v1.1.0 (Production Ready + Multi-Agent AI).
 - **Архитектура:** CLI-First (CLI — единственный источник истины для FS), AI-Native (aicli + 9 ролей + Navigator), Content (`/content/`, вне webroot) + Skin (`www/media/[domain]/[allias]/skin/`, git).
 - **Репозиторий:** https://github.com/DCoD-85/cms-damoony.ru/
 - **Ветка:** `main`.
-- **Стек:** PHP 8.4, MariaDB 11.8, Apache 2, Composer (PSR-4/3/11), PHPUnit 10, PHPStan 8, PHP-CS-Fixer, Ollama (Qwen 2.5 Coder 7B), curl + openssl + gd.
+- **Стек:** PHP 8.4, MariaDB 11.8, Apache 2, Composer (PSR-4/3/11), PHPUnit 10, PHPStan 8, PHP-CS-Fixer, Python 3 (для `ai_agent/brain.py`), Ollama (Qwen 2.5 Coder 7B / Gemma 4), curl + openssl + gd.
 
 ---
 
 ## 2. Read-order
 
-1. Файл `_doc/start_new_audit.md` — этот файл (окружение, правила, карта).
-2. Файл `_doc/ARCH.md` — жизненный цикл, слои, инварианты, контракты, 10 принципов, P2.
-3. Файл `_doc/CLI.md` — 40 команд, флаги, guards, карантин.
-4. Файл `_doc/DEV.md` — how-to: страница (A/B), блок, схема, скин, контент, компиляция.
-5. Файл `_doc/AI.md` — aicli (HATEOAS, роли, Navigator), AINET (SSRF, провайдеры), оркестраторы.
-6. Файл `_doc/INSTALL.md` — развёртывание (только установка с нуля).
-7. Файл `_doc/ADMIN.md` — UI админки (что можно, что только через CLI).
-8. Файл `README.md` — обзор и быстрый старт.
+1. `_doc/start_new_audit.md` — этот файл (окружение, правила, карта).
+2. `_doc/ARCH.md` — жизненный цикл, слои, инварианты, контракты, 10 принципов, P2.
+3. `_doc/CLI.md` — 44 команды, флаги, guards, карантин.
+4. `_doc/DEV.md` — how-to: страница (A/B), блок, схема, скин, контент, компиляция.
+5. `_doc/AI.md` — aicli (HATEOAS, роли, Navigator), AINET (SSRF, провайдеры), мультиагентная генерация (`brain.py`).
+6. `_doc/INSTALL.md` — развёртывание (только установка с нуля).
+7. `_doc/ADMIN.md` — UI админки (что можно, что только через CLI).
+8. `_doc/readme.md` — обзор и быстрый старт.
 
 ---
 
@@ -37,10 +40,10 @@
 | `ARCH.md` | Жизненный цикл, слои, инварианты, контракты, принципы, открытые P2 | How-to, установку, историю |
 | `CLI.md` | Команды: флаги, идемпотентность, per-command guards | UI, архитектуру, метрики |
 | `DEV.md` | Как писать страницу/блок/схему/скин/контент | Установку, UI, per-command флаги |
-| `AI.md` | aicli-контракт, роли, Navigator, AINET, оркестраторы | Установку, UI, per-command флаги |
+| `AI.md` | aicli-контракт, роли, Navigator, AINET, мультиагентная генерация | Установку, UI, per-command флаги |
 | `INSTALL.md` | Требования, конфиги, веб-сервер, первый запуск, проверка | How-to разработчика, историю миграций |
 | `ADMIN.md` | UI админки + делегирование CLI | Per-command флаги (ссылка в CLI) |
-| `README.md` | Обзор, стек, быстрый старт, ссылки | Метрики (ссылка), историю |
+| `readme.md` | Обзор, стек, быстрый старт, ссылки | Метрики (ссылка), историю |
 
 **Правило:** один факт — одно место. Метрики, перечень команд, требования — не дублируются, только ссылки.
 
@@ -82,7 +85,7 @@
 
 - Production: прямое редактирование `/var/www/damoony.ru/`.
 - Ядро: `src/Core/`, `src/Http/Kernel.php`, `src/App/AppFactory.php`, `bin/aicli.php`, `bin/ainet.php`.
-- AI-контракт: `src/Ai/Roles.php`, `src/Ai/Navigator.php`, `PageCompiler`, `AinetFacade`.
+- AI-контракт: `src/Ai/Roles.php`, `src/Ai/Navigator.php`, `PageCompiler`, `BlockCompiler`, `AinetFacade`.
 - Роутинг: `PagePath`, `PageRules`, `FileRouter`.
 - Безопасность: механизм карантина, path traversal guard, SSRF (UrlGuard), `www/content.php`/`ContentResponder`, `skin:edit` whitelist.
 - Git: push в `main` при красных проверках; commit `config/*.config`; изменение `composer.lock`.
@@ -107,7 +110,7 @@
 | Карантин (6 уровней) | `app/[d]_trash_[ts]/`, `app/[d]/[a]_trash_[ts]/`, `.alliasscheme/[n]_trash_[ts]/`, `.alliasglobal/[n]_trash_[ts]/`, `/content/.trash/...`, `www/media/.trash/...` |
 | Конфиги | `config/*.config` (`engine`, `site`, `admin`, `agent`, `ainet`) |
 | Точки входа | `www/index.php` (сайт), `www/admin/index.php` (админка), `www/content.php` (content), `bin/cli.php` (CLI), `bin/aicli.php` (AI, единственная), `bin/ainet.php` (standalone-отладка, не для AI) |
-| Оркестраторы AI | `agent_test.py` (рабочий), `ai_agent/` (будущая multi-agent модель, P3) |
+| AI-Оркестраторы | `ai_agent/brain.py` (рабочий мультиагент), `ask.py` (скрипт для ввода брифа) |
 | Тесты | `_dev/tests/` |
 | Runtime | `var/` (+ `var/ainet-cache/`, `var/ainet-ratelimit.json`) |
 
@@ -130,12 +133,17 @@ PHP_CS_FIXER_IGNORE_ENV=1 php vendor/bin/php-cs-fixer fix --config=_dev/.php-cs-
 php bin/cli.php structure:check
 php bin/cli.php structure:repair --domain=example.ru
 
-# Список команд (40)
+# Список команд (44)
 php bin/cli.php help
 
 # Карантин (dry-run -> --force)
 php bin/cli.php trash:clear
 php bin/cli.php trash:clear --force --older=7d
+
+# Запуск мультиагента (E2E генерация сайта)
+python -m ai_agent.brain <domain> <allias> "<brief>" <model_name>
+# Например:
+python -m ai_agent.brain damoony3test.ru coffee "Сделай лендинг IT-агентства" gemma4:e4b
 
 # Проверка AI-слоя (нужны config/agent.config + config/ainet.config)
 echo '{"command": "ai:start", "role": "architect"}' | php bin/aicli.php
@@ -154,3 +162,5 @@ echo '{"command": "net:status", "args": {}}'        | php bin/aicli.php
 - Изменение структуры `/content/` или `www/media/` (три зоны + скин).
 
 Открытые архитектурные ограничения (P2) — в `ARCH.md`, раздел «Открытые P2». Прочитать до, а не после.
+
+--- КОНЕЦ ФАЙЛА ---

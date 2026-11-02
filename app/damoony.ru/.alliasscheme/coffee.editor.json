@@ -1,0 +1,38 @@
+{
+    "scheme": {
+        "children": [
+            {
+                "type": "slot",
+                "name": "top"
+            },
+            {
+                "type": "slot",
+                "name": "left"
+            },
+            {
+                "type": "slot",
+                "name": "center"
+            },
+            {
+                "type": "slot",
+                "name": "right"
+            },
+            {
+                "type": "slot",
+                "name": "bottom"
+            },
+            {
+                "type": "slot",
+                "name": "policy"
+            }
+        ],
+        "meta": {
+            "css": [
+                "\/media\/shared\/css\/main.css"
+            ],
+            "js": [
+                "\/media\/shared\/scripts\/jquery.min.js"
+            ]
+        }
+    }
+}

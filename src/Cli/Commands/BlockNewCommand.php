@@ -101,8 +101,6 @@ final class BlockNewCommand implements CommandInterface
                 . "    public function name(): string\n    {\n        return '{$name}';\n    }\n\n"
                 . "    public function enabled(): bool\n    {\n        return true;\n    }\n\n"
                 . "    public function render(RegionContext \$context): Node\n    {\n"
-                . "        \$cssUrl = '/media/' . \$context->domain->real . '/' . \$context->domain->allias . '/skin/default/css/{$name}.css';\n"
-                . "        \$context->meta->addCss(\$cssUrl);\n\n"
                 . "        \$wrap = Builder::div('{$name}');\n"
                 . "        \$wrap->append(Builder::p()->content('Блок {$name} ({$type})'));\n"
                 . "        return \$wrap;\n    }\n"
@@ -120,17 +118,6 @@ final class BlockNewCommand implements CommandInterface
 
         Fs::writeAtomic($blockDir . '/' . $name . '.editor.json', json_encode([], JSON_PRETTY_PRINT) . "\n");
         $r->file(Fs::rel($blockDir . '/' . $name . '.editor.json', $this->paths->root()));
-
-        // Создаем CSS для блока в базовом алиасе www
-        $defaultSkinDir = $this->paths->media($realDomain, 'www') . '/skin/default/css';
-        if (!Fs::isDir($defaultSkinDir)) {
-            Fs::mkdir($defaultSkinDir);
-        }
-        $cssFile = $defaultSkinDir . '/' . $name . '.css';
-        if (!is_file($cssFile)) {
-            Fs::writeAtomic($cssFile, "/* Block: {$name} */\n.{$name} { padding: 10px; }\n");
-            $r->file(Fs::rel($cssFile, $this->paths->root()));
-        }
 
         $context->step("Блок создан ({$type})", true, $name);
 

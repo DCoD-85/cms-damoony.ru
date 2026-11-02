@@ -15,7 +15,7 @@ import re
 from typing import Any
 
 from .models import OllamaClient
-from .prompts import PLANNER_SYSTEM, planner_user
+from .prompts import planner_user
 from .session import Session
 
 
@@ -34,6 +34,7 @@ def run_planner(
     allowed_domains: list[str],
     model: str,
     session: Session,
+    system_prompt: str,
     llm: OllamaClient | None = None,
 ) -> dict[str, Any]:
     """
@@ -49,7 +50,7 @@ def run_planner(
     llm = llm or OllamaClient()
 
     messages: list[dict[str, Any]] = [
-        {"role": "system", "content": PLANNER_SYSTEM},
+        {"role": "system", "content": system_prompt},
         {"role": "user", "content": planner_user(brief, allowed_domains)},
     ]
 

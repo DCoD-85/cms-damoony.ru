@@ -22,8 +22,6 @@ final class BlockCompiler
         $code .= "    public function name(): string\n    {\n        return '{$blockName}';\n    }\n\n";
         $code .= "    public function enabled(): bool\n    {\n        return true;\n    }\n\n";
         $code .= "    public function render(RegionContext \$context): Node\n    {\n";
-        $code .= "        \$cssUrl = '/media/' . \$context->domain->real . '/' . \$context->domain->allias . '/skin/default/css/{$blockName}.css';\n";
-        $code .= "        \$context->meta->addCss(\$cssUrl);\n\n";
 
         $code .= "        \$content = Builder::div('{$blockName}');\n\n";
 

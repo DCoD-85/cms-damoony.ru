@@ -7,24 +7,6 @@ Pipeline:
   3. Builder.run  → skeleton.json
   4. Content.run  → content.json (по страницам)
   5. Session.complete(erase=not keep_session)
-
-Возвращает:
-  {
-    "ok": bool,
-    "status": "completed" | "partial" | "failed",
-    "plan": {...} | None,
-    "skeleton": {...} | None,
-    "content": {...} | None,
-    "error": str,        # если failed
-    "session_path": str,  # для --keep-session / --resume
-    "stats": {
-      "pages_total": int,
-      "pages_written": int,
-      "pages_failed": int,
-      "media_downloaded": int,
-      "llm_calls": int,   # planner + content
-    }
-  }
 """
 
 from __future__ import annotations
@@ -41,6 +23,7 @@ from .content import ContentError, run_content
 from .models import OllamaClient
 from .planner import PlannerError, run_planner
 from .session import Session
+from .profiles import PROFILES
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -48,18 +31,20 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 def run(
     brief: str,
-    model: str = "qwen2.5-coder:7b",
+    model: str | None = None,
     allowed_domains: list[str] | None = None,
     keep_session: bool = False,
     reset: bool = False,
     llm: OllamaClient | None = None,
+    profile_name: str = "default",
+    force_allias: str | None = None,
+    force_domain: str | None = None,
 ) -> dict[str, Any]:
-    """Полный прогон: Planner → Builder → Content.
-
-    reset=True: перед Builder удалить существующий алиас (allias:remove --force).
-    """
+    """Полный прогон: Planner → Builder → Content."""
+    profile = PROFILES.get(profile_name, PROFILES["default"])
+    model = model or profile["model"]
     allowed_domains = allowed_domains or _load_allowed_domains()
-    llm = llm or OllamaClient()
+    llm = llm or OllamaClient(timeout=profile["timeout"])
 
     if not allowed_domains:
         return {
@@ -71,9 +56,10 @@ def run(
 
     session = Session.create(brief, {
         "model": model,
+        "profile": profile_name,
         "allowed_domains": allowed_domains,
     })
-    session.log(f"Orchestrator started: model={model}, brief={brief[:80]}")
+    session.log(f"Orchestrator started: model={model}, profile={profile_name}, brief={brief[:80]}")
 
     started = time.monotonic()
     stats = _empty_stats()
@@ -97,11 +83,25 @@ def run(
             model=model,
             session=session,
             llm=llm,
+            system_prompt=profile["planner_system"],
         )
         stats["llm_calls"] += 1
         stats["pages_total"] = len(plan["pages"])
         result["plan"] = plan
         session.log(f"Planner done: {len(plan['pages'])} pages")
+
+        # Принудительная установка домена/алиаса, если переданы флаги
+        if force_domain:
+            plan["domain"] = force_domain
+            session.log(f"Domain overridden by CLI: {force_domain}")
+            
+        if force_allias:
+            plan["allias"] = force_allias
+            session.log(f"Allias overridden by CLI: {force_allias}")
+
+        if force_domain or force_allias:
+            session.write_json("plan.json", plan)
+
     except PlannerError as e:
         result["error"] = f"Planner failed: {e}"
         stats["duration_sec"] = round(time.monotonic() - started, 2)
@@ -133,8 +133,9 @@ def run(
             session=session,
             model=model,
             llm=llm,
+            system_prompt=profile["content_system"],
         )
-        stats["llm_calls"] += len(plan["pages"])  # 1 LLM на страницу (в идеале)
+        stats["llm_calls"] += len(plan["pages"])
         result["content"] = content
 
         written = sum(1 for v in content.values() if v.get("status") == "written")
@@ -167,14 +168,16 @@ def run(
 
     return result
 
-def _reset_alias(domain: str, allias: str, client: "AicliClient", session: Session) -> None:
-    """Удалить алиас (в карантин) для чистого rebuild. AI не имеет доступа к allias:remove — используем CLI напрямую."""
+
+def _reset_alias(domain: str, allias: str, client: Any, session: Session) -> None:
+    """Удалить алиас (в карантин) для чистого rebuild."""
     result = client.call_cli("allias:remove", {
         "domain": domain,
         "name": allias,
         "force": True,
     })
     session.log(f"  allias:remove → ok={result.ok}")
+
 
 def _load_allowed_domains() -> list[str]:
     """Читает config/agent.config (allowed_domains)."""
@@ -209,16 +212,22 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--brief", type=str, default="", help="Task description (inline)")
     parser.add_argument("--brief-file", type=str, default="", help="Read brief from file")
-    parser.add_argument("--model", type=str, default="qwen2.5-coder:7b",
-                        help="Ollama model (default: qwen2.5-coder:7b)")
+    parser.add_argument("--model", type=str, default=None,
+                        help="Ollama model (overrides profile)")
     parser.add_argument("--domains", type=str, default="",
                         help="Comma-separated allowed domains (default: from agent.config)")
     parser.add_argument("--keep-session", action="store_true",
-                        help="Не стирать session-директорию на успехе (для отладки/бенчмарка)")
+                        help="Не стирать session-директорию на успехе (для отладки)")
     parser.add_argument("--reset", action="store_true",
                         help="Удалить существующий алиас перед пересборкой (fresh site)")
     parser.add_argument("--json", action="store_true",
                         help="Вывести результат как JSON (для скриптов)")
+    parser.add_argument("--profile", type=str, default="default", choices=["default", "rich"],
+                        help="Профиль агента (default/rich)")
+    parser.add_argument("--allias", type=str, default="",
+                        help="Принудительно задать имя алиаса (игнорирует выбор LLM)")
+    parser.add_argument("--domain", type=str, default="",
+                        help="Принудительно задать домен (игнорирует выбор LLM)")
     args = parser.parse_args(argv)
 
     brief = args.brief
@@ -238,6 +247,9 @@ def main(argv: list[str] | None = None) -> int:
         allowed_domains=allowed_domains,
         keep_session=args.keep_session,
         reset=args.reset,
+        profile_name=args.profile,
+        force_allias=args.allias,
+        force_domain=args.domain,
     )
 
     if args.json:

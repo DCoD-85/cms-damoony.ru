@@ -1,0 +1,10 @@
+{
+    "available": [
+        "services",
+        "cases",
+        "contacts"
+    ],
+    "auth": false,
+    "search": true,
+    "default": false
+}

@@ -13,9 +13,10 @@ use Damoony\Files\Paths;
 
 final class SkinEditCommand implements CommandInterface
 {
-    private const ALLOWED_FILES = ['css/main.css', 'js/main.js'];
     private const MAX_SIZE = 1048576; // 1 MB
     private const SAFE_CSS_RE = '#@import|url\(\s*["\']?\s*javascript:#i';
+    // Разрешаем любые css файлы в папке css/ и строго js/main.js
+    private const FILE_RE = '/^(css\/[a-z0-9_]+\.css|js\/main\.js)$/';
 
     public function __construct(private readonly Paths $paths)
     {
@@ -28,7 +29,7 @@ final class SkinEditCommand implements CommandInterface
 
     public function description(): string
     {
-        return 'Редактировать файл скина (только css/main.css, js/main.js)';
+        return 'Редактировать файл скина (css/*.css, js/main.js)';
     }
 
     public function run(array $args, Context $context): Result
@@ -54,8 +55,10 @@ final class SkinEditCommand implements CommandInterface
             $r->error('Некорректное имя скина');
             return $r;
         }
-        if (!in_array($file, self::ALLOWED_FILES, true)) {
-            $r->error('Недопустимый файл (разрешены: ' . implode(', ', self::ALLOWED_FILES) . ')');
+
+        // Проверка имени файла по новому регулярному выражению
+        if (!preg_match(self::FILE_RE, $file)) {
+            $r->error('Недопустимый файл (разрешены: css/*.css, js/main.js)');
             return $r;
         }
 
@@ -100,6 +103,13 @@ final class SkinEditCommand implements CommandInterface
         }
 
         $target = $skinDir . '/' . $file;
+
+        // Если папки (например, css/) нет, создаем её
+        $dir = dirname($target);
+        if (!Fs::isDir($dir)) {
+            Fs::mkdir($dir);
+        }
+
         Fs::writeAtomic($target, $content);
         $r->file(Fs::rel($target, $this->paths->root()));
 

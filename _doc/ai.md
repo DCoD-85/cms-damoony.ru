@@ -1,6 +1,8 @@
-# AI-Слой: Интеграция, AINET и Оркестраторы
+--- НАЧАЛО ФАЙЛА ---
 
-Этот документ описывает, как локальные LLM (например, через Ollama) взаимодействуют с движком. Единственная точка входа для ИИ — `bin/aicli.php`. AINET (сеть) изолирован от файловой системы.
+# AI-Слой: Интеграция, AINET и Мультиагентная генерация
+
+Этот документ описывает, как локальные LLM (например, Ollama) взаимодействуют с движком. Единственная точка входа для ИИ-команд — `bin/aicli.php`. AINET (сеть) изолирован от файловой системы. Для полной автономной сборки сайтов используется Python-оркестратор `ai_agent/brain.py`.
 
 ---
 
@@ -50,12 +52,13 @@ AI не имеет прямого доступа к терминалу. Он о�
 | `planner` | План структуры | `*:list`, `page:read` |
 | `architect` | Каркас сайта | `domain:new`, `allias:new`, `block:new`, `scheme:new`, `filler:new`, `*:list` |
 | `executor` | Контент | `page:new`, `page:write`, `image:search`, `image:download`, `*:list` |
-| `designer` | Стили | `page:write`, `block:edit`, `filler:edit`, `*:list` |
+| `designer` | Стили | `page:write`, `block:write`, `filler:write`, `skin:edit`, `*:list` |
 | `bundler` | Сборка | `structure:check`, `*:list` |
 | `corrector` | Исправления | `page:write`, `structure:repair`, `structure:check` |
 | `reporter` | Отчёт | `*:list`, `page:read`, `structure:check` |
 
-**Роль `*` (по умолчанию):** объединяет все 9 ролей и добавляет специфичные команды (`net:*`, `skin:remove`, `filler_toggle`).
+**Роль `*` (по умолчанию):** объединяет все 9 ролей и добавляет специфичные команды (`net:*`, `skin:remove`, `block:write`, `filler:write`).
+
 **Запрещено всем:** `user:new`, `db:migrate`, `admin:passwd`, а также любые destructive-команды (`*:remove`, `trash:clear`, `content:remove`).
 
 ---
@@ -63,6 +66,7 @@ AI не имеет прямого доступа к терминалу. Он о�
 ## 3. Navigator (Граф состояний)
 
 Скрипт `src/Ai/Navigator.php` формирует массив `next[]` на основе текущего состояния.
+
 - `OFFERABLE` = `[domain:new, allias:new, skin:new, skin:edit, page:new, page:write, page:read, image:search, image:download, done]`.
 - `next[]` фильтруется по whitelist роли (если роль `executor`, она не увидит `domain:new`).
 
@@ -77,17 +81,19 @@ AI не имеет прямого доступа к терминалу. Он о�
 
 ---
 
-## 4. Безопасная генерация контента (PageCompiler)
+## 4. Безопасная генерация контента (Компиляторы)
 
-⚠️ **AI НЕ ПИШЕТ PHP-КОД.** Он передаёт JSON-массив блоков через `page:write`. PageCompiler конвертирует его в безопасный PHP.
+⚠️ **AI НЕ ПИШЕТ PHP-КОД.** Он передаёт JSON-массив блоков через `page:write`, `block:write` или `filler:write`.
 
-**Поддерживаемые типы:** `h1`, `h2`, `h3`, `text`, `img`, `link`, `button`, `ul`.
+**Поддерживаемые типы:** `h1`, `h2`, `h3`, `text`, `img`, `link`, `button`, `ul`, `nav`.
 **Атрибуты:** `class`, `id`, `style`, `url`, `alt`.
 
 *Правила:*
 - JSON должен быть валидным (без висячих запятых).
 - Имена страниц/алиасов: `[a-z][a-z0-9_]*` (без дефисов).
 - Для главной страницы: `--name=__root__`. Флаг `--parent` с `__root__` несовместим.
+- Для меню используй тип `nav` с массивом `{"title": "...", "url": "..."}`.
+- Для карточек товаров комбинируй блоки: `img` -> `h3` -> `text` -> `button`.
 
 ---
 
@@ -110,18 +116,22 @@ AI не имеет прямого доступа к терминалу. Он о�
 
 ---
 
-## 6. Настройка локальных оркестраторов
+## 6. Мультиагентная генерация (E2E)
 
-Для автономной генерации сайтов используются Python-оркестраторы.
+Для автономной генерации сайтов используется Python-скрипт `ai_agent/brain.py`. Архитектура построена на паттерне Map-Reduce (очистка контекста LLM на каждом шаге):
 
-1. **`agent_test.py`** (рабочий E2E-скрипт).
-   - Настраивается на локальную модель через Ollama (например, Qwen 2.5 Coder 7B).
-   - Читает бриф, генерирует JSON-план (цепочку команд), отправляет в `aicli.php`, обрабатывает ошибки, делает commit (шаг).
-   - Умеет искать и скачивать картинки (`image:search` -> `image:download`), вставлять `local_url` в `page:write`.
+1. **Architect 1 (Structure):** Создает карту сайта и список страниц, определяет базовые слоты (`top`, `center`, `bottom`).
+2. **Builder:** Вызывает CLI для создания структуры папок (`domain:new`, `allias:new`, `page:new`), базовых блоков (`block:new`), меню (`filler:new`/`write`) и схемы (`scheme:save`).
+3. **Architect 2 & Content Workers:** Для каждой страницы детализирует список блоков (`h1`, `text`, `img`) и генерирует текст с привязкой CSS-классов.
+4. **Lead Designer:** Собирает все использованные классы и генерирует единый файл `css/main.css` со стилями для всего сайта (включая шапку и меню).
 
-2. **`ai_agent/`** (Будущая multi-agent модель, P3).
-   - Прототип архитектуры Planner -> Builder -> Content.
-   - В данный момент не используется в production, но является референсом для перехода на полноценную мультиагентную оркестрацию (с Transaction Rollback и батчами).
+**Запуск:**
+```bash
+python -m ai_agent.brain <domain> <allias> "<brief>" <model_name>
+```
+*(Рекомендуется использовать `gemma4:e4b` для быстрой работы или `gemma4:26b` для глубокого контента).*
+
+**Схема работы:** `LLM (Architect)` -> `CLI (FS)` -> `LLM (Writer)` -> `CLI (page:write)` -> `LLM (Designer)` -> `CLI (skin:edit)`.
 
 ---
 
@@ -134,3 +144,8 @@ AI не имеет прямого доступа к терминалу. Он о�
 5. Домен находится в `config/agent.config` (иначе `Security violation`).
 6. URL картинки находится в `config/ainet.config` (иначе `Domain not in whitelist`).
 7. Если `ok: false` — прочитай `hint`, исправь ошибку и попробуй снова.
+8. Для создания меню используй тип `nav` с массивом `{"title": "...", "url": "..."}`.
+9. Для карточек товаров комбинируй блоки: `img` -> `h3` -> `text` -> `button`.
+10. Для записи блоков и филлеров используй `block:write` и `filler:write`.
+
+--- КОНЕЦ ФАЙЛА ---

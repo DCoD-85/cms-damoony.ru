@@ -17,7 +17,7 @@ from typing import Any
 
 from .aicli_client import AicliClient, Transaction
 from .models import OllamaClient
-from .prompts import CONTENT_SYSTEM, content_user
+from .prompts import content_user
 from .session import Session
 
 
@@ -41,6 +41,7 @@ def run_content(
     client: AicliClient | None = None,
     llm: OllamaClient | None = None,
     model: str | None = None,
+    system_prompt: str = "",
 ) -> dict[str, Any]:
     client = client or AicliClient()
     llm = llm or OllamaClient()
@@ -77,6 +78,7 @@ def run_content(
                 page_theme=page_theme,
                 other_pages=other_names,
                 images=images,
+                system_prompt=system_prompt,
             )
             content[name] = result
         except ContentError as e:
@@ -105,6 +107,7 @@ def _write_one_page(
     page_theme: str,
     other_pages: list[str],
     images: bool,
+    system_prompt: str,
 ) -> dict[str, Any]:
     tx = Transaction(client)
     local_url: str | None = None
@@ -142,6 +145,7 @@ def _write_one_page(
             site_theme=site_theme,
             local_url=local_url,
             other_pages=other_pages,
+            system_prompt=system_prompt,
         )
     except ContentError as e:
         rb = tx.rollback()
@@ -265,9 +269,10 @@ def _generate_blocks(
     site_theme: str,
     local_url: str | None,
     other_pages: list[str],
+    system_prompt: str,
 ) -> list[dict[str, Any]]:
     messages: list[dict[str, Any]] = [
-        {"role": "system", "content": CONTENT_SYSTEM},
+        {"role": "system", "content": system_prompt},
         {
             "role": "user",
             "content": content_user(
