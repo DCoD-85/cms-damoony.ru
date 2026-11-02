@@ -28,7 +28,10 @@ if ($req === null) {
 
 // === 3. Host check (не палим чужие домены) ===
 $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
-if (!ContentResponder::hostAllowed($req->domain, $host)) {
+$siteConfigFile = dirname(__DIR__) . '/config/site.config';
+$siteConfig = is_file($siteConfigFile) ? json_decode((string) file_get_contents($siteConfigFile), true) : [];
+
+if (!ContentResponder::hostAllowed($req->domain, $host, is_array($siteConfig) ? $siteConfig : [])) {
     _not_found();
 }
 

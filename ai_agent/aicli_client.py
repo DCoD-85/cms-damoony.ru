@@ -95,7 +95,7 @@ class Transaction:
 
     def record_media(self, domain: str, allias: str, category: str, file_hash: str) -> None:
         self.undo.append((
-            "media:remove",
+            "content:remove",
             {"domain": domain, "allias": allias, "category": category, "hash": file_hash, "force": True},
         ))
 

@@ -155,6 +155,7 @@ def _write_one_page(
             "allias": allias,
             "name": page_name,
             "blocks": blocks,
+            "with_schema": "1",  # Оборачиваем контент в схему с меню и стилями
         },
     )
     session.log(f"  page:write: ok={write.ok} blocks={len(blocks)}")

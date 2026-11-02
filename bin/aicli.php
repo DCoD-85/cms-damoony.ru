@@ -426,6 +426,80 @@ try {
         );
     }
 
+    if ($command === 'block:write') {
+        $domain = (string) ($args['domain'] ?? '');
+        $name = (string) ($args['name'] ?? '');
+        if (!in_array($domain, $allowedDomains, true)) {
+            throw new \RuntimeException("Security violation: Domain '{$domain}' is not in the allowed list.");
+        }
+        if (!preg_match('/^[a-z][a-z0-9_]*$/', $name)) {
+            throw new \RuntimeException('Invalid block name.');
+        }
+        $encoded = base64_encode((string) json_encode($args['blocks'] ?? [], JSON_UNESCAPED_UNICODE));
+        $r = runCli('block:write --domain=' . escapeshellarg($domain) . ' --name=' . escapeshellarg($name) . ' --json_b64=' . escapeshellarg($encoded));
+        respond($r, $role, $command, $args);
+    }
+
+    if ($command === 'filler:write') {
+        $domain = (string) ($args['domain'] ?? '');
+        $allias = (string) ($args['allias'] ?? '');
+        $block = (string) ($args['block'] ?? '');
+        if (!in_array($domain, $allowedDomains, true)) {
+            throw new \RuntimeException("Security violation: Domain '{$domain}' is not in the allowed list.");
+        }
+        if (!preg_match('/^[a-z][a-z0-9_]*$/', $allias) || !preg_match('/^[a-z][a-z0-9_]*$/', $block)) {
+            throw new \RuntimeException('Invalid allias or block name.');
+        }
+        $encoded = base64_encode((string) json_encode($args['blocks'] ?? [], JSON_UNESCAPED_UNICODE));
+        $r = runCli('filler:write --domain=' . escapeshellarg($domain) . ' --allias=' . escapeshellarg($allias) . ' --block=' . escapeshellarg($block) . ' --json_b64=' . escapeshellarg($encoded));
+        respond($r, $role, $command, $args);
+    }
+
+    if ($command === 'scheme:save') {
+        $domain = (string) ($args['domain'] ?? '');
+        $name = (string) ($args['name'] ?? '');
+        if (!in_array($domain, $allowedDomains, true)) {
+            throw new \RuntimeException("Security violation: Domain '{$domain}' is not in the allowed list.");
+        }
+        if (!preg_match('/^[a-z][a-z0-9_]*$/', $name)) {
+            throw new \RuntimeException('Invalid scheme name.');
+        }
+        $encoded = base64_encode((string) json_encode($args['scheme_json'] ?? [], JSON_UNESCAPED_UNICODE));
+        $r = runCli('scheme:save --domain=' . escapeshellarg($domain) . ' --name=' . escapeshellarg($name) . ' --scheme_json_b64=' . escapeshellarg($encoded));
+        respond($r, $role, $command, $args);
+    }
+
+    if ($command === 'block:new') {
+        $domain = (string) ($args['domain'] ?? '');
+        $name = (string) ($args['name'] ?? '');
+        $type = (string) ($args['type'] ?? 'visual');
+        if (!in_array($domain, $allowedDomains, true)) {
+            throw new \RuntimeException("Security violation: Domain '{$domain}' is not in the allowed list.");
+        }
+        if (!preg_match('/^[a-z][a-z0-9_]*$/', $name)) {
+            throw new \RuntimeException('Invalid block name.');
+        }
+        if (!in_array($type, ['script', 'visual', 'mixed'], true)) {
+            throw new \RuntimeException('Invalid block type (script, visual, mixed).');
+        }
+        $r = runCli('block:new --domain=' . escapeshellarg($domain) . ' --name=' . escapeshellarg($name) . ' --type=' . escapeshellarg($type));
+        respond($r, $role, $command, $args);
+    }
+
+    if ($command === 'filler:new') {
+        $domain = (string) ($args['domain'] ?? '');
+        $allias = (string) ($args['allias'] ?? '');
+        $block = (string) ($args['block'] ?? '');
+        if (!in_array($domain, $allowedDomains, true)) {
+            throw new \RuntimeException("Security violation: Domain '{$domain}' is not in the allowed list.");
+        }
+        if (!preg_match('/^[a-z][a-z0-9_]*$/', $allias) || !preg_match('/^[a-z][a-z0-9_]*$/', $block)) {
+            throw new \RuntimeException('Invalid allias or block name.');
+        }
+        $r = runCli('filler:new --domain=' . escapeshellarg($domain) . ' --allias=' . escapeshellarg($allias) . ' --block=' . escapeshellarg($block));
+        respond($r, $role, $command, $args);
+    }
+
     if ($command === 'net:status') {
         if ($ainet === null) {
             respond(['ok' => false, 'error' => $ainetError, 'hint' => 'Fix config/ainet.config'], $role, $command, $args);
