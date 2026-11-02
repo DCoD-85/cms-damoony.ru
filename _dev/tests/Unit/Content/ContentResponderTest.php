@@ -106,10 +106,10 @@ final class ContentResponderTest extends TestCase
     {
         // 1. Чужой домен (полностью другой)
         self::assertFalse(ContentResponder::hostAllowed('example.com', 'evil.com'));
-        
+
         // 2. Похожий, но не поддомен (должен отклоняться)
         self::assertFalse(ContentResponder::hostAllowed('example.com', 'not-example.com'));
-        
+
         // 3. Свой поддомен (алиас) — должен разрешаться
         self::assertTrue(ContentResponder::hostAllowed('example.com', 'sub.example.com'));
     }
