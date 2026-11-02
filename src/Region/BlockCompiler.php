@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Damoony\Region;
 
+use Damoony\Ui\UrlSanitizer;
+
 final class BlockCompiler
 {
     /**
@@ -17,7 +19,8 @@ final class BlockCompiler
         $code .= "use Damoony\\Region\\RegionInterface;\n";
         $code .= "use Damoony\\Ui\\Builder;\n";
         $code .= "use Damoony\\Ui\\Node;\n";
-        $code .= "use Damoony\\Ui\\Text;\n\n";
+        $code .= "use Damoony\\Ui\\Text;\n";
+        $code .= "use Damoony\\Ui\\UrlSanitizer;\n\n";
 
         $code .= "final class {$className} implements RegionInterface\n{\n";
         $code .= "    public function name(): string\n    {\n        return '{$blockName}';\n    }\n\n";
@@ -57,7 +60,7 @@ final class BlockCompiler
                 $navItems = $block['items'] ?? [];
                 foreach ($navItems as $item) {
                     if (is_array($item) && isset($item['url'], $item['title'])) {
-                        $itemUrl = var_export($item['url'], true);
+                        $itemUrl = var_export(UrlSanitizer::forHref((string) $item['url']), true);
                         $itemTitle = var_export($item['title'], true);
                         $code .= "        \$el->append(Builder::li()->append(Builder::a({$itemUrl})->append(Text::raw(strip_tags({$itemTitle}, '<a><strong>')))));\n";
                     }
@@ -81,11 +84,11 @@ final class BlockCompiler
                 $code .= $attrsCode;
                 $code .= "        \$content->append(\$el);\n\n";
             } elseif ($type === 'img') {
-                $code .= '        $el = Builder::img(' . var_export($content, true) . ', ' . var_export($alt, true) . ");\n";
+                $code .= '        $el = Builder::img(' . var_export(UrlSanitizer::forSrc($content), true) . ', ' . var_export($alt, true) . ");\n";
                 $code .= $attrsCode;
                 $code .= "        \$content->append(\$el);\n\n";
             } elseif ($type === 'button' || $type === 'link') {
-                $code .= '        $el = Builder::a(' . var_export($url, true) . ')->append(Text::raw(strip_tags(' . var_export($content, true) . ", '<a><strong>')));\n";
+                $code .= '        $el = Builder::a(' . var_export(UrlSanitizer::forHref($url), true) . ')->append(Text::raw(strip_tags(' . var_export($content, true) . ", '<a><strong>')));\n";
                 $code .= $attrsCode;
                 $code .= "        \$content->append(Builder::p()->append(\$el));\n\n";
             } elseif ($type === 'ul') {
