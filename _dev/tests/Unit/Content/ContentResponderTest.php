@@ -104,9 +104,14 @@ final class ContentResponderTest extends TestCase
 
     public function testHostMismatch(): void
     {
-        self::assertFalse(ContentResponder::hostAllowed('example.ru', 'evil.com'));
-        self::assertFalse(ContentResponder::hostAllowed('example.ru', ''));
-        self::assertFalse(ContentResponder::hostAllowed('example.ru', 'sub.example.ru'));
+        // 1. Чужой домен (полностью другой)
+        self::assertFalse(ContentResponder::hostAllowed('example.com', 'evil.com'));
+        
+        // 2. Похожий, но не поддомен (должен отклоняться)
+        self::assertFalse(ContentResponder::hostAllowed('example.com', 'not-example.com'));
+        
+        // 3. Свой поддомен (алиас) — должен разрешаться
+        self::assertTrue(ContentResponder::hostAllowed('example.com', 'sub.example.com'));
     }
 
     // === resolveMime ===

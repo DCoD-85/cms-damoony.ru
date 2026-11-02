@@ -7,7 +7,7 @@ namespace Damoony\Region;
 final class BlockCompiler
 {
     /**
-     * @param list<array{type: string, content?: string, items?: list<string>, url?: string, class?: string, id?: string, style?: string, alt?: string}> $blocks
+     * @param list<array{type: string, content?: string, items?: mixed, url?: string, class?: string, id?: string, style?: string, alt?: string}> $blocks
      */
     public function compile(string $namespace, string $className, string $blockName, array $blocks): string
     {

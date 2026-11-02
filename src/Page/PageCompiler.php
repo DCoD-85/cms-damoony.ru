@@ -7,7 +7,7 @@ namespace Damoony\Page;
 final class PageCompiler
 {
     /**
-     * @param list<array{type: string, content?: string, items?: list<string|array{title: string, url: string}>, url?: string, class?: string, id?: string, style?: string, alt?: string}> $blocks
+     * @param list<array{type: string, content?: string, items?: mixed, url?: string, class?: string, id?: string, style?: string, alt?: string}> $blocks
      */
     public function compile(string $namespace, string $classChain, array $blocks, bool $withSchema = false): string
     {
