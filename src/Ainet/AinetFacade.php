@@ -15,7 +15,11 @@ use Damoony\Ainet\ImageSearch\WikimediaProvider;
  *
  * Все методы возвращают array в формате {ok, data} или {ok: false, error, hint, context}.
  * AinetFacade НЕ пишет на диск. downloadImage возвращает bytes + meta,
- * запись в www/media/ — через cli.php media:store (вызывает AICLI).
+ * запись в /content/ — через cli.php content:store (вызывает AICLI).
+ *
+ * Rate limit (30 req/min по умолчанию): применяется к «логическим операциям»
+ * (searchImages = 1 hit независимо от fallback, fetchJson/fetchText/downloadImage = 1 hit).
+ * Кэш-хит лимит НЕ тратит.
  */
 final class AinetFacade
 {
@@ -25,6 +29,7 @@ final class AinetFacade
         private readonly HttpClient $http,
         private readonly Cache $cache,
         private readonly array $providers,
+        private readonly ?RateLimiter $rateLimiter = null,
     ) {
     }
 
@@ -48,18 +53,35 @@ final class AinetFacade
         );
         $cache = new Cache($cacheDir, $config->cacheTtlDays * 86400);
 
+        // Лимитер — рядом с кэшем, но не в нём: Cache::clear() не должен сбрасывать лимит.
+        $rateLimiter = new RateLimiter(
+            dirname($cacheDir) . '/ainet-ratelimit.json',
+            $config->ratePerMin,
+            60,
+        );
+
         $providers = [
             'openverse' => new OpenverseProvider($http),
             'wikimedia' => new WikimediaProvider($http),
         ];
 
-        return new self($config, $http, $cache, $providers);
+        return new self($config, $http, $cache, $providers, $rateLimiter);
     }
 
     /** @return array<string, mixed> */
     public function status(): array
     {
         $stats = $this->cache->stats();
+
+        $rateLimit = $this->rateLimiter !== null
+            ? $this->rateLimiter->stats()
+            : [
+                'used' => 0,
+                'max' => $this->config->ratePerMin,
+                'window' => 60,
+                'remaining' => $this->config->ratePerMin,
+                'reset_in' => 0,
+            ];
 
         return [
             'ok' => true,
@@ -69,7 +91,7 @@ final class AinetFacade
                 'whitelist_count' => count($this->config->allowedDomains),
                 'cache_size_mb' => $stats['size_mb'],
                 'cache_entries' => $stats['entries'],
-                'rate_limit' => ['max' => $this->config->ratePerMin, 'window' => '1m'],
+                'rate_limit' => $rateLimit,
             ],
         ];
     }
@@ -84,6 +106,17 @@ final class AinetFacade
                 "Unknown provider '{$primary}'",
                 'Available: ' . implode(', ', array_keys($this->providers)),
                 ['provider' => $primary],
+            );
+        }
+
+        // 1 логический поиск = 1 hit (fallback внутри — внутренняя деталь реализации)
+        if ($this->rateLimiter !== null && !$this->rateLimiter->allow()) {
+            $stats = $this->rateLimiter->stats();
+
+            return $this->error(
+                'Rate limit exceeded',
+                'Wait ' . $this->rateLimiter->waitSeconds() . 's (limit: ' . $stats['max'] . '/min)',
+                ['max' => $stats['max'], 'used' => $stats['used'], 'reset_in' => $stats['reset_in']],
             );
         }
 
@@ -201,7 +234,7 @@ final class AinetFacade
 
     /**
      * Скачать картинку. НЕ пишет на диск — возвращает bytes + meta.
-     * Запись в www/media/ — через cli.php media:store (в AICLI).
+     * Запись в /content/ — через cli.php content:store (в AICLI).
      */
     /** @return array<string, mixed> */
     public function downloadImage(
@@ -282,7 +315,7 @@ final class AinetFacade
         return [
             'ok' => true,
             'data' => [
-                'bytes' => $response->body,   // НЕ сериализуется в JSON, используется AICLI для media:store
+                'bytes' => $response->body,   // НЕ сериализуется в JSON, используется AICLI для content:store
                 'hash' => $hash,
                 'ext' => $ext,
                 'mime' => $mime,
@@ -303,6 +336,8 @@ final class AinetFacade
             return [$cached, true];
         }
 
+        $this->assertRateLimit($url);
+
         try {
             $response = $this->http->get($url);
         } catch (UrlGuardException|HttpClientException $e) {
@@ -314,6 +349,23 @@ final class AinetFacade
         }
 
         return [$response, false];
+    }
+
+    private function assertRateLimit(string $url): void
+    {
+        if ($this->rateLimiter === null) {
+            return;
+        }
+        if ($this->rateLimiter->allow()) {
+            return;
+        }
+        $stats = $this->rateLimiter->stats();
+
+        throw new AinetException(
+            'Rate limit exceeded',
+            'Wait ' . $this->rateLimiter->waitSeconds() . 's (limit: ' . $stats['max'] . '/min)',
+            ['url' => $url, 'max' => $stats['max'], 'used' => $stats['used'], 'reset_in' => $stats['reset_in']],
+        );
     }
 
     /** @return array{0: int, 1: int}|null */

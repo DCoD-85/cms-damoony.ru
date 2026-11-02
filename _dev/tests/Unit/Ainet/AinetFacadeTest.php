@@ -11,6 +11,7 @@ use Damoony\Ainet\DomainWhitelist;
 use Damoony\Ainet\HttpClient;
 use Damoony\Ainet\ImageSearch\OpenverseProvider;
 use Damoony\Ainet\ImageSearch\WikimediaProvider;
+use Damoony\Ainet\RateLimiter;
 use Damoony\Ainet\UrlGuard;
 use PHPUnit\Framework\TestCase;
 
@@ -42,6 +43,7 @@ final class AinetFacadeTest extends TestCase
     protected function tearDown(): void
     {
         $this->rmrf($this->cacheDir);
+        $this->rmrf($this->cacheDir . '-rl');
     }
 
     private function facade(): AinetFacade
@@ -69,6 +71,38 @@ final class AinetFacadeTest extends TestCase
         ]);
     }
 
+    private function facadeWithRateLimit(int $maxPerMin): AinetFacade
+    {
+        $whitelist = new DomainWhitelist($this->config->allowedDomains);
+        $guard = new UrlGuard(
+            $whitelist,
+            $this->config->allowedSchemes,
+            $this->config->allowedPorts,
+            $this->config->blockPrivateIps,
+        );
+        $http = new HttpClient(
+            $guard,
+            $this->transport,
+            $this->config->connectTimeout,
+            $this->config->readTimeout,
+            $this->config->maxSize,
+            $this->config->maxRedirects,
+        );
+        $cache = new Cache($this->cacheDir, $this->config->cacheTtlDays * 86400);
+
+        // Изолированный per-test каталог для лимитера (не пересекается между прогонами)
+        $rlDir = $this->cacheDir . '-rl';
+        if (!is_dir($rlDir)) {
+            mkdir($rlDir, 0o777, true);
+        }
+        $rl = new RateLimiter($rlDir . '/ainet-ratelimit.json', $maxPerMin, 60);
+
+        return new AinetFacade($this->config, $http, $cache, [
+            'openverse' => new OpenverseProvider($http),
+            'wikimedia' => new WikimediaProvider($http),
+        ], $rl);
+    }
+
     /** @return array{bytes: string, width: int, height: int} */
     private function makePng(int $width = 200, int $height = 200): array
     {
@@ -78,6 +112,7 @@ final class AinetFacadeTest extends TestCase
         }
         $bg = imagecolorallocate($im, 200, 100, 50);
         imagefilledrectangle($im, 0, 0, $width - 1, $height - 1, $bg);
+
         ob_start();
         imagepng($im);
         $bytes = (string) ob_get_clean();
@@ -390,6 +425,49 @@ final class AinetFacadeTest extends TestCase
         self::assertTrue($r2['data']['cached']);
         self::assertSame($r1['data']['hash'], $r2['data']['hash']);
         self::assertCount(1, $this->transport->getRequestedUrls());
+    }
+
+    // === rate limit ===
+
+    public function testRateLimitBlocksSecondFetch(): void
+    {
+        $facade = $this->facadeWithRateLimit(1);
+
+        $this->transport->queueResponse([
+            'status' => 200,
+            'headers' => ['content-type' => 'application/json'],
+            'body' => '{"ok":true}',
+        ]);
+
+        $first = $facade->fetchJson('https://api.github.com/x');
+        self::assertTrue($first['ok']);
+
+        // Второй вызов к другому URL — блокируется лимитом до HTTP
+        $second = $facade->fetchJson('https://api.github.com/y');
+        self::assertFalse($second['ok']);
+        self::assertSame('Rate limit exceeded', $second['error']);
+        self::assertStringContainsString('Wait ', $second['hint']);
+        self::assertStringContainsString('limit: 1/min', $second['hint']);
+    }
+
+    public function testRateLimitDoesNotAffectCacheHit(): void
+    {
+        $facade = $this->facadeWithRateLimit(1);
+
+        $this->transport->queueResponse([
+            'status' => 200,
+            'headers' => ['content-type' => 'application/json'],
+            'body' => '{"ok":true}',
+        ]);
+
+        $first = $facade->fetchJson('https://api.github.com/x');
+        self::assertTrue($first['ok']);
+        self::assertFalse($first['data']['cached']);
+
+        // Второй вызов к тому же URL — кэш-хит, лимит не тратится
+        $second = $facade->fetchJson('https://api.github.com/x');
+        self::assertTrue($second['ok']);
+        self::assertTrue($second['data']['cached']);
     }
 
     private function rmrf(string $dir): void
