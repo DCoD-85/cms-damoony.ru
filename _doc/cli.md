@@ -15,7 +15,7 @@
 
 ## 1. Диагностика и миграции
 
-- `help` — список всех команд (42).
+- `help` — список всех команд (актуальный состав — по выводу самой команды).
 - `structure:check` — проверка целостности (наличие 3 файлов, стыковка филлеров). Severity-aware: `error` (exit 1) и `warning` (exit 0).
 - `structure:repair --domain=[domain]` — восстанавливает отсутствующие `.php`, `.rules.json`, `.editor.json`.
 - `migrate:page-rules [--domain=...] [--dry]` — идемпотентная миграция старых `.rules.json` на новую модель.

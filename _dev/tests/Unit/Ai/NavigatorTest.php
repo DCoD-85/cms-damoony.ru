@@ -164,4 +164,51 @@ final class NavigatorTest extends TestCase
             }
         }
     }
+
+    /**
+     * After image:search, image:download must advertise domain/allias as
+     * explicit placeholders — before the fix they were '' and an AI following
+     * next[] blindly produced 'Security violation: Domain ""'.
+     */
+    public function testImageDownloadSuggestsDomainAndAlliasPlaceholders(): void
+    {
+        $next = Navigator::after('image:search', ['query' => 'dog', 'count' => 1]);
+        $download = null;
+        foreach ($next as $item) {
+            if ($item['cmd'] === 'image:download') {
+                $download = $item;
+                break;
+            }
+        }
+        $this->assertNotNull($download, 'image:download not offered after image:search');
+        $this->assertSame('<domain>', $download['args']['domain']);
+        $this->assertSame('<allias>', $download['args']['allias']);
+        $this->assertSame('<url_from_results>', $download['args']['url']);
+    }
+
+    /**
+     * After image:download, page:write must advertise name as <page_name>,
+     * not '' — before the fix an AI following next[] blindly overwrote
+     * __root__ (empty name = root page).
+     */
+    public function testPageWriteAfterImageDownloadSuggestsPageNamePlaceholder(): void
+    {
+        $next = Navigator::after('image:download', [
+            'url' => 'https://example.com/x.jpg',
+            'domain' => 'example.ru',
+            'allias' => 'www',
+        ]);
+        $write = null;
+        foreach ($next as $item) {
+            if ($item['cmd'] === 'page:write') {
+                $write = $item;
+                break;
+            }
+        }
+        $this->assertNotNull($write, 'page:write not offered after image:download');
+        $this->assertSame('<page_name>', $write['args']['name']);
+        // domain/allias carry over from args — sanity check they don't get lost
+        $this->assertSame('example.ru', $write['args']['domain']);
+        $this->assertSame('www', $write['args']['allias']);
+    }
 }

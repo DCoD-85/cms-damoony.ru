@@ -207,34 +207,28 @@ try {
     }
 
     if ($command === 'engine_status') {
-        $output = [];
-        $returnCode = 0;
-        exec('php ' . __DIR__ . '/cli.php structure:check 2>&1', $output, $returnCode);
-        $text = implode("\n", $output);
-        if ($returnCode === 0) {
-            respond(['ok' => true, 'data' => ['status' => 'OK', 'message' => 'Structure is perfect.']], $role, $command, $args);
-        }
-        preg_match('/Найдено проблем: (\d+)/', $text, $matches);
+        $r = runCli('structure:check');
         respond([
-            'ok' => false,
-            'error' => 'Structure check failed',
-            'data' => ['errors_count' => $matches[1] ?? 'unknown', 'raw_output' => $text],
+            'ok' => $r['ok'],
+            'data' => [
+                'status' => $r['ok'] ? 'OK' : 'FAILED',
+                'output' => $r['output'],
+            ],
+            'error' => $r['ok'] ? '' : 'Structure check failed',
         ], $role, $command, $args);
     }
 
-    if ($command === 'filler_toggle') {
+    if ($command === 'structure:check') {
+        respond(runCli('structure:check'), $role, $command, $args);
+    }
+
+    if ($command === 'structure:repair') {
         $domain = (string) ($args['domain'] ?? '');
-        $allias = (string) ($args['allias'] ?? '');
-        $block = (string) ($args['block'] ?? '');
-        $value = (string) ($args['value'] ?? '0');
-        if (!in_array($domain, $allowedDomains, true)) {
-            throw new \RuntimeException("Domain '{$domain}' is not allowed.");
+        if ($domain !== '' && (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain) || str_contains($domain, '..'))) {
+            throw new \RuntimeException('Invalid domain.');
         }
-        if (!preg_match('/^[a-z][a-z0-9_]*$/', $allias) || !preg_match('/^[a-z][a-z0-9_]*$/', $block)) {
-            throw new \RuntimeException('Invalid arguments for filler_toggle.');
-        }
-        $r = runCli("filler:toggle --domain={$domain} --allias={$allias} --block={$block} --value={$value}");
-        respond($r, $role, $command, $args);
+        $argsStr = $domain !== '' ? ' --domain=' . escapeshellarg($domain) : '';
+        respond(runCli('structure:repair' . $argsStr), $role, $command, $args);
     }
 
     if ($command === 'domain:new') {
@@ -495,6 +489,19 @@ try {
         respond($r, $role, $command, $args);
     }
 
+    if ($command === 'scheme:new') {
+        $domain = (string) ($args['domain'] ?? '');
+        $name = (string) ($args['name'] ?? '');
+        if (!in_array($domain, $allowedDomains, true)) {
+            throw new \RuntimeException("Security violation: Domain '{$domain}' is not in the allowed list.");
+        }
+        if (!preg_match('/^[a-z][a-z0-9_]*$/', $name)) {
+            throw new \RuntimeException('Invalid scheme name.');
+        }
+        $r = runCli('scheme:new --domain=' . escapeshellarg($domain) . ' --name=' . escapeshellarg($name));
+        respond($r, $role, $command, $args);
+    }
+
     if ($command === 'scheme:save') {
         $domain = (string) ($args['domain'] ?? '');
         $name = (string) ($args['name'] ?? '');
@@ -606,28 +613,25 @@ try {
         }
 
         try {
-            $cmd = 'php ' . __DIR__ . '/cli.php content:store'
+            $cliArgs = 'content:store'
                 . ' --domain=' . escapeshellarg($domain)
                 . ' --allias=' . escapeshellarg($allias)
                 . ' --category=' . escapeshellarg($category)
                 . ' --data_file=' . escapeshellarg($tmpFile)
                 . ' --mime=' . escapeshellarg($mime)
                 . ' --alt=' . escapeshellarg($alt)
-                . ' --source_url=' . escapeshellarg($url)
-                . ' 2>&1';
-            $output = shell_exec($cmd);
-            $outputStr = trim((string) $output);
+                . ' --source_url=' . escapeshellarg($url);
+            $storeResult = runCli($cliArgs);
         } finally {
             @unlink($tmpFile);
         }
 
-        $storeResult = parseCliResult($outputStr);
         if (!$storeResult['ok']) {
             respond([
                 'ok' => false,
                 'error' => 'content:store failed',
                 'hint' => $storeResult['hint'],
-                'context' => ['cli_output' => $outputStr],
+                'context' => ['cli_output' => $storeResult['output']],
             ], $role, $command, $args);
         }
 

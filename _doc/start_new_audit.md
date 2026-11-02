@@ -23,7 +23,7 @@
 
 1. `_doc/start_new_audit.md` — этот файл (окружение, правила, карта).
 2. `_doc/ARCH.md` — жизненный цикл, слои, инварианты, контракты, 10 принципов, P2.
-3. `_doc/CLI.md` — 44 команды, флаги, guards, карантин.
+3. `_doc/CLI.md` — команды, флаги, guards, карантин (актуальный состав — `php bin/cli.php help`).
 4. `_doc/DEV.md` — how-to: страница (A/B), блок, схема, скин, контент, компиляция.
 5. `_doc/AI.md` — aicli (HATEOAS, роли, Navigator), AINET (SSRF, провайдеры), мультиагентная генерация (`brain.py`), Markdown-парсер и валидатор.
 6. `_doc/INSTALL.md` — развёртывание (только установка с нуля).
@@ -133,7 +133,7 @@ PHP_CS_FIXER_IGNORE_ENV=1 php vendor/bin/php-cs-fixer fix --config=_dev/.php-cs-
 php bin/cli.php structure:check
 php bin/cli.php structure:repair --domain=example.ru
 
-# Список команд (44)
+# Список команд (`php bin/cli.php help`)
 php bin/cli.php help
 
 # Карантин (dry-run -> --force)

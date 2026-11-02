@@ -141,4 +141,31 @@ final class RolesTest extends TestCase
         // Должна быть другая ошибка (валидация домена / конфига), не whitelist
         self::assertFalse($decoded['ok'] ?? false);
     }
+
+    /**
+     * After the Roles cleanup:
+     * - block:edit / filler:edit removed (no handler in aicli.php)
+     * - structure:check / structure:repair / scheme:new kept (handlers added)
+     */
+    public function testWildcardDoesNotAdvertiseEditCommandsWithoutHandlers(): void
+    {
+        $star = Roles::whitelist('*');
+        $this->assertNotContains('block:edit', $star, 'block:edit has no aicli handler — remove or add handler');
+        $this->assertNotContains('filler:edit', $star, 'filler:edit has no aicli handler — remove or add handler');
+    }
+
+    public function testWildcardKeepsDiagnosticAndSchemeCommands(): void
+    {
+        $star = Roles::whitelist('*');
+        $this->assertContains('structure:check', $star);
+        $this->assertContains('structure:repair', $star);
+        $this->assertContains('scheme:new', $star);
+    }
+
+    public function testCorrectorRoleKeepsStructureRepair(): void
+    {
+        $corrector = Roles::whitelist(Roles::CORRECTOR);
+        $this->assertContains('structure:repair', $corrector);
+        $this->assertContains('structure:check', $corrector);
+    }
 }

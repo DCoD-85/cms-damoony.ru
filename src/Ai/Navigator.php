@@ -138,12 +138,12 @@ final class Navigator
                     'image:download',
                     [
                         'url' => '<url_from_results>',
-                        'domain' => (string) ($args['domain'] ?? ''),
-                        'allias' => (string) ($args['allias'] ?? ''),
+                        'domain' => '<domain>',
+                        'allias' => '<allias>',
                         'category' => 'general',
                         'alt' => '',
                     ],
-                    'Скачать картинку локально и получить local_url',
+                    'Скачать картинку локально и получить local_url. domain/allias взять из контекста (ai:start, page:new)',
                 ),
             ],
             'image:download' => [
@@ -152,10 +152,10 @@ final class Navigator
                     [
                         'domain' => (string) ($args['domain'] ?? ''),
                         'allias' => (string) ($args['allias'] ?? ''),
-                        'name' => (string) ($args['name'] ?? ''),
+                        'name' => '<page_name>',
                         'blocks' => [],
                     ],
-                    'Вставить local_url в page:write (тип "img")',
+                    'Вставить local_url в page:write (тип "img"). name: имя целевой страницы (пусто = __root__)',
                 ),
             ],
             'page:write' => [

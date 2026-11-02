@@ -33,7 +33,6 @@ final class Roles
         self::ARCHITECT => [
             'domain:new', 'allias:new',
             'block:new', 'scheme:new', 'filler:new',
-            'block:edit', 'filler:edit',
             'skin:new', 'skin:list',
             'domain:list', 'allias:list', 'scheme:list', 'block:list',
         ],
@@ -45,7 +44,6 @@ final class Roles
         self::DESIGNER => [
             'page:write', 'block:write', 'filler:write',
             'skin:edit', 'skin:list',
-            'block:edit', 'filler:edit',
             'scheme:save', 'scheme:list',
             'block:list', 'filler:list', 'page:list', 'page:read',
         ],
@@ -78,7 +76,7 @@ final class Roles
             return array_values(array_unique(array_merge($all, [
                 'ai:start', 'done', 'engine_status',
                 'net:status', 'image:search', 'image:download', 'fetch',
-                'skin:remove', 'block:write', 'filler:write',
+                'block:write', 'filler:write',
                 'domain:list', 'allias:list', 'page:list', 'page:read',
                 'scheme:list', 'block:list', 'filler:list', 'skin:list',
             ])));
