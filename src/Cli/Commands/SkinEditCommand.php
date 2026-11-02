@@ -94,7 +94,7 @@ final class SkinEditCommand implements CommandInterface
                 // Не хватает закрывающих скобок — добавляем их
                 $missing = $openBraces - $closeBraces;
                 $content = rtrim($content) . "\n" . str_repeat("}\n", $missing);
-                $context->step("CSS auto-repaired", true, "Added {$missing} missing closing brace(s)");
+                $context->step('CSS auto-repaired', true, "Added {$missing} missing closing brace(s)");
             } elseif ($closeBraces > $openBraces) {
                 $r->error('Некорректный CSS: лишние закрывающие скобки }');
                 return $r;

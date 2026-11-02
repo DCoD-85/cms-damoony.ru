@@ -65,7 +65,7 @@ function runCli(string $args): array
         2 => ['pipe', 'w'],
     ];
     $proc = proc_open($cmd, $descriptors, $pipes, __DIR__ . '/../');
-    
+
     if (!is_resource($proc)) {
         return ['ok' => false, 'error' => 'Failed to start CLI process', 'hint' => '', 'output' => ''];
     }
@@ -91,7 +91,7 @@ function runCli(string $args): array
             proc_terminate($proc, 9);
             return ['ok' => false, 'error' => 'CLI timeout', 'hint' => 'Command took too long', 'output' => $output];
         }
-        
+
         usleep(100000); // 0.1 сек
     }
 

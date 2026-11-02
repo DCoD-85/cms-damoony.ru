@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Damoony\Page;
 
-use Damoony\Ui\Text;
-
 final class PageCompiler
 {
     /**
