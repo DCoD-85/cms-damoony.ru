@@ -106,7 +106,7 @@
 
 ## 7. Безопасность (архитектурные решения)
 
-- **RCE:** удалены визуальные редакторы для страниц/блоков. `RegionCompiler` блокирует сырой PHP без флага `allow_php_blocks=true`.
+- **RCE:** удалены визуальные редакторы для страниц/блоков. `BlockCompiler` (единственный активный компилятор регионов) не поддерживает типы `custom`/`if`/`endif` — raw PHP в блоки через `block:write`/`filler:write` не попадает. `allow_php_blocks` остаётся только для `block:edit`/`filler:edit` (CLI-путь, отдельный флаг в `engine.config`, защита — см. `BlockEditCommand`/`FillerEditCommand`).
 - **Path Traversal:** `str_contains('..')` + regex во всех CLI-командах.
 - **SSRF:** `UrlGuard` (схема, порт, private IP, whitelist). `CURLOPT_FOLLOWLOCATION=false` + повторная проверка на каждый Location.
 - **Карантин:** 6 уровней (`app/`, `.alliasscheme/`, `.alliasglobal/`, `/content/.trash/`, `www/media/.trash/` и т.д.). Symlink-safe `Fs::rmrf`.
