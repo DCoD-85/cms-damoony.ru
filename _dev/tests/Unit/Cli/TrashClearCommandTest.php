@@ -166,6 +166,36 @@ final class TrashClearCommandTest extends TestCase
         self::assertFalse(is_dir($trash), 'media-карантин работает без app/');
     }
 
+    public function testCollectsContentTrash(): void
+    {
+        // content/.trash/<domain>_<allias>_<category>_<hash>_trash_<ts>/
+        // ContentRemoveCommand quarantines here, not in www/media/.trash/
+        mkdir($this->root . '/content/.trash', 0o775, true);
+        $trash = $this->root . '/content/.trash/example.ru_www_coffee_abc123def4567890_trash_' . (time() - 3600);
+        mkdir($trash, 0o775, true);
+        file_put_contents($trash . '/abc123def4567890.png', 'bytes');
+
+        $cmd = new TrashClearCommand(new Paths($this->root));
+        $cmd->run(['force' => true], $this->ctx());
+
+        self::assertFalse(is_dir($trash), 'content:remove карантин должен удаляться');
+    }
+
+    public function testContentTrashDomainFilter(): void
+    {
+        mkdir($this->root . '/content/.trash', 0o775, true);
+        $a = $this->root . '/content/.trash/example.ru_www_coffee_abc123def4567890_trash_' . (time() - 3600);
+        $b = $this->root . '/content/.trash/other.ru_www_tea_def456abc1237890_trash_' . (time() - 3600);
+        mkdir($a, 0o775, true);
+        mkdir($b, 0o775, true);
+
+        $cmd = new TrashClearCommand(new Paths($this->root));
+        $cmd->run(['force' => true, 'domain' => 'example.ru'], $this->ctx());
+
+        self::assertFalse(is_dir($a), 'example.ru — удалён');
+        self::assertTrue(is_dir($b), 'other.ru — сохранён (не матчит фильтр)');
+    }
+
     private function ctx(): Context
     {
         return new Context(static function (string $m, bool $ok, string $d): void {

@@ -64,8 +64,24 @@ final class AlliasRemoveCommand implements CommandInterface
         }
         $site = Config::fromFile($siteFile)->all();
 
+        // --force required for ANY mutation (disk OR config-only). See arch.md §5.
+        if (!$force) {
+            $r->error('Для удаления укажите --force (файлы будут перемещены в карантин)');
+            return $r;
+        }
+
         if (!isset($site['domains_real'][$domain])) {
             $r->error('Домен не найден');
+            return $r;
+        }
+
+        // Reject non-self-mapped: paths->allias() and config use different keys.
+        $realDomain = (string) ($site['domains_real'][$domain] ?? '');
+        if ($realDomain !== '' && $realDomain !== $domain) {
+            $r->error(
+                "Домен '{$domain}' мапится на '{$realDomain}'. "
+                . "Удаление non-self-mapped домена запрещено. Укажите --domain={$realDomain}.",
+            );
             return $r;
         }
 
@@ -80,10 +96,6 @@ final class AlliasRemoveCommand implements CommandInterface
 
         // 2. Карантин
         if (is_dir($alliasDir)) {
-            if (!$force) {
-                $r->error('Отменено пользователем (нужен --force)');
-                return $r;
-            }
             $trash = $alliasDir . '_trash_' . time();
             if (!@rename($alliasDir, $trash)) {
                 $r->error('Не удалось переместить в карантин');

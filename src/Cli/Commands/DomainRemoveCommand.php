@@ -70,6 +70,19 @@ final class DomainRemoveCommand implements CommandInterface
         }
         $site = Config::fromFile($siteFile)->all();
 
+        // Reject non-self-mapped: paths->domain() resolves via realDomain,
+        // config cleanup uses $domain directly. Removing 'alias.ru' when it
+        // maps to 'real.ru' would orphan app/real.ru and partially clean config.
+        $realDomain = (string) ($site['domains_real'][$domain] ?? '');
+        if ($realDomain !== '' && $realDomain !== $domain) {
+            $r->error(
+                "Домен '{$domain}' мапится на '{$realDomain}'. "
+                . 'Удаление non-self-mapped домена запрещено. '
+                . "Укажите --domain={$realDomain} или отредактируйте site.config вручную.",
+            );
+            return $r;
+        }
+
         $domainDir = $this->paths->domain($domain);
         $domainInConfig = isset($site['domains_real'][$domain]);
 

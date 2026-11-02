@@ -34,21 +34,6 @@ final class AlliasCommandsTest extends TestCase
         $this->rmrf($this->root);
     }
 
-    private function rmrf(string $dir): void
-    {
-        if (!is_dir($dir)) {
-            return;
-        }
-        foreach (scandir($dir) ?: [] as $i) {
-            if ($i === '.' || $i === '..') {
-                continue;
-            }
-            $p = $dir . '/' . $i;
-            is_dir($p) ? $this->rmrf($p) : @unlink($p);
-        }
-        @rmdir($dir);
-    }
-
     private function context(Result $result): Context
     {
         return new Context(static function (string $m, bool $ok = true, string $d = '') use ($result): void {
@@ -162,5 +147,59 @@ final class AlliasCommandsTest extends TestCase
         $res = $cmd->run(['domain' => 'a..ru', 'name' => 'admin', 'force' => '1'], $this->context(new Result()));
 
         self::assertFalse($res->ok);
+    }
+
+    public function testS03ForceRequiredForConfigOnlyRemoval(): void
+    {
+        // Config entry exists, folder does not — old code removed config
+        // without --force. Now any mutation requires --force.
+        $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
+        $site['alliases_real']['example.ru']['ghost'] = 'ghost';
+        $site['alliases_available']['example.ru']['ghost'] = true;
+        file_put_contents($this->root . '/config/site.config', json_encode($site));
+
+        $cmd = new AlliasRemoveCommand(new Paths($this->root));
+        $res = $cmd->run(['domain' => 'example.ru', 'name' => 'ghost'], $this->context(new Result()));
+
+        self::assertFalse($res->ok);
+        self::assertStringContainsString('--force', $res->errors[0]);
+
+        $siteAfter = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
+        self::assertArrayHasKey('ghost', $siteAfter['alliases_real']['example.ru'], 'config не тронут без --force');
+    }
+
+    public function testS03RejectsNonSelfMappedDomain(): void
+    {
+        // alias.ru -> real.ru: paths->allias() and config keys diverge.
+        mkdir($this->root . '/app/real.ru/www/algoritm', 0o777, true);
+        $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
+        $site['domains_real']['alias.ru'] = 'real.ru';
+        $site['alliases_real']['alias.ru'] = ['www' => 'www'];
+        file_put_contents($this->root . '/config/site.config', json_encode($site));
+
+        $cmd = new AlliasRemoveCommand(new Paths($this->root));
+        $res = $cmd->run(
+            ['domain' => 'alias.ru', 'name' => 'www', 'force' => '1'],
+            $this->context(new Result()),
+        );
+
+        self::assertFalse($res->ok);
+        self::assertStringContainsString('мапится', $res->errors[0]);
+        self::assertDirectoryExists($this->root . '/app/real.ru/www');
+    }
+
+    private function rmrf(string $dir): void
+    {
+        if (!is_dir($dir)) {
+            return;
+        }
+        foreach (scandir($dir) ?: [] as $i) {
+            if ($i === '.' || $i === '..') {
+                continue;
+            }
+            $p = $dir . '/' . $i;
+            is_dir($p) ? $this->rmrf($p) : @unlink($p);
+        }
+        @rmdir($dir);
     }
 }

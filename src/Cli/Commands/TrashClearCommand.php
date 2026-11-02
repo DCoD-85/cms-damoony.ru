@@ -66,10 +66,12 @@ final class TrashClearCommand implements CommandInterface
 
         $appDir = $this->paths->appRoot();
         $mediaTrashRoot = $this->paths->mediaRoot() . '/.trash';
+        $contentTrashRoot = $this->paths->contentRoot() . '/.trash';
         $appExists = Fs::isDir($appDir);
         $mediaTrashExists = is_dir($mediaTrashRoot);
+        $contentTrashExists = is_dir($contentTrashRoot);
 
-        if (!$appExists && !$mediaTrashExists) {
+        if (!$appExists && !$mediaTrashExists && !$contentTrashExists) {
             $context->step('Карантин пуст');
             return $r;
         }
@@ -139,7 +141,29 @@ final class TrashClearCommand implements CommandInterface
             }
         }
 
-        // 5. www/media/.trash/<domain>_<allias>_<category>_<hash>_trash_<ts>/
+        // 5. content/.trash/<domain>_<allias>_<category>_<hash>_trash_<ts>/
+        //    (ContentRemoveCommand quarantines here, not in www/media/.trash/)
+        if ($contentTrashExists) {
+            $entries = scandir($contentTrashRoot) ?: [];
+            foreach ($entries as $e) {
+                if ($e === '.' || $e === '..') {
+                    continue;
+                }
+                $path = $contentTrashRoot . '/' . $e;
+                if (!is_dir($path)) {
+                    continue;
+                }
+                if (!preg_match(self::TRASH_RE, $e, $m)) {
+                    continue;
+                }
+                if ($domainFilter !== '' && !str_starts_with($e, $domainFilter . '_')) {
+                    continue;
+                }
+                $this->collect($path, (int) $m[1], $now, $olderSeconds, $trash);
+            }
+        }
+
+        // 6. www/media/.trash/<domain>_<allias>_skin_<name>_trash_<ts>/
         if ($mediaTrashExists) {
             $entries = scandir($mediaTrashRoot) ?: [];
             foreach ($entries as $e) {

@@ -106,6 +106,28 @@ final class DomainRemoveCommandTest extends TestCase
         self::assertFalse($res->ok);
     }
 
+    public function testRejectsNonSelfMappedDomain(): void
+    {
+        // alias.ru -> real.ru: removing alias.ru would orphan app/real.ru
+        // and partially clean config. Must be rejected.
+        mkdir($this->root . '/app/real.ru', 0o777, true);
+        file_put_contents($this->root . '/app/real.ru/keep.php', '<?php');
+        $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
+        $site['domains_real']['alias.ru'] = 'real.ru';
+        file_put_contents($this->root . '/config/site.config', json_encode($site));
+
+        $cmd = new DomainRemoveCommand(new Paths($this->root));
+        $res = $cmd->run(['domain' => 'alias.ru', 'force' => '1'], new Context(static fn () => null));
+
+        self::assertFalse($res->ok);
+        self::assertStringContainsString('мапится', $res->errors[0]);
+        self::assertDirectoryExists($this->root . '/app/real.ru', 'real.ru не должен быть тронут');
+        self::assertFileExists($this->root . '/app/real.ru/keep.php');
+
+        $siteAfter = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
+        self::assertSame('real.ru', $siteAfter['domains_real']['alias.ru'], 'config не изменён');
+    }
+
     private function rmrf(string $dir): void
     {
         if (!is_dir($dir)) {
