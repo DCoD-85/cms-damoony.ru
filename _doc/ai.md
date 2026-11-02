@@ -63,15 +63,17 @@ AI не имеет прямого доступа к терминалу. Он о�
 ## 3. Navigator (Граф состояний)
 
 Скрипт `src/Ai/Navigator.php` формирует массив `next[]` на основе текущего состояния.
-- `OFFERABLE` = `[domain:new, allias:new, skin:new, skin:edit, page:new, page:write, page:read, done]`.
+- `OFFERABLE` = `[domain:new, allias:new, skin:new, skin:edit, page:new, page:write, page:read, image:search, image:download, done]`.
 - `next[]` фильтруется по whitelist роли (если роль `executor`, она не увидит `domain:new`).
 
 **Порядок шагов (Architect -> Executor):**
 1. `ai:start` -> `domain:new`
 2. `domain:new` -> `allias:new`
 3. `allias:new` -> `page:new` (или `skin:new`)
-4. `page:new` -> `page:write`
-5. `page:write` -> `page:new` (следующая страница) или `done`
+4. `page:new` -> `page:write` (или `image:search`, если нужны картинки)
+5. `image:search` -> `image:download` (скачать выбранную картинку)
+6. `image:download` -> `page:write` (вставить `local_url`)
+7. `page:write` -> `page:new` (следующая страница) или `done`
 
 ---
 
