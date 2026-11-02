@@ -104,7 +104,7 @@ final class SchemeSaveCommand implements CommandInterface
         $phpData = [
             'tag' => 'div',
             'class' => 'layout',
-            'children' => is_array($scheme['children'] ?? null) ? $scheme['children'] : [],
+            'children' => $this->mapSchemeToPhp(is_array($scheme['children'] ?? null) ? $scheme['children'] : []),
             'scripts' => is_array($scheme['scripts'] ?? null) ? $scheme['scripts'] : [],
         ];
 
@@ -115,5 +115,42 @@ final class SchemeSaveCommand implements CommandInterface
         $context->step('Схема сохранена', true, $name);
 
         return $r;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $children
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function mapSchemeToPhp(array $children): array
+    {
+        $result = [];
+        foreach ($children as $child) {
+            if (!is_array($child)) {
+                continue;
+            }
+
+            if (($child['type'] ?? '') === 'slot') {
+                $result[] = [
+                    'tag' => 'div',
+                    'slot' => (string) ($child['name'] ?? ''),
+                ];
+            } elseif (($child['type'] ?? '') === 'element' || isset($child['tag'])) {
+                $element = [
+                    'tag' => (string) ($child['tag'] ?? 'div'),
+                ];
+                if (isset($child['class'])) {
+                    $element['class'] = (string) $child['class'];
+                }
+                if (isset($child['slot'])) {
+                    $element['slot'] = (string) $child['slot'];
+                }
+                if (isset($child['children']) && is_array($child['children'])) {
+                    $element['children'] = $this->mapSchemeToPhp($child['children']);
+                }
+                $result[] = $element;
+            }
+        }
+        return $result;
     }
 }

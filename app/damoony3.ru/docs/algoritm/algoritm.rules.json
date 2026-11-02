@@ -1,0 +1,9 @@
+{
+    "available": [
+        "documents",
+        "tags"
+    ],
+    "auth": false,
+    "search": true,
+    "default": false
+}

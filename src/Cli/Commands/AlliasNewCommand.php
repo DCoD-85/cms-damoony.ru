@@ -91,6 +91,38 @@ final class AlliasNewCommand implements CommandInterface
         Fs::writeAtomic($algoritmDir . '/algoritm.editor.json', "[]\n");
         $r->file(Fs::rel($algoritmDir . '/algoritm.editor.json', $this->paths->root()));
 
+        // 2b. Схема по умолчанию для алиаса
+        $schemesDir = $this->paths->domain($domain) . '/.alliasscheme';
+        if (!Fs::isDir($schemesDir)) {
+            Fs::mkdir($schemesDir);
+        }
+
+        $schemeName = $name;
+        $schemeEditor = $schemesDir . '/' . $schemeName . '.editor.json';
+        $schemePhp = $schemesDir . '/' . $schemeName . '.php';
+        $schemeRules = $schemesDir . '/' . $schemeName . '.rules.json';
+
+        if (!is_file($schemePhp)) {
+            $defaultScheme = [
+                'tag' => 'div',
+                'class' => 'layout',
+                'children' => [
+                    ['tag' => 'main', 'slot' => 'center'],
+                ],
+            ];
+            Fs::writeAtomic($schemePhp, "<?php\n\nreturn " . var_export($defaultScheme, true) . ";\n");
+            $r->file(Fs::rel($schemePhp, $this->paths->root()));
+
+            Fs::writeAtomic(
+                $schemeEditor,
+                json_encode(['scheme' => ['children' => [['type' => 'slot', 'name' => 'center']]]], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n",
+            );
+            $r->file(Fs::rel($schemeEditor, $this->paths->root()));
+
+            Fs::writeAtomic($schemeRules, json_encode(['enabled' => true], JSON_PRETTY_PRINT) . "\n");
+            $r->file(Fs::rel($schemeRules, $this->paths->root()));
+        }
+
         // 3. Конфиг (все ключи)
         $site['alliases_real'][$domain][$name] = $name;
         $site['alliases_available'][$domain][$name] = true;
