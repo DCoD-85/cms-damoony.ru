@@ -148,12 +148,15 @@ def _write_one_page(
         session.log(f"  blocks: failed ({e}), rollback {len(rb)} op(s)")
         raise
 
+    # Подмена __root__ на пустую строку для CLI
+    cli_name = "" if page_name == "__root__" else page_name
+
     write = client.call_aicli(
         "page:write",
         {
             "domain": domain,
             "allias": allias,
-            "name": page_name,
+            "name": cli_name,
             "blocks": blocks,
             "with_schema": "1",  # Оборачиваем контент в схему с меню и стилями
         },

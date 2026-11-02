@@ -59,7 +59,7 @@ final class ContentResponder
     /**
      * Host должен совпадать с domain из URL (без порта, без trailing-dot).
      * Не палим контент чужих доменов.
-     * 
+     *
      * @param array<string, mixed> $siteConfig
      */
     public static function hostAllowed(string $domain, string $host, array $siteConfig = []): bool
@@ -68,19 +68,17 @@ final class ContentResponder
         $host = (string) preg_replace('/:\d+$/', '', $host);
         $host = rtrim($host, '.');
 
-        // 1. Точное совпадение
         if ($host === strtolower($domain)) {
             return true;
         }
 
-        // 2. Проверка через site.config (для алиасов доменов, например damoony.online -> damoony.ru)
         $real = $siteConfig['domains_real'][$host] ?? null;
         if ($real !== null && strtolower((string)$real) === strtolower($domain)) {
             return true;
         }
 
-        // 3. Разрешаем поддомены (например, coffee.damoony3test.ru)
-        if (str_ends_with($host, '.' . strtolower($domain))) {
+        // Разрешаем поддомены только если domain — это FQDN (содержит точку)
+        if (str_contains($domain, '.') && str_ends_with($host, '.' . strtolower($domain))) {
             return true;
         }
 

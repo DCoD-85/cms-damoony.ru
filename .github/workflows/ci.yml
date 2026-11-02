@@ -68,7 +68,7 @@ jobs:
 
       - name: Create Test Admin
         run: |
-          php bin/cli.php admin:passwd --name=admin --password=secret
+          php bin/cli.php admin:passwd --name=admin --password=secret123
 
       - name: Start PHP Dev Server
         run: |

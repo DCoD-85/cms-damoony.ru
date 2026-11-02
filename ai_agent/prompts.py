@@ -26,14 +26,15 @@ Schema:
   "allias": "<lowercase letters, digits, underscores; no hyphens; 1-32 chars>",
   "theme": "<short theme description for image search, e.g. 'coffee shop'>",
   "pages": [
-    {"name": "<lowercase, digits, underscores; no hyphens>", "title": "<human-readable>", "theme": "<image search theme for this page>"}
+    {"name": "<lowercase, digits, underscores, or __root__>", "title": "<human-readable>", "theme": "<image search theme for this page>"}
   ],
   "images": true
 }
 
 Rules:
-- 1 to 10 pages. Root page is implicit (do not include it).
-- names must match ^[a-z][a-z0-9_]*$ (start with letter).
+- 1 to 10 pages.
+- If the brief mentions the home page, start page, or "/", include a page with name "__root__".
+- names must match ^[a-z_][a-z0-9_]*$ (start with letter or underscore).
 - theme: 1-3 words, in English, for image search.
 - domain must be from the allowed list in the brief; if none specified, use the first.
 - If brief says "no images" — set images=false.
@@ -61,19 +62,22 @@ Output ONLY a JSON array of blocks, no explanations, no markdown fences.
 Supported block types:
 - {"type": "h1", "content": "..."}                — main heading (exactly 1 per page)
 - {"type": "h2", "content": "..."}                — subheading
+- {"type": "h3", "content": "..."}                — small heading (use for product names)
 - {"type": "text", "content": "..."}              — paragraph (2-4 sentences)
 - {"type": "img", "content": "/media/...", "alt": "..."}  — image (use provided local_url)
 - {"type": "ul", "items": ["...", "..."]}         — bullet list
-- {"type": "link", "url": "/...", "content": "..."} — link to another page
+- {"type": "link", "url": "/...", "content": "..."} — text link to another page
+- {"type": "button", "url": "/...", "content": "..."} — styled button link
 
 Optional fields on any block: "class", "style".
 
 Rules:
 - Start with exactly ONE h1.
-- 3 to 6 blocks total.
+- You MUST include 2-3 cross-links to other pages using the "link" or "button" type.
+- If the brief mentions products, create 2-3 product cards. A product card is a sequence of blocks: {"type": "img"}, {"type": "h3"}, {"type": "text"}, {"type": "button", "content": "Buy Now"}.
+- Do NOT invent external URLs. Only use relative URLs like "/about" or the provided local_url.
 - If an image local_url is provided — include exactly ONE img block with content=local_url and alt="<descriptive>".
-- Do NOT invent external URLs. Only use the provided local_url (if any).
-- Write in English, 50-150 words total.
+- Write up to 300 words total. Include as many blocks as needed to fulfill the brief.
 - Output ONLY the JSON array. No markdown. No explanations.
 """
 

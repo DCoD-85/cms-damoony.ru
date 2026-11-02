@@ -7,7 +7,7 @@ namespace Damoony\Page;
 final class PageCompiler
 {
     /**
-     * @param list<array{type: string, content?: string, items?: list<string>, url?: string, class?: string, id?: string, style?: string, alt?: string}> $blocks
+     * @param list<array{type: string, content?: string, items?: list<string|array{title: string, url: string}>, url?: string, class?: string, id?: string, style?: string, alt?: string}> $blocks
      */
     public function compile(string $namespace, string $classChain, array $blocks, bool $withSchema = false): string
     {
@@ -53,7 +53,19 @@ final class PageCompiler
                 $attrsCode .= '        $el->attrs()->styleAdd(' . var_export($style, true) . ");\n";
             }
 
-            if ($type === 'h1') {
+            if ($type === 'nav') {
+                $code .= "        \$el = Builder::ul('menu');\n";
+                $navItems = $block['items'] ?? [];
+                foreach ($navItems as $item) {
+                    if (is_array($item) && isset($item['url'], $item['title'])) {
+                        $itemUrl = var_export($item['url'], true);
+                        $itemTitle = var_export($item['title'], true);
+                        $code .= "        \$el->append(Builder::li()->append(Builder::a({$itemUrl})->content({$itemTitle})));\n";
+                    }
+                }
+                $code .= $attrsCode;
+                $code .= "        \$content->append(\$el);\n\n";
+            } elseif ($type === 'h1') {
                 $code .= '        $el = Builder::h(1)->content(' . var_export($content, true) . ");\n";
                 $code .= $attrsCode;
                 $code .= "        \$content->append(\$el);\n\n";

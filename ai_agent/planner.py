@@ -21,7 +21,7 @@ from .session import Session
 
 MAX_RETRIES = 2
 
-NAME_RE = re.compile(r"^[a-z][a-z0-9_]*$")
+NAME_RE = re.compile(r"^[a-z_][a-z0-9_]*$")
 DOMAIN_RE = re.compile(r"^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$")
 
 
@@ -187,6 +187,11 @@ def _normalize_and_validate(raw: dict[str, Any], allowed_domains: list[str]) -> 
         if not name:
             errors.append(f"pages[{idx}] missing 'name'")
             continue
+            
+        # Добавлена нормализация главной страницы
+        if name.lower() in ("root", "home", "index", "main"):
+            name = "__root__"
+
         if not NAME_RE.match(name):
             errors.append(f"pages[{idx}] invalid name '{name}'")
             continue

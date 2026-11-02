@@ -9,10 +9,6 @@ Builder: plan → skeleton.
 5. filler:new (создание филлера для меню)
 6. filler:write (наполнение меню ссылками)
 7. scheme:save (сохранение схемы слотов и базовых meta)
-
-Использует AicliClient.call_aicli (AI-фасад: валидация, whitelist, домен).
-Transaction: при падении на шаге — rollback предыдущих.
-На "already exists" — не ошибка, skip и продолжаем (idempotency).
 """
 
 from __future__ import annotations
@@ -47,43 +43,27 @@ def run_builder(
     try:
         # 1. domain:new
         _run_or_skip(
-            client=client,
-            session=session,
-            tx=tx,
-            command="domain:new",
-            args={"domain": domain},
-            label="domain",
-            created=created,
-            skipped=skipped,
-            undo=None,
+            client=client, session=session, tx=tx,
+            command="domain:new", args={"domain": domain},
+            label="domain", created=created, skipped=skipped, undo=None,
         )
 
         # 2. allias:new
         _run_or_skip(
-            client=client,
-            session=session,
-            tx=tx,
-            command="allias:new",
-            args={"domain": domain, "name": allias},
-            label="allias",
-            created=created,
-            skipped=skipped,
-            undo=lambda: tx.record_allias_new(domain, allias),
+            client=client, session=session, tx=tx,
+            command="allias:new", args={"domain": domain, "name": allias},
+            label="allias", created=created, skipped=skipped, undo=lambda: tx.record_allias_new(domain, allias),
         )
 
         # 3. page:new × N
         for p in pages:
             name = p["name"]
+            if name == "__root__":
+                continue  # Главная страница уже создана allias:new
             _run_or_skip(
-                client=client,
-                session=session,
-                tx=tx,
-                command="page:new",
-                args={"domain": domain, "allias": allias, "name": name},
-                label=f"page:{name}",
-                created=created,
-                skipped=skipped,
-                undo=None,  # page:new не откатываем (пустая страница безопасна)
+                client=client, session=session, tx=tx,
+                command="page:new", args={"domain": domain, "allias": allias, "name": name},
+                label=f"page:{name}", created=created, skipped=skipped, undo=None,
             )
 
         # 4. Создание Layout (Блоки, Меню, Схема)
@@ -92,45 +72,33 @@ def run_builder(
         # 4a. Базовые блоки
         for block in ["top", "left", "right", "bottom", "policy"]:
             _run_or_skip(
-                client=client,
-                session=session,
-                tx=tx,
-                command="block:new",
-                args={"domain": domain, "name": block, "type": "visual"},
-                label=f"block:{block}",
-                created=created,
-                skipped=skipped,
-                undo=None,
+                client=client, session=session, tx=tx,
+                command="block:new", args={"domain": domain, "name": block, "type": "visual"},
+                label=f"block:{block}", created=created, skipped=skipped, undo=None,
             )
 
-        # 4b. Филлер для меню
+        # 4b. Филлер для меню (в шапке top)
         _run_or_skip(
-            client=client,
-            session=session,
-            tx=tx,
-            command="filler:new",
-            args={"domain": domain, "allias": allias, "block": "left"},
-            label="filler:left",
-            created=created,
-            skipped=skipped,
-            undo=None,
+            client=client, session=session, tx=tx,
+            command="filler:new", args={"domain": domain, "allias": allias, "block": "top"},
+            label="filler:top", created=created, skipped=skipped, undo=None,
         )
 
-        # 4c. Наполнение меню
-        menu_items = ["Главная"] + [p["title"] for p in pages]
+        # 4c. Наполнение меню ссылками (используем новый тип nav)
+        menu_items = [{"title": "Главная", "url": "/"}]
+        for p in pages:
+            if p["name"] != "__root__":
+                menu_items.append({"title": p["title"], "url": f"/{p['name']}"})
+        
         filler_blocks = [
-            {"type": "h3", "content": "Навигация"},
-            {"type": "ul", "items": menu_items}
+            {"type": "nav", "items": menu_items}
         ]
         res = client.call_aicli("filler:write", {
-            "domain": domain, 
-            "allias": allias, 
-            "block": "left", 
-            "blocks": filler_blocks
+            "domain": domain, "allias": allias, "block": "top", "blocks": filler_blocks
         })
         if not res.ok:
             raise BuilderError(f"filler:write failed: {res.error}")
-        session.log("    + filler:write (left menu content)")
+        session.log("    + filler:write (top menu links)")
 
         # 4d. Сохранение схемы (слоты + базовые meta)
         scheme_json = {
@@ -147,53 +115,34 @@ def run_builder(
                 "js": ["/media/shared/scripts/jquery.min.js"]
             }
         }
-        res = client.call_aicli("scheme:save", {
-            "domain": domain, 
-            "name": allias, 
-            "scheme_json": scheme_json
-        })
+        res = client.call_aicli("scheme:save", {"domain": domain, "name": allias, "scheme_json": scheme_json})
         if not res.ok:
             raise BuilderError(f"scheme:save failed: {res.error}")
         session.log("    + scheme:save (slots + meta)")
 
-        # Успех — коммитим (undo больше не нужен)
         tx.commit()
 
         skeleton = {
-            "domain": domain,
-            "allias": allias,
-            "created": created,
-            "skipped": skipped,
+            "domain": domain, "allias": allias,
+            "created": created, "skipped": skipped,
         }
         session.write_json("skeleton.json", skeleton)
         session.log(f"Builder OK: created={len(created)}, skipped={len(skipped)}")
-
         return skeleton
 
     except BuilderError as e:
         rollback_log = tx.rollback()
         session.log(f"Builder FAILED: {e}")
-        session.log(f"Builder rollback: {len(rollback_log)} op(s)")
         for line in rollback_log:
             session.log(f"  {line}")
         raise
 
 
 def _run_or_skip(
-    *,
-    client: AicliClient,
-    session: Session,
-    tx: Transaction,
-    command: str,
-    args: dict[str, Any],
-    label: str,
-    created: list[str],
-    skipped: list[str],
-    undo: Any,
+    *, client: AicliClient, session: Session, tx: Transaction,
+    command: str, args: dict[str, Any], label: str,
+    created: list[str], skipped: list[str], undo: Any,
 ) -> None:
-    """
-    Выполняет одну команду. На "already exists" — skip. На прочих ошибках — raise.
-    """
     result = client.call_aicli(command, args)
     session.log(f"  {command} {args} → ok={result.ok}")
 
@@ -209,7 +158,6 @@ def _run_or_skip(
         session.log(f"    ~ skipped {label} (already exists)")
         return
 
-    # Реальная ошибка
     raise BuilderError(
         f"{label} failed: {result.error}"
         + (f" (hint: {result.hint})" if result.hint else "")
