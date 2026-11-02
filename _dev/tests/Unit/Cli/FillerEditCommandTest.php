@@ -69,7 +69,7 @@ final class FillerEditCommandTest extends TestCase
     {
         file_put_contents(
             $this->root . '/config/engine.config',
-            json_encode(['security' => ['allow_php_blocks' => true]]),
+            json_encode(['security' => ['allow_php_blocks' => true]])
         );
     }
 
@@ -88,7 +88,7 @@ final class FillerEditCommandTest extends TestCase
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
         $rules = json_decode((string) file_get_contents(
-            $this->root . '/app/example.ru/.alliasglobal/top/top_www.rules.json',
+            $this->root . '/app/example.ru/.alliasglobal/top/top_www.rules.json'
         ), true);
         self::assertFalse($rules['enabled']);
     }
@@ -106,7 +106,7 @@ final class FillerEditCommandTest extends TestCase
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
         $editor = json_decode((string) file_get_contents(
-            $this->root . '/app/example.ru/.alliasglobal/top/top_www.editor.json',
+            $this->root . '/app/example.ru/.alliasglobal/top/top_www.editor.json'
         ), true);
         self::assertSame(1, $editor['x']);
     }
@@ -159,7 +159,7 @@ final class FillerEditCommandTest extends TestCase
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
         $code = (string) file_get_contents(
-            $this->root . '/app/example.ru/.alliasglobal/top/top_www.php',
+            $this->root . '/app/example.ru/.alliasglobal/top/top_www.php'
         );
         self::assertStringContainsString('override', $code);
     }

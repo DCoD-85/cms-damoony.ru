@@ -13,12 +13,13 @@ use Damoony\Files\Paths;
 final class TrashClearCommand implements CommandInterface
 {
     /**
-     * Карантин на 5 уровнях:
+     * Карантин на 6 уровнях:
      *   1. app/<domain>_trash_<ts>/                                         — domain:remove
      *   2. app/<domain>/<allias>_trash_<ts>/                                — allias:remove
      *   3. app/<domain>/.alliasscheme/<name>_trash_<ts>/                    — scheme:remove
      *   4. app/<domain>/.alliasglobal/<name>_trash_<ts>/                    — block:remove
-     *   5. www/media/.trash/<domain>_<allias>_<category>_<hash>_trash_<ts>/ — media:remove
+     *   5. content/.trash/<domain>_<allias>_<category>_<hash>_trash_<ts>/   — content:remove
+     *   6. www/media/.trash/<domain>_<allias>_skin_<name>_trash_<ts>/       — skin:remove
      */
     private const TRASH_RE = '/^[a-z0-9][a-z0-9._-]*_trash_(\d+)$/';
 
