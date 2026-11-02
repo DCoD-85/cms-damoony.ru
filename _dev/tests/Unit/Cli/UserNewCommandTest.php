@@ -19,9 +19,9 @@ final class UserNewCommandTest extends TestCase
         $connection = new Connection(['driver' => 'sqlite', 'path' => ':memory:']);
         $pdo = $connection->pdo();
         $pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, login TEXT UNIQUE, email TEXT UNIQUE, password_hash TEXT, status TEXT)');
-        
+
         $this->command = new UserNewCommand($connection);
-        $this->context = new Context(fn() => null);
+        $this->context = new Context(fn () => null);
     }
 
     public function testInvalidLogin(): void

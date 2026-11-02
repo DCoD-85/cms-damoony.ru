@@ -24,7 +24,7 @@ final class RolesTest extends TestCase
         self::assertNotEmpty($wl);
         self::assertContains('domain:new', $wl);
         self::assertContains('net:status', $wl);
-        
+
         // Проверяем инвариант: роль '*' должна содержать все команды из всех ролей
         foreach (Roles::all() as $role) {
             foreach (Roles::whitelist($role) as $cmd) {

@@ -19,10 +19,10 @@ final class AdminPasswdCommandTest extends TestCase
     protected function setUp(): void
     {
         $this->tmpDir = sys_get_temp_dir() . '/damoony_cli_test_' . uniqid();
-        mkdir($this->tmpDir . '/config', 0777, true);
+        mkdir($this->tmpDir . '/config', 0o777, true);
         $this->paths = new Paths($this->tmpDir);
         $this->command = new AdminPasswdCommand($this->paths);
-        $this->context = new Context(fn() => null);
+        $this->context = new Context(fn () => null);
     }
 
     protected function tearDown(): void
@@ -56,10 +56,10 @@ final class AdminPasswdCommandTest extends TestCase
     {
         $result = $this->command->run(['name' => 'testuser', 'password' => 'strongpass'], $this->context);
         $this->assertTrue($result->ok);
-        
+
         $configFile = $this->tmpDir . '/config/admin.config';
         $this->assertFileExists($configFile);
-        
+
         $data = json_decode(file_get_contents($configFile), true);
         $this->assertEquals('testuser', $data['login']);
         $this->assertTrue(password_verify('strongpass', $data['password_hash']));

@@ -18,11 +18,11 @@ final class DbMigrateCommandTest extends TestCase
     protected function setUp(): void
     {
         $this->tmpDir = sys_get_temp_dir() . '/damoony_db_test_' . uniqid();
-        mkdir($this->tmpDir . '/migrations/archive', 0777, true);
+        mkdir($this->tmpDir . '/migrations/archive', 0o777, true);
         file_put_contents($this->tmpDir . '/migrations/001_test.sql', 'CREATE TABLE test (id INT);');
-        
+
         $this->paths = new Paths($this->tmpDir);
-        $this->context = new Context(fn() => null);
+        $this->context = new Context(fn () => null);
     }
 
     protected function tearDown(): void
@@ -44,8 +44,8 @@ final class DbMigrateCommandTest extends TestCase
     public function testSuccessfulMigration(): void
     {
         $cmd = new DbMigrateCommand(
-            $this->paths, 
-            ['driver' => 'sqlite', 'path' => ':memory:']
+            $this->paths,
+            ['driver' => 'sqlite', 'path' => ':memory:'],
         );
         $result = $cmd->run([], $this->context);
         $this->assertTrue($result->ok);

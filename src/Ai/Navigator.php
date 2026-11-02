@@ -25,6 +25,7 @@ final class Navigator
 
     /**
      * @param array{domains?: list<string>} $state
+     *
      * @return list<array{cmd: string, args: array<string, mixed>, hint: string}>
      */
     public static function start(array $state): array
@@ -56,6 +57,7 @@ final class Navigator
 
     /**
      * @param array<string, mixed> $args
+     *
      * @return list<array{cmd: string, args: array<string, mixed>, hint: string}>
      */
     public static function after(string $cmd, array $args): array
@@ -208,6 +210,7 @@ final class Navigator
 
     /**
      * @param array<string, mixed> $args
+     *
      * @return array{cmd: string, args: array<string, mixed>, hint: string}
      */
     private static function item(string $cmd, array $args, string $hint): array
