@@ -31,17 +31,20 @@ final class Roles
             'structure:check',
         ],
         self::ARCHITECT => [
+            'wizard:start', 'wizard:domain', 'wizard:allias', 'wizard:plan', 'wizard:abort',
             'domain:new', 'allias:new',
             'block:new', 'scheme:new', 'filler:new',
             'skin:new', 'skin:list',
             'domain:list', 'allias:list', 'scheme:list', 'block:list',
         ],
         self::EXECUTOR => [
+            'wizard:content', 'wizard:finish',
             'page:new', 'page:write', 'page:read', 'page:list',
             'image:search', 'image:download',
             'domain:list', 'allias:list',
         ],
         self::DESIGNER => [
+            'wizard:skin',
             'page:write', 'block:write', 'filler:write',
             'skin:edit', 'skin:list',
             'scheme:save', 'scheme:list',
@@ -74,6 +77,7 @@ final class Roles
                 $all = array_merge($all, $cmds);
             }
             return array_values(array_unique(array_merge($all, [
+                'wizard:start', 'wizard:domain', 'wizard:allias', 'wizard:plan', 'wizard:content', 'wizard:skin', 'wizard:finish', 'wizard:commit', 'wizard:abort',
                 'ai:start', 'done', 'engine_status',
                 'net:status', 'image:search', 'image:download', 'fetch',
                 'block:write', 'filler:write',

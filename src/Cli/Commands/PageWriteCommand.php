@@ -70,7 +70,14 @@ final class PageWriteCommand implements CommandInterface
         }
 
         // 3. JSON
-        if (isset($args['json_b64'])) {
+        if (isset($args['json_file'])) {
+            $file = (string) $args['json_file'];
+            if (!is_file($file)) {
+                $r->error('Файл json_file не найден');
+                return $r;
+            }
+            $json = (string) file_get_contents($file);
+        } elseif (isset($args['json_b64'])) {
             $decoded = base64_decode((string) $args['json_b64'], true);
             if ($decoded === false) {
                 $r->error('Некорректный base64');

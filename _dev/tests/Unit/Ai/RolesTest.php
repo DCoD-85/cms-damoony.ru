@@ -162,6 +162,36 @@ final class RolesTest extends TestCase
         $this->assertContains('scheme:new', $star);
     }
 
+    public function testWizardCommandsAreAssignedToRoles(): void
+    {
+        $architect = Roles::whitelist(Roles::ARCHITECT);
+        self::assertContains('wizard:start', $architect);
+        self::assertContains('wizard:plan', $architect);
+        self::assertNotContains('wizard:content', $architect); // Архитектор не пишет контент
+
+        $executor = Roles::whitelist(Roles::EXECUTOR);
+        self::assertContains('wizard:content', $executor);
+        self::assertContains('wizard:finish', $executor);
+        self::assertNotContains('wizard:plan', $executor); // Исполнитель не меняет план
+
+        $designer = Roles::whitelist(Roles::DESIGNER);
+        self::assertContains('wizard:skin', $designer);
+    }
+
+    public function testWildcardHasAllWizardCommands(): void
+    {
+        $star = Roles::whitelist('*');
+        self::assertContains('wizard:start', $star);
+        self::assertContains('wizard:domain', $star);
+        self::assertContains('wizard:allias', $star);
+        self::assertContains('wizard:plan', $star);
+        self::assertContains('wizard:content', $star);
+        self::assertContains('wizard:skin', $star);
+        self::assertContains('wizard:finish', $star);
+        self::assertContains('wizard:commit', $star);
+        self::assertContains('wizard:abort', $star);
+    }
+
     public function testCorrectorRoleKeepsStructureRepair(): void
     {
         $corrector = Roles::whitelist(Roles::CORRECTOR);

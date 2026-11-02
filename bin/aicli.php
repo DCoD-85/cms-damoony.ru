@@ -175,6 +175,42 @@ if (in_array($command, ['net:status', 'image:search', 'image:download', 'fetch']
 }
 
 try {
+    if (str_starts_with($command, 'wizard:')) {
+        $action = substr($command, 7);
+        $paths = new \Damoony\Files\Paths(__DIR__ . '/../');
+
+        if ($action === 'start') {
+            $session = \Damoony\Ai\WizardSession::create($paths);
+            respond([
+                'ok' => true,
+                'data' => [
+                    'session_id' => $session->id(),
+                    'stage' => $session->stage(),
+                    'next' => 'wizard:domain { session_id, domain }',
+                ],
+            ], $role, $command, $args);
+        }
+
+        $sessionId = (string)($args['session_id'] ?? '');
+        $session = \Damoony\Ai\WizardSession::load($sessionId, $paths);
+
+        if ($session === null) {
+            respond(['ok' => false, 'error' => 'Session not found or invalid ID'], $role, $command, $args);
+        }
+
+        $manager = new \Damoony\Ai\WizardManager($paths, 'runCli', 'runCliJson');
+        $result = $manager->handle($session, $action, $args);
+
+        respond([
+            'ok' => $result->ok,
+            'data' => [
+                'session_id' => $session->id(),
+                'stage' => $session->stage(),
+            ],
+            'error' => implode('; ', $result->errors),
+        ], $role, $command, $args);
+    }
+
     if ($command === 'ai:start') {
         $domains = [];
         $siteFile = __DIR__ . '/../config/site.config';
