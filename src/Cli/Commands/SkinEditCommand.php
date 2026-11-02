@@ -79,9 +79,26 @@ final class SkinEditCommand implements CommandInterface
             return $r;
         }
 
-        if (str_ends_with($file, '.css') && preg_match(self::SAFE_CSS_RE, $content) === 1) {
-            $r->error('CSS содержит небезопасные конструкции (@import / javascript: url)');
-            return $r;
+        if (str_ends_with($file, '.css')) {
+            // 1. Проверка безопасности
+            if (preg_match(self::SAFE_CSS_RE, $content) === 1) {
+                $r->error('CSS содержит небезопасные конструкции (@import / javascript: url)');
+                return $r;
+            }
+
+            // 2. Проверка баланса фигурных скобок (реставрация)
+            $openBraces = substr_count($content, '{');
+            $closeBraces = substr_count($content, '}');
+
+            if ($openBraces > $closeBraces) {
+                // Не хватает закрывающих скобок — добавляем их
+                $missing = $openBraces - $closeBraces;
+                $content = rtrim($content) . "\n" . str_repeat("}\n", $missing);
+                $context->step("CSS auto-repaired", true, "Added {$missing} missing closing brace(s)");
+            } elseif ($closeBraces > $openBraces) {
+                $r->error('Некорректный CSS: лишние закрывающие скобки }');
+                return $r;
+            }
         }
 
         $siteFile = $this->paths->siteConfig();

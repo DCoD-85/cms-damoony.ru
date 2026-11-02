@@ -1,5 +1,5 @@
 """
-Production Multi-Agent: Architect -> Builder -> Content -> Designer.
+Production Multi-Agent: Architect -> Builder -> Markdown Parser -> Designer.
 """
 import json
 import sys
@@ -26,56 +26,41 @@ Output ONLY a JSON object:
 Rules:
 - Include __root__ (home page).
 - CRITICAL: "name" must be ONLY English letters, numbers, and underscores.
-- CRITICAL: "layout" must be a list of slots. Available slots: top, left, center, right, bottom.
 - Output ONLY the JSON object."""
 
-ARCHITECT_DETAIL_PROMPT = """You are a content planner.
-Design the content blocks for the page "{page_title}".
+WRITER_MARKDOWN_PROMPT = """You are a professional copywriter.
+Write a detailed, engaging article for the page "{page_title}".
 Context: {brief}
-Output ONLY a JSON object:
-{{
-  "blocks": [
-    {{"type": "h1", "topic": "Main page headline"}},
-    {{"type": "text", "topic": "Introduction"}},
-    {{"type": "img", "topic": "it agency office"}},
-    {{"type": "button", "topic": "Call to action"}}
-  ]
-}}
-Rules:
-- CRITICAL: For "img" blocks, the "topic" MUST be 1-3 English words.
-- Allowed block types: h1, h2, h3, text, img, ul, button, link.
-- Every page MUST start with h1.
-- Output ONLY the JSON object."""
+Available URLs for links: {valid_urls}
 
-WRITER_PROMPT = """You are a professional copywriter.
-Write the content for a '{block_type}' block on the page "{page_title}".
-Topic: "{topic}"
-Context: {brief}
-Available URLs: {valid_urls}
+RULES:
+1. Output ONLY Markdown text. No JSON. No HTML tags.
+2. Use # for the main heading (exactly one).
+3. Use ## and ### for subheadings.
+4. Use - for bullet lists.
+5. Where an image is needed, use the exact format: [IMG: 1-3 word topic]
+6. Use [LINK: /url | Link Text] for links.
 
-Output format: You MUST output a valid JSON object with two keys: "content" and "class".
-Example: {{"content": "Your amazing text here", "class": "hero-heading"}}
+Example output:
+# Welcome to Our Site
+This is a great paragraph.
 
-Rules:
-1. NEVER output empty text.
-2. The "class" must be a custom CSS class name (e.g., "hero-title", "intro-text", "action-btn", "menu-list").
-3. For 'ul' blocks: {{"items": ["item 1", "item 2"], "class": "feature-list"}}
-4. For 'button' or 'link' blocks: {{"url": "/page", "content": "Button Text", "class": "primary-btn"}}
-5. Output ONLY the JSON object. No markdown, no explanations."""
+[IMG: happy dog]
+
+## Why Choose Us
+- Fast service
+- Great quality
+
+[LINK: /contact | Contact Us]
+"""
 
 LEAD_DESIGNER_PROMPT = """You are the Lead Web Designer.
 Website brief: {brief}
 Here are the custom CSS classes used across the site: {classes}
 
-Create a Style Guide and write the complete CSS.
-Output ONLY a JSON object:
-{{
-  "style_guide": "Use a modern dark blue theme. Font: Inter, sans-serif. Primary color: #007bff.",
-  "css_code": "body {{ margin: 0; font-family: 'Inter', sans-serif; }}\\n.hero-heading {{ font-size: 3rem; color: #007bff; }}"
-}}
-Rules:
-- Include styles for body, basic tags (h1, h2, p, ul, a), and ALL the custom classes listed above.
-- Output ONLY the JSON object. No markdown. Ensure the CSS code is fully complete and valid."""
+Write a beautiful, modern CSS based on these classes.
+Output ONLY valid CSS code. No HTML, no JSON, no markdown fences, no explanations. Just the CSS.
+Include styles for body, basic tags (h1, h2, p, ul, a), and ALL the custom classes listed above."""
 
 # --- ТРАНЗАКЦИИ ---
 class Transaction:
@@ -96,11 +81,7 @@ class Transaction:
             self.client.call_cli(cmd, args)
 
 # --- ХЕЛПЕРЫ ---
-def clean_html(text: str) -> str:
-    return re.sub(r'<[^>]+>', '', text).strip()
-
 def safe_chat(llm: OllamaClient, model: str, messages: list, retries: int = 3) -> dict:
-    """Обертка над llm.chat с повторными попытками."""
     for i in range(retries):
         try:
             return llm.chat(model, messages)
@@ -123,6 +104,89 @@ def fetch_image(client: AicliClient, domain: str, allias: str, category: str, th
         return download.data.get("local_url", "")
     return "https://via.placeholder.com/800x600?text=Download+Failed"
 
+def parse_markdown_to_blocks(md_text: str, client: AicliClient, domain: str, allias: str, category: str, used_classes: set) -> list:
+    """Превращает Markdown от LLM в JSON-блоки для CLI."""
+    blocks = []
+    lines = md_text.split('\n')
+    
+    current_list = []
+    current_text = []
+
+    def flush_text():
+        if current_text:
+            text = " ".join(current_text).strip()
+            if text:
+                blocks.append({"type": "text", "content": text, "class": "paragraph"})
+                used_classes.add("paragraph")
+            current_text.clear()
+
+    def flush_list():
+        if current_list:
+            blocks.append({"type": "ul", "items": list(current_list), "class": "features-list"})
+            used_classes.add("features-list")
+            current_list.clear()
+
+    for line in lines:
+        line = line.strip()
+        if not line:
+            flush_text()
+            flush_list()
+            continue
+
+        # Заголовки
+        if line.startswith('# '):
+            flush_text(); flush_list()
+            blocks.append({"type": "h1", "content": line[2:].strip(), "class": "hero-title"})
+            used_classes.add("hero-title")
+        elif line.startswith('## '):
+            flush_text(); flush_list()
+            blocks.append({"type": "h2", "content": line[3:].strip(), "class": "section-title"})
+            used_classes.add("section-title")
+        elif line.startswith('### '):
+            flush_text(); flush_list()
+            blocks.append({"type": "h3", "content": line[4:].strip(), "class": "sub-title"})
+            used_classes.add("sub-title")
+            
+        # Списки
+        elif line.startswith('- ') or line.startswith('* '):
+            flush_text()
+            current_list.append(line[2:].strip())
+
+        # Картинки
+        elif line.startswith('[IMG:') and line.endswith(']'):
+            flush_text(); flush_list()
+            topic = line[5:-1].strip()
+            print(f"     [img] searching for '{topic}'...")
+            local_url = fetch_image(client, domain, allias, category, topic)
+            blocks.append({"type": "img", "content": local_url, "alt": topic, "class": "img-fluid"})
+            used_classes.add("img-fluid")
+
+        # Ссылки/Кнопки
+        elif line.startswith('[LINK:') and line.endswith(']'):
+            flush_text(); flush_list()
+            inner = line[6:-1].strip()
+            if '|' in inner:
+                url, label = inner.split('|', 1)
+                blocks.append({"type": "button", "url": url.strip(), "content": label.strip(), "class": "primary-btn"})
+                used_classes.add("primary-btn")
+            else:
+                blocks.append({"type": "link", "url": inner, "content": inner, "class": "text-link"})
+                used_classes.add("text-link")
+
+        # Обычный текст
+        else:
+            flush_list()
+            current_text.append(line)
+
+    flush_text()
+    flush_list()
+    
+    # Убедимся, что H1 есть в начале
+    if not blocks or blocks[0]["type"] != "h1":
+        blocks.insert(0, {"type": "h1", "content": "Welcome", "class": "hero-title"})
+
+    return blocks
+
 
 def run_multi_agent(brief: str, domain: str, allias: str, model: str = "gemma4:e4b"):
     llm = OllamaClient(timeout=180)
@@ -130,8 +194,8 @@ def run_multi_agent(brief: str, domain: str, allias: str, model: str = "gemma4:e
     tx = Transaction(client)
     
     try:
-        # 1. ARCHITECT 1 (СТРУКТУРА)
-        print("[1/5] Architect is planning the high-level structure...")
+        # 1. ARCHITECT (СТРУКТУРА)
+        print("[1/4] Architect is planning the high-level structure...")
         res = safe_chat(llm, model, [{"role": "user", "content": f"BRIEF: {brief}\n\n{ARCHITECT_STRUCTURE_PROMPT}"}])
         plan_text = res.get("message", {}).get("content", "").strip().removeprefix("```json").removesuffix("```").strip()
         
@@ -146,7 +210,7 @@ def run_multi_agent(brief: str, domain: str, allias: str, model: str = "gemma4:e
         urls_str = ", ".join(valid_urls)
 
         # 2. BUILDER (КАРКАС)
-        print("[2/5] Creating skeleton...")
+        print("[2/4] Creating skeleton...")
         client.call_cli("domain:new", {"domain": domain})
         tx.record_domain(domain) 
         
@@ -172,101 +236,72 @@ def run_multi_agent(brief: str, domain: str, allias: str, model: str = "gemma4:e
 
         scheme_json = {
             "children": [{"type": "slot", "name": s} for s in ["top", "left", "center", "right", "bottom", "policy"]],
-            "meta": {"css": ["/media/shared/css/main.css"], "js": ["/media/shared/scripts/jquery.min.js"]}
+            "meta": {
+                "css": [
+                    "/media/shared/css/main.css",
+                    f"/media/{domain}/{allias}/skin/default/css/main.css"
+                ], 
+                "js": ["/media/shared/scripts/jquery.min.js"]
+            }
         }
         client.call_aicli("scheme:save", {"domain": domain, "name": allias, "scheme_json": scheme_json})
 
-        # 3. CONTENT WORKERS
-        print("[3/5] Generating content (block by block)...")
+        # 3. CONTENT WORKERS (WRITER + MARKDOWN PARSER)
+        print("[3/4] Generating content (Markdown mode)...")
         used_classes = set(["main-navigation"])
-        page_blocks_map = {}
-
+        
         for page in plan.get("pages", []):
             page_name = page["name"]
             page_title = page["title"]
             
-            detail_prompt = ARCHITECT_DETAIL_PROMPT.format(page_title=page_title, brief=brief)
-            r_det = safe_chat(llm, model, [{"role": "user", "content": detail_prompt}])
-            det_text = r_det.get("message", {}).get("content", "").strip().removeprefix("```json").removesuffix("```").strip()
+            print(f"  -> Writing: {page_title}")
             
-            try:
-                blocks_plan = json.loads(det_text).get("blocks", [])
-            except:
-                blocks_plan = [{"type": "h1", "topic": page_title}, {"type": "text", "topic": "Welcome"}]
+            # ОДИН запрос на генерацию Markdown
+            writer_prompt = WRITER_MARKDOWN_PROMPT.format(
+                page_title=page_title, brief=brief, valid_urls=urls_str
+            )
+            r = safe_chat(llm, model, [{"role": "user", "content": writer_prompt}])
+            md_text = r.get("message", {}).get("content", "").strip()
 
-            final_blocks = []
-            print(f"  -> Writing: {page_title} ({len(blocks_plan)} blocks)")
-            
-            for block in blocks_plan:
-                block_type = block.get("type", "text")
-                topic = block.get("topic", page_title)
+            # Парсинг в JSON
+            final_blocks = parse_markdown_to_blocks(md_text, client, domain, allias, page_name or "__root__", used_classes)
 
-                if block_type == "img":
-                    local_url = fetch_image(client, domain, allias, page_name or "__root__", topic)
-                    final_blocks.append({"type": "img", "content": local_url, "alt": topic, "class": "img-fluid"})
-                    used_classes.add("img-fluid")
-                    continue
-
-                prompt = WRITER_PROMPT.format(
-                    block_type=block_type, page_title=page_title, topic=topic, brief=brief, valid_urls=urls_str
-                )
-                r = safe_chat(llm, model, [{"role": "user", "content": prompt}])
-                content = r.get("message", {}).get("content", "").strip().removeprefix("```json").removesuffix("```").strip()
-
-                try:
-                    data = json.loads(content)
-                except Exception:
-                    data = {"content": content, "class": f"{block_type}-default"}
-
-                css_class = data.get("class", f"{block_type}-default")
-                used_classes.add(css_class)
-                
-                if block_type == "ul":
-                    items = data.get("items", [])
-                    if not items: items = ["Item 1", "Item 2", "Item 3"]
-                    final_blocks.append({"type": "ul", "items": items, "class": css_class})
-                elif block_type in ("button", "link"):
-                    final_blocks.append({"type": block_type, "url": data.get("url", "/"), "content": data.get("content", "Click Here"), "class": css_class})
-                else:
-                    text_content = clean_html(data.get("content", ""))
-                    if not text_content: text_content = f"Welcome to {topic}"
-                    final_blocks.append({"type": block_type, "content": text_content, "class": css_class})
-
+            # Запись в CLI
             cli_name = "" if page_name == "__root__" else page_name
-            page_blocks_map[cli_name] = final_blocks
-
-        for p_name, blocks in page_blocks_map.items():
             client.call_aicli("page:write", {
-                "domain": domain, "allias": allias, "name": p_name, "blocks": blocks, "with_schema": "1"
+                "domain": domain, "allias": allias, "name": cli_name, "blocks": final_blocks, "with_schema": "1"
             })
 
         # 4. LEAD DESIGNER
-        print("[4/5] Designer is creating the main.css...")
+        print("[4/4] Designer is creating the main.css...")
         classes_str = ", ".join(used_classes)
         ld_prompt = LEAD_DESIGNER_PROMPT.format(brief=brief, classes=classes_str)
-        r = safe_chat(llm, model, [{"role": "user", "content": ld_prompt}])
-        ld_text = r.get("message", {}).get("content", "").strip().removeprefix("```json").removesuffix("```").strip()
-
-        try:
-            design_data = json.loads(ld_text)
-            css_code = design_data.get("css_code", "")
-            if len(css_code) < 20 or not css_code.endswith("}"):
-                raise ValueError("Incomplete CSS")
-        except Exception:
-            print("  [!] Designer failed to output valid CSS. Using fallback.")
-            css_code = f"body {{ font-family: sans-serif; line-height: 1.6; }}\n" + "\n".join([f".{c.strip()} {{ margin-bottom: 15px; }}" for c in used_classes if c.strip()])
-
-        res = client.call_aicli("skin:edit", {
-            "domain": domain, "allias": allias, "name": "default", 
-            "file": "css/main.css", "content": css_code
-        })
         
-        if res.ok:
-            print("  [OK] main.css written.")
-        else:
-            print(f"  [ERROR] Failed to write main.css: {res.error}")
+        css_written = False
+        for attempt in range(2):
+            r = safe_chat(llm, model, [{"role": "user", "content": ld_prompt}])
+            css_code = r.get("message", {}).get("content", "").strip().removeprefix("```css").removesuffix("```").strip()
 
-        print("[5/5] Done!")
+            if not css_code:
+                continue
+
+            res = client.call_aicli("skin:edit", {
+                "domain": domain, "allias": allias, "name": "default", 
+                "file": "css/main.css", "content": css_code
+            })
+            
+            if res.ok:
+                print("  [OK] main.css written.")
+                css_written = True
+                break
+            else:
+                print(f"  [!] CLI rejected CSS: {res.error}. Retrying...")
+                ld_prompt += "\n\nYour previous answer was rejected. Output ONLY valid CSS with balanced { and } braces."
+
+        if not css_written:
+            print("  [ERROR] Could not generate valid CSS. Skipping.")
+
+        print("Done!")
         
     except Exception as e:
         print(f"\n[!] Fatal error: {e}")
