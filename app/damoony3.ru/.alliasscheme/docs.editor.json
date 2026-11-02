@@ -13,6 +13,10 @@
             "type": "visual"
         },
         {
+            "name": "menu",
+            "type": "visual"
+        },
+        {
             "name": "policy",
             "type": "visual"
         },
@@ -51,6 +55,14 @@
                 "type": "slot",
                 "name": "policy"
             }
-        ]
+        ],
+        "meta": {
+            "css": [
+                "\/media\/shared\/css\/main.css"
+            ],
+            "js": [
+                "\/media\/shared\/scripts\/jquery.min.js"
+            ]
+        }
     }
 }

@@ -39,4 +39,15 @@ return array (
   'scripts' => 
   array (
   ),
+  'meta' => 
+  array (
+    'css' => 
+    array (
+      0 => '/media/shared/css/main.css',
+    ),
+    'js' => 
+    array (
+      0 => '/media/shared/scripts/jquery.min.js',
+    ),
+  ),
 );

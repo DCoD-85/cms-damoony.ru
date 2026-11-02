@@ -106,6 +106,7 @@ final class SchemeSaveCommand implements CommandInterface
             'class' => 'layout',
             'children' => $this->mapSchemeToPhp(is_array($scheme['children'] ?? null) ? $scheme['children'] : []),
             'scripts' => is_array($scheme['scripts'] ?? null) ? $scheme['scripts'] : [],
+            'meta' => is_array($scheme['meta'] ?? null) ? $scheme['meta'] : [],
         ];
 
         $compiler = new SchemeCompiler();

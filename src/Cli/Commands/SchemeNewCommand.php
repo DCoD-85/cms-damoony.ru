@@ -86,12 +86,25 @@ final class SchemeNewCommand implements CommandInterface
             'scheme' => [
                 'children' => [],
                 'scripts' => [],
+                'meta' => [
+                    'css' => ['/media/shared/css/main.css'],
+                    'js' => ['/media/shared/scripts/jquery.min.js'],
+                ],
             ],
         ];
         Fs::writeAtomic($editorFile, json_encode($editorData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
 
-        // 2. Создаем пустой php
-        $data = "<?php\n\nreturn [\n    'tag' => 'div',\n    'class' => 'layout',\n    'children' => [],\n    'scripts' => [],\n];\n";
+        // 2. Создаем пустой php с базовыми meta
+        $data = "<?php\n\nreturn [\n"
+            . "    'tag' => 'div',\n"
+            . "    'class' => 'layout',\n"
+            . "    'children' => [],\n"
+            . "    'scripts' => [],\n"
+            . "    'meta' => [\n"
+            . "        'css' => ['/media/shared/css/main.css'],\n"
+            . "        'js' => ['/media/shared/scripts/jquery.min.js'],\n"
+            . "    ],\n"
+            . "];\n";
         Fs::writeAtomic($phpFile, $data);
 
         // 3. Создаем rules.json

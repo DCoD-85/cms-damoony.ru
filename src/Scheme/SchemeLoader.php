@@ -21,7 +21,15 @@ final class SchemeLoader
      */
     public function load(DomainContext $domain, string $schemeName = 'www'): array
     {
-        $file = $this->paths->domain($domain->real) . '/.alliasscheme/' . $schemeName . '.php';
+        $baseDir = $this->paths->domain($domain->real) . '/.alliasscheme/';
+
+        // 1. Приоритет: схема алиаса (например, docs.php)
+        $file = $baseDir . $domain->allias . '.php';
+
+        // 2. Если нет — берем переданную схему (www.php)
+        if (!is_file($file)) {
+            $file = $baseDir . $schemeName . '.php';
+        }
 
         if (!is_file($file)) {
             if (!Env::fromServer()->isDev()) {

@@ -18,10 +18,10 @@ final class algoritm extends Page
     {
         $content = Builder::div('page-content');
 
-        $el = Builder::h(1)->content('Добро пожаловать в документацию');
+        $el = Builder::h(1)->content('Добро пожаловать');
         $content->append($el);
 
-        $el = Builder::p()->content('Здесь вы найдете все необходимые материалы.');
+        $el = Builder::p()->content('Стили должны подключиться.');
         $content->append($el);
 
         $this->setContent('center', $content);
