@@ -108,7 +108,7 @@ final class AinetFacadeTest extends TestCase
     {
         $im = imagecreatetruecolor($width, $height);
         if ($im === false) {
-            self::markTestSkipped('GD not available');
+            self::fail('imagecreatetruecolor() failed — GD extension is required');
         }
         $bg = imagecolorallocate($im, 200, 100, 50);
         imagefilledrectangle($im, 0, 0, $width - 1, $height - 1, $bg);

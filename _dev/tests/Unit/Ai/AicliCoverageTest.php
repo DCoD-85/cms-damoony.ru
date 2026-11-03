@@ -16,9 +16,10 @@ final class AicliCoverageTest extends TestCase
     {
         $root = dirname(__DIR__, 4);
         $this->aicliPath = $root . '/bin/aicli.php';
-        if (!is_file($this->aicliPath)) {
-            $this->markTestSkipped('bin/aicli.php not found');
-        }
+        $this->assertFileExists(
+            $this->aicliPath,
+            'bin/aicli.php missing — aicli coverage tests require this file'
+        );
         $src = file_get_contents($this->aicliPath);
         $this->assertNotFalse($src);
         $this->source = $src;

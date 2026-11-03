@@ -48,7 +48,7 @@ final class ContentListCommandTest extends TestCase
     {
         $im = imagecreatetruecolor(200, 200);
         if ($im === false) {
-            self::markTestSkipped('GD not available');
+            self::fail('imagecreatetruecolor() failed — GD extension is required');
         }
         $color = imagecolorallocate($im, $seed, 100, 50);
         imagefilledrectangle($im, 0, 0, 199, 199, $color);

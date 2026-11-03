@@ -49,7 +49,7 @@ final class ContentRemoveCommandTest extends TestCase
     {
         $im = imagecreatetruecolor(200, 200);
         if ($im === false) {
-            self::markTestSkipped('GD not available');
+            self::fail('imagecreatetruecolor() failed — GD extension is required');
         }
         ob_start();
         imagepng($im);

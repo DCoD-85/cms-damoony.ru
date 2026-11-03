@@ -66,7 +66,7 @@ final class PageContentRefsTest extends TestCase
     {
         $im = imagecreatetruecolor(200, 200);
         if ($im === false) {
-            self::markTestSkipped('GD not available');
+            self::fail('imagecreatetruecolor() failed — GD extension is required');
         }
         imagefilledrectangle($im, 0, 0, 199, 199, imagecolorallocate($im, $seed, 100, 50));
         ob_start();
