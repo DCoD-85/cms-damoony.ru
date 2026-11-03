@@ -86,6 +86,19 @@ final class WizardManager
             return;
         }
 
+        // КРЕМЕНЬ: Проверяем наличие папки на диске И запись в конфиге
+        $domain = (string) $session->get('domain');
+        $alliasDir = $this->paths->algoritm($domain, $allias);
+        
+        $siteFile = $this->paths->siteConfig();
+        $site = is_file($siteFile) ? json_decode(file_get_contents($siteFile), true) : [];
+        $existing = $site['alliases_real'][$domain] ?? [];
+
+        if (is_dir($alliasDir) || isset($existing[$allias])) {
+            $r->error("Алиас '{$allias}' уже занят. Выберите другое имя для сайта (или попросите администратора освободить его).");
+            return;
+        }
+
         $session->set('allias', $allias);
         $session->advanceTo(WizardSession::STAGE_ALLIAS);
     }

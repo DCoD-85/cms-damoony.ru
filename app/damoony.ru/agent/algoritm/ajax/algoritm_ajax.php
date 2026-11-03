@@ -144,6 +144,12 @@ final class algoritm_ajax extends Page
             if (str_contains($log, 'Отменено пользователем')) {
                 return Response::json(['ok' => false, 'error' => 'Генерация отменена пользователем']);
             }
+            
+            // Ищем конкретную ошибку от Wizard
+            if (str_contains($log, 'уже занят')) {
+                return Response::json(['ok' => false, 'error' => 'Этот алиас уже занят. Попробуйте выбрать другое имя для сайта.']);
+            }
+            
             return Response::json(['ok' => false, 'error' => 'Ошибка при генерации (см. лог)']);
         }
 
