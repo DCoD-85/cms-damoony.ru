@@ -91,7 +91,16 @@ final class WizardManager
         $alliasDir = $this->paths->algoritm($domain, $allias);
         
         $siteFile = $this->paths->siteConfig();
-        $site = is_file($siteFile) ? json_decode(file_get_contents($siteFile), true) : [];
+        $site = [];
+        if (is_file($siteFile)) {
+            $raw = file_get_contents($siteFile);
+            if ($raw === false) {
+                $r->error('Не удалось прочитать ' . $siteFile);
+                return;
+            }
+            $decoded = json_decode($raw, true);
+            $site = is_array($decoded) ? $decoded : [];
+        }
         $existing = $site['alliases_real'][$domain] ?? [];
 
         if (is_dir($alliasDir) || isset($existing[$allias])) {
@@ -355,8 +364,8 @@ final class WizardManager
             $pathMap = ['__root__' => ''];
             foreach ($plan as $p) {
                 if ($p['name'] === '__root__') continue;
-                $parent = $p['parent'] ?? '';
-                $parentPath = ($parent === '__root__' || $parent === null || $parent === '') ? '' : ($pathMap[$parent] ?? $parent);
+                $parent = (string) ($p['parent'] ?? '');
+                $parentPath = ($parent === '__root__' || $parent === '') ? '' : ($pathMap[$parent] ?? $parent);
                 $pathMap[$p['name']] = $parentPath === '' ? $p['name'] : $parentPath . '/' . $p['name'];
             }
 
