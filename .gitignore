@@ -87,3 +87,11 @@ app/*_trash_*
 
 # --- Локальный мусор CLI ---
 /bin/*.txt
+# --- Эфемерные E2E-домены, генерируемые brain.py (не трекаются) ---
+# Формат: <allias=agentN|siteNNNN>.<domain из whitelist>
+/www/media/agent*.damoony.ru/
+/www/media/agent*.damoony3.ru/
+/www/media/agent*.damoony3test.ru/
+/www/media/site[0-9]*.damoony.ru/
+/www/media/site[0-9]*.damoony3.ru/
+/www/media/site[0-9]*.damoony3test.ru/

@@ -112,7 +112,7 @@
 | Карантин (6 уровней) | `app/[d]_trash_[ts]/`, `app/[d]/[a]_trash_[ts]/`, `.alliasscheme/[n]_trash_[ts]/`, `.alliasglobal/[n]_trash_[ts]/`, `/content/.trash/...`, `www/media/.trash/...` |
 | Конфиги | `config/*.config` (`engine`, `site`, `admin`, `agent`, `ainet`) |
 | Точки входа | `www/index.php` (сайт), `www/admin/index.php` (админка), `www/content.php` (content), `bin/cli.php` (CLI), `bin/aicli.php` (AI, единственная), `bin/ainet.php` (standalone-отладка, не для AI) |
-| AI-Оркестраторы | `ai_agent/brain.py` (рабочий мультиагент), `ask.py` (скрипт для ввода брифа) |
+| AI-Оркестраторы | `ai_agent/brain.py` (рабочий мультиагент) |
 | Тесты | `_dev/tests/` |
 | Runtime | `var/` (+ `var/ainet-cache/`, `var/ainet-ratelimit.json`) |
 
