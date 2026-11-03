@@ -148,10 +148,16 @@ final class algoritm_ajax extends Page
         }
 
         if (str_contains($log, 'Done! Total time:')) {
+            $link = '';
+            if (preg_match('/SITE_URL:\s*(http[^\s]+)/', $log, $matches)) {
+                $link = $matches[1];
+            } else {
+                $link = 'http://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/';
+            }
             return Response::json([
                 'ok' => true, 
                 'done' => true, 
-                'link' => 'http://' . ($_SERVER['HTTP_HOST'] ?? 'coffee.damoony3test.ru') . '/'
+                'link' => $link
             ]);
         }
 
