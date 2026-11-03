@@ -220,6 +220,33 @@ def run_multi_agent(brief: str, domain: str, allias: str, session_id: str = None
     client = AicliClient()
     total_start = time.time()
 
+    # === 0. EXTRACT ALIAS (Только алиас!) ===
+    if allias == 'auto':
+        print("[0/5] Extracting alias from brief...")
+        extraction_prompt = f"""Extract a short, valid alias for the website from this text.
+The alias must be only lowercase English letters, numbers, and underscores (a-z0-9_).
+It should reflect the theme (e.g., if the site is about cats, use "cats"; if it's a personal page, use "page").
+Output ONLY JSON: {{"alias": "example"}}
+
+Transcript:
+{brief}"""
+        try:
+            res = safe_chat(llm, model, [{"role": "user", "content": extraction_prompt}])
+            text = res.get("message", {}).get("content", "").strip().removeprefix("```json").removesuffix("```").strip()
+            parsed = json.loads(text)
+            extracted = parsed.get("alias", "").strip().lower()
+            
+            # Валидация (безопасность)
+            if re.match(r'^[a-z][a-z0-9_]*$', extracted):
+                allias = extracted
+            else:
+                allias = "site_" + str(random.randint(100, 999))
+        except Exception as e:
+            print(f"  [!] Alias extraction failed: {e}. Using default.")
+            allias = "site_" + str(random.randint(100, 999))
+            
+        print(f"  [Target] Domain: {domain}, Allias: {allias}")
+
     def check_cancel():
         if session_id:
             cancel_file = os.path.join(os.path.dirname(__file__), '..', 'var', f'{session_id}.cancel')

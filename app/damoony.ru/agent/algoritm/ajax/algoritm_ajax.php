@@ -63,8 +63,18 @@ final class algoritm_ajax extends Page
             $brief .= "{$role}: {$msg['content']}\n";
         }
 
-        $domain = 'damoony3test.ru';
-        $allias = 'coffee';
+        // Читаем конфиг, чтобы узнать домен фабрики
+        $agentConfigFile = dirname(__DIR__, 5) . '/config/agent.config';
+        $cfg = is_file($agentConfigFile) ? json_decode(file_get_contents($agentConfigFile), true) : [];
+        
+        // Домен берем из конфига. Если там пусто — вытаскиваем из текущего хоста (убирая "agent.")
+        $domain = $cfg['target_domain'] ?? '';
+        if ($domain === '') {
+            $host = $_SERVER['HTTP_HOST'] ?? 'damoony3test.ru';
+            $domain = str_replace('agent.', '', $host);
+        }
+
+        $allias = 'auto'; // Python сам придумает алиас на основе брифа
         $sessionId = 'gen_' . rand(1000, 9999);
 
         $varDir = dirname(__DIR__, 5) . '/var';
