@@ -42,6 +42,7 @@ final class WizardManager
                 'plan' => $this->setPlan($session, $args['pages'] ?? [], $r),
                 'content' => $this->setContent($session, (string) ($args['page'] ?? ''), $args['blocks'] ?? [], $r),
                 'skin' => $this->setSkin($session, (string) ($args['file'] ?? ''), (string) ($args['content'] ?? ''), $r),
+                'widgets' => $this->setWidgets($session, $args['widgets'] ?? [], $r),
                 'finish' => $this->finish($session, $r),
                 'commit' => $this->commit($session, $r),
                 default => $r->error("Unknown wizard action: {$action}"),
@@ -199,6 +200,21 @@ final class WizardManager
         $session->advanceTo(WizardSession::STAGE_CONTENT);
     }
 
+    private function setWidgets(WizardSession $session, mixed $widgets, Result $r): void
+    {
+        if ($session->stage() !== WizardSession::STAGE_PLAN && $session->stage() !== WizardSession::STAGE_CONTENT) {
+            $r->error('Invalid stage for widgets. Expected: plan or content, current: ' . $session->stage());
+            return;
+        }
+
+        if (!is_array($widgets)) {
+            $r->error('Widgets must be an array.');
+            return;
+        }
+
+        $session->set('widgets', $widgets);
+    }
+
     private function setSkin(WizardSession $session, string $file, string $content, Result $r): void
     {
         if ($session->stage() !== WizardSession::STAGE_CONTENT && $session->stage() !== WizardSession::STAGE_SKIN) {
@@ -309,11 +325,14 @@ final class WizardManager
                 }
             }
 
-            $fillerFile = $this->paths->domain($domain) . '/.alliasglobal/top/top_' . $allias . '.php';
-            if (!is_file($fillerFile)) {
-                $res = $run('filler:new --domain=' . escapeshellarg($domain) . ' --allias=' . escapeshellarg($allias) . ' --block=top');
-                if (!$res['ok']) {
-                    throw new \RuntimeException('filler:new failed: ' . $res['output']);
+            // Создаем филлеры для ВСЕХ глобальных блоков
+            foreach (['top', 'left', 'right', 'bottom', 'policy'] as $b) {
+                $fillerFile = $this->paths->domain($domain) . '/.alliasglobal/' . $b . '/' . $b . '_' . $allias . '.php';
+                if (!is_file($fillerFile)) {
+                    $res = $run('filler:new --domain=' . escapeshellarg($domain) . ' --allias=' . escapeshellarg($allias) . ' --block=' . escapeshellarg($b));
+                    if (!$res['ok']) {
+                        throw new \RuntimeException("filler:new {$b} failed: " . $res['output']);
+                    }
                 }
             }
 
@@ -338,9 +357,24 @@ final class WizardManager
 
             $navBlocks = [['type' => 'nav', 'items' => $menuItems, 'class' => 'main-navigation']];
             $encodedNav = base64_encode((string) json_encode($navBlocks, JSON_UNESCAPED_UNICODE));
-            $res = $run('filler:write --domain=' . escapeshellarg($domain) . ' --allias=' . escapeshellarg($allias) . ' --block=top --json_b64=' . escapeshellarg($encodedNav));
+			$res = $run('filler:write --domain=' . escapeshellarg($domain) . ' --allias=' . escapeshellarg($allias) . ' --block=top --json_b64=' . escapeshellarg($encodedNav));
             if (!$res['ok']) {
                 throw new \RuntimeException('filler:write top failed: ' . $res['output']);
+            }
+
+            // Записываем сгенерированные виджеты (или очищаем их, если ИИ не справился)
+            $widgets = (array) $session->get('widgets', []);
+            foreach (['left', 'right', 'bottom', 'policy'] as $b) {
+                $blocksToWrite = [];
+                if (isset($widgets[$b]) && is_array($widgets[$b]) && count($widgets[$b]) > 0) {
+                    $blocksToWrite = $widgets[$b];
+                }
+                
+                $encodedWidget = base64_encode((string) json_encode($blocksToWrite, JSON_UNESCAPED_UNICODE));
+                $res = $run('filler:write --domain=' . escapeshellarg($domain) . ' --allias=' . escapeshellarg($allias) . ' --block=' . escapeshellarg($b) . ' --json_b64=' . escapeshellarg($encodedWidget));
+                if (!$res['ok']) {
+                    throw new \RuntimeException("filler:write {$b} failed: " . $res['output']);
+                }
             }
 
             // 6. Схема

@@ -1,6 +1,5 @@
 """
-Production Multi-Agent: Architect -> Markdown Parser -> Designer.
-Работает через строгий State Machine API (wizard:*) в bin/aicli.php.
+Production Multi-Agent: Architect -> Widgets -> Markdown Parser -> Designer.
 """
 from __future__ import annotations
 
@@ -12,7 +11,7 @@ import re
 import os
 from typing import Any
 
-from .models import OllamaClient, Result
+from .models import get_llm_client, Result
 from .aicli_client import AicliClient
 
 # --- ПРОМПТЫ ---
@@ -45,10 +44,28 @@ CRITICAL EXAMPLE (YOU MUST FOLLOW THIS FORMAT EXACTLY):
 
 Output ONLY the JSON object."""
 
+WIDGETS_PROMPT = """You are a web designer.
+Based on this brief: {brief}
+Generate JSON for global blocks: left sidebar, right sidebar, bottom footer, and policy footer.
+Output ONLY valid JSON matching this schema:
+{
+  "left": [{"type": "h3", "content": "..."}, {"type": "text", "content": "..."}],
+  "right": [{"type": "h3", "content": "..."}, {"type": "ul", "items": ["...", "..."]}],
+  "bottom": [{"type": "text", "content": "Copyright ..."}],
+  "policy": [{"type": "text", "content": "Политика конфиденциальности ..."}]
+}
+CRITICAL: If a block is not needed (e.g., no sidebars for a minimal site), return an empty array [] for that key.
+Output ONLY the JSON object, no markdown."""
+
 WRITER_MARKDOWN_PROMPT = """You are a professional copywriter.
 Write a detailed, engaging article for the page "{page_title}".
-Context: {brief}
-CRITICAL RULE: Do NOT write instructions about how to create a website. Write the ACTUAL content of the website (e.g., if the page is a blog post, write a fictional blog post about a dog; if it's "About Us", write a company biography). NEVER mention that you are an AI or that this is a website generator.
+Here is the interview transcript with the client: {brief}
+
+CRITICAL RULES:
+1. Do NOT output the interview transcript. Extract the requirements from it and write the ACTUAL content of the website.
+2. Do NOT write instructions about how to create a website. Write as if the website is already live (e.g., if it's a blog post, write the post itself; if it's "About Us", write the biography).
+3. NEVER mention that you are an AI or that this is a website generator.
+4. Output ONLY Markdown text. No JSON. No HTML tags.
 Available URLs for links: {valid_urls}
 
 RULES:
@@ -65,6 +82,7 @@ DESIGNER_BASE_PROMPT = """You are an expert UI/UX Web Designer.
 Write ONLY the CSS variables for the website based on this brief: {brief}
 Output ONLY valid CSS. No HTML, no markdown.
 CRITICAL RULE: Output ONLY the :root selector with color variables. DO NOT style body, h1, p, or any tags. Only variables!
+CRITICAL RULE 2: The --bg-color MUST be a light color (e.g., #f8fafc) and the --text-color MUST be a dark color (e.g., #1e293b). DO NOT output white text on light backgrounds.
 
 Example output:
 :root {{
@@ -96,7 +114,7 @@ def _safe_href(url: str) -> str | None:
     if not any(url.startswith(p) for p in ('/', '#', 'http://', 'https://')): return None
     return url.replace('"', '%22').replace("'", '%27').replace('<', '%3C').replace('>', '%3E')
 
-def safe_chat(llm: OllamaClient, model: str, messages: list, retries: int = 3) -> dict:
+def safe_chat(llm: Any, model: str, messages: list, retries: int = 3) -> dict:
     for i in range(retries):
         try:
             return llm.chat(model, messages)
@@ -195,22 +213,22 @@ def parse_markdown_to_blocks(md_text: str, client: AicliClient, session_id: str,
         used_classes.add("hero-title")
     return blocks
 
-def run_multi_agent(brief: str, domain: str, allias: str, model: str = "qwen2.5-coder:7b", session_id: str = None) -> None:
-    llm = OllamaClient(timeout=180)
+def run_multi_agent(brief: str, domain: str, allias: str, session_id: str = None) -> None:
+    llm, model = get_llm_client()
+    print(f"  [LLM] Using provider: {llm.__class__.__name__}, model: {model}")
+    
     client = AicliClient()
     total_start = time.time()
 
     def check_cancel():
-        """Проверяет наличие файла отмены из веб-интерфейса."""
         if session_id:
             cancel_file = os.path.join(os.path.dirname(__file__), '..', 'var', f'{session_id}.cancel')
             if os.path.isfile(cancel_file):
                 raise RuntimeError("Отменено пользователем")
 
     def log_time(step_name: str, start_time: float):
-        print(f"  [Time] {step_name}: {time.time() - start_time:.2f}s")
+        print(f"  [Time] {step_name}: {time.time() - start_time:.2f}s", flush=True)
 
-    # === 1. WIZARD: START ===
     step_start = time.time()
     r = client.call_aicli("wizard:start", {})
     if not r.ok:
@@ -221,13 +239,14 @@ def run_multi_agent(brief: str, domain: str, allias: str, model: str = "qwen2.5-
     log_time("Start", step_start)
 
     try:
-        # === 2. ARCHITECT (LLM) ===
         step_start = time.time()
         print("[2/5] Architect is planning the structure...")
         res = safe_chat(llm, model, [{
             "role": "user", "content": f"BRIEF: {brief}\n\n{ARCHITECT_STRUCTURE_PROMPT}"
         }])
-        plan_text = (res.get("message", {}).get("content", "").strip().removeprefix("```json").removesuffix("```").strip())
+        plan_text = res.get("message", {}).get("content", "").strip()
+        # Нативно убираем маркеры Markdown, если они есть
+        plan_text = plan_text.removeprefix("```json").removesuffix("```").strip()
         plan = json.loads(plan_text)
         
         r_dom = client.call_aicli("wizard:domain", {"session_id": internal_session, "domain": domain})
@@ -252,13 +271,38 @@ def run_multi_agent(brief: str, domain: str, allias: str, model: str = "qwen2.5-
         urls_str = ", ".join(["/"] + list(path_map.values()))
         log_time("Architect", step_start)
 
-        # === 3. CONTENT WORKERS ===
+        # === 2.5 WIDGETS ===
+        check_cancel()
+        step_start = time.time()
+        print("[*] Generating global widgets...")
+        
+        try:
+            r_llm = safe_chat(llm, model, [{"role": "user", "content": WIDGETS_PROMPT.format(brief=brief)}])
+            widgets_text = r_llm.get("message", {}).get("content", "").strip().removeprefix("```json").removesuffix("```").strip()
+            widgets = json.loads(widgets_text)
+            
+            # Если ИИ вернул пустые сайдбары, ставим дефолтные заглушки
+            if not widgets.get("left") or len(widgets["left"]) == 0:
+                widgets["left"] = [{"type": "h3", "content": "Информация"}, {"type": "text", "content": "Этот сайт был сгенерирован AI-фабрикой Damoony."}]
+            if not widgets.get("right") or len(widgets["right"]) == 0:
+                widgets["right"] = [{"type": "h3", "content": "Навигация"}, {"type": "ul", "items": ["Главная", "О проекте", "Контакты"]}]
+            
+            r_wid = client.call_aicli("wizard:widgets", {"session_id": internal_session, "widgets": widgets})
+            if not r_wid.ok:
+                print(f"  [!] Widgets rejected: {r_wid.error}")
+        except Exception as e:
+            print(f"  [!] Widgets generation failed (skipping): {e}")
+            # Если виджеты не удались, просто передаем пустой объект, сайт соберется без них
+            client.call_aicli("wizard:widgets", {"session_id": internal_session, "widgets": {}})
+            
+        log_time("Widgets", step_start)
+
         step_start = time.time()
         print("[3/5] Generating content (Markdown mode)...")
         used_classes = {"main-navigation"}
         
         for page in plan.get("pages", []):
-            check_cancel() # ПРОВЕРКА НА ОТМЕНУ
+            check_cancel()
             page_start = time.time()
             page_name = page["name"]
             page_title = page["title"]
@@ -278,8 +322,7 @@ def run_multi_agent(brief: str, domain: str, allias: str, model: str = "qwen2.5-
             print(f"     [Time] Page '{page_title}': {time.time() - page_start:.2f}s")
         log_time("Content Workers", step_start)
 
-        # === 4. DESIGNER: main.css ===
-        check_cancel() # ПРОВЕРКА НА ОТМЕНУ
+        check_cancel()
         step_start = time.time()
         print("[4/5] Designer is creating main.css...")
         r_llm = safe_chat(llm, model, [{"role": "user", "content": DESIGNER_BASE_PROMPT.format(brief=brief)}])
@@ -296,19 +339,21 @@ def run_multi_agent(brief: str, domain: str, allias: str, model: str = "qwen2.5-
 /* --- ЖЕСТКАЯ БАЗОВАЯ СЕТКА (защищена от ИИ) --- */
 img, .img-fluid { max-width: 100% !important; max-height: 500px !important; object-fit: cover; display: block; border-radius: 8px; margin: 20px 0; }
 body { margin: 0; font-family: var(--font-family, system-ui, sans-serif); background: var(--bg-color, #f4f6f8); color: var(--text-color, #1e293b); }
-h1, h2, h3 { color: var(--primary-color, #000000); margin-top: 0; font-weight: 800; }
-p { line-height: 1.6; margin-bottom: 15px; }
+/* Защита от белого текста на белом фоне */
+.center, .left, .right, p, li, span, div { color: var(--text-color, #1e293b) !important; }
+.center h1, .center h2, .center h3, .left h1, .left h2, .left h3, .right h1, .right h2, .right h3 { color: var(--primary-color, #000000) !important; }
+h1, h2, h3 { margin-top: 0; font-weight: 800; }
+p { line-height: 1.6; margin-bottom: 15px; text-align: left; }
 
 .layout { display: grid !important; grid-template-areas: "top top top" "left center right" "bottom bottom bottom" "policy policy policy" !important; grid-template-columns: 260px 1fr 260px !important; gap: 20px !important; max-width: 1400px !important; margin: 0 auto !important; padding: 20px !important; min-height: 100vh !important; box-sizing: border-box !important; }
 .layout > div { display: contents !important; }
 
 .top { grid-area: top !important; background: #fff !important; padding: 20px 30px !important; border-radius: 12px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important; display: flex !important; align-items: center !important; }
 .left { grid-area: left !important; background: var(--bg-color, #fff) !important; padding: 20px !important; border-radius: 12px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important; color: var(--text-color, #000); }
-.center { grid-area: center !important; background: #fff !important; padding: 40px !important; border-radius: 12px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important; }
+.center, .page-content { grid-area: center !important; background: #fff !important; padding: 40px !important; border-radius: 12px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important; }
 .right { grid-area: right !important; background: var(--bg-color, #fff) !important; padding: 20px !important; border-radius: 12px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important; color: var(--text-color, #000); }
 .bottom-wrap, .bottom { grid-area: bottom !important; background: #1e293b !important; color: #94a3b8 !important; padding: 40px 20px !important; border-radius: 12px !important; text-align: center !important; margin-top: 20px !important; }
 .policy { grid-area: policy !important; background: #e2e8f0 !important; color: #64748b !important; padding: 15px !important; border-radius: 12px !important; text-align: center !important; font-size: 14px !important; }
-p { line-height: 1.6; margin-bottom: 15px; text-align: left; }
 .left:empty, .right:empty { display: none !important; }
 
 .main-navigation { display: flex !important; gap: 30px !important; list-style: none !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
@@ -328,8 +373,7 @@ p { line-height: 1.6; margin-bottom: 15px; text-align: left; }
         client.call_aicli("wizard:skin", {"session_id": internal_session, "file": "css/main.css", "content": full_main_css})
         log_time("Designer (main.css)", step_start)
 
-        # === 5. DESIGNER: top.css ===
-        check_cancel() # ПРОВЕРКА НА ОТМЕНУ
+        check_cancel()
         step_start = time.time()
         print("[5/5] Designer is styling top.css...")
         top_prompt = DESIGNER_BLOCK_PROMPT.format(brief=brief, block_name="top (navigation)", classes="main-navigation")
@@ -339,8 +383,7 @@ p { line-height: 1.6; margin-bottom: 15px; text-align: left; }
             client.call_aicli("wizard:skin", {"session_id": internal_session, "file": "css/top.css", "content": top_css})
         log_time("Designer (top.css)", step_start)
 
-        # === COMMIT ===
-        check_cancel() # ПРОВЕРКА ПЕРЕД ЗАПИСЬЮ НА ДИСК
+        check_cancel()
         step_start = time.time()
         print("\n[=>] All drafts collected. Committing to filesystem...")
         r_fin = client.call_aicli("wizard:finish", {"session_id": internal_session})
@@ -363,7 +406,7 @@ if __name__ == "__main__":
         sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
     if len(sys.argv) < 4:
-        print("Usage: python -m ai_agent.brain <domain> <allias> <brief|@file> [model_name] --session=ID")
+        print("Usage: python -m ai_agent.brain <domain> <allias> <brief|@file> --session=ID")
         sys.exit(1)
 
     domain_arg, allias_arg, brief_arg = sys.argv[1], sys.argv[2], sys.argv[3]
@@ -377,5 +420,4 @@ if __name__ == "__main__":
         if arg.startswith('--session='):
             session_arg = arg.split('=')[1]
 
-    model_arg = sys.argv[4] if len(sys.argv) > 4 and not sys.argv[4].startswith('--') else "qwen2.5-coder:7b"
-    run_multi_agent(brief_arg, domain_arg, allias_arg, model=model_arg, session_id=session_arg)
+    run_multi_agent(brief_arg, domain_arg, allias_arg, session_id=session_arg)

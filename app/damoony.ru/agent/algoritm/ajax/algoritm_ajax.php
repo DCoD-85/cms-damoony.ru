@@ -70,7 +70,6 @@ final class algoritm_ajax extends Page
         $varDir = dirname(__DIR__, 5) . '/var';
         $briefFile = $varDir . '/' . $sessionId . '_brief.txt';
         $logFile = $varDir . '/' . $sessionId . '_brain.log';
-        $batFile = $varDir . '/' . $sessionId . '_run.bat';
         
         file_put_contents($briefFile, $brief);
         file_put_contents($logFile, ''); // Очищаем лог
@@ -85,18 +84,28 @@ final class algoritm_ajax extends Page
             }
         }
 
-        $python = 'C:\\Users\\Developer\\AppData\\Local\\Programs\\Python\\Python312\\python.exe'; 
+        // КРОСС-ПЛАТФОРМЕННЫЙ ЗАПУСК PYTHON
+        $python = $cfg['python_path'] ?? 'python';
         $rootDir = dirname(__DIR__, 5);
         
-        // Передаем --session={$sessionId} в brain.py
-        $batContent = "@echo off\r\n";
-        $batContent .= "cd /d \"{$rootDir}\"\r\n";
-        $batContent .= "set PYTHONPATH={$rootDir}\r\n";
-        $batContent .= "\"{$python}\" -m ai_agent.brain {$domain} {$allias} @\"{$briefFile}\" qwen2.5-coder:7b --session={$sessionId} > \"{$logFile}\" 2>&1\r\n";
-        file_put_contents($batFile, $batContent);
+        $brainCmd = escapeshellarg($python) . " -u -m ai_agent.brain {$domain} {$allias} @" . escapeshellarg($briefFile) . " --session={$sessionId} > " . escapeshellarg($logFile) . " 2>&1";
 
-        $cmd = "cmd /c start /B \"\" \"" . $batFile . "\"";
-        pclose(popen($cmd, 'r'));
+        if (PHP_OS_FAMILY === 'Windows') {
+            // Для Windows используем bat-файл
+            $batFile = $varDir . '/' . $sessionId . '_run.bat';
+            $batContent = "@echo off\r\n";
+            $batContent .= "cd /d \"{$rootDir}\"\r\n";
+            $batContent .= "set PYTHONPATH={$rootDir}\r\n";
+            $batContent .= "{$brainCmd}\r\n";
+            file_put_contents($batFile, $batContent);
+            
+            $cmd = "cmd /c start /B \"\" \"" . $batFile . "\"";
+            pclose(popen($cmd, 'r'));
+        } else {
+            // Для Linux/Mac используем nohup
+            $cmd = "cd " . escapeshellarg($rootDir) . " && nohup {$brainCmd} &";
+            exec($cmd);
+        }
 
         return Response::json(['ok' => true, 'session_id' => $sessionId]);
     }
@@ -122,7 +131,6 @@ final class algoritm_ajax extends Page
         $log = (string)file_get_contents($logFile);
 
         if (str_contains($log, 'Fatal error') || str_contains($log, 'Aborting session')) {
-            // Если это была отмена, выдаем соответствующий текст
             if (str_contains($log, 'Отменено пользователем')) {
                 return Response::json(['ok' => false, 'error' => 'Генерация отменена пользователем']);
             }
@@ -133,21 +141,21 @@ final class algoritm_ajax extends Page
             return Response::json([
                 'ok' => true, 
                 'done' => true, 
-                'link' => 'http://coffee.damoony3test.ru/'
+                'link' => 'http://' . ($_SERVER['HTTP_HOST'] ?? 'coffee.damoony3test.ru') . '/'
             ]);
         }
 
-        // ПАРСИНГ СТАТУСА ДЛЯ ПРОГРЕСС-БАРА
         $lines = explode("\n", trim($log));
         $lastStatus = 'Инициализация...';
         
         foreach ($lines as $line) {
             $line = trim($line);
-            if (preg_match('/^\[\d\/5\]/', $line) || str_starts_with($line, '-> Writing:') || str_starts_with($line, '[=>]')) {
+            if (preg_match('/^\[\d\/5\]/', $line) || str_starts_with($line, '-> Writing:') || str_starts_with($line, '[=>]') || str_starts_with($line, '[*]')) {
                 $lastStatus = preg_replace('/\s*\[Time\].*/i', '', $line);
                 $lastStatus = str_replace([
                     '[1/5] Wizard started', 
                     '[2/5] Architect is planning the structure...',
+                    '[*] Generating global widgets...',
                     '[3/5] Generating content (Markdown mode)...',
                     '[4/5] Designer is creating main.css...',
                     '[5/5] Designer is styling top.css...',
@@ -156,6 +164,7 @@ final class algoritm_ajax extends Page
                 ], [
                     'Инициализация...',
                     'Проектирование структуры...',
+                    'Генерация виджетов...',
                     'Генерация контента...',
                     'Создание стилей (main.css)...',
                     'Настройка навигации (top.css)...',
@@ -178,7 +187,6 @@ final class algoritm_ajax extends Page
         $varDir = dirname(__DIR__, 5) . '/var';
         $cancelFile = $varDir . '/' . $sessionId . '.cancel';
         
-        // Создаем файл отмены, brain.py увидит его и прервется
         file_put_contents($cancelFile, '1');
         
         return Response::json(['ok' => true, 'message' => 'Отмена запрошена']);
@@ -186,10 +194,13 @@ final class algoritm_ajax extends Page
 
     private function runCli(string $payload): string
     {
-        $phpBin = 'E:\\OSPanel543\\modules\\php\\PHP_8.4\\php.exe';
+        $phpBin = PHP_BINARY;
         
-        if (!file_exists($phpBin)) {
-            $phpBin = 'php'; 
+        // Защита от OSPanel/Apache: если PHP запущен как модуль, PHP_BINARY = httpd.exe
+        if (PHP_OS_FAMILY === 'Windows' && str_contains(strtolower($phpBin), 'httpd.exe')) {
+            $agentConfigFile = dirname(__DIR__, 5) . '/config/agent.config';
+            $cfg = is_file($agentConfigFile) ? json_decode(file_get_contents($agentConfigFile), true) : [];
+            $phpBin = $cfg['php_path'] ?? 'php'; // Берем путь из конфига или из системного PATH
         }
         
         $cliPath = dirname(__DIR__, 5) . '/bin/aicli.php';

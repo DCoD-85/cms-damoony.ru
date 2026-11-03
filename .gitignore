@@ -93,3 +93,4 @@ config/ainet.config
 # E2E test-domain (генерируется agent_test.py)
 /app/damoony3test.ru/
 config/agent.config
+bin/*.txt

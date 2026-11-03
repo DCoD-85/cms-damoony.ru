@@ -58,7 +58,7 @@ function parseCliResult(string $output): array
  */
 function runCli(string $args): array
 {
-    $cmd = 'php ' . __DIR__ . '/cli.php ' . $args . ' 2>&1';
+    $cmd = escapeshellarg(PHP_BINARY) . ' ' . __DIR__ . '/cli.php ' . $args . ' 2>&1';
     $descriptors = [
         0 => ['pipe', 'r'],
         1 => ['pipe', 'w'],
@@ -107,7 +107,7 @@ function runCli(string $args): array
  */
 function runCliJson(string $args): array
 {
-    $output = shell_exec('php ' . __DIR__ . '/cli.php ' . $args . ' --json 2>&1');
+    $output = shell_exec(escapeshellarg(PHP_BINARY) . ' ' . __DIR__ . '/cli.php ' . $args . ' --json 2>&1');
     $trimmed = trim((string) $output);
     if ($trimmed === '') {
         return ['ok' => false, 'data' => [], 'error' => 'empty output', 'hint' => 'CLI returned nothing'];
@@ -215,11 +215,13 @@ try {
         $history = $args['history'] ?? [];
         
         $messages = [
-            ['role' => 'system', 'content' => 'Ты — веб-архитектор. Твоя цель — собрать ТЗ для сайта.
+            ['role' => 'system', 'content' => 'Ты — встроенный AI-конструктор сайтов в системе Damoony. Ты сам проектируешь и генерируешь сайты. 
+ЗАПРЕЩЕНО предлагать пользователю Wix, Tilda, WordPress или другие CMS. Ты сам являешься платформой.
+Твоя цель — собрать ТЗ для сайта.
 СТРОГИЕ ПРАВИЛА:
-1. ЗАПРЕЩЕНО задавать больше одного вопроса за раз! Спросил про стиль — жди ответа, не задавай другие вопросы.
-2. Если пользователь отвечает коротко (например, "Да", "Нет", "На твой вкус"), прими это как ответ на свой последний вопрос и переходи к следующей теме.
-3. Если пользователь явно просит сбросить (пишет "Удали", "Сброс"), ответь ровно так: "Хорошо, я сбросил все настройки. Давайте начнем сначала. Какой сайт вы хотите создать?"
+1. ЗАПРЕЩЕНО задавать больше одного вопроса за раз! Спросил про стиль — жди ответа.
+2. Если пользователь отвечает коротко ("Да", "Нет", "На твой вкус"), прими это как ответ и переходи к следующей теме.
+3. Если пользователь просит сбросить ("Удали", "Сброс"), ответь: "Хорошо, я сбросил все настройки. Давайте начнем сначала. Какой сайт вы хотите создать?"
 4. Когда соберешь достаточно информации (минимум 3-4 ответа), напиши точную фразу: "Отлично! Я готов создать сайт. Напишите «Создавай», чтобы запустить генерацию."']
         ];
         
@@ -227,38 +229,91 @@ try {
             $messages[] = ['role' => $msg['role'], 'content' => $msg['content']];
         }
 
-        // Простейший клиент Ollama
-        $ollamaUrl = 'http://localhost:11434/api/chat';
-        $payload = [
-            'model' => 'qwen2.5-coder:7b', // простая модель
-			# 'model' => 'gemma4:e4b', // Мощная модель для интервью
-			# 'model' => 'gemma4:26b', // Мощная модель для интервью
-            'messages' => $messages,
-            'stream' => false
-        ];
+        $provider = $agentConfig['llm_provider'] ?? 'local';
+        $isOpenAI = false;
         
-        $ch = curl_init($ollamaUrl);
+        if ($provider === 'deepseek') {
+            $apiKey = $agentConfig['deepseek']['api_key'] ?? '';
+            $model = $agentConfig['deepseek']['model'] ?? 'deepseek-chat';
+            $baseUrl = $agentConfig['deepseek']['base_url'] ?? 'https://api.deepseek.com/v1';
+            if ($apiKey === '') throw new \RuntimeException("DeepSeek API key missing in agent.config");
+            $url = rtrim($baseUrl, '/') . '/chat/completions';
+            $isOpenAI = true;
+        } elseif ($provider === 'groq') {
+            $apiKey = $agentConfig['groq']['api_key'] ?? '';
+            $model = $agentConfig['groq']['model'] ?? 'llama-3.3-70b-versatile';
+            $baseUrl = $agentConfig['groq']['base_url'] ?? 'https://api.groq.com/openai/v1';
+            if ($apiKey === '') throw new \RuntimeException("Groq API key missing in agent.config");
+            $url = rtrim($baseUrl, '/') . '/chat/completions';
+            $isOpenAI = true;
+        } elseif ($provider === 'yandex') {
+            $apiKey = $agentConfig['yandex']['api_key'] ?? '';
+            $folderId = $agentConfig['yandex']['folder_id'] ?? '';
+            $modelName = $agentConfig['yandex']['model'] ?? 'deepseek-v4-flash';
+            $baseUrl = $agentConfig['yandex']['base_url'] ?? 'https://llm.api.cloud.yandex.net/v1';
+            
+            if ($apiKey === '' || $folderId === '') {
+                throw new \RuntimeException("Yandex API key or folder_id missing in agent.config");
+            }
+            
+            $model = "gpt://{$folderId}/{$modelName}";
+            $url = rtrim($baseUrl, '/') . '/chat/completions';
+            $isOpenAI = true;
+        } elseif ($provider === 'cloud_ru') {
+            $apiKey = $agentConfig['cloud_ru']['api_key'] ?? '';
+            $model = $agentConfig['cloud_ru']['model'] ?? 'GigaChat-Lightning';
+            $baseUrl = $agentConfig['cloud_ru']['base_url'] ?? 'https://foundation-models.api.cloud.ru/v1';
+            if ($apiKey === '') throw new \RuntimeException("Cloud.ru API key missing in agent.config");
+            $url = rtrim($baseUrl, '/') . '/chat/completions';
+            $isOpenAI = true;
+        } else {
+            $model = $agentConfig['llm_model'] ?? 'qwen2.5-coder:7b';
+            $url = 'http://localhost:11434/api/chat';
+            $isOpenAI = false;
+        }
+
+        $payload = ['model' => $model, 'messages' => $messages, 'stream' => false];
+        $headers = ['Content-Type: application/json'];
+        if ($isOpenAI) {
+            $headers[] = 'Authorization: Bearer ' . $apiKey;
+        }
+        
+        $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($ch, CURLOPT_TIMEOUT, 120);
+        curl_setopt($ch, CURLOPT_HEADER, true); // Включаем заголовки в ответ
         $response = curl_exec($ch);
         $err = curl_error($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
         curl_close($ch);
 
         if ($err) {
-            throw new \RuntimeException("Ollama error: {$err}");
+            throw new \RuntimeException("LLM error: {$err}");
         }
 
-        $decoded = json_decode((string)$response, true);
+        $rawHeaders = substr((string)$response, 0, $headerSize);
+        $rawBody = substr((string)$response, $headerSize);
         
-        // Если Ollama вернула ошибку (например, модель не найдена)
+        $decoded = json_decode($rawBody, true);
+        
         if (isset($decoded['error'])) {
-            throw new \RuntimeException("Ollama error: " . $decoded['error']);
+            throw new \RuntimeException("LLM error: " . ($decoded['error']['message'] ?? json_encode($decoded['error'])));
         }
 
-        $reply = $decoded['message']['content'] ?? 'Пустой ответ от Ollama. Проверьте консоль.';
+        if (isset($decoded['choices'][0]['message']['content'])) {
+            $reply = $decoded['choices'][0]['message']['content'];
+        } elseif (isset($decoded['message']['content'])) {
+            $reply = $decoded['message']['content'];
+        } else {
+            // Выводим HTTP-код, заголовки и тело ответа
+            throw new \RuntimeException(
+                "Неизвестный ответ от LLM. HTTP {$httpCode}. Headers: " . substr($rawHeaders, 0, 200) . " Body: " . substr($rawBody, 0, 500)
+            );
+        }
 
         respond([
             'ok' => true,
