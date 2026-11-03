@@ -421,6 +421,15 @@ p { line-height: 1.6; margin-bottom: 15px; text-align: left; }
             raise RuntimeError(f"Commit failed: {r_commit.error}")
         log_time("Commit", step_start)
 
+        # Выводим итоговый URL, чтобы PHP мог его прочитать
+        site_url = f"http://{allias}.{domain}/" if domain != "damoony.ru" else f"http://{domain}/{allias}/"
+        # Упрощенная логика: если домен типа *.damoony3test.ru или *.damoony.ru, то используем поддомен
+        if ".damoony" in domain:
+            site_url = f"http://{allias}.{domain}/"
+        else:
+            site_url = f"http://{domain}/{allias}/"
+
+        print(f"SITE_URL: {site_url}")
         print(f"\nDone! Total time: {time.time() - total_start:.2f}s")
 
     except Exception as e:
