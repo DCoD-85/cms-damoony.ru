@@ -1,0 +1,212 @@
+<?php
+
+declare(strict_types=1);
+
+namespace damoony_ru\agent;
+
+use Damoony\Algoritm\Page;
+use Damoony\Ui\Node;
+use Damoony\Http\Response;
+
+final class algoritm_ajax extends Page
+{
+    public function default(): Node|Response|null
+    {
+        $action = $_POST['action'] ?? '';
+
+        if ($action === 'chat') {
+            return $this->handleChat();
+        } elseif ($action === 'generate') {
+            return $this->handleGenerate();
+        } elseif ($action === 'status') {
+            return $this->handleStatus();
+        } elseif ($action === 'cancel') {
+            return $this->handleCancel();
+        }
+
+        return Response::json(['ok' => false, 'error' => 'Invalid action'], 400);
+    }
+
+    private function handleChat(): Response
+    {
+        $historyJson = (string)($_POST['history'] ?? '[]');
+        $history = json_decode($historyJson, true) ?: [];
+        
+        if (empty($history)) {
+            return Response::json(['ok' => false, 'error' => 'History is empty'], 400);
+        }
+
+        $payload = json_encode([
+            'command' => 'agent:chat',
+            'role' => '*',
+            'args' => ['history' => $history]
+        ]);
+
+        $output = $this->runCli($payload);
+        $result = json_decode($output, true);
+        
+        if (!is_array($result)) {
+            return Response::json(['ok' => false, 'error' => 'CLI Output: ' . strip_tags($output)], 500);
+        }
+
+        return Response::json($result);
+    }
+
+    private function handleGenerate(): Response
+    {
+        $historyJson = (string)($_POST['history'] ?? '[]');
+        $history = json_decode($historyJson, true) ?: [];
+        
+        $brief = "";
+        foreach ($history as $msg) {
+            $role = $msg['role'] === 'user' ? 'Клиент' : 'Дизайнер';
+            $brief .= "{$role}: {$msg['content']}\n";
+        }
+
+        $domain = 'damoony3test.ru';
+        $allias = 'coffee';
+        $sessionId = 'gen_' . rand(1000, 9999);
+
+        $varDir = dirname(__DIR__, 5) . '/var';
+        $briefFile = $varDir . '/' . $sessionId . '_brief.txt';
+        $logFile = $varDir . '/' . $sessionId . '_brain.log';
+        $batFile = $varDir . '/' . $sessionId . '_run.bat';
+        
+        file_put_contents($briefFile, $brief);
+        file_put_contents($logFile, ''); // Очищаем лог
+
+        // Добавляем домен в agent.config
+        $agentConfigFile = dirname(__DIR__, 5) . '/config/agent.config';
+        if (file_exists($agentConfigFile)) {
+            $cfg = json_decode(file_get_contents($agentConfigFile), true);
+            if (!in_array($domain, $cfg['allowed_domains'])) {
+                $cfg['allowed_domains'][] = $domain;
+                file_put_contents($agentConfigFile, json_encode($cfg, JSON_PRETTY_PRINT));
+            }
+        }
+
+        $python = 'C:\\Users\\Developer\\AppData\\Local\\Programs\\Python\\Python312\\python.exe'; 
+        $rootDir = dirname(__DIR__, 5);
+        
+        // Передаем --session={$sessionId} в brain.py
+        $batContent = "@echo off\r\n";
+        $batContent .= "cd /d \"{$rootDir}\"\r\n";
+        $batContent .= "set PYTHONPATH={$rootDir}\r\n";
+        $batContent .= "\"{$python}\" -m ai_agent.brain {$domain} {$allias} @\"{$briefFile}\" qwen2.5-coder:7b --session={$sessionId} > \"{$logFile}\" 2>&1\r\n";
+        file_put_contents($batFile, $batContent);
+
+        $cmd = "cmd /c start /B \"\" \"" . $batFile . "\"";
+        pclose(popen($cmd, 'r'));
+
+        return Response::json(['ok' => true, 'session_id' => $sessionId]);
+    }
+
+    private function handleStatus(): Response
+    {
+        $sessionId = $_POST['session_id'] ?? '';
+        if ($sessionId === '') {
+            return Response::json(['ok' => false, 'error' => 'No session ID']);
+        }
+
+        $varDir = dirname(__DIR__, 5) . '/var';
+        $logFile = $varDir . '/' . $sessionId . '_brain.log';
+
+        if (!file_exists($logFile)) {
+            return Response::json(['ok' => true, 'done' => false, 'status_text' => 'Запуск агента...']);
+        }
+
+        if (filesize($logFile) === 0 && (time() - filemtime($logFile) > 180)) {
+            return Response::json(['ok' => false, 'error' => 'Модель не отвечает (возможно, не хватило RAM). Попробуйте qwen2.5-coder:7b']);
+        }
+
+        $log = (string)file_get_contents($logFile);
+
+        if (str_contains($log, 'Fatal error') || str_contains($log, 'Aborting session')) {
+            // Если это была отмена, выдаем соответствующий текст
+            if (str_contains($log, 'Отменено пользователем')) {
+                return Response::json(['ok' => false, 'error' => 'Генерация отменена пользователем']);
+            }
+            return Response::json(['ok' => false, 'error' => 'Ошибка при генерации (см. лог)']);
+        }
+
+        if (str_contains($log, 'Done! Total time:')) {
+            return Response::json([
+                'ok' => true, 
+                'done' => true, 
+                'link' => 'http://coffee.damoony3test.ru/'
+            ]);
+        }
+
+        // ПАРСИНГ СТАТУСА ДЛЯ ПРОГРЕСС-БАРА
+        $lines = explode("\n", trim($log));
+        $lastStatus = 'Инициализация...';
+        
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (preg_match('/^\[\d\/5\]/', $line) || str_starts_with($line, '-> Writing:') || str_starts_with($line, '[=>]')) {
+                $lastStatus = preg_replace('/\s*\[Time\].*/i', '', $line);
+                $lastStatus = str_replace([
+                    '[1/5] Wizard started', 
+                    '[2/5] Architect is planning the structure...',
+                    '[3/5] Generating content (Markdown mode)...',
+                    '[4/5] Designer is creating main.css...',
+                    '[5/5] Designer is styling top.css...',
+                    '[=>] All drafts collected. Committing to filesystem...',
+                    '-> Writing:'
+                ], [
+                    'Инициализация...',
+                    'Проектирование структуры...',
+                    'Генерация контента...',
+                    'Создание стилей (main.css)...',
+                    'Настройка навигации (top.css)...',
+                    'Сборка файлов на диске...',
+                    'Написание текста для:'
+                ], $lastStatus);
+            }
+        }
+
+        return Response::json(['ok' => true, 'done' => false, 'status_text' => $lastStatus]);
+    }
+
+    private function handleCancel(): Response
+    {
+        $sessionId = $_POST['session_id'] ?? '';
+        if ($sessionId === '') {
+            return Response::json(['ok' => false, 'error' => 'No session ID']);
+        }
+
+        $varDir = dirname(__DIR__, 5) . '/var';
+        $cancelFile = $varDir . '/' . $sessionId . '.cancel';
+        
+        // Создаем файл отмены, brain.py увидит его и прервется
+        file_put_contents($cancelFile, '1');
+        
+        return Response::json(['ok' => true, 'message' => 'Отмена запрошена']);
+    }
+
+    private function runCli(string $payload): string
+    {
+        $phpBin = 'E:\\OSPanel543\\modules\\php\\PHP_8.4\\php.exe';
+        
+        if (!file_exists($phpBin)) {
+            $phpBin = 'php'; 
+        }
+        
+        $cliPath = dirname(__DIR__, 5) . '/bin/aicli.php';
+        $cmd = escapeshellarg($phpBin) . ' ' . escapeshellarg($cliPath) . ' 2>&1';
+        
+        $proc = proc_open($cmd, [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+        if (!is_resource($proc)) {
+            return '{"ok":false,"error":"Failed to start CLI"}';
+        }
+
+        fwrite($pipes[0], $payload);
+        fclose($pipes[0]);
+        $output = stream_get_contents($pipes[1]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        proc_close($proc);
+
+        return $output;
+    }
+}

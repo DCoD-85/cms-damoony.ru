@@ -78,6 +78,7 @@ final class Roles
             }
             return array_values(array_unique(array_merge($all, [
                 'wizard:start', 'wizard:domain', 'wizard:allias', 'wizard:plan', 'wizard:content', 'wizard:skin', 'wizard:finish', 'wizard:commit', 'wizard:abort',
+                'agent:chat',
                 'ai:start', 'done', 'engine_status',
                 'net:status', 'image:search', 'image:download', 'fetch',
                 'block:write', 'filler:write',

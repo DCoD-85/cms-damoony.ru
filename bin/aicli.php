@@ -211,6 +211,61 @@ try {
         ], $role, $command, $args);
     }
 
+    if ($command === 'agent:chat') {
+        $history = $args['history'] ?? [];
+        
+        $messages = [
+            ['role' => 'system', 'content' => 'Ты — веб-архитектор. Твоя цель — собрать ТЗ для сайта.
+СТРОГИЕ ПРАВИЛА:
+1. ЗАПРЕЩЕНО задавать больше одного вопроса за раз! Спросил про стиль — жди ответа, не задавай другие вопросы.
+2. Если пользователь отвечает коротко (например, "Да", "Нет", "На твой вкус"), прими это как ответ на свой последний вопрос и переходи к следующей теме.
+3. Если пользователь явно просит сбросить (пишет "Удали", "Сброс"), ответь ровно так: "Хорошо, я сбросил все настройки. Давайте начнем сначала. Какой сайт вы хотите создать?"
+4. Когда соберешь достаточно информации (минимум 3-4 ответа), напиши точную фразу: "Отлично! Я готов создать сайт. Напишите «Создавай», чтобы запустить генерацию."']
+        ];
+        
+        foreach ($history as $msg) {
+            $messages[] = ['role' => $msg['role'], 'content' => $msg['content']];
+        }
+
+        // Простейший клиент Ollama
+        $ollamaUrl = 'http://localhost:11434/api/chat';
+        $payload = [
+            'model' => 'qwen2.5-coder:7b', // простая модель
+			# 'model' => 'gemma4:e4b', // Мощная модель для интервью
+			# 'model' => 'gemma4:26b', // Мощная модель для интервью
+            'messages' => $messages,
+            'stream' => false
+        ];
+        
+        $ch = curl_init($ollamaUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 120);
+        $response = curl_exec($ch);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+        if ($err) {
+            throw new \RuntimeException("Ollama error: {$err}");
+        }
+
+        $decoded = json_decode((string)$response, true);
+        
+        // Если Ollama вернула ошибку (например, модель не найдена)
+        if (isset($decoded['error'])) {
+            throw new \RuntimeException("Ollama error: " . $decoded['error']);
+        }
+
+        $reply = $decoded['message']['content'] ?? 'Пустой ответ от Ollama. Проверьте консоль.';
+
+        respond([
+            'ok' => true,
+            'data' => ['reply' => $reply]
+        ], $role, $command, $args);
+    }
+
     if ($command === 'ai:start') {
         $domains = [];
         $siteFile = __DIR__ . '/../config/site.config';

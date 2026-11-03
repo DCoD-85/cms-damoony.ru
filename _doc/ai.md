@@ -57,7 +57,7 @@ AI не имеет прямого доступа к терминалу. Он о�
 | `corrector` | Исправления | `page:write`, `structure:repair`, `structure:check` |
 | `reporter` | Отчёт | `*:list`, `page:read`, `structure:check` |
 
-**Роль `*` (по умолчанию):** объединяет все 9 ролей и добавляет специфичные команды (`net:*`, `skin:remove`, `block:write`, `filler:write`).
+**Роль `*` (по умолчанию):** объединяет все 9 ролей и добавляет специфичные команды (`net:*`, `skin:remove`, `block:write`, `filler:write`, `agent:chat`). Также включает все команды `wizard:*`.
 
 **Запрещено всем:** `user:new`, `db:migrate`, `admin:passwd`, а также любые destructive-команды (`*:remove`, `trash:clear`, `content:remove`).
 
@@ -112,9 +112,12 @@ AI не имеет прямого доступа к терминалу. Он о�
 4. **Content Workers (Markdown Mode):** LLM генерирует текст в формате Markdown. Python-парсер разбирает его на блоки, конвертирует Markdown-ссылки в безопасный HTML (`<a>`, `<strong>`) и скачивает картинки через AINET.
 5. **Modular Designer:** LLM анализирует классы и генерирует модульные CSS-файлы: `main.css` (переменные), `top.css` (меню), `center.css` (контент). Базовый layout (сетка, ограничение картинок) зашит в Python-код.
 
+
+**Заменить на:**
+```markdown
 **Запуск:**
 ```bash
-python -m ai_agent.brain <domain> <allias> "<brief>" <model_name>
+python -m ai_agent.brain <domain> <allias> "<brief|@file>" <model_name> [--session=ID]
 ```
 
 --- КОНЕЦ ФАЙЛА ---

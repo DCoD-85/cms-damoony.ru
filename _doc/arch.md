@@ -53,6 +53,7 @@
 ### 3.4. Модульный CSS и Layout
 - **Layout:** Базовые стили сетки (`.layout`, `.page-content`) и защита от переполнения картинок (`img { max-width: 100%; max-height: 500px; }`) жестко зашиты в `ai_agent/brain.py` и не могут быть сломаны LLM.
 - **Модульность:** Вместо одного огромного `main.css`, стили генерируются по блокам: `main.css` (переменные), `top.css` (меню), `center.css` (контент). Блоки автоматически подключают свои CSS-файлы при рендеринге.
+- **Защита от ИИ (Grid):** Сгенерированные сайты используют жестко зашитую CSS Grid-сетку (через `brain.py`). Для того чтобы обертки `<div>` от `SchemeRenderer` не ломали сетку, применяется CSS-хак `display: contents` для прямых потомков `.layout`.
 - **Автогенерация стилей блоков:** При создании блока (`block:new`) движок автоматически создает CSS-файл для него в базовом скине (`www/media/{domain}/{allias}/skin/default/css/{block}.css`).
 
 ---
@@ -66,6 +67,7 @@
 - **ContentResponder:** `parse()`, `hostAllowed()`, `requiresAuth()`. Отдаёт только GET/HEAD. 404 при host-mismatch. 302 на логин при `page_refs` (auth).
 - **Компиляторы (`PageCompiler`, `BlockCompiler`):** Принимают JSON-массив блоков (включая тип `nav` для меню) и генерируют безопасный PHP-код. Используют `Text::raw()` для вывода разрешенных тегов `<a>` и `<strong>` (защита от XSS остальных тегов).
 - **AINET (`src/Ainet/`)**: `UrlGuard` (SSRF), `HttpClient` (GET-only, ручные редиректы), `AinetFacade` (bytes без записи на диск). URL whitelist независим от domain whitelist (`agent.config`).
+- **Wizard (`src/Ai/`)**: `WizardManager` управляет строгим State Machine (init -> domain -> plan -> content -> commit). Отделяет валидацию черновиков от реального вызова CLI. `WizardSession` — DTO для хранения состояния (JSON в `var/wizard/`).
 
 ---
 

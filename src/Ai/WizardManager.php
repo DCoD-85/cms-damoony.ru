@@ -255,7 +255,7 @@ final class WizardManager
         $undo = [];
 
         try {
-            // 1. Domain (проверяем через CLI, а не через файлы)
+            // 1. Domain
             $domainExists = false;
             $resDomains = $runJson('domain:list');
             if ($resDomains['ok'] ?? false) {
@@ -277,7 +277,7 @@ final class WizardManager
                 $undo[] = 'domain:remove --domain=' . escapeshellarg($domain) . ' --force';
             }
 
-            // 2. Allias (Clean Slate: CLI сам разберется, есть ли мусор)
+            // 2. Allias
             $res = $run('allias:remove --domain=' . escapeshellarg($domain) . ' --name=' . escapeshellarg($allias) . ' --force');
             if (!$res['ok']) {
                 throw new \RuntimeException('allias:remove failed: ' . $res['output']);
@@ -298,7 +298,7 @@ final class WizardManager
                 }
             }
 
-            // 4. Blocks
+            // 4. Blocks & Filler
             foreach (['top', 'left', 'right', 'bottom', 'policy'] as $b) {
                 $blockDir = $this->paths->domain($domain) . '/.alliasglobal/' . $b;
                 if (!Fs::isDir($blockDir)) {
@@ -317,16 +317,22 @@ final class WizardManager
                 }
             }
 
-            // 5. Меню и Схема
+            // ==========================================
+            // СОЗДАЕМ КАРТУ ПУТЕЙ ДЛЯ ВСЕХ СТРАНИЦ (Меню + Файлы)
+            // ==========================================
+            $pathMap = ['__root__' => ''];
+            foreach ($plan as $p) {
+                if ($p['name'] === '__root__') continue;
+                $parent = $p['parent'] ?? '';
+                $parentPath = ($parent === '__root__' || $parent === null || $parent === '') ? '' : ($pathMap[$parent] ?? $parent);
+                $pathMap[$p['name']] = $parentPath === '' ? $p['name'] : $parentPath . '/' . $p['name'];
+            }
+
+            // 5. Меню
             $menuItems = [['title' => 'Главная', 'url' => '/']];
             foreach ($plan as $p) {
-                if ($p['name'] === '__root__') {
-                    continue;
-                }
-                $url = '/' . $p['name'];
-                if ($p['parent'] && $p['parent'] !== '__root__') {
-                    $url = '/' . $p['parent'] . '/' . $p['name'];
-                }
+                if ($p['name'] === '__root__') continue;
+                $url = '/' . $pathMap[$p['name']]; // Берем полный путь из карты
                 $menuItems[] = ['title' => $p['title'], 'url' => $url];
             }
 
@@ -337,6 +343,16 @@ final class WizardManager
                 throw new \RuntimeException('filler:write top failed: ' . $res['output']);
             }
 
+            // 6. Схема
+            $schemeDir = $this->paths->domain($domain) . '/.alliasscheme';
+            $editorFile = $schemeDir . '/' . $allias . '.editor.json';
+            if (!Fs::isFile($editorFile)) {
+                $res = $run('scheme:new --domain=' . escapeshellarg($domain) . ' --name=' . escapeshellarg($allias));
+                if (!$res['ok']) {
+                    throw new \RuntimeException("scheme:new failed: " . $res['output']);
+                }
+            }
+            
             $schemeJson = [
                 'children' => array_map(static fn (string $s): array => ['type' => 'slot', 'name' => $s], ['top', 'left', 'center', 'right', 'bottom', 'policy']),
                 'meta' => [
@@ -350,7 +366,7 @@ final class WizardManager
                 throw new \RuntimeException('scheme:save failed: ' . $res['output']);
             }
 
-            // 6. Pages
+            // 7. Страницы (Создание папок)
             usort($plan, static function (array $a, array $b): int {
                 $depthA = $a['name'] === '__root__' ? 0 : ($a['parent'] ? 2 : 1);
                 $depthB = $b['name'] === '__root__' ? 0 : ($b['parent'] ? 2 : 1);
@@ -359,16 +375,19 @@ final class WizardManager
 
             foreach ($plan as $p) {
                 $name = $p['name'];
-                if ($name === '__root__') {
-                    continue;
-                }
+                if ($name === '__root__') continue;
 
-                $pageDir = $this->paths->algoritm($domain, $allias) . '/' . ($p['parent'] && $p['parent'] !== '__root__' ? $p['parent'] . '/' : '') . $name;
+                $fullRelPath = $pathMap[$name]; 
+                $pageDir = $this->paths->algoritm($domain, $allias) . '/' . $fullRelPath;
+                
                 if (!Fs::isDir($pageDir)) {
                     $args = 'page:new --domain=' . escapeshellarg($domain) . ' --allias=' . escapeshellarg($allias) . ' --name=' . escapeshellarg($name);
-                    if ($p['parent'] && $p['parent'] !== '__root__') {
-                        $args .= ' --parent=' . escapeshellarg($p['parent']);
+                    
+                    $parentPath = $p['parent'] && $p['parent'] !== '__root__' ? ($pathMap[$p['parent']] ?? $p['parent']) : '';
+                    if ($parentPath !== '') {
+                        $args .= ' --parent=' . escapeshellarg($parentPath);
                     }
+                    
                     $res = $run($args);
                     if (!$res['ok']) {
                         throw new \RuntimeException("page:new {$name} failed: " . $res['output']);
@@ -376,7 +395,7 @@ final class WizardManager
                 }
             }
 
-            // 7. Content (через json_file, чтобы обойти лимит Windows)
+            // 8. Контент
             $tmpDir = $this->paths->root() . '/var/tmp';
             if (!Fs::isDir($tmpDir)) {
                 Fs::mkdir($tmpDir);
@@ -391,7 +410,14 @@ final class WizardManager
                 Fs::writeAtomic($tmpFile, (string) json_encode($blocks, JSON_UNESCAPED_UNICODE));
 
                 try {
-                    $res = $run('page:write --domain=' . escapeshellarg($domain) . ' --allias=' . escapeshellarg($allias) . ' --name=' . escapeshellarg($cliName) . ' --json_file=' . escapeshellarg($tmpFile) . ' --with_schema=1');
+                    $writeArgs = 'page:write --domain=' . escapeshellarg($domain) . ' --allias=' . escapeshellarg($allias) . ' --name=' . escapeshellarg($cliName) . ' --json_file=' . escapeshellarg($tmpFile) . ' --with_schema=1';
+                    
+                    $parentPath = $p['parent'] && $p['parent'] !== '__root__' ? ($pathMap[$p['parent']] ?? $p['parent']) : '';
+                    if ($parentPath !== '') {
+                        $writeArgs .= ' --parent=' . escapeshellarg($parentPath);
+                    }
+                    
+                    $res = $run($writeArgs);
                     if (!$res['ok']) {
                         throw new \RuntimeException("page:write {$name} failed: " . $res['output']);
                     }
@@ -400,7 +426,7 @@ final class WizardManager
                 }
             }
 
-            // 8. Skins
+            // 9. Скины
             foreach ($skins as $file => $cssContent) {
                 $encodedCss = base64_encode((string) $cssContent);
                 $res = $run('skin:edit --domain=' . escapeshellarg($domain) . ' --allias=' . escapeshellarg($allias) . ' --name=default --file=' . escapeshellarg($file) . ' --content_b64=' . escapeshellarg($encodedCss));
