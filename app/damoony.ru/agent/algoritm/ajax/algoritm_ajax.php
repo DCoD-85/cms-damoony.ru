@@ -194,15 +194,23 @@ final class algoritm_ajax extends Page
 
     private function runCli(string $payload): string
     {
-        $phpBin = PHP_BINARY;
-        
-        // Защита от OSPanel/Apache: если PHP запущен как модуль, PHP_BINARY = httpd.exe
-        if (PHP_OS_FAMILY === 'Windows' && str_contains(strtolower($phpBin), 'httpd.exe')) {
-            $agentConfigFile = dirname(__DIR__, 5) . '/config/agent.config';
-            $cfg = is_file($agentConfigFile) ? json_decode(file_get_contents($agentConfigFile), true) : [];
-            $phpBin = $cfg['php_path'] ?? 'php'; // Берем путь из конфига или из системного PATH
+        // 1. Пытаемся взять путь из конфига
+        $agentConfigFile = dirname(__DIR__, 5) . '/config/agent.config';
+        $cfg = is_file($agentConfigFile) ? json_decode(file_get_contents($agentConfigFile), true) : [];
+        $phpBin = trim($cfg['php_path'] ?? '');
+
+        // 2. Если в конфиге пусто — определяем автоматически
+        if ($phpBin === '') {
+            $phpBin = PHP_BINARY;
+            // Если это веб-сервер (Apache/FPM), берем просто системный 'php'
+            if (str_contains(strtolower($phpBin), 'httpd.exe') || 
+                str_contains(strtolower($phpBin), 'apache') || 
+                str_contains(strtolower($phpBin), 'fpm') || 
+                empty($phpBin)) {
+                $phpBin = 'php';
+            }
         }
-        
+
         $cliPath = dirname(__DIR__, 5) . '/bin/aicli.php';
         $cmd = escapeshellarg($phpBin) . ' ' . escapeshellarg($cliPath) . ' 2>&1';
         
