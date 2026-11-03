@@ -1,35 +1,39 @@
-# vendor
+# ================================================================
+# Damoony Engine — .gitignore (v2.0.0, audit-clean)
+# Правило: один паттерн — одно место. Без дублей.
+# ================================================================
+
+# --- Composer / vendor ---
 /vendor/
 /vendor-dev/
-
-# composer
 /composer.phar
+/bin/composer.phar
 
-# phpunit / phpstan / cs-fixer cache
+# --- PHP tooling caches ---
 .phpunit.cache/
 .phpunit.result.cache
 .php-cs-fixer.cache
 /_dev/var/
 
-# IDE
+# --- IDE ---
 /.idea/
 /.vscode/
 *.swp
 *.swo
 *~
 
-# OS
+# --- OS ---
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# PHP
+# --- PHP build artifacts ---
 *.log
 phpstan.neon.local
 /build/
 /coverage/
 
-# секреты и runtime
+# --- Secrets / runtime ---
 /secure/
 /var/
 /storage/
@@ -37,60 +41,49 @@ env.php
 .env
 .env.local
 
-# тестовые артефакты
-/tests/fixtures/scenarios/**/actual/
-/tests/fixtures/scenarios/**/diff/
-
-# временное
-/tmp/
-*.tmp
-
-# аудит-снапшот
-/_doc/_audit-snapshot.txt
-
-# dev-маркер (локально)
-/.dev
-/_dev/.dev
-/bin/composer.phar
-
-# прод-специфика: конфиги с секретами и пользовательский media
+# --- Prod configs (содержат секреты) ---
 /config/admin.config
 /config/site.config
 /config/engine.config
 /config/agent.config
 /config/ainet.config
 
-# audit dev docs
-/_devdocoldpro/
+# --- Test artifacts ---
+/tests/fixtures/scenarios/**/actual/
+/tests/fixtures/scenarios/**/diff/
 
+# --- Временное ---
+/tmp/
+*.tmp
+
+# --- Dev-маркеры ---
+/.dev
 /_dev/.dev
-/bin/composer.phar
+
+# --- Аудит-доки (архив, не пушим) ---
+/_devdocoldpro/
+/_doc/_audit-snapshot.txt
+
+# --- Карантин (runtime, создаётся CLI) ---
 app/*_trash_*
 
-# python venv (локальная разработка)
+# --- Python / ai_agent ---
 /venv/
+/ai_agent/.session/
+/ai_agent/__pycache__/
 
-# AI media (генерируется через media:store, runtime)
-/www/media/*/*/
-!/www/media/*/skin/
-!/www/media/admin/
-!/www/media/shared/
+# --- AI content (runtime, вне webroot, только через CLI content:store) ---
+/content/
 
-# AI media (генерируется через media:store, runtime)
+# --- AI media (runtime) ---
 /www/media/*/*/
 !/www/media/*/skin/
 !/www/media/admin/
 !/www/media/shared/
 /www/media/.trash/
 
-# ai_agent runtime sessions
-/ai_agent/.session/
-/ai_agent/__pycache__/
-# AI content (runtime, вне webroot, только через CLI content:store)
-/content/
-config/ainet.config
-
-# E2E test-domain (генерируется agent_test.py)
+# --- E2E test-domain (генерируется brain.py) ---
 /app/damoony3test.ru/
-config/agent.config
-bin/*.txt
+
+# --- Локальный мусор CLI ---
+/bin/*.txt
