@@ -19,6 +19,7 @@ use Damoony\Cli\Commands\ContentGcCommand;
 use Damoony\Cli\Commands\ContentListCommand;
 use Damoony\Cli\Commands\ContentRemoveCommand;
 use Damoony\Cli\Commands\ContentStoreCommand;
+use Damoony\Cli\Commands\DbCallCommand;
 use Damoony\Cli\Commands\DbDescribeCommand;
 use Damoony\Cli\Commands\DbMethodsCommand;
 use Damoony\Cli\Commands\DbMigrateCommand;
@@ -126,6 +127,7 @@ $registry->add(new UserNewCommand($db));
 $registry->add(new DbSchemaCommand($siteConfig, $db));
 $registry->add(new DbMethodsCommand());
 $registry->add(new DbDescribeCommand());
+$registry->add(new DbCallCommand($siteConfig, $db));
 
 $app = new Application($registry, new ArgvParser(), new Renderer());
 exit($app->run($_SERVER['argv']));

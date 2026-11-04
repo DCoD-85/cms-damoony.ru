@@ -1,0 +1,187 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Damoony\Cli\Commands;
+
+use Damoony\Cli\CommandInterface;
+use Damoony\Cli\Context;
+use Damoony\Cli\Result;
+use Damoony\Core\Config;
+use Damoony\Db\Connection;
+use Damoony\Db\DataProvider\FilesProvider;
+use Damoony\Db\DataProvider\NewsProvider;
+use Damoony\Db\DataProvider\ProviderInterface;
+use Damoony\Db\DataProvider\UserProvider;
+
+final class DbCallCommand implements CommandInterface
+{
+    /** @var array<string, class-string> */
+    private const PROVIDERS = [
+        'user' => UserProvider::class,
+        'news' => NewsProvider::class,
+        'files' => FilesProvider::class,
+    ];
+
+    /**
+     * Read-only методы (whitelist). Write-методы — db:mutate (Phase 3.2).
+     *
+     * @var array<string, list<string>>
+     */
+    private const READ_METHODS = [
+        'user' => ['by_login', 'by_id', 'exists'],
+        'news' => ['recent', 'by_slug', 'by_id', 'search_like'],
+        'files' => ['all_active', 'by_slug', 'by_id'],
+    ];
+
+    public function __construct(
+        private readonly Config $site,
+        private readonly Connection $db,
+    ) {
+    }
+
+    public function name(): string
+    {
+        return 'db:call';
+    }
+
+    public function description(): string
+    {
+        return 'Invoke a read-only provider method (whitelist, args validated by reflection)';
+    }
+
+    public function run(array $args, Context $context): Result
+    {
+        $r = new Result();
+
+        $domain = $args['domain'] ?? '';
+        if ($domain === ''
+            || !preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain)
+            || str_contains($domain, '..')) {
+            $r->error('Invalid or missing --domain.');
+
+            return $r;
+        }
+
+        $alias = $args['alias'] ?? 'www';
+        if (!preg_match('/^[a-z][a-z0-9_]*$/', $alias)) {
+            $r->error('Invalid --alias.');
+
+            return $r;
+        }
+
+        $provider = $args['provider'] ?? '';
+        $class = self::PROVIDERS[$provider] ?? null;
+        if ($class === null) {
+            $r->error('Unknown provider: "' . $provider . '". Allowed: ' . implode(', ', array_keys(self::PROVIDERS)));
+
+            return $r;
+        }
+
+        $method = $args['method'] ?? '';
+        if (!preg_match('/^[a-z][a-z0-9_]*$/', $method)) {
+            $r->error('Invalid or missing --method.');
+
+            return $r;
+        }
+
+        $allowed = self::READ_METHODS[$provider] ?? [];
+        if (!in_array($method, $allowed, true)) {
+            $r->error(
+                "Method '{$method}' is not in read-only whitelist for '{$provider}'."
+                . ' Allowed: ' . implode(', ', $allowed),
+            );
+
+            return $r;
+        }
+
+        $paramsJson = $args['params'] ?? '{}';
+        $params = json_decode($paramsJson, true);
+        if (!is_array($params)) {
+            $r->error('--params must be valid JSON object.');
+
+            return $r;
+        }
+
+        $ref = new \ReflectionClass($class);
+        $refMethod = $ref->getMethod($method);
+
+        $ordered = [];
+        $unknown = array_diff(array_keys($params), array_map(
+            static fn (\ReflectionParameter $p): string => $p->getName(),
+            $refMethod->getParameters(),
+        ));
+        if ($unknown !== []) {
+            $r->error('Unknown params: ' . implode(', ', $unknown));
+
+            return $r;
+        }
+
+        foreach ($refMethod->getParameters() as $p) {
+            $name = $p->getName();
+            $hasKey = array_key_exists($name, $params);
+
+            if (!$hasKey && $p->isOptional()) {
+                $ordered[] = $p->getDefaultValue();
+                continue;
+            }
+
+            if (!$hasKey) {
+                $r->error("Missing required param '{$name}'.");
+
+                return $r;
+            }
+
+            $value = $params[$name];
+            $type = $p->getType();
+            $typeName = $type instanceof \ReflectionNamedType ? $type->getName() : 'mixed';
+
+            $cast = $this->castValue($value, $typeName);
+            if ($cast === null) {
+                $r->error("Param '{$name}' expects {$typeName}, got " . gettype($value));
+
+                return $r;
+            }
+
+            $ordered[] = $cast;
+        }
+
+        try {
+            /** @var ProviderInterface $instance */
+            $instance = new $class($this->db, $this->site, $domain, $alias);
+            $result = $refMethod->invokeArgs($instance, $ordered);
+        } catch (\Throwable $e) {
+            $r->error('Call failed: ' . $e->getMessage());
+
+            return $r;
+        }
+
+        $r->data = [
+            'provider' => $provider,
+            'method' => $method,
+            'domain' => $domain,
+            'alias' => $alias,
+            'result' => $result,
+        ];
+        if (is_array($result)) {
+            $r->data['row_count'] = count($result);
+        }
+        $context->step("Called {$provider}::{$method}", true);
+
+        return $r;
+    }
+
+    /**
+     * @return string|int|bool|array<mixed>|null null = type mismatch
+     */
+    private function castValue(mixed $value, string $typeName): string|int|bool|array|null
+    {
+        return match ($typeName) {
+            'string' => is_string($value) ? $value : (is_int($value) || is_float($value) ? (string) $value : null),
+            'int' => is_int($value) ? $value : (is_numeric($value) ? (int) $value : null),
+            'bool' => is_bool($value) ? $value : null,
+            'array' => is_array($value) ? $value : null,
+            default => null,
+        };
+    }
+}

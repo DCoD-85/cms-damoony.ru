@@ -28,6 +28,7 @@ final class Roles
             'db:schema',
             'db:methods',
             'db:describe',
+            'db:call',
         ],
         self::PLANNER => [
             'domain:list', 'allias:list', 'page:list', 'page:read',
@@ -45,6 +46,7 @@ final class Roles
             'page:new', 'page:write', 'page:read', 'page:list',
             'image:search', 'image:download',
             'domain:list', 'allias:list',
+            'db:call',
         ],
         self::DESIGNER => [
             'wizard:skin',
@@ -66,6 +68,7 @@ final class Roles
             'domain:list', 'allias:list', 'page:list', 'page:read',
             'scheme:list', 'block:list', 'filler:list',
             'structure:check',
+            'db:call',
         ],
     ];
 
