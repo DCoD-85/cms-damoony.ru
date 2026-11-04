@@ -18,6 +18,7 @@ final class DbMethodsCommand implements CommandInterface
         'user' => UserProvider::class,
         'news' => NewsProvider::class,
         'files' => FilesProvider::class,
+        'audit' => AuditProvider::class,
     ];
 
     /**

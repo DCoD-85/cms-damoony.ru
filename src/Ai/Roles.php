@@ -47,6 +47,7 @@ final class Roles
             'image:search', 'image:download',
             'domain:list', 'allias:list',
             'db:call',
+            'db:mutate',
         ],
         self::DESIGNER => [
             'wizard:skin',

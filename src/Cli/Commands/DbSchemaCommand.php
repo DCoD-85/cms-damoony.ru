@@ -196,7 +196,7 @@ final class DbSchemaCommand implements CommandInterface
             return true;
         }
 
-        $global = ['users', 'sessions', 'roles', 'user_roles', 'login_attempts', 'migrations'];
+        $global = ['users', 'sessions', 'roles', 'user_roles', 'login_attempts', 'migrations', 'audit_log'];
         if (in_array($table, $global, true)) {
             return true;
         }

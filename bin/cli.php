@@ -23,6 +23,7 @@ use Damoony\Cli\Commands\DbCallCommand;
 use Damoony\Cli\Commands\DbDescribeCommand;
 use Damoony\Cli\Commands\DbMethodsCommand;
 use Damoony\Cli\Commands\DbMigrateCommand;
+use Damoony\Cli\Commands\DbMutateCommand;
 use Damoony\Cli\Commands\DbSchemaCommand;
 use Damoony\Cli\Commands\DomainListCommand;
 use Damoony\Cli\Commands\DomainNewCommand;
@@ -128,6 +129,7 @@ $registry->add(new DbSchemaCommand($siteConfig, $db));
 $registry->add(new DbMethodsCommand());
 $registry->add(new DbDescribeCommand());
 $registry->add(new DbCallCommand($siteConfig, $db));
+$registry->add(new DbMutateCommand($siteConfig, $db));
 
 $app = new Application($registry, new ArgvParser(), new Renderer());
 exit($app->run($_SERVER['argv']));

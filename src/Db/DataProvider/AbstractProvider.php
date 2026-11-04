@@ -38,8 +38,21 @@ abstract class AbstractProvider implements ProviderInterface
         return $this->alias;
     }
 
+    /**
+     * Глобальные таблицы (users, sessions, audit_log, ...) не префиксуются,
+     * даже если alias настроен с prefix в site.config.domains_aliases_storage.
+     */
+    protected function isGlobal(): bool
+    {
+        return false;
+    }
+
     final public function physicalTable(): string
     {
+        if ($this->isGlobal()) {
+            return $this->table();
+        }
+
         $map = $this->site->getByKey(['domains_aliases_storage'], []);
         if (!is_array($map)) {
             return $this->table();
