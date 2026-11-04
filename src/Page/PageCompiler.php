@@ -32,7 +32,7 @@ final class PageCompiler
         $code .= "    public function default(): Node|Response|null\n    {\n";
         $code .= "        \$content = Builder::div('page-content');\n\n";
 
-        $code .= BlockCodegen::render($blocks, '$content', 8);
+        $code .= BlockCodegen::render($blocks, '$content', '$this->context', 8);
 
         if ($withSchema) {
             $code .= "        \$this->setContent('center', \$content);\n\n";

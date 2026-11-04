@@ -30,7 +30,7 @@ final class BlockCompiler
         $code .= "        \$context->meta->addCss(\$cssUrl);\n\n";
         $code .= "        \$content = Builder::div('{$blockName}');\n\n";
 
-        $code .= BlockCodegen::render($blocks, '$content', 8);
+        $code .= BlockCodegen::render($blocks, '$content', '$context', 8);
 
         $code .= "        return \$content;\n    }\n}\n";
 

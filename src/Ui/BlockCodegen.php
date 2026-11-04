@@ -11,21 +11,21 @@ final class BlockCodegen
      *
      * @param list<array<string, mixed>> $blocks
      */
-    public static function render(array $blocks, string $parentVar, int $indent = 8): string
+    public static function render(array $blocks, string $parentVar, string $contextVar, int $indent = 8): string
     {
         $counter = 0;
-        return self::renderWithCounter($blocks, $parentVar, $counter, $indent);
+        return self::renderWithCounter($blocks, $parentVar, $contextVar, $counter, $indent);
     }
 
     /**
      * @param list<array<string, mixed>> $blocks
      */
-    private static function renderWithCounter(array $blocks, string $parentVar, int &$counter, int $indent): string
+    private static function renderWithCounter(array $blocks, string $parentVar, string $contextVar, int &$counter, int $indent): string
     {
         $code = '';
         foreach ($blocks as $block) {
             $var = '$el' . (++$counter);
-            $code .= self::renderOne($block, $parentVar, $var, $counter, $indent);
+            $code .= self::renderOne($block, $parentVar, $var, $contextVar, $counter, $indent);
         }
         return $code;
     }
@@ -33,7 +33,7 @@ final class BlockCodegen
     /**
      * @param array<string, mixed> $block
      */
-    private static function renderOne(array $block, string $parentVar, string $var, int &$counter, int $indent): string
+    private static function renderOne(array $block, string $parentVar, string $var, string $contextVar, int &$counter, int $indent): string
     {
         $pad = str_repeat(' ', $indent);
         $type = (string) ($block['type'] ?? '');
@@ -135,7 +135,7 @@ final class BlockCodegen
             $code .= $pad . $var . ' = Builder::' . $tag . "();\n";
             $code .= $attrs;
             if (is_array($children) && $children !== []) {
-                $code .= self::renderWithCounter($children, $var, $counter, $indent);
+                $code .= self::renderWithCounter($children, $var, $contextVar, $counter, $indent);
             }
             $code .= $pad . $parentVar . '->append(' . $var . ");\n\n";
             return $code;
@@ -201,8 +201,15 @@ final class BlockCodegen
             $code .= $pad . $var . '->attrs()->add(\'method\', ' . var_export($method, true) . ");\n";
             $code .= $attrs;
 
+            if ($method === 'POST') {
+                $csrfVar = '$el' . (++$counter);
+                $code .= $pad . $csrfVar . " = Builder::input('hidden', '_csrf', '');\n";
+                $code .= $pad . $csrfVar . "->attrs()->add('value', " . $contextVar . "->service('csrf')->token());\n";
+                $code .= $pad . $var . '->append(' . $csrfVar . ");\n";
+            }
+
             if (is_array($children) && $children !== []) {
-                $code .= self::renderWithCounter($children, $var, $counter, $indent);
+                $code .= self::renderWithCounter($children, $var, $contextVar, $counter, $indent);
             }
             $code .= $pad . $parentVar . '->append(' . $var . ");\n\n";
             return $code;
