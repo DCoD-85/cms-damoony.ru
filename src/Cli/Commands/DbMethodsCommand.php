@@ -144,8 +144,11 @@ final class DbMethodsCommand implements CommandInterface
 
         $lines = preg_split('/\R/', $doc) ?: [];
         foreach ($lines as $line) {
-            $clean = (string) preg_replace('#^\s*/\*+|\*+/\s*$|^\s*\*\s?#', '', $line);
-            $clean = trim($clean);
+            $clean = trim($line);
+            $clean = (string) preg_replace('#^/\*+#', '', $clean);
+            $clean = (string) preg_replace('#\*/$#', '', $clean);
+            $clean = trim((string) preg_replace('#^\*+\s?#', '', $clean));
+
             if ($clean === '' || str_starts_with($clean, '@')) {
                 continue;
             }

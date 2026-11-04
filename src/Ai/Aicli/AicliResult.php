@@ -61,10 +61,20 @@ final readonly class AicliResult
             $data = [];
         }
 
+        // CLI Result::error() пишет в 'errors' (array); также поддерживаем 'error' (scalar)
+        $error = (string) ($json['error'] ?? '');
+        if ($error === '' && isset($json['errors']) && is_array($json['errors'])) {
+            $parts = [];
+            foreach ($json['errors'] as $e) {
+                $parts[] = is_string($e) ? $e : (string) json_encode($e);
+            }
+            $error = implode('; ', $parts);
+        }
+
         return new self(
             ok: (bool) ($json['ok'] ?? false),
             data: $data,
-            error: (string) ($json['error'] ?? ''),
+            error: $error,
             hint: (string) ($json['hint'] ?? ''),
         );
     }
