@@ -36,6 +36,7 @@ final class Roles
         ],
         self::ARCHITECT => [
             'wizard:start', 'wizard:domain', 'wizard:allias', 'wizard:plan', 'wizard:abort',
+            'dataprovider:add-method',
             'domain:new', 'allias:new',
             'block:new', 'scheme:new', 'filler:new',
             'skin:new', 'skin:list',

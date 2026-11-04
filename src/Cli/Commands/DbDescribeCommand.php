@@ -7,20 +7,15 @@ namespace Damoony\Cli\Commands;
 use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
-use Damoony\Db\DataProvider\AuditProvider;
-use Damoony\Db\DataProvider\FilesProvider;
-use Damoony\Db\DataProvider\NewsProvider;
-use Damoony\Db\DataProvider\UserProvider;
+use Damoony\Db\DataProvider\ProviderResolver;
+use Damoony\Files\Paths;
 
 final class DbDescribeCommand implements CommandInterface
 {
-    /** @var array<string, class-string> */
-    private const PROVIDERS = [
-        'user' => UserProvider::class,
-        'news' => NewsProvider::class,
-        'files' => FilesProvider::class,
-        'audit' => AuditProvider::class,
-    ];
+    public function __construct(
+        private readonly Paths $paths,
+    ) {
+    }
 
     public function name(): string
     {
@@ -36,12 +31,14 @@ final class DbDescribeCommand implements CommandInterface
     {
         $r = new Result();
 
+        $domain = $args['domain'] ?? '';
+        $alias = $args['alias'] ?? 'www';
         $provider = $args['provider'] ?? '';
         $method = $args['method'] ?? '';
 
-        $class = self::PROVIDERS[$provider] ?? null;
+        $class = ProviderResolver::resolveClass($provider, $domain, $alias, $this->paths);
         if ($class === null) {
-            $r->error('Unknown provider: "' . $provider . '". Allowed: ' . implode(', ', array_keys(self::PROVIDERS)));
+            $r->error('Unknown provider: "' . $provider . '". Allowed: ' . implode(', ', ['user', 'news', 'files', 'audit']));
 
             return $r;
         }
@@ -95,6 +92,8 @@ final class DbDescribeCommand implements CommandInterface
 
         $r->data = [
             'provider' => $provider,
+            'domain' => $domain,
+            'alias' => $alias,
             'class' => $class,
             'method' => $method,
             'params' => $params,

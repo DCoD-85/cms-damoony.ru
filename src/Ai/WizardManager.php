@@ -89,7 +89,7 @@ final class WizardManager
         // КРЕМЕНЬ: Проверяем наличие папки на диске И запись в конфиге
         $domain = (string) $session->get('domain');
         $alliasDir = $this->paths->algoritm($domain, $allias);
-        
+
         $siteFile = $this->paths->siteConfig();
         $site = [];
         if (is_file($siteFile)) {
@@ -363,7 +363,9 @@ final class WizardManager
             // ==========================================
             $pathMap = ['__root__' => ''];
             foreach ($plan as $p) {
-                if ($p['name'] === '__root__') continue;
+                if ($p['name'] === '__root__') {
+                    continue;
+                }
                 $parent = (string) ($p['parent'] ?? '');
                 $parentPath = ($parent === '__root__' || $parent === '') ? '' : ($pathMap[$parent] ?? $parent);
                 $pathMap[$p['name']] = $parentPath === '' ? $p['name'] : $parentPath . '/' . $p['name'];
@@ -372,14 +374,16 @@ final class WizardManager
             // 5. Меню
             $menuItems = [['title' => 'Главная', 'url' => '/']];
             foreach ($plan as $p) {
-                if ($p['name'] === '__root__') continue;
+                if ($p['name'] === '__root__') {
+                    continue;
+                }
                 $url = '/' . $pathMap[$p['name']]; // Берем полный путь из карты
                 $menuItems[] = ['title' => $p['title'], 'url' => $url];
             }
 
             $navBlocks = [['type' => 'nav', 'items' => $menuItems, 'class' => 'main-navigation']];
             $encodedNav = base64_encode((string) json_encode($navBlocks, JSON_UNESCAPED_UNICODE));
-			$res = $run('filler:write --domain=' . escapeshellarg($domain) . ' --allias=' . escapeshellarg($allias) . ' --block=top --json_b64=' . escapeshellarg($encodedNav));
+            $res = $run('filler:write --domain=' . escapeshellarg($domain) . ' --allias=' . escapeshellarg($allias) . ' --block=top --json_b64=' . escapeshellarg($encodedNav));
             if (!$res['ok']) {
                 throw new \RuntimeException('filler:write top failed: ' . $res['output']);
             }
@@ -391,7 +395,7 @@ final class WizardManager
                 if (isset($widgets[$b]) && is_array($widgets[$b]) && count($widgets[$b]) > 0) {
                     $blocksToWrite = $widgets[$b];
                 }
-                
+
                 $encodedWidget = base64_encode((string) json_encode($blocksToWrite, JSON_UNESCAPED_UNICODE));
                 $res = $run('filler:write --domain=' . escapeshellarg($domain) . ' --allias=' . escapeshellarg($allias) . ' --block=' . escapeshellarg($b) . ' --json_b64=' . escapeshellarg($encodedWidget));
                 if (!$res['ok']) {
@@ -405,10 +409,10 @@ final class WizardManager
             if (!Fs::isFile($editorFile)) {
                 $res = $run('scheme:new --domain=' . escapeshellarg($domain) . ' --name=' . escapeshellarg($allias));
                 if (!$res['ok']) {
-                    throw new \RuntimeException("scheme:new failed: " . $res['output']);
+                    throw new \RuntimeException('scheme:new failed: ' . $res['output']);
                 }
             }
-            
+
             $schemeJson = [
                 'children' => array_map(static fn (string $s): array => ['type' => 'slot', 'name' => $s], ['top', 'left', 'center', 'right', 'bottom', 'policy']),
                 'meta' => [
@@ -431,19 +435,21 @@ final class WizardManager
 
             foreach ($plan as $p) {
                 $name = $p['name'];
-                if ($name === '__root__') continue;
+                if ($name === '__root__') {
+                    continue;
+                }
 
-                $fullRelPath = $pathMap[$name]; 
+                $fullRelPath = $pathMap[$name];
                 $pageDir = $this->paths->algoritm($domain, $allias) . '/' . $fullRelPath;
-                
+
                 if (!Fs::isDir($pageDir)) {
                     $args = 'page:new --domain=' . escapeshellarg($domain) . ' --allias=' . escapeshellarg($allias) . ' --name=' . escapeshellarg($name);
-                    
+
                     $parentPath = $p['parent'] && $p['parent'] !== '__root__' ? ($pathMap[$p['parent']] ?? $p['parent']) : '';
                     if ($parentPath !== '') {
                         $args .= ' --parent=' . escapeshellarg($parentPath);
                     }
-                    
+
                     $res = $run($args);
                     if (!$res['ok']) {
                         throw new \RuntimeException("page:new {$name} failed: " . $res['output']);
@@ -467,12 +473,12 @@ final class WizardManager
 
                 try {
                     $writeArgs = 'page:write --domain=' . escapeshellarg($domain) . ' --allias=' . escapeshellarg($allias) . ' --name=' . escapeshellarg($cliName) . ' --json_file=' . escapeshellarg($tmpFile) . ' --with_schema=1';
-                    
+
                     $parentPath = $p['parent'] && $p['parent'] !== '__root__' ? ($pathMap[$p['parent']] ?? $p['parent']) : '';
                     if ($parentPath !== '') {
                         $writeArgs .= ' --parent=' . escapeshellarg($parentPath);
                     }
-                    
+
                     $res = $run($writeArgs);
                     if (!$res['ok']) {
                         throw new \RuntimeException("page:write {$name} failed: " . $res['output']);

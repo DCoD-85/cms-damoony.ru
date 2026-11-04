@@ -8,6 +8,7 @@ use Damoony\Cli\Commands\DbMutateCommand;
 use Damoony\Cli\Context;
 use Damoony\Core\Config;
 use Damoony\Db\Connection;
+use Damoony\Files\Paths;
 use PHPUnit\Framework\TestCase;
 
 final class DbMutateCommandTest extends TestCase
@@ -15,6 +16,7 @@ final class DbMutateCommandTest extends TestCase
     private Connection $conn;
 
     private Config $site;
+    private Paths $paths;
 
     protected function setUp(): void
     {
@@ -25,11 +27,12 @@ final class DbMutateCommandTest extends TestCase
         $pdo->exec('CREATE TABLE files (id INTEGER PRIMARY KEY AUTOINCREMENT, slug TEXT NOT NULL UNIQUE, filename TEXT NOT NULL, filesize INTEGER NOT NULL DEFAULT 0, status TEXT NOT NULL DEFAULT "active", downloads INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)');
         $pdo->exec('CREATE TABLE audit_log (id INTEGER PRIMARY KEY AUTOINCREMENT, domain TEXT NOT NULL, alias_name TEXT NOT NULL, provider TEXT NOT NULL, method TEXT NOT NULL, params_json TEXT, result_ok INTEGER NOT NULL, error_text TEXT, source TEXT NOT NULL, role_name TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)');
         $this->site = new Config([]);
+        $this->paths = new Paths(sys_get_temp_dir());
     }
 
     private function cmd(): DbMutateCommand
     {
-        return new DbMutateCommand($this->site, $this->conn);
+        return new DbMutateCommand($this->paths, $this->site, $this->conn);
     }
 
     private function ctx(): Context

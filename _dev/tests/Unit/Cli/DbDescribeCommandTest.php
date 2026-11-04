@@ -6,13 +6,15 @@ namespace Damoony\Tests\Unit\Cli;
 
 use Damoony\Cli\Commands\DbDescribeCommand;
 use Damoony\Cli\Context;
+use Damoony\Files\Paths;
 use PHPUnit\Framework\TestCase;
 
 final class DbDescribeCommandTest extends TestCase
 {
+    private Paths $paths;
     private function cmd(): DbDescribeCommand
     {
-        return new DbDescribeCommand();
+        return new DbDescribeCommand(new Paths(sys_get_temp_dir()));
     }
 
     private function ctx(): Context

@@ -13,6 +13,7 @@ use Damoony\Ai\Aicli\Handler\AlliasNewHandler;
 use Damoony\Ai\Aicli\Handler\BlockListHandler;
 use Damoony\Ai\Aicli\Handler\BlockNewHandler;
 use Damoony\Ai\Aicli\Handler\BlockWriteHandler;
+use Damoony\Ai\Aicli\Handler\DataproviderAddMethodHandler;
 use Damoony\Ai\Aicli\Handler\DbCallHandler;
 use Damoony\Ai\Aicli\Handler\DbDescribeHandler;
 use Damoony\Ai\Aicli\Handler\DbMethodsHandler;
@@ -139,6 +140,7 @@ $handlers = [
     new DbDescribeHandler($client, $root, $allowedDomains),
     new DbCallHandler($client, $root, $allowedDomains),
     new DbMutateHandler($client, $root, $allowedDomains),
+    new DataproviderAddMethodHandler($client, $root, $allowedDomains),
     new DomainListHandler($client, $root, $allowedDomains),
     new DomainNewHandler($client, $root, $allowedDomains),
     new AlliasListHandler($client, $root, $allowedDomains),

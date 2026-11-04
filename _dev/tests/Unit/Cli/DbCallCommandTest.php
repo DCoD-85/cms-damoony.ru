@@ -8,6 +8,7 @@ use Damoony\Cli\Commands\DbCallCommand;
 use Damoony\Cli\Context;
 use Damoony\Core\Config;
 use Damoony\Db\Connection;
+use Damoony\Files\Paths;
 use PHPUnit\Framework\TestCase;
 
 final class DbCallCommandTest extends TestCase
@@ -15,6 +16,7 @@ final class DbCallCommandTest extends TestCase
     private Connection $conn;
 
     private Config $site;
+    private Paths $paths;
 
     protected function setUp(): void
     {
@@ -31,11 +33,12 @@ final class DbCallCommandTest extends TestCase
         );
 
         $this->site = new Config([]);
+        $this->paths = new Paths(sys_get_temp_dir());
     }
 
     private function cmd(): DbCallCommand
     {
-        return new DbCallCommand($this->site, $this->conn);
+        return new DbCallCommand($this->paths, $this->site, $this->conn);
     }
 
     private function ctx(): Context
@@ -198,7 +201,7 @@ final class DbCallCommandTest extends TestCase
                 'd1.ru' => ['www' => ['db' => 'main', 'prefix' => 'd1_www__']],
             ],
         ]);
-        $cmd = new DbCallCommand($site, $this->conn);
+        $cmd = new DbCallCommand($this->paths, $site, $this->conn);
 
         $r = $cmd->run([
             'domain' => 'd1.ru', 'alias' => 'www', 'provider' => 'news', 'method' => 'recent',

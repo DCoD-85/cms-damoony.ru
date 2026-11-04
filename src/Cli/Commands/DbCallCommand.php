@@ -9,22 +9,12 @@ use Damoony\Cli\Context;
 use Damoony\Cli\Result;
 use Damoony\Core\Config;
 use Damoony\Db\Connection;
-use Damoony\Db\DataProvider\AuditProvider;
-use Damoony\Db\DataProvider\FilesProvider;
-use Damoony\Db\DataProvider\NewsProvider;
 use Damoony\Db\DataProvider\ProviderInterface;
-use Damoony\Db\DataProvider\UserProvider;
+use Damoony\Db\DataProvider\ProviderResolver;
+use Damoony\Files\Paths;
 
 final class DbCallCommand implements CommandInterface
 {
-    /** @var array<string, class-string> */
-    private const PROVIDERS = [
-        'user' => UserProvider::class,
-        'news' => NewsProvider::class,
-        'files' => FilesProvider::class,
-        'audit' => AuditProvider::class,
-    ];
-
     /**
      * Read-only методы (whitelist). Write-методы — db:mutate (Phase 3.2).
      *
@@ -38,6 +28,7 @@ final class DbCallCommand implements CommandInterface
     ];
 
     public function __construct(
+        private readonly Paths $paths,
         private readonly Config $site,
         private readonly Connection $db,
     ) {
@@ -74,9 +65,9 @@ final class DbCallCommand implements CommandInterface
         }
 
         $provider = $args['provider'] ?? '';
-        $class = self::PROVIDERS[$provider] ?? null;
+        $class = ProviderResolver::resolveClass($provider, $domain, $alias, $this->paths);
         if ($class === null) {
-            $r->error('Unknown provider: "' . $provider . '". Allowed: ' . implode(', ', array_keys(self::PROVIDERS)));
+            $r->error('Unknown provider: "' . $provider . '". Allowed: ' . implode(', ', ['user', 'news', 'files', 'audit']));
 
             return $r;
         }

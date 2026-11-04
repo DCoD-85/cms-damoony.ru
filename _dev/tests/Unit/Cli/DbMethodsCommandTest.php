@@ -8,6 +8,7 @@ use Damoony\Cli\Commands\DbMethodsCommand;
 use Damoony\Cli\Context;
 use Damoony\Core\Config;
 use Damoony\Db\Connection;
+use Damoony\Files\Paths;
 use PHPUnit\Framework\TestCase;
 
 final class DbMethodsCommandTest extends TestCase
@@ -15,16 +16,18 @@ final class DbMethodsCommandTest extends TestCase
     private Connection $conn;
 
     private Config $site;
+    private Paths $paths;
 
     protected function setUp(): void
     {
         $this->conn = new Connection(['driver' => 'sqlite', 'path' => ':memory:']);
         $this->site = new Config([]);
+        $this->paths = new Paths(sys_get_temp_dir());
     }
 
     private function cmd(): DbMethodsCommand
     {
-        return new DbMethodsCommand($this->site, $this->conn);
+        return new DbMethodsCommand($this->paths, $this->site, $this->conn);
     }
 
     private function ctx(): Context
