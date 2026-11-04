@@ -95,3 +95,7 @@ app/*_trash_*
 /www/media/site[0-9]*.damoony.ru/
 /www/media/site[0-9]*.damoony3.ru/
 /www/media/site[0-9]*.damoony3test.ru/
+
+# --- AI edit sessions (runtime) ---
+/app/.sess_*/
+/app/_trash_sess_*/

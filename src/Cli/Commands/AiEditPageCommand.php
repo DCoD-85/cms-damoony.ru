@@ -79,7 +79,7 @@ final class AiEditPageCommand implements CommandInterface
             . "4. Keep existing blocks unless the user explicitly asks to delete them.\n\n"
             . "EXAMPLE OF CORRECT FORMAT:\n"
             . "[\n  {\"type\": \"h1\", \"content\": \"Hello\"},\n  {\"type\": \"text\", \"content\": \"World\"}\n]\n\n"
-            . "Output JSON array only. No markdown, no explanations.";
+            . 'Output JSON array only. No markdown, no explanations.';
 
         // 4. Спрашиваем LLM
         $client = new AicliClient(dirname(__DIR__, 3));
@@ -87,7 +87,7 @@ final class AiEditPageCommand implements CommandInterface
 
         $context->step('Asking AI...', true);
         $chatResult = $chatHandler->handle('agent:chat', [
-            'history' => [['role' => 'user', 'content' => $llmPrompt]]
+            'history' => [['role' => 'user', 'content' => $llmPrompt]],
         ], 'designer');
 
         if (!$chatResult->ok) {
@@ -124,27 +124,27 @@ final class AiEditPageCommand implements CommandInterface
         $r->data = [
             'old' => $currentBlocks,
             'new' => $newBlocks,
-            'diff' => count($newBlocks) - count($currentBlocks) . ' blocks'
+            'diff' => count($newBlocks) - count($currentBlocks) . ' blocks',
         ];
 
         if ($force) {
             file_put_contents($jsonFile, json_encode($newBlocks, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
-            
+
             $encoded = base64_encode((string) json_encode($newBlocks, JSON_UNESCAPED_UNICODE));
-            
+
             $root = $this->paths->root();
             $cliPath = $root . '/bin/cli.php';
-            
-            $cmd = 'php ' . escapeshellarg($cliPath) . ' page:write --domain=' . escapeshellarg($realDomain) 
-                 . ' --allias=' . escapeshellarg($alias) 
+
+            $cmd = 'php ' . escapeshellarg($cliPath) . ' page:write --domain=' . escapeshellarg($realDomain)
+                 . ' --allias=' . escapeshellarg($alias)
                  . ' --name=' . escapeshellarg($page)
                  . ' --json_b64=' . escapeshellarg($encoded)
                  . ' 2>&1';
-            
+
             $output = shell_exec($cmd);
-            
+
             if (str_contains((string)$output, 'OK')) {
-                $context->step("Page recompiled successfully", true);
+                $context->step('Page recompiled successfully', true);
                 $r->data['file'] = $jsonFile;
             } else {
                 $r->error('Compilation failed: ' . $output);
