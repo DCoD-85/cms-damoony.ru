@@ -7,6 +7,7 @@ namespace Damoony\Cli\Commands;
 use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
+use Damoony\Db\DataProvider\AuditProvider;
 use Damoony\Db\DataProvider\FilesProvider;
 use Damoony\Db\DataProvider\NewsProvider;
 use Damoony\Db\DataProvider\UserProvider;
@@ -18,6 +19,7 @@ final class DbDescribeCommand implements CommandInterface
         'user' => UserProvider::class,
         'news' => NewsProvider::class,
         'files' => FilesProvider::class,
+        'audit' => AuditProvider::class,
     ];
 
     public function name(): string

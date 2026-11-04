@@ -134,8 +134,8 @@ final class DbMutateCommandTest extends TestCase
     public function testMissingRequiredParamFails(): void
     {
         $r = $this->cmd()->run([
-            'domain' => 'example.ru', 'provider' => 'news', 'method' => 'create',
-            'params' => '{}', 'force' => '1',
+            'domain' => 'example.ru', 'provider' => 'files', 'method' => 'create',
+            'params' => '{"slug":"a"}', 'force' => '1', // filename is missing
         ], $this->ctx());
         $this->assertFalse($r->ok);
     }
@@ -143,8 +143,8 @@ final class DbMutateCommandTest extends TestCase
     public function testUnknownParamFails(): void
     {
         $r = $this->cmd()->run([
-            'domain' => 'example.ru', 'provider' => 'news', 'method' => 'create',
-            'params' => '{"slug":"a","title":"A","nope":1}', 'force' => '1',
+            'domain' => 'example.ru', 'provider' => 'files', 'method' => 'create',
+            'params' => '{"slug":"a","filename":"a.pdf","nope":1}', 'force' => '1',
         ], $this->ctx());
         $this->assertFalse($r->ok);
         $this->assertStringContainsString('Unknown params: nope', $r->errors[0]);

@@ -117,42 +117,44 @@ final class DbMutateCommand implements CommandInterface
 
         $ref = new \ReflectionClass($class);
         $refMethod = $ref->getMethod($method);
+        $methodParams = $refMethod->getParameters();
 
         $ordered = [];
-        $unknown = array_diff(array_keys($params), array_map(
-            static fn (\ReflectionParameter $p): string => $p->getName(),
-            $refMethod->getParameters(),
-        ));
-        if ($unknown !== []) {
-            $r->error('Unknown params: ' . implode(', ', $unknown));
-
-            return $r;
-        }
-
-        foreach ($refMethod->getParameters() as $p) {
-            $name = $p->getName();
-            $hasKey = array_key_exists($name, $params);
-
-            if (!$hasKey && $p->isOptional()) {
-                $ordered[] = $p->getDefaultValue();
-                continue;
-            }
-            if (!$hasKey) {
-                $r->error("Missing required param '{$name}'.");
-
+        if (count($methodParams) === 1 && $methodParams[0]->getType() instanceof \ReflectionNamedType && $methodParams[0]->getType()->getName() === 'array') {
+            $ordered[] = $params;
+        } else {
+            $unknown = array_diff(array_keys($params), array_map(
+                static fn (\ReflectionParameter $p): string => $p->getName(),
+                $methodParams,
+            ));
+            if ($unknown !== []) {
+                $r->error('Unknown params: ' . implode(', ', $unknown));
                 return $r;
             }
 
-            $value = $params[$name];
-            $type = $p->getType();
-            $typeName = $type instanceof \ReflectionNamedType ? $type->getName() : 'mixed';
-            $cast = $this->castValue($value, $typeName);
-            if ($cast === null) {
-                $r->error("Param '{$name}' expects {$typeName}, got " . gettype($value));
+            foreach ($methodParams as $p) {
+                $name = $p->getName();
+                $hasKey = array_key_exists($name, $params);
 
-                return $r;
+                if (!$hasKey && $p->isOptional()) {
+                    $ordered[] = $p->getDefaultValue();
+                    continue;
+                }
+                if (!$hasKey) {
+                    $r->error("Missing required param '{$name}'.");
+                    return $r;
+                }
+
+                $value = $params[$name];
+                $type = $p->getType();
+                $typeName = $type instanceof \ReflectionNamedType ? $type->getName() : 'mixed';
+                $cast = $this->castValue($value, $typeName);
+                if ($cast === null) {
+                    $r->error("Param '{$name}' expects {$typeName}, got " . gettype($value));
+                    return $r;
+                }
+                $ordered[] = $cast;
             }
-            $ordered[] = $cast;
         }
 
         $audit = new AuditProvider($this->db, $this->site, $domain, $alias);

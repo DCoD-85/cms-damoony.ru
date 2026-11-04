@@ -9,6 +9,7 @@ use Damoony\Cli\Context;
 use Damoony\Cli\Result;
 use Damoony\Core\Config;
 use Damoony\Db\Connection;
+use Damoony\Db\DataProvider\AuditProvider;
 use Damoony\Db\DataProvider\FilesProvider;
 use Damoony\Db\DataProvider\NewsProvider;
 use Damoony\Db\DataProvider\ProviderInterface;
@@ -21,6 +22,7 @@ final class DbCallCommand implements CommandInterface
         'user' => UserProvider::class,
         'news' => NewsProvider::class,
         'files' => FilesProvider::class,
+        'audit' => AuditProvider::class,
     ];
 
     /**
@@ -32,6 +34,7 @@ final class DbCallCommand implements CommandInterface
         'user' => ['by_login', 'by_id', 'exists'],
         'news' => ['recent', 'by_slug', 'by_id', 'search_like'],
         'files' => ['all_active', 'by_slug', 'by_id'],
+        'audit' => ['recent', 'by_entity'],
     ];
 
     public function __construct(
@@ -104,45 +107,46 @@ final class DbCallCommand implements CommandInterface
 
         $ref = new \ReflectionClass($class);
         $refMethod = $ref->getMethod($method);
+        $methodParams = $refMethod->getParameters();
 
         $ordered = [];
-        $unknown = array_diff(array_keys($params), array_map(
-            static fn (\ReflectionParameter $p): string => $p->getName(),
-            $refMethod->getParameters(),
-        ));
-        if ($unknown !== []) {
-            $r->error('Unknown params: ' . implode(', ', $unknown));
-
-            return $r;
-        }
-
-        foreach ($refMethod->getParameters() as $p) {
-            $name = $p->getName();
-            $hasKey = array_key_exists($name, $params);
-
-            if (!$hasKey && $p->isOptional()) {
-                $ordered[] = $p->getDefaultValue();
-                continue;
-            }
-
-            if (!$hasKey) {
-                $r->error("Missing required param '{$name}'.");
-
+        if (count($methodParams) === 1 && $methodParams[0]->getType() instanceof \ReflectionNamedType && $methodParams[0]->getType()->getName() === 'array') {
+            $ordered[] = $params;
+        } else {
+            $unknown = array_diff(array_keys($params), array_map(
+                static fn (\ReflectionParameter $p): string => $p->getName(),
+                $methodParams,
+            ));
+            if ($unknown !== []) {
+                $r->error('Unknown params: ' . implode(', ', $unknown));
                 return $r;
             }
 
-            $value = $params[$name];
-            $type = $p->getType();
-            $typeName = $type instanceof \ReflectionNamedType ? $type->getName() : 'mixed';
+            foreach ($methodParams as $p) {
+                $name = $p->getName();
+                $hasKey = array_key_exists($name, $params);
 
-            $cast = $this->castValue($value, $typeName);
-            if ($cast === null) {
-                $r->error("Param '{$name}' expects {$typeName}, got " . gettype($value));
+                if (!$hasKey && $p->isOptional()) {
+                    $ordered[] = $p->getDefaultValue();
+                    continue;
+                }
+                if (!$hasKey) {
+                    $r->error("Missing required param '{$name}'.");
+                    return $r;
+                }
 
-                return $r;
+                $value = $params[$name];
+                $type = $p->getType();
+                $typeName = $type instanceof \ReflectionNamedType ? $type->getName() : 'mixed';
+
+                $cast = $this->castValue($value, $typeName);
+                if ($cast === null) {
+                    $r->error("Param '{$name}' expects {$typeName}, got " . gettype($value));
+                    return $r;
+                }
+
+                $ordered[] = $cast;
             }
-
-            $ordered[] = $cast;
         }
 
         try {
