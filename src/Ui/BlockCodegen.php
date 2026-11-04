@@ -129,6 +129,56 @@ final class BlockCodegen
             return $code;
         }
 
+
+        if ($type === 'table') {
+            $headers = $block['headers'] ?? [];
+            $rows = $block['rows'] ?? [];
+
+            $code .= $pad . $var . " = Builder::el('table');\n";
+            $code .= $attrs;
+
+            if (is_array($headers) && $headers !== []) {
+                $thead = '$el' . (++$counter);
+                $code .= $pad . $thead . " = Builder::el('thead');\n";
+
+                $trHead = '$el' . (++$counter);
+                $code .= $pad . $trHead . " = Builder::el('tr');\n";
+
+                foreach ($headers as $h) {
+                    $th = '$el' . (++$counter);
+                    $code .= $pad . $th . ' = Builder::el(\'th\')->append(Text::raw(strip_tags(' . var_export((string) $h, true) . ", '<a><strong>')));\n";
+                    $code .= $pad . $trHead . '->append(' . $th . ");\n";
+                }
+
+                $code .= $pad . $thead . '->append(' . $trHead . ");\n";
+                $code .= $pad . $var . '->append(' . $thead . ");\n";
+            }
+
+            if (is_array($rows) && $rows !== []) {
+                $tbody = '$el' . (++$counter);
+                $code .= $pad . $tbody . " = Builder::el('tbody');\n";
+
+                foreach ($rows as $row) {
+                    $tr = '$el' . (++$counter);
+                    $code .= $pad . $tr . " = Builder::el('tr');\n";
+
+                    foreach ((array) $row as $cell) {
+                        $td = '$el' . (++$counter);
+                        $code .= $pad . $td . ' = Builder::el(\'td\')->append(Text::raw(strip_tags(' . var_export((string) $cell, true) . ", '<a><strong>')));\n";
+                        $code .= $pad . $tr . '->append(' . $td . ");\n";
+                    }
+
+                    $code .= $pad . $tbody . '->append(' . $tr . ");\n";
+                }
+
+                $code .= $pad . $var . '->append(' . $tbody . ");\n";
+            }
+
+            $code .= $pad . $parentVar . '->append(' . $var . ");\n\n";
+
+            return $code;
+        }
+
         return '';
     }
 }
