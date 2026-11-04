@@ -144,3 +144,14 @@ AI не имеет прямого доступа к терминалу. Он о�
 
 - **Таймер:** засекает время с момента запуска генерации.
 - **Сброс контекста:** если пользователь пишет «Удали» или «Сброс», JS очищает массив `chatHistory` и просит LLM начать интервью заново.
+
+
+---
+
+## 8. AIUI (AI User Interface) и brain.py integration
+
+- **brain.py (Формы):** Автоматически определяет, нужна ли форма (через LLM или keyword-fallback), и генерирует её с CSRF-токеном через `_build_form_blocks()`.
+- **AIUI (Команда):** `php bin/cli.php ai:edit-page --domain=... --alias=... --page=... --prompt="Добавь H1"`
+- **AIUI (Web UI):** Split-screen (`www/admin/aiui.php`). Чат с LLM + превью.
+- **AIUI (Endpoint):** `POST /admin/ai_edit.php` (принимает JSON `{prompt, apply}`).
+- **Принцип:** LLM получает текущий JSON блоков, возвращает новый, `PageCompiler` перекомпилирует PHP. Никакого raw PHP от ИИ.
