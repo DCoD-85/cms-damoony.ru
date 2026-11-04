@@ -85,10 +85,22 @@ final class BlockCodegen
             return $code;
         }
 
-        if ($type === 'link' || $type === 'button') {
+        if ($type === 'link') {
             $code .= $pad . $var . ' = Builder::a(' . var_export(UrlSanitizer::forHref($url), true) . ')->append(Text::raw(strip_tags(' . var_export($content, true) . ", '<a><strong>')));\n";
             $code .= $attrs;
             $code .= $pad . $parentVar . '->append(Builder::p()->append(' . $var . "));\n\n";
+            return $code;
+        }
+
+        if ($type === 'button') {
+            $buttonType = (string) ($block['button_type'] ?? 'submit');
+            if (!in_array($buttonType, ['submit', 'button', 'reset'], true)) {
+                $buttonType = 'submit';
+            }
+            $code .= $pad . $var . ' = Builder::button(' . var_export($buttonType, true) . ");\n";
+            $code .= $attrs;
+            $code .= $pad . $var . '->append(Text::raw(strip_tags(' . var_export($content, true) . ", '<a><strong>')));\n";
+            $code .= $pad . $parentVar . '->append(' . $var . ");\n\n";
             return $code;
         }
 
@@ -176,6 +188,105 @@ final class BlockCodegen
 
             $code .= $pad . $parentVar . '->append(' . $var . ");\n\n";
 
+            return $code;
+        }
+
+
+        if ($type === 'form') {
+            $action = $block['action'] ?? '#';
+            $method = strtoupper((string)($block['method'] ?? 'POST'));
+
+            $code .= $pad . $var . " = Builder::el('form');\n";
+            $code .= $pad . $var . '->attrs()->add(\'action\', ' . var_export(UrlSanitizer::forHref($action), true) . ");\n";
+            $code .= $pad . $var . '->attrs()->add(\'method\', ' . var_export($method, true) . ");\n";
+            $code .= $attrs;
+
+            if (is_array($children) && $children !== []) {
+                $code .= self::renderWithCounter($children, $var, $counter, $indent);
+            }
+            $code .= $pad . $parentVar . '->append(' . $var . ");\n\n";
+            return $code;
+        }
+
+        if ($type === 'label') {
+            $for = $block['for'] ?? '';
+            $code .= $pad . $var . " = Builder::el('label');\n";
+            if ($for !== '') {
+                $code .= $pad . $var . '->attrs()->add(\'for\', ' . var_export($for, true) . ");\n";
+            }
+            $code .= $attrs;
+            $code .= $pad . $var . '->append(Text::raw(strip_tags(' . var_export($content, true) . ", '<a><strong>')));\n";
+            $code .= $pad . $parentVar . '->append(' . $var . ");\n\n";
+            return $code;
+        }
+
+        if ($type === 'input') {
+            $inputType = $block['input_type'] ?? 'text';
+            $name = $block['name'] ?? '';
+            $value = $block['value'] ?? '';
+            $placeholder = $block['placeholder'] ?? '';
+            $required = $block['required'] ?? false;
+
+            $code .= $pad . $var . ' = Builder::input(' . var_export($inputType, true) . ', ' . var_export($name, true) . ', ' . var_export($value, true) . ");\n";
+            if ($placeholder !== '') {
+                $code .= $pad . $var . '->attrs()->add(\'placeholder\', ' . var_export($placeholder, true) . ");\n";
+            }
+            if ($required) {
+                $code .= $pad . $var . "->attrs()->add('required', 'required');\n";
+            }
+            $code .= $attrs;
+            $code .= $pad . $parentVar . '->append(' . $var . ");\n\n";
+            return $code;
+        }
+
+        if ($type === 'textarea') {
+            $name = $block['name'] ?? '';
+            $rows = (int) ($block['rows'] ?? 3);
+            $placeholder = $block['placeholder'] ?? '';
+            $required = $block['required'] ?? false;
+
+            $code .= $pad . $var . " = Builder::el('textarea');\n";
+            if ($name !== '') {
+                $code .= $pad . $var . '->attrs()->add(\'name\', ' . var_export($name, true) . ");\n";
+            }
+            $code .= $pad . $var . '->attrs()->add(\'rows\', ' . var_export((string) $rows, true) . ");\n";
+            if ($placeholder !== '') {
+                $code .= $pad . $var . '->attrs()->add(\'placeholder\', ' . var_export($placeholder, true) . ");\n";
+            }
+            if ($required) {
+                $code .= $pad . $var . "->attrs()->add('required', 'required');\n";
+            }
+            $code .= $attrs;
+            $code .= $pad . $var . '->append(Text::raw(strip_tags(' . var_export($content, true) . ", '<a><strong>')));\n";
+            $code .= $pad . $parentVar . '->append(' . $var . ");\n\n";
+            return $code;
+        }
+
+        if ($type === 'select') {
+            $name = $block['name'] ?? '';
+            $options = $block['options'] ?? [];
+            $required = $block['required'] ?? false;
+
+            $code .= $pad . $var . " = Builder::el('select');\n";
+            if ($name !== '') {
+                $code .= $pad . $var . '->attrs()->add(\'name\', ' . var_export($name, true) . ");\n";
+            }
+            if ($required) {
+                $code .= $pad . $var . "->attrs()->add('required', 'required');\n";
+            }
+            $code .= $attrs;
+
+            foreach ((array) $options as $opt) {
+                if (is_array($opt) && isset($opt['value'], $opt['label'])) {
+                    $optVar = '$el' . (++$counter);
+                    $code .= $pad . $optVar . " = Builder::el('option');\n";
+                    $code .= $pad . $optVar . '->attrs()->add(\'value\', ' . var_export((string) $opt['value'], true) . ");\n";
+                    $code .= $pad . $optVar . '->append(Text::raw(strip_tags(' . var_export((string) $opt['label'], true) . ", '<a><strong>')));\n";
+                    $code .= $pad . $var . '->append(' . $optVar . ");\n";
+                }
+            }
+
+            $code .= $pad . $parentVar . '->append(' . $var . ");\n\n";
             return $code;
         }
 

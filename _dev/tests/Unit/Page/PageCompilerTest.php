@@ -22,14 +22,14 @@ final class PageCompilerTest extends TestCase
         self::assertStringNotContainsString('javascript:', $php);
     }
 
-    public function testButtonWithJavascriptSchemeIsNeutralized(): void
+    public function testButtonIgnoresUrlAndRendersAsButton(): void
     {
         $php = (new PageCompiler())->compile('example_ru\\www', 'algoritm_root', [
             ['type' => 'button', 'url' => 'javascript:void(0)', 'content' => 'Click'],
         ]);
 
         token_get_all($php, TOKEN_PARSE);
-        self::assertStringContainsString("Builder::a('#')", $php);
+        self::assertStringContainsString("Builder::button('submit')", $php);
         self::assertStringNotContainsString('javascript:', $php);
     }
 
