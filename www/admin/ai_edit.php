@@ -12,7 +12,7 @@ header('Content-Type: application/json; charset=utf-8');
 // TODO: Добавить проверку авторизации админа (ADMINSESSID)
 // Для MVP считаем, что запрос идет из админки
 
-$input = json_decode(file_get_contents('php://input'), true);
+$input = json_decode((string) file_get_contents('php://input'), true);
 $prompt = $input['prompt'] ?? '';
 $domain = $input['domain'] ?? '';
 $alias = $input['alias'] ?? 'www';

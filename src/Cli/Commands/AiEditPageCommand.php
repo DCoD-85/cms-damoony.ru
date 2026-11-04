@@ -73,10 +73,10 @@ final class AiEditPageCommand implements CommandInterface
         
         // 4. Извлекаем JSON из ответа (простой парсинг)
         $reply = preg_replace('/^```json\s*|\s*```$/m', '', trim($reply));
-        $newBlocks = json_decode($reply, true);
+        $newBlocks = json_decode((string) $reply, true);
 
         if (!is_array($newBlocks)) {
-            $r->error('AI returned invalid JSON. Raw: ' . substr($reply, 0, 200));
+            $r->error('AI returned invalid JSON. Raw: ' . substr((string) $reply, 0, 200));
             return $r;
         }
 
@@ -88,7 +88,7 @@ final class AiEditPageCommand implements CommandInterface
         ];
 
         if ($force) {
-            $encoded = base64_encode(json_encode($newBlocks, JSON_UNESCAPED_UNICODE));
+            $encoded = base64_encode((string) json_encode($newBlocks, JSON_UNESCAPED_UNICODE));
             
             // Вызываем page:write, чтобы скомпилировать PHP
             $root = $this->paths->root();
