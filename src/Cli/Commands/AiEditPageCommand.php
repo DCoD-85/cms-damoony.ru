@@ -89,19 +89,26 @@ final class AiEditPageCommand implements CommandInterface
 
         if ($force) {
             $encoded = base64_encode(json_encode($newBlocks, JSON_UNESCAPED_UNICODE));
-            // Вызываем page:write изнутри
-            $cmd = 'page:write --domain=' . escapeshellarg($domain) 
+            
+            // Вызываем page:write, чтобы скомпилировать PHP
+            $root = $this->paths->root();
+            $cliPath = $root . '/bin/cli.php';
+            
+            $cmd = 'php ' . escapeshellarg($cliPath) . ' page:write --domain=' . escapeshellarg($domain) 
                  . ' --allias=' . escapeshellarg($alias) 
                  . ' --name=' . escapeshellarg($page)
-                 . ' --json_b64=' . escapeshellarg($encoded);
+                 . ' --json_b64=' . escapeshellarg($encoded)
+                 . ' 2>&1';
             
-            // ВАЖНО: Для AIUI нам нужно, чтобы page:write сохранял editor.json
-            // Если он его не сохраняет, мы запишем его вручную:
-            file_put_contents($jsonFile, json_encode($newBlocks, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+            $output = shell_exec($cmd);
             
-            // Для MVP просто пишем файл editor.json (PageCompiler подхватит)
-            $context->step("Saved to {$jsonFile}", true);
-            $r->data['file'] = $jsonFile;
+            if (str_contains((string)$output, 'OK')) {
+                $context->step("Page recompiled successfully", true);
+                $r->data['file'] = $jsonFile;
+            } else {
+                $r->error('Compilation failed: ' . $output);
+                return $r;
+            }
         } else {
             $context->step('Dry-run: not saved. Use --force=1 to apply.', true);
         }
