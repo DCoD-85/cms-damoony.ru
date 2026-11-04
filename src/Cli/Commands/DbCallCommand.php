@@ -95,10 +95,9 @@ final class DbCallCommand implements CommandInterface
             return $r;
         }
 
-        $paramsJson = $args['params'] ?? '{}';
-        $params = json_decode($paramsJson, true);
+        $params = $this->parseParams($args);
         if (!is_array($params)) {
-            $r->error('--params must be valid JSON object.');
+            $r->error('--params or --params_b64 must be a valid JSON object.');
 
             return $r;
         }
@@ -169,6 +168,32 @@ final class DbCallCommand implements CommandInterface
         $context->step("Called {$provider}::{$method}", true);
 
         return $r;
+    }
+
+    /**
+     * @param array<string, string> $args
+     *
+     * @return array<string, mixed>|null null = parse failure
+     */
+    private function parseParams(array $args): ?array
+    {
+        // base64 — предпочтительный путь (безопасно для Windows escapeshellarg)
+        $b64 = $args['params_b64'] ?? '';
+        if ($b64 !== '') {
+            $decoded = base64_decode($b64, true);
+            if ($decoded === false) {
+                return null;
+            }
+            $parsed = json_decode($decoded, true);
+
+            return is_array($parsed) ? $parsed : null;
+        }
+
+        // fallback: plain --params (работает в bash без escapeshellarg)
+        $json = $args['params'] ?? '{}';
+        $parsed = json_decode($json, true);
+
+        return is_array($parsed) ? $parsed : null;
     }
 
     /**

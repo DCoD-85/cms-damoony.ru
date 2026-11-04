@@ -222,4 +222,28 @@ final class DbCallCommandTest extends TestCase
         $this->assertNotEmpty($r->data['result']);
         $this->assertSame('n', $r->data['result']['slug']);
     }
+
+    public function testParamsB64(): void
+    {
+        $pdo = $this->conn->pdo();
+        $pdo->exec("INSERT INTO users (login, email, password_hash) VALUES ('admin', 'a@e.ru', 'h')");
+
+        $b64 = base64_encode((string) json_encode(['login' => 'admin']));
+
+        $r = $this->cmd()->run([
+            'domain' => 'example.ru', 'provider' => 'user', 'method' => 'exists',
+            'params_b64' => $b64,
+        ], $this->ctx());
+        $this->assertTrue($r->ok);
+        $this->assertTrue($r->data['result']);
+    }
+
+    public function testParamsB64InvalidFails(): void
+    {
+        $r = $this->cmd()->run([
+            'domain' => 'example.ru', 'provider' => 'news', 'method' => 'recent',
+            'params_b64' => 'not-base64!!!',
+        ], $this->ctx());
+        $this->assertFalse($r->ok);
+    }
 }

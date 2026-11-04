@@ -28,14 +28,14 @@ final class DbCallHandler extends AbstractHandler
         if (!is_array($params)) {
             $params = [];
         }
-        $paramsJson = (string) json_encode($params, JSON_UNESCAPED_UNICODE);
+        $paramsB64 = base64_encode((string) json_encode($params, JSON_UNESCAPED_UNICODE));
 
         return AicliResult::fromJson($this->client->runJson(
             'db:call --domain=' . escapeshellarg($domain)
             . ' --alias=' . escapeshellarg($alias)
             . ' --provider=' . escapeshellarg($provider)
             . ' --method=' . escapeshellarg($method)
-            . ' --params=' . escapeshellarg($paramsJson),
+            . ' --params_b64=' . escapeshellarg($paramsB64),
         ));
     }
 }
