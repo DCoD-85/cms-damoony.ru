@@ -2,14 +2,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const app = document.getElementById('app');
     if (!app) return;
 
+    const DOMAIN = 'damoony3.ru';
+    const ALIAS = 'www';
+    const PAGE = '__root__';
+
+    // tab_id per-tab, survives F5
+    let tabId = sessionStorage.getItem('aiui_tab');
+    if (!tabId) {
+        tabId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())).replace(/-/g, '').slice(0, 16);
+        sessionStorage.setItem('aiui_tab', tabId);
+    }
+
+    const previewBase = '/admin/preview/' + tabId + '/';
+    let sessionStarted = false;
+
     app.innerHTML = `
         <div class="aiui-container">
             <div class="preview-area">
                 <div class="preview-header">
-                    <span style="margin-right: 10px;">🔴 🟡 🟢</span> <span id="address">http://damoony3.ru/</span>
+                    <span style="margin-right: 10px;">🔴 🟡 🟢</span>
+                    <span id="address">http://${DOMAIN}/</span>
+                    <button id="btn-apply" style="display:none; margin-left:20px; background:#238636; color:#fff; border:none; padding:4px 10px; border-radius:4px; cursor:pointer;">Применить</button>
+                    <span id="tab-badge" style="margin-left:auto; font-size:11px; color:#8b949e;">tab: ${tabId}</span>
                 </div>
                 <div class="preview-content">
-                    <iframe id="site-frame" src="http://damoony3.ru/"></iframe>
+                    <iframe id="site-frame" src="//${DOMAIN}/"></iframe>
                 </div>
             </div>
             <div class="chat-area">
@@ -18,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="msg ai">Привет! Напиши, что изменить на странице.</div>
                 </div>
                 <div class="chat-input-area">
-                    <textarea id="prompt" rows="2" placeholder="Например: Добавь H1..."></textarea>
+                    <textarea id="prompt" rows="2" placeholder="Например: Добавь H1 'Привет'..."></textarea>
                     <button id="send">➤</button>
                 </div>
             </div>
@@ -26,36 +43,75 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
 
     const input = document.getElementById('prompt');
-    const btn = document.getElementById('send');
+    const btnSend = document.getElementById('send');
+    const btnApply = document.getElementById('btn-apply');
     const messages = document.getElementById('messages');
     const iframe = document.getElementById('site-frame');
+    const address = document.getElementById('address');
+
+    async function api(payload) {
+        const res = await fetch('/admin/ai_edit.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload),
+        });
+        return res.json();
+    }
+
+    async function ensureSession() {
+        if (sessionStarted) return true;
+        const data = await api({action: 'start', domain: DOMAIN, alias: ALIAS, page: PAGE, tab: tabId});
+        if (data.ok) {
+            sessionStarted = true;
+            return true;
+        }
+        addMsg('Ошибка старта сессии: ' + data.error, 'error');
+        return false;
+    }
 
     async function send() {
         const text = input.value.trim();
         if (!text) return;
-        
         addMsg(text, 'user');
         input.value = '';
-        btn.disabled = true;
+        btnSend.disabled = true;
+        btnApply.style.display = 'none';
 
         try {
-            const res = await fetch('/admin/ai_edit.php', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ domain: 'damoony3.ru', alias: 'www', page: '__root__', prompt: text, apply: true })
-            });
-            const data = await res.json();
-            
+            if (!(await ensureSession())) return;
+            const data = await api({action: 'preview', domain: DOMAIN, alias: ALIAS, page: PAGE, tab: tabId, prompt: text});
             if (data.ok) {
-                addMsg('Готово! Обновляю превью.', 'ai');
-                iframe.src = iframe.src.split('?')[0] + '?t=' + Date.now();
+                addMsg('Черновик готов! Смотри превью. Если всё нравится — "Применить".', 'ai');
+                iframe.src = previewBase + '?t=' + Date.now();
+                address.innerText = 'PREVIEW · ' + text.slice(0, 40);
+                btnApply.style.display = 'inline-block';
             } else {
                 addMsg('Ошибка: ' + data.error, 'error');
             }
         } catch (e) {
             addMsg('Сетевая ошибка: ' + e.message, 'error');
         } finally {
-            btn.disabled = false;
+            btnSend.disabled = false;
+        }
+    }
+
+    async function apply() {
+        btnApply.disabled = true;
+        try {
+            const data = await api({action: 'apply', domain: DOMAIN, alias: ALIAS, page: PAGE, tab: tabId});
+            if (data.ok) {
+                addMsg('Изменения применены к production!', 'ai');
+                sessionStarted = false;
+                iframe.src = '//' + DOMAIN + '/?t=' + Date.now();
+                address.innerText = 'http://' + DOMAIN + '/';
+                btnApply.style.display = 'none';
+            } else {
+                addMsg('Ошибка apply: ' + data.error, 'error');
+            }
+        } catch (e) {
+            addMsg('Сетевая ошибка: ' + e.message, 'error');
+        } finally {
+            btnApply.disabled = false;
         }
     }
 
@@ -67,6 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
         messages.scrollTop = messages.scrollHeight;
     }
 
-    btn.onclick = send;
+    btnSend.onclick = send;
+    btnApply.onclick = apply;
     input.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } };
 });
