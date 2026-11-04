@@ -76,4 +76,11 @@ abstract class AbstractHandler implements AicliHandlerInterface
             throw new \RuntimeException('Invalid alias name.');
         }
     }
+
+    protected function validateName(string $value, string $label): void
+    {
+        if (!preg_match('/^[a-z][a-z0-9_]*$/', $value)) {
+            throw new \RuntimeException('Invalid ' . $label . '.');
+        }
+    }
 }
