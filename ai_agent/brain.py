@@ -172,6 +172,39 @@ def _safe_href(url: str) -> str | None:
     if not any(url.startswith(p) for p in ('/', '#', 'http://', 'https://')): return None
     return url.replace('"', '%22').replace("'", '%27').replace('<', '%3C').replace('>', '%3E')
 
+def _extract_json(text: str) -> dict:
+    """Robust JSON extraction from LLM response.
+    
+    Handles: markdown fences, leading/trailing text, missing outer braces.
+    Raises ValueError if no valid JSON found.
+    """
+    import re as _re
+    text = text.strip()
+    # Strip markdown fences
+    text = _re.sub(r"^```(?:json)?\s*", "", text)
+    text = _re.sub(r"```\s*$", "", text)
+    text = text.strip()
+    # Try direct parse
+    try:
+        return json.loads(text)
+    except Exception:
+        pass
+    # Find first { ... last }
+    start = text.find("{")
+    end = text.rfind("}")
+    if start >= 0 and end > start:
+        try:
+            return json.loads(text[start:end+1])
+        except Exception:
+            pass
+    # Try wrapping (missing outer braces, e.g. '\n  "needs_form": true, ...')
+    try:
+        return json.loads("{" + text + "}")
+    except Exception:
+        pass
+    raise ValueError(f"Cannot extract JSON from: {text[:100]}")
+
+
 def safe_chat(llm: Any, model: str, messages: list, retries: int = 3) -> dict:
     for i in range(retries):
         try:
@@ -329,6 +362,34 @@ def _build_form_blocks(form_spec: dict) -> list[dict]:
         "children": children,
     }]
 
+def _fallback_form_spec(brief: str, pages: list) -> dict | None:
+    """Keyword-based form detection (deterministic, no LLM)."""
+    brief_lower = brief.lower()
+    keywords = ["форма", "заявк", "обратн", "связ", "контакт", "contact", "form",
+                "feedback", "заказ", "order", "бронир", "запис"]
+    if not any(k in brief_lower for k in keywords):
+        return None
+
+    target = "__root__"
+    for p in pages:
+        name = p.get("name", "").lower()
+        if any(k in name for k in ["contact", "contacts", "about", "обратн", "контакт", "связ"]):
+            target = name
+            break
+
+    return {
+        "needs_form": True,
+        "target_page": target,
+        "form_name": "contact",
+        "fields": [
+            {"name": "name", "type": "text", "label": "Ваше имя", "required": True},
+            {"name": "email", "type": "email", "label": "Email", "required": True},
+            {"name": "message", "type": "textarea", "label": "Сообщение", "required": False},
+        ],
+        "_source": "keyword_fallback",
+    }
+
+
 def run_multi_agent(brief: str, domain: str, allias: str, session_id: str = None) -> None:
     llm, model = get_llm_client()
     print(f"  [LLM] Using provider: {llm.__class__.__name__}, model: {model}")
@@ -349,7 +410,7 @@ Transcript:
         try:
             res = safe_chat(llm, model, [{"role": "user", "content": extraction_prompt}])
             text = res.get("message", {}).get("content", "").strip().removeprefix("```json").removesuffix("```").strip()
-            parsed = json.loads(text)
+            parsed = _extract_json(text)
             extracted = parsed.get("alias", "").strip().lower()
             
             # Валидация (безопасность)
@@ -390,7 +451,7 @@ Transcript:
         plan_text = res.get("message", {}).get("content", "").strip()
         # Нативно убираем маркеры Markdown, если они есть
         plan_text = plan_text.removeprefix("```json").removesuffix("```").strip()
-        plan = json.loads(plan_text)
+        plan = _extract_json(plan_text)
         
         r_dom = client.call_aicli("wizard:domain", {"session_id": internal_session, "domain": domain})
         if not r_dom.ok:
@@ -426,15 +487,20 @@ Transcript:
                 "content": FORMS_DETECTION_PROMPT.format(brief=brief, pages=pages_list)
             }])
             form_text = form_res.get("message", {}).get("content", "").strip().removeprefix("```json").removesuffix("```").strip()
-            parsed_form = json.loads(form_text)
+            parsed_form = _extract_json(form_text)
             if parsed_form.get("needs_form"):
                 forms_spec = parsed_form
                 print(f"  [+] Form detected: '{forms_spec.get('form_name')}' on page '{forms_spec.get('target_page')}'")
             else:
                 print("  [-] No form needed in this brief")
         except Exception as e:
-            print(f"  [!] Form detection failed (skipping): {e}")
-            forms_spec = None
+            print(f"  [!] Form detection failed: {e}")
+            print("  [*] Trying keyword fallback...")
+            forms_spec = _fallback_form_spec(brief, plan.get("pages", []))
+            if forms_spec:
+                print(f"  [+] Form (fallback): '{forms_spec['form_name']}' on page '{forms_spec['target_page']}'")
+            else:
+                print("  [-] No form detected by fallback either")
         log_time("Forms Detection", step_start)
 
         # === 2.5 WIDGETS ===
@@ -445,7 +511,7 @@ Transcript:
         try:
             r_llm = safe_chat(llm, model, [{"role": "user", "content": WIDGETS_PROMPT.format(brief=brief)}])
             widgets_text = r_llm.get("message", {}).get("content", "").strip().removeprefix("```json").removesuffix("```").strip()
-            widgets = json.loads(widgets_text)
+            widgets = _extract_json(widgets_text)
             
             # Если ИИ вернул пустые сайдбары, ставим дефолтные заглушки
             if not widgets.get("left") or len(widgets["left"]) == 0:
