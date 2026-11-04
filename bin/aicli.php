@@ -13,6 +13,8 @@ use Damoony\Ai\Aicli\Handler\AlliasNewHandler;
 use Damoony\Ai\Aicli\Handler\BlockListHandler;
 use Damoony\Ai\Aicli\Handler\BlockNewHandler;
 use Damoony\Ai\Aicli\Handler\BlockWriteHandler;
+use Damoony\Ai\Aicli\Handler\DbDescribeHandler;
+use Damoony\Ai\Aicli\Handler\DbMethodsHandler;
 use Damoony\Ai\Aicli\Handler\DbSchemaHandler;
 use Damoony\Ai\Aicli\Handler\DomainListHandler;
 use Damoony\Ai\Aicli\Handler\DomainNewHandler;
@@ -131,6 +133,8 @@ $handlers = [
     new StructureCheckHandler($client, $root, $allowedDomains),
     new StructureRepairHandler($client, $root, $allowedDomains),
     new DbSchemaHandler($client, $root, $allowedDomains),
+    new DbMethodsHandler($client, $root, $allowedDomains),
+    new DbDescribeHandler($client, $root, $allowedDomains),
     new DomainListHandler($client, $root, $allowedDomains),
     new DomainNewHandler($client, $root, $allowedDomains),
     new AlliasListHandler($client, $root, $allowedDomains),

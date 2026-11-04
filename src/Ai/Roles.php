@@ -26,6 +26,8 @@ final class Roles
             'scheme:list', 'block:list', 'filler:list',
             'structure:check',
             'db:schema',
+            'db:methods',
+            'db:describe',
         ],
         self::PLANNER => [
             'domain:list', 'allias:list', 'page:list', 'page:read',
