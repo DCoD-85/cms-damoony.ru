@@ -20,6 +20,7 @@ use Damoony\Cli\Commands\ContentListCommand;
 use Damoony\Cli\Commands\ContentRemoveCommand;
 use Damoony\Cli\Commands\ContentStoreCommand;
 use Damoony\Cli\Commands\DataproviderAddMethodCommand;
+use Damoony\Cli\Commands\AiEditPageCommand;
 use Damoony\Cli\Commands\DbCallCommand;
 use Damoony\Cli\Commands\DbDescribeCommand;
 use Damoony\Cli\Commands\DbMethodsCommand;
@@ -132,6 +133,7 @@ $registry->add(new DbDescribeCommand($paths));
 $registry->add(new DbCallCommand($paths, $siteConfig, $db));
 $registry->add(new DbMutateCommand($paths, $siteConfig, $db));
 $registry->add(new DataproviderAddMethodCommand($paths));
+$registry->add(new AiEditPageCommand($paths));
 
 $app = new Application($registry, new ArgvParser(), new Renderer());
 exit($app->run($_SERVER['argv']));
