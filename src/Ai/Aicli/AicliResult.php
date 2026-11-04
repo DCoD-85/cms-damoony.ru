@@ -37,6 +37,19 @@ final readonly class AicliResult
     }
 
     /**
+     * @param array{ok: bool, output: string, error: string, hint: string} $cli
+     */
+    public static function fromCli(array $cli): self
+    {
+        return new self(
+            ok: (bool) $cli['ok'],
+            data: ['output' => (string) $cli['output']],
+            error: (string) $cli['error'],
+            hint: (string) $cli['hint'],
+        );
+    }
+
+    /**
      * @return array{ok: bool, data: array<string, mixed>, error: string, hint: string}
      */
     public function toArray(): array

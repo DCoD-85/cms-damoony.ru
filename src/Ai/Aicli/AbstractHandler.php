@@ -7,12 +7,19 @@ namespace Damoony\Ai\Aicli;
 /**
  * Базовый класс для AI-handlers.
  *
- * Даёт доступ к AicliClient и минимальные хелперы для типизации args.
+ * Даёт доступ к AicliClient, root (для чтения config) и allowedDomains
+ * (из config/agent.config — для проверки домена).
  */
 abstract class AbstractHandler implements AicliHandlerInterface
 {
-    public function __construct(protected readonly AicliClient $client)
-    {
+    /**
+     * @param list<string> $allowedDomains
+     */
+    public function __construct(
+        protected readonly AicliClient $client,
+        protected readonly string $root,
+        protected readonly array $allowedDomains = [],
+    ) {
     }
 
     /**
@@ -45,5 +52,14 @@ abstract class AbstractHandler implements AicliHandlerInterface
         $value = $args[$key] ?? [];
 
         return is_array($value) ? $value : [];
+    }
+
+    protected function requireDomain(string $domain): void
+    {
+        if (!in_array($domain, $this->allowedDomains, true)) {
+            throw new \RuntimeException(
+                "Security violation: Domain '{$domain}' is not in the allowed list.",
+            );
+        }
     }
 }
