@@ -37,7 +37,6 @@ final class Roles
         self::ARCHITECT => [
             'wizard:start', 'wizard:domain', 'wizard:allias', 'wizard:plan', 'wizard:abort',
             'dataprovider:add-method',
-                'ai:edit-page',
             'domain:new', 'allias:new',
             'block:new', 'scheme:new', 'filler:new',
             'skin:new', 'skin:list',
@@ -53,7 +52,6 @@ final class Roles
         ],
         self::DESIGNER => [
             'wizard:skin',
-            'ai:edit-page',
             'page:write', 'block:write', 'filler:write',
             'skin:edit', 'skin:list',
             'scheme:save', 'scheme:list',
@@ -88,7 +86,7 @@ final class Roles
             }
             return array_values(array_unique(array_merge($all, [
                 'wizard:start', 'wizard:domain', 'wizard:allias', 'wizard:plan', 'wizard:content', 'wizard:skin',
-            'ai:edit-page', 'wizard:finish', 'wizard:commit', 'wizard:abort',
+            'wizard:finish', 'wizard:commit', 'wizard:abort',
                 'agent:chat',
                 'ai:start', 'done', 'engine_status',
                 'net:status', 'image:search', 'image:download', 'fetch',
