@@ -18,6 +18,7 @@ final class ProviderResolver
             'news' => NewsProvider::class,
             'files' => FilesProvider::class,
             'audit' => AuditProvider::class,
+            'form_submission' => FormSubmissionProvider::class,
         ];
         $coreClass = $map[$provider] ?? null;
         if ($coreClass === null) {

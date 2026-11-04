@@ -25,6 +25,7 @@ final class DbMutateCommand implements CommandInterface
         'user' => ['create'],
         'news' => ['create', 'update', 'delete', 'publish'],
         'files' => ['create', 'update_filesize', 'increment_downloads', 'delete'],
+        'form_submission' => ['delete', 'delete_all'],
     ];
 
     public function __construct(

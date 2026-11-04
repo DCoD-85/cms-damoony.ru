@@ -25,6 +25,7 @@ final class DbCallCommand implements CommandInterface
         'news' => ['recent', 'by_slug', 'by_id', 'search_like'],
         'files' => ['all_active', 'by_slug', 'by_id'],
         'audit' => ['recent', 'by_entity'],
+        'form_submission' => ['recent'],
     ];
 
     public function __construct(

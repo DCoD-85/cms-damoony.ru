@@ -11,6 +11,9 @@ RewriteRule ^admin(/.*)?$ admin/index.php [L,QSA]
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule \.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|map)$ - [L]
 
+# POST формы
+RewriteRule ^submit$ forms.php [L,QSA]
+
 # всё остальное — в front controller
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
