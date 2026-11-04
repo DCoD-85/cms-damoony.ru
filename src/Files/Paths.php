@@ -30,6 +30,11 @@ final class Paths
         return $this->root . '/app';
     }
 
+    public function sessionDir(string $tabId, string $real): string
+    {
+        return $this->appRoot() . '/.sess_' . $tabId . '.' . $real;
+    }
+
     public function domain(string $real): string
     {
         return $this->appRoot() . '/' . $real;

@@ -17,10 +17,15 @@ final class FileRouter implements RouterInterface
     ) {
     }
 
-    public function match(string $path, DomainContext $domain): RouteMatch
+    public function match(string $path, DomainContext $domain, ?string $sessionId = null): RouteMatch
     {
         $segments = $this->segments($path);
-        $base = $this->appRoot . '/app/' . $domain->real . '/' . $domain->allias . '/algoritm';
+        
+        if ($sessionId !== null) {
+            $base = $this->appRoot . '/app/.sess_' . $sessionId . '.' . $domain->real . '/algoritm';
+        } else {
+            $base = $this->appRoot . '/app/' . $domain->real . '/' . $domain->allias . '/algoritm';
+        }
 
         if (!is_dir($base)) {
             return RouteMatch::notFound();

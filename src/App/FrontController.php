@@ -27,7 +27,7 @@ final class FrontController
     ) {
     }
 
-    public function handle(Request $request): Response
+    public function handle(Request $request, ?string $sessionId = null): Response
     {
         $resolver = $this->container->get(DomainResolverInterface::class);
         assert($resolver instanceof DomainResolverInterface);
@@ -57,7 +57,7 @@ final class FrontController
         $router = $this->container->get(RouterInterface::class);
         assert($router instanceof RouterInterface);
 
-        $match = $router->match($request->path, $domain);
+        $match = $router->match($request->path, $domain, $sessionId);
         if (!$match->found) {
             return $match->code === 403
                 ? ErrorPage::forbidden($domain->language)

@@ -34,10 +34,11 @@ final class SecurityMiddlewareTest extends TestCase
         $r = $mw->process(new Request('GET', '/'), fn () => Response::text('ok'));
 
         self::assertSame('nosniff', $r->headers['x-content-type-options']);
-        self::assertSame('DENY', $r->headers['x-frame-options']);
-        self::assertSame('same-origin', $r->headers['referrer-policy']);
+        self::assertArrayNotHasKey('x-frame-options', $r->headers); // заменён на CSP frame-ancestors
+        self::assertSame('strict-origin-when-cross-origin', $r->headers['referrer-policy']);
         self::assertArrayHasKey('content-security-policy', $r->headers);
-        self::assertArrayHasKey('strict-transport-security', $r->headers);
+        // HSTS только при HTTPS — проверяется в testSecurityHeadersNoHstsWhenNotHttps
+        self::assertArrayNotHasKey('strict-transport-security', $r->headers);
     }
 
     public function testSecurityHeadersNoHstsWhenNotHttps(): void
