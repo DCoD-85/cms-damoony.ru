@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionStorage.setItem('aiui_tab', tabId);
     }
 
-    const previewBase = '/admin/preview/' + tabId + '/';
+    const previewBase = '/admin/preview/' + tabId + '/' + ALIAS + '/';
     let sessionStarted = false;
 
     app.innerHTML = `

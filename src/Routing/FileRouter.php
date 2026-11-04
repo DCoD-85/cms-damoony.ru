@@ -22,7 +22,7 @@ final class FileRouter implements RouterInterface
         $segments = $this->segments($path);
         
         if ($sessionId !== null) {
-            $base = $this->appRoot . '/app/.sess_' . $sessionId . '.' . $domain->real . '/algoritm';
+            $base = $this->appRoot . '/app/.sess_' . $sessionId . '.' . $domain->real . '/' . $domain->allias . '/algoritm';
         } else {
             $base = $this->appRoot . '/app/' . $domain->real . '/' . $domain->allias . '/algoritm';
         }

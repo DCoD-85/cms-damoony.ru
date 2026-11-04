@@ -14,6 +14,7 @@ $root = dirname(__DIR__, 2);
 
 try {
     $tabId = $_GET['tab'] ?? '';
+    $alias = $_GET['alias'] ?? null;
     $path = $_GET['path'] ?? '/';
     
     if (!preg_match('/^[a-f0-9]+$/', $tabId)) {
@@ -41,6 +42,10 @@ try {
         $realDomain = $host;
     }
 
+    if ($alias !== null && !preg_match('/^[a-z][a-z0-9_]*$/', $alias)) {
+        throw new \RuntimeException('Invalid alias');
+    }
+
     $sessionDir = $paths->sessionDir($tabId, $realDomain);
     $metaFile = $sessionDir . '/.session.json';
 
@@ -66,7 +71,7 @@ try {
         throw new \RuntimeException('PageHandler missing');
     }
     $fc = new \Damoony\App\FrontController($container, $pages);
-    $response = $fc->handle($request, sessionId: $tabId);
+    $response = $fc->handle($request, sessionId: $tabId, aliasOverride: $alias);
     
     // 4. Внедряем <base> тег, чтобы ссылки внутри превью не ломали адреса
     $contentType = $response->headers['content-type'] ?? '';

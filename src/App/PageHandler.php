@@ -28,12 +28,14 @@ final class PageHandler implements PageHandlerInterface
 
     public function handle(RouteMatch $match, RegionContext $context): Response
     {
+        $sessionIdRaw = $context->service('session_id');
+        $sessionId = is_string($sessionIdRaw) && $sessionIdRaw !== '' ? $sessionIdRaw : null;
         if ($match->classChain === null || $match->pathRel === null) {
             return Response::notFound();
         }
 
         $domain = $context->domain;
-        $file = $this->path($domain, $match->pathRel, $match->classChain);
+        $file = $this->path($domain, $match->pathRel, $match->classChain, $sessionId);
         if (!is_file($file)) {
             return Response::notFound();
         }
@@ -77,9 +79,13 @@ final class PageHandler implements PageHandlerInterface
         }
     }
 
-    private function path(DomainContext $domain, string $pathRel, string $classChain): string
+    private function path(DomainContext $domain, string $pathRel, string $classChain, ?string $sessionId = null): string
     {
-        return rtrim($this->appRoot, '/') . '/app/' . $domain->real
+        $domainDir = $sessionId !== null
+            ? '/app/.sess_' . $sessionId . '.' . $domain->real
+            : '/app/' . $domain->real;
+
+        return rtrim($this->appRoot, '/') . $domainDir
             . '/' . $domain->allias
             . '/algoritm'
             . ($pathRel === '' ? '' : '/' . $pathRel)

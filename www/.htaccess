@@ -5,7 +5,7 @@ RewriteBase /
 RewriteRule ^content/ content.php [L,QSA]
 
 # AIUI: Красивые URL для превью (/admin/preview/{tab_id}/{path})
-RewriteRule ^admin/preview/([a-f0-9]+)/?(.*)$ admin/aipreview.php?tab=$1&path=/$2 [L,QSA]
+RewriteRule ^admin/preview/([a-f0-9]+)/([a-z0-9_]+)/?(.*)$ admin/aipreview.php?tab=$1&alias=$2&path=/$3 [L,QSA]
 
 # /admin/ и всё внутри — принудительно в admin/index.php, КРОМЕ реальных файлов (aiui.php, ai_edit.php)
 RewriteCond %{REQUEST_FILENAME} !-f
