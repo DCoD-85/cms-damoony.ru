@@ -101,6 +101,8 @@
 9. **AI-Оркестраторы:** `ai_agent/brain.py` — рабочий мультиагент. UI для запуска из админки пока нет (только CLI/консоль).
 10. **skin:bundle:** не реализован (сборка CSS/JS).
 11. **Скрытые дефолты:** `Slot::release()` возвращает пустую строку (слот без региона молча исчезает).
+12. **`www/admin/index.php` — собственный bootstrap** (session/auth/csrf) by design. Параметризация через `AppFactory` отвергнута: admin-сессия (`ADMINSESSID`) независима от site-сессии (`SITE_SESSID`), `Auth` (admin) отличается от `DbAuth` (user). Не «оптимизировать» без пересмотра этой архитектуры.
+13. **`bin/aicli.php` — монолит** (812 строк, 40+ if-блоков, двойной subprocess через `proc_open` + `shell_exec` на каждую AI-команду). Прежде чем расширять aicli (DataProvider, схемы, визуализация) — разбить на `AicliHandlerInterface` (Command pattern) + registry. Требует отдельного дизайн-проекта (Roadmap v3.1, фаза 4).
 
 ---
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Damoony\App\AppFactory;
 use Damoony\Auth\AuthInterface;
 use Damoony\Content\ContentResponder;
+use Damoony\Core\Config;
 use Damoony\Files\Paths;
 
 require_once __DIR__ . '/../vendor/autoload.php';
@@ -29,9 +30,9 @@ if ($req === null) {
 // === 3. Host check (не палим чужие домены) ===
 $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
 $siteConfigFile = dirname(__DIR__) . '/config/site.config';
-$siteConfig = is_file($siteConfigFile) ? json_decode((string) file_get_contents($siteConfigFile), true) : [];
+$siteConfig = is_file($siteConfigFile) ? Config::fromFile($siteConfigFile)->all() : [];
 
-if (!ContentResponder::hostAllowed($req->domain, $host, is_array($siteConfig) ? $siteConfig : [])) {
+if (!ContentResponder::hostAllowed($req->domain, $host, $siteConfig)) {
     _not_found();
 }
 
