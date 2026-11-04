@@ -22,8 +22,10 @@ final class DataproviderAddMethodHandler extends AbstractHandler
         $template = $this->stringArg($args, 'template');
         $templateArgs = $args['args'] ?? [];
 
-        if (!is_array($templateArgs)) {
-            $templateArgs = [];
+        // Fallback: некоторые LLM кладут поля шаблона прямо в args (без вложенности)
+        if (!is_array($templateArgs) || $templateArgs === []) {
+            $templateArgs = $args;
+            unset($templateArgs['domain'], $templateArgs['alias'], $templateArgs['provider'], $templateArgs['template']);
         }
 
         $argsB64 = base64_encode((string) json_encode($templateArgs, JSON_UNESCAPED_UNICODE));

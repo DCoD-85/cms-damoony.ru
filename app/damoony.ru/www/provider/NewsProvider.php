@@ -28,4 +28,42 @@ final class NewsProvider extends BaseProvider
         }
         return $out;
     }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function custom_method(): array
+    {
+        $rows = $this->query(
+            'SELECT * FROM ' . $this->physicalTable(),
+            []
+        )->fetchAll();
+
+        $out = [];
+        foreach ($rows as $row) {
+            if (is_array($row)) {
+                $out[] = $row;
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function count_published(): array
+    {
+        $rows = $this->query(
+            'SELECT id FROM ' . $this->physicalTable() . ' WHERE status = \'published\'',
+            []
+        )->fetchAll();
+
+        $out = [];
+        foreach ($rows as $row) {
+            if (is_array($row)) {
+                $out[] = $row;
+            }
+        }
+        return $out;
+    }
 }
