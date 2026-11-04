@@ -62,4 +62,18 @@ abstract class AbstractHandler implements AicliHandlerInterface
             );
         }
     }
+
+    protected function validateDomain(string $domain): void
+    {
+        if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain) || str_contains($domain, '..')) {
+            throw new \RuntimeException('Invalid domain.');
+        }
+    }
+
+    protected function validateAllias(string $allias): void
+    {
+        if (!preg_match('/^[a-z][a-z0-9_]*$/', $allias)) {
+            throw new \RuntimeException('Invalid alias name.');
+        }
+    }
 }
