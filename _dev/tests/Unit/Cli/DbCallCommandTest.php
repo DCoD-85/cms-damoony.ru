@@ -72,7 +72,7 @@ final class DbCallCommandTest extends TestCase
             'domain' => 'example.ru', 'provider' => 'news', 'method' => 'create',
         ], $this->ctx());
         $this->assertFalse($r->ok);
-        $this->assertStringContainsString('not in read-only whitelist', $r->errors[0]);
+        $this->assertStringContainsString('not in whitelist', $r->errors[0]);
     }
 
     public function testInvalidParamsJsonFails(): void

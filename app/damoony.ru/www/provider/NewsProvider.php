@@ -8,7 +8,6 @@ use Damoony\Db\DataProvider\NewsProvider as BaseProvider;
 
 final class NewsProvider extends BaseProvider
 {
-
     /**
      * @return array<string, mixed>
      */
@@ -17,7 +16,7 @@ final class NewsProvider extends BaseProvider
         $limit = max(1, min(100, $limit));
         $rows = $this->query(
             'SELECT id, slug, title, published_at FROM ' . $this->physicalTable() . ' WHERE status = \'published\' AND lang = \'ru\'' . ' ORDER BY published_at DESC' . ' LIMIT ' . $limit,
-            []
+            [],
         )->fetchAll();
 
         $out = [];
@@ -29,24 +28,6 @@ final class NewsProvider extends BaseProvider
         return $out;
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    public function custom_method(): array
-    {
-        $rows = $this->query(
-            'SELECT * FROM ' . $this->physicalTable(),
-            []
-        )->fetchAll();
-
-        $out = [];
-        foreach ($rows as $row) {
-            if (is_array($row)) {
-                $out[] = $row;
-            }
-        }
-        return $out;
-    }
 
     /**
      * @return array<string, mixed>
@@ -55,7 +36,7 @@ final class NewsProvider extends BaseProvider
     {
         $rows = $this->query(
             'SELECT id FROM ' . $this->physicalTable() . ' WHERE status = \'published\'',
-            []
+            [],
         )->fetchAll();
 
         $out = [];

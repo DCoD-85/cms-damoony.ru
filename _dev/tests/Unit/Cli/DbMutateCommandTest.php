@@ -59,7 +59,7 @@ final class DbMutateCommandTest extends TestCase
             'params' => '{}', 'force' => '1',
         ], $this->ctx());
         $this->assertFalse($r->ok);
-        $this->assertStringContainsString('not in write whitelist', $r->errors[0]);
+        $this->assertStringContainsString('not in whitelist', $r->errors[0]);
     }
 
     public function testForceRequired(): void
