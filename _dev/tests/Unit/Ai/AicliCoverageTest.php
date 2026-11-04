@@ -12,6 +12,7 @@ use Damoony\Ai\Aicli\Handler\AlliasNewHandler;
 use Damoony\Ai\Aicli\Handler\BlockListHandler;
 use Damoony\Ai\Aicli\Handler\BlockNewHandler;
 use Damoony\Ai\Aicli\Handler\BlockWriteHandler;
+use Damoony\Ai\Aicli\Handler\DbSchemaHandler;
 use Damoony\Ai\Aicli\Handler\DomainListHandler;
 use Damoony\Ai\Aicli\Handler\DomainNewHandler;
 use Damoony\Ai\Aicli\Handler\DoneHandler;
@@ -55,6 +56,7 @@ final class AicliCoverageTest extends TestCase
         $registry->add(new EngineStatusHandler($client, $root));
         $registry->add(new StructureCheckHandler($client, $root));
         $registry->add(new StructureRepairHandler($client, $root));
+        $registry->add(new DbSchemaHandler($client, $root));
         $registry->add(new DomainListHandler($client, $root));
         $registry->add(new DomainNewHandler($client, $root));
         $registry->add(new AlliasListHandler($client, $root));

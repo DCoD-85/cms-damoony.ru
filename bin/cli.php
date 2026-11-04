@@ -20,6 +20,7 @@ use Damoony\Cli\Commands\ContentListCommand;
 use Damoony\Cli\Commands\ContentRemoveCommand;
 use Damoony\Cli\Commands\ContentStoreCommand;
 use Damoony\Cli\Commands\DbMigrateCommand;
+use Damoony\Cli\Commands\DbSchemaCommand;
 use Damoony\Cli\Commands\DomainListCommand;
 use Damoony\Cli\Commands\DomainNewCommand;
 use Damoony\Cli\Commands\DomainRemoveCommand;
@@ -120,6 +121,7 @@ $registry->add(new FillerWriteCommand($paths));
 
 $db = new Connection($dbConfig);
 $registry->add(new UserNewCommand($db));
+$registry->add(new DbSchemaCommand($siteConfig, $db));
 
 $app = new Application($registry, new ArgvParser(), new Renderer());
 exit($app->run($_SERVER['argv']));
