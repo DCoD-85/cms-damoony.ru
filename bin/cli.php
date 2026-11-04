@@ -133,7 +133,7 @@ $registry->add(new DbDescribeCommand($paths));
 $registry->add(new DbCallCommand($paths, $siteConfig, $db));
 $registry->add(new DbMutateCommand($paths, $siteConfig, $db));
 $registry->add(new DataproviderAddMethodCommand($paths));
-$registry->add(new AiEditPageCommand($paths));
+$registry->add(new AiEditPageCommand($paths, new \Damoony\Domain\ConfigDomainResolver($siteConfig)));
 
 $app = new Application($registry, new ArgvParser(), new Renderer());
 exit($app->run($_SERVER['argv']));

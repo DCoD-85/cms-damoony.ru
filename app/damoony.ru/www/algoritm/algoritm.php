@@ -17,28 +17,14 @@ final class algoritm extends Page
     {
         $content = Builder::div('page-content');
 
-        $el1 = Builder::el('form');
-        $el1->attrs()->add('action', '/submit');
-        $el1->attrs()->add('method', 'POST');
-        $el1->attrs()->classAdd('contact-form');
-        $el2 = Builder::input('hidden', '_csrf', '');
-        $el2->attrs()->add('value', $this->context->service('csrf')->token());
-        $el1->append($el2);
-        $el3 = Builder::el('label');
-        $el3->attrs()->add('for', 'name');
-        $el3->append(Text::raw(strip_tags('Имя:', '<a><strong>')));
-        $el1->append($el3);
-
-        $el4 = Builder::input('text', 'name', '');
-        $el4->attrs()->add('required', 'required');
-        $el1->append($el4);
-
-        $el5 = Builder::button('submit');
-        $el5->attrs()->classAdd('btn');
-        $el5->append(Text::raw(strip_tags('Отправить', '<a><strong>')));
-        $el1->append($el5);
-
+        $el1 = Builder::h(1)->append(Text::raw(strip_tags('Добро пожаловать', '<a><strong>')));
         $content->append($el1);
+
+        $el2 = Builder::h(2)->append(Text::raw(strip_tags('Наши контакты 3', '<a><strong>')));
+        $content->append($el2);
+
+        $el3 = Builder::el('table');
+        $content->append($el3);
 
         return $content;
     }
