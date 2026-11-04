@@ -57,6 +57,64 @@ Output ONLY valid JSON matching this schema:
 CRITICAL: If a block is not needed (e.g., no sidebars for a minimal site), return an empty array [] for that key.
 Output ONLY the JSON object, no markdown."""
 
+FORMS_DETECTION_PROMPT = """You are analyzing a website brief.
+Does this brief require a feedback/contact/order form on any page?
+
+Brief: {brief}
+
+Available pages: {pages}
+
+Output ONLY valid JSON (no markdown):
+{
+  "needs_form": true|false,
+  "target_page": "<page name from the list, e.g. __root__ or contacts>",
+  "form_name": "<lowercase identifier, e.g. contact, order, feedback>",
+  "fields": [
+    {"name": "name", "type": "text", "label": "Ваше имя", "required": true},
+    {"name": "email", "type": "email", "label": "Email", "required": true},
+    {"name": "message", "type": "textarea", "label": "Сообщение", "required": false}
+  ]
+}
+
+Rules:
+- If no form needed: {"needs_form": false}.
+- If form needed: target_page MUST be one of the provided pages.
+- Field types: text, email, tel, textarea, select.
+- For select fields: add "options": [{"value": "opt1", "label": "Опция 1"}].
+- All labels in RUSSIAN.
+- 2-5 fields max.
+- Do NOT include CSRF or _form_name in fields (they are added automatically).
+"""
+
+FORM_BLOCK_PROMPT = """You are converting a form spec to a JSON block array for BlockCodegen.
+
+Form spec: {spec}
+
+Output ONLY a JSON array containing ONE form block:
+[
+  {{
+    "type": "form",
+    "class": "contact-form",
+    "action": "/submit",
+    "method": "POST",
+    "children": [
+      {{"type": "input", "input_type": "hidden", "name": "_form_name", "value": "{form_name}"}},
+      {{"type": "label", "content": "<label>", "for": "<name>"}},
+      {{"type": "input", "input_type": "<type>", "name": "<name>", "required": true}},
+      ... one entry per field ...
+      {{"type": "button", "content": "Отправить", "button_type": "submit"}}
+    ]
+  }}
+]
+
+Rules:
+- For textarea field: {{"type": "textarea", "name": "...", "rows": 5, "required": ...}}
+- For select field: {{"type": "select", "name": "...", "options": [...], "required": ...}}
+- For hidden input: {{"type": "input", "input_type": "hidden", "name": "...", "value": "..."}}
+- All fields MUST come from the spec.
+- Output ONLY the JSON array, no markdown.
+"""
+
 WRITER_MARKDOWN_PROMPT = """You are a professional copywriter.
 Write a detailed, engaging article for the page "{page_title}".
 Here is the interview transcript with the client: {brief}
@@ -213,6 +271,64 @@ def parse_markdown_to_blocks(md_text: str, client: AicliClient, session_id: str,
         used_classes.add("hero-title")
     return blocks
 
+def _build_form_blocks(form_spec: dict) -> list[dict]:
+    """Convert form_spec (from FORMS_DETECTION_PROMPT) to blocks array for BlockCodegen.
+
+    Deterministic (no LLM) — we control the structure, LLM only fills fields.
+    """
+    form_name = str(form_spec.get("form_name", "contact"))
+    fields = form_spec.get("fields", [])
+    if not isinstance(fields, list) or not fields:
+        return []
+
+    children: list[dict] = [
+        {"type": "input", "input_type": "hidden", "name": "_form_name", "value": form_name},
+    ]
+
+    for f in fields:
+        if not isinstance(f, dict):
+            continue
+        fname = str(f.get("name", ""))
+        if not fname:
+            continue
+        label = str(f.get("label", fname))
+        ftype = str(f.get("type", "text"))
+        required = bool(f.get("required", False))
+
+        children.append({"type": "label", "content": label, "for": fname})
+
+        if ftype == "textarea":
+            children.append({
+                "type": "textarea",
+                "name": fname,
+                "rows": 5,
+                "required": required,
+            })
+        elif ftype == "select":
+            children.append({
+                "type": "select",
+                "name": fname,
+                "options": f.get("options", []),
+                "required": required,
+            })
+        else:
+            children.append({
+                "type": "input",
+                "input_type": ftype,
+                "name": fname,
+                "required": required,
+            })
+
+    children.append({"type": "button", "content": "Отправить", "button_type": "submit"})
+
+    return [{
+        "type": "form",
+        "class": "contact-form",
+        "action": "/submit",
+        "method": "POST",
+        "children": children,
+    }]
+
 def run_multi_agent(brief: str, domain: str, allias: str, session_id: str = None) -> None:
     llm, model = get_llm_client()
     print(f"  [LLM] Using provider: {llm.__class__.__name__}, model: {model}")
@@ -298,6 +414,29 @@ Transcript:
         urls_str = ", ".join(["/"] + list(path_map.values()))
         log_time("Architect", step_start)
 
+        # === 2.4 FORMS DETECTION ===
+        check_cancel()
+        step_start = time.time()
+        print("[*] Detecting forms in brief...")
+        forms_spec = None
+        try:
+            pages_list = ", ".join([p["name"] for p in plan.get("pages", [])])
+            form_res = safe_chat(llm, model, [{
+                "role": "user",
+                "content": FORMS_DETECTION_PROMPT.format(brief=brief, pages=pages_list)
+            }])
+            form_text = form_res.get("message", {}).get("content", "").strip().removeprefix("```json").removesuffix("```").strip()
+            parsed_form = json.loads(form_text)
+            if parsed_form.get("needs_form"):
+                forms_spec = parsed_form
+                print(f"  [+] Form detected: '{forms_spec.get('form_name')}' on page '{forms_spec.get('target_page')}'")
+            else:
+                print("  [-] No form needed in this brief")
+        except Exception as e:
+            print(f"  [!] Form detection failed (skipping): {e}")
+            forms_spec = None
+        log_time("Forms Detection", step_start)
+
         # === 2.5 WIDGETS ===
         check_cancel()
         step_start = time.time()
@@ -333,13 +472,23 @@ Transcript:
             page_start = time.time()
             page_name = page["name"]
             page_title = page["title"]
-            print(f"  -> Writing: {page_title}")
             
-            writer_prompt = WRITER_MARKDOWN_PROMPT.format(page_title=page_title, brief=brief, valid_urls=urls_str)
-            r_llm = safe_chat(llm, model, [{"role": "user", "content": writer_prompt}])
-            md_text = r_llm.get("message", {}).get("content", "").strip()
-
-            final_blocks = parse_markdown_to_blocks(md_text, client, internal_session, domain, allias, page_name or "__root__", used_classes)
+            # Форма нужна на этой странице?
+            needs_form_here = (
+                forms_spec is not None
+                and forms_spec.get("target_page") == page_name
+            )
+            
+            if needs_form_here:
+                print(f"  -> Generating form for: {page_title}")
+                final_blocks = _build_form_blocks(forms_spec)
+                print(f"     [+] Form blocks: {len(final_blocks)}")
+            else:
+                print(f"  -> Writing: {page_title}")
+                writer_prompt = WRITER_MARKDOWN_PROMPT.format(page_title=page_title, brief=brief, valid_urls=urls_str)
+                r_llm = safe_chat(llm, model, [{"role": "user", "content": writer_prompt}])
+                md_text = r_llm.get("message", {}).get("content", "").strip()
+                final_blocks = parse_markdown_to_blocks(md_text, client, internal_session, domain, allias, page_name or "__root__", used_classes)
             
             r_content = client.call_aicli("wizard:content", {
                 "session_id": internal_session, "page": page_name, "blocks": final_blocks
