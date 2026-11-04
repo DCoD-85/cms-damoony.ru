@@ -19,6 +19,21 @@ final class DomainContext
     ) {
     }
 
+    public function withAllias(string $allias): self
+    {
+        return new self(
+            domain: $this->domain,
+            real: $this->real,
+            allias: $allias,
+            skin: $this->skin,
+            language: $this->language,
+            available: $this->available,
+            stub: $this->stub,
+            namespace: $this->namespace,
+            scheme: $this->scheme,
+        );
+    }
+
     public function isAvailable(): bool
     {
         return $this->available;

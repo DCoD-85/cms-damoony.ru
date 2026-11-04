@@ -1,12 +1,12 @@
 <?php
+
 declare(strict_types=1);
 
 use Damoony\App\AppFactory;
 use Damoony\Core\Config;
-use Damoony\Domain\DomainContext;
 use Damoony\Files\Paths;
-use Damoony\Session\NativeSession;
 use Damoony\Http\Request;
+use Damoony\Session\NativeSession;
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
@@ -16,7 +16,16 @@ try {
     $tabId = $_GET['tab'] ?? '';
     $alias = $_GET['alias'] ?? null;
     $path = $_GET['path'] ?? '/';
-    
+
+    // Отсекаем query string (?t=12345 из cache-buster)
+    $qPos = strpos($path, '?');
+    if ($qPos !== false) {
+        $path = substr($path, 0, $qPos);
+    }
+    if ($path === '') {
+        $path = '/';
+    }
+
     if (!preg_match('/^[a-f0-9]+$/', $tabId)) {
         throw new \RuntimeException('Invalid tab ID');
     }
@@ -24,17 +33,22 @@ try {
     // 1. Проверяем авторизацию админа
     $session = new NativeSession('ADMINSESSID', ($_SERVER['HTTPS'] ?? '') === 'on');
     $session->start();
-    $adminSessionId = session_id();
+    $adminLogin = $session->get('admin_login');
+    if (!is_string($adminLogin) || $adminLogin === '') {
+        http_response_code(403);
+        header('Content-Type: text/plain; charset=utf-8');
+        exit('Forbidden: Admin authentication required.');
+    }
 
     // 2. Проверяем, что сессия существует и принадлежит этому админу
     $paths = new Paths($root);
     $host = $_SERVER['HTTP_HOST'] ?? '';
-    
+
     // Резолвим хост в реальный домен
     $siteConfigFile = $root . '/config/site.config';
     $site = is_file($siteConfigFile) ? Config::fromFile($siteConfigFile) : Config::fromArray([]);
     $resolver = new \Damoony\Domain\ConfigDomainResolver($site);
-    
+
     try {
         $domainCtx = $resolver->resolve($host);
         $realDomain = $domainCtx->real;
@@ -54,8 +68,8 @@ try {
     }
 
     $meta = json_decode((string)file_get_contents($metaFile), true);
-    if (!is_array($meta) || $meta['admin_session_id'] !== $adminSessionId) {
-        throw new \RuntimeException('Access denied');
+    if (!is_array($meta)) {
+        throw new \RuntimeException('Invalid session meta');
     }
 
     // 3. Создаем Request и передаем в AppFactory с флагом сессии
@@ -64,7 +78,7 @@ try {
 
     $app = AppFactory::create($root);
     $container = $app->container();
-    
+
     // Получаем FrontController и передаем ему ID сессии
     $pages = $container->get(\Damoony\App\PageHandlerInterface::class);
     if (!$pages instanceof \Damoony\App\PageHandlerInterface) {
@@ -72,7 +86,7 @@ try {
     }
     $fc = new \Damoony\App\FrontController($container, $pages);
     $response = $fc->handle($request, sessionId: $tabId, aliasOverride: $alias);
-    
+
     // 4. Внедряем <base> тег, чтобы ссылки внутри превью не ломали адреса
     $contentType = $response->headers['content-type'] ?? '';
     if (str_contains((string)$contentType, 'text/html')) {
@@ -80,7 +94,7 @@ try {
         $response = new \Damoony\Http\Response(
             str_replace('<head>', "<head><base href=\"{$baseUrl}\">", $response->body),
             $response->status,
-            $response->headers
+            $response->headers,
         );
     }
 

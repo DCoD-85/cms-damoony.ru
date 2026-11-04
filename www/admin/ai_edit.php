@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 ob_start();
@@ -8,7 +9,6 @@ use Damoony\Ai\Aicli\AicliClient;
 use Damoony\Cli\Commands\SessionApplyCommand;
 use Damoony\Cli\Commands\SessionStartCommand;
 use Damoony\Cli\Context;
-use Damoony\Cli\Result;
 use Damoony\Core\Config;
 use Damoony\Domain\ConfigDomainResolver;
 use Damoony\Files\Paths;
@@ -41,7 +41,10 @@ try {
     // Admin session id (для привязки сессии)
     $sess = new NativeSession('ADMINSESSID', ($_SERVER['HTTPS'] ?? '') === 'on');
     $sess->start();
-    $adminSessId = (string) session_id();
+    $adminSessId = (string) $sess->get('admin_login');
+    if ($adminSessId === '') {
+        throw new \RuntimeException('Forbidden: Admin authentication required.');
+    }
 
     $root = dirname(__DIR__, 2);
     $paths = new Paths($root);
@@ -57,7 +60,7 @@ try {
     }
 
     $sessionDir = $paths->sessionDir($tabId, $realDomain);
-    $ctx = new Context(static fn() => null);
+    $ctx = new Context(static fn () => null);
 
     // === 1. START: создаём сессию, если её нет ===
     if ($action === 'start') {
@@ -108,7 +111,7 @@ try {
             . "3. Allowed types: h1, h2, h3, text, img, link, button, ul, nav, section, div, table, form, input, textarea, select, label.\n"
             . "4. Keep existing blocks unless the user explicitly asks to delete them.\n\n"
             . "EXAMPLE:\n[\n  {\"type\": \"h1\", \"content\": \"Hello\"},\n  {\"type\": \"text\", \"content\": \"World\"}\n]\n\n"
-            . "Output JSON array only. No markdown, no explanations.";
+            . 'Output JSON array only. No markdown, no explanations.';
 
         $client = new AicliClient($root);
         $handler = new \Damoony\Ai\Aicli\Handler\AgentChatHandler($client, $root);

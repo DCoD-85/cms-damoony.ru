@@ -20,7 +20,7 @@ final class FileRouter implements RouterInterface
     public function match(string $path, DomainContext $domain, ?string $sessionId = null): RouteMatch
     {
         $segments = $this->segments($path);
-        
+
         if ($sessionId !== null) {
             $base = $this->appRoot . '/app/.sess_' . $sessionId . '.' . $domain->real . '/' . $domain->allias . '/algoritm';
         } else {

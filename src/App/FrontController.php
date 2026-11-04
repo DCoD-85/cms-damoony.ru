@@ -27,13 +27,20 @@ final class FrontController
     ) {
     }
 
-    public function handle(Request $request, ?string $sessionId = null): Response
-    {
+    public function handle(
+        Request $request,
+        ?string $sessionId = null,
+        ?string $aliasOverride = null,
+    ): Response {
         $resolver = $this->container->get(DomainResolverInterface::class);
         assert($resolver instanceof DomainResolverInterface);
 
         $host = (string) ($request->header('host') ?? $request->server['SERVER_NAME'] ?? '');
         $domain = $resolver->resolve($host);
+
+        if ($aliasOverride !== null && $aliasOverride !== '' && $aliasOverride !== $domain->allias) {
+            $domain = $domain->withAllias($aliasOverride);
+        }
 
         // O12: Если домен/поддомен не зарегистрирован в конфиге -> 404
         if ($domain->real === $host && $domain->allias === '') {
@@ -92,6 +99,7 @@ final class FrontController
             'auth' => $auth,
             'csrf' => $csrf,
             'i18n' => $translator,
+            'session_id' => $sessionId,
         ]);
 
         return $this->pages->handle($match, $context);

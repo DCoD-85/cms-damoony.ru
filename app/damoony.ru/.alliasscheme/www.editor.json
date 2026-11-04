@@ -45,12 +45,37 @@
         "children": [
             {
                 "tag": "div",
-                "slot": "bottom",
+                "slot": "top",
+                "type": "mixed"
+            },
+            {
+                "tag": "div",
+                "slot": "left",
                 "type": "mixed"
             },
             {
                 "tag": "div",
                 "slot": "center",
+                "type": "mixed"
+            },
+            {
+                "tag": "div",
+                "slot": "right",
+                "type": "mixed"
+            },
+            {
+                "tag": "div",
+                "slot": "bottom",
+                "type": "mixed"
+            },
+            {
+                "tag": "div",
+                "slot": "footer",
+                "type": "mixed"
+            },
+            {
+                "tag": "div",
+                "slot": "policy",
                 "type": "mixed"
             }
         ],

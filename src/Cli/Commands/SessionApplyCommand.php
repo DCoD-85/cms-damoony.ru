@@ -49,10 +49,13 @@ final class SessionApplyCommand extends AbstractSessionCommand
             return $r;
         }
 
-        if ($adminSess !== '' && (string) ($meta['admin_session_id'] ?? '') !== $adminSess) {
-            $r->error('Access denied: admin session mismatch');
+        if ($adminSess === '') {
+            $r->error('Access denied: not authenticated');
             return $r;
         }
+        // Примечание: мы намеренно не сравниваем admin_session_id строго,
+        // так как PHP session_id может меняться при релогине/перезагрузке.
+        // Безопасность обеспечивается неугадываемым tab_id (64 бита).
 
         $currentHash = $this->hashProduction($releaseDir);
         $expectedHash = (string) ($meta['production_hash'] ?? '');

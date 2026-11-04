@@ -113,14 +113,34 @@ final class SessionCommandsTest extends TestCase
         file_put_contents($prodJson, json_encode([['type' => 'h1', 'content' => 'Concurrent']]));
 
         $apply = new SessionApplyCommand($this->paths);
-        $r = $apply->run(['domain' => 'damoony3.ru', 'tab' => 'a1b2c3d4'], $this->ctx());
+        $r = $apply->run([
+            'domain' => 'damoony3.ru',
+            'tab' => 'a1b2c3d4',
+            'admin-sess' => 'dummy',
+        ], $this->ctx());
 
         $this->assertFalse($r->ok);
         $this->assertStringContainsString('Conflict', $r->errors[0]);
     }
 
-    public function testApplyRejectsWrongAdminSession(): void
+    public function testApplyRejectsEmptyAdminSession(): void
     {
+        $start = new SessionStartCommand($this->paths);
+        $start->run(['domain' => 'damoony3.ru', 'tab' => 'a1b2c3d4'], $this->ctx());
+
+        $apply = new SessionApplyCommand($this->paths);
+        $r = $apply->run([
+            'domain' => 'damoony3.ru',
+            'tab' => 'a1b2c3d4',
+        ], $this->ctx());
+
+        $this->assertFalse($r->ok);
+        $this->assertStringContainsString('Access denied', $r->errors[0]);
+    }
+
+    public function testApplyIgnoresMismatchedAdminSession(): void
+    {
+        // Новый контракт: admin_session_id не сравнивается (может меняться при релогине)
         $start = new SessionStartCommand($this->paths);
         $start->run(['domain' => 'damoony3.ru', 'tab' => 'a1b2c3d4', 'admin-sess' => 'mysess'], $this->ctx());
 
@@ -131,8 +151,8 @@ final class SessionCommandsTest extends TestCase
             'admin-sess' => 'other',
         ], $this->ctx());
 
-        $this->assertFalse($r->ok);
-        $this->assertStringContainsString('Access denied', $r->errors[0]);
+        $this->assertTrue($r->ok);
+        $this->assertTrue($r->data['applied']);
     }
 
     public function testDiscardMovesToTrash(): void
