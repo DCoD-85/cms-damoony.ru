@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Db\DataProvider;
 
-final class UserProvider extends AbstractProvider
+class UserProvider extends AbstractProvider
 {
     public function name(): string
     {

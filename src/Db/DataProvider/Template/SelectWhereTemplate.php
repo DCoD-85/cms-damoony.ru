@@ -10,7 +10,7 @@ final class SelectWhereTemplate implements TemplateInterface
     {
         $methodName = $args['method_name'] ?? 'custom_method';
         $returnType = $args['return_type'] ?? 'array';
-
+        
         $params = $args['params'] ?? [];
         $fields = $args['fields'] ?? ['*'];
         $where = $args['where'] ?? [];
@@ -27,8 +27,7 @@ final class SelectWhereTemplate implements TemplateInterface
         }
         $signature = implode(', ', $sig);
 
-        // 2. SQL String
-        $sqlSelect = implode(', ', $fields);
+        // 2. SQL WHERE
         $whereSql = [];
         $bindings = [];
         foreach ($where as $w) {
@@ -43,36 +42,41 @@ final class SelectWhereTemplate implements TemplateInterface
                 $bindings[$param] = "\${$param}";
             }
         }
+        $whereString = empty($whereSql) ? '' : " WHERE " . implode(' AND ', $whereSql);
 
+        // 3. SQL ORDER
         $orders = [];
         foreach ($order as $o) {
             $orders[] = $o['field'] . ' ' . ($o['direction'] ?? 'ASC');
         }
+        $orderString = empty($orders) ? '' : " ORDER BY " . implode(', ', $orders);
 
-        $sqlString = "SELECT {$sqlSelect} FROM ' . \$this->physicalTable() . '";
-        if (!empty($whereSql)) {
-            $sqlString .= ' WHERE ' . implode(' AND ', $whereSql);
+        // 4. Сборка SQL-выражения для PHP
+        $sqlSelect = implode(', ', $fields);
+        $sqlExpr = var_export("SELECT {$sqlSelect} FROM ", true) . " . \$this->physicalTable()";
+        
+        if ($whereString !== '') {
+            $sqlExpr .= " . " . var_export($whereString, true);
         }
-        if (!empty($orders)) {
-            $sqlString .= ' ORDER BY ' . implode(', ', $orders);
+        if ($orderString !== '') {
+            $sqlExpr .= " . " . var_export($orderString, true);
         }
-
-        $returnStr = '';
+        
+        $limitCode = '';
         if ($limitParam !== null) {
-            $sqlString .= " LIMIT ' . \${$limitParam}";
-            $returnStr .= "        \${$limitParam} = max(1, min(100, \${$limitParam}));\n";
-        } else {
-            $sqlString .= "'";
+            $sqlExpr .= " . ' LIMIT ' . \${$limitParam}";
+            $limitCode = "        \${$limitParam} = max(1, min(100, \${$limitParam}));\n";
         }
 
-        $bindingsArrayStr = '[';
+        $bindingsArrayStr = "[";
         foreach ($bindings as $k => $v) {
             $bindingsArrayStr .= "'{$k}' => {$v}, ";
         }
-        $bindingsArrayStr .= ']';
+        $bindingsArrayStr .= "]";
 
+        $returnStr = $limitCode;
         $returnStr .= "        \$rows = \$this->query(\n";
-        $returnStr .= "            {$sqlString},\n";
+        $returnStr .= "            {$sqlExpr},\n";
         $returnStr .= "            {$bindingsArrayStr}\n";
         $returnStr .= "        )->fetchAll();\n\n";
 
@@ -90,12 +94,12 @@ final class SelectWhereTemplate implements TemplateInterface
         }
 
         return <<<PHP
-                /**
-                 * @return array<string, mixed>
-                 */
-                public function {$methodName}({$signature}): array
-                {
-            {$returnStr}    }
-            PHP;
+    /**
+     * @return array<string, mixed>
+     */
+    public function {$methodName}({$signature}): array
+    {
+{$returnStr}    }
+PHP;
     }
 }

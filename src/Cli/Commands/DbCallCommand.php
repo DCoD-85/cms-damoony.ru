@@ -80,10 +80,10 @@ final class DbCallCommand implements CommandInterface
         }
 
         $allowed = self::READ_METHODS[$provider] ?? [];
-        if (!in_array($method, $allowed, true)) {
+        if (str_starts_with($class, 'Damoony\\Db\\DataProvider\\') && !in_array($method, $allowed, true)) {
             $r->error(
-                "Method '{$method}' is not in read-only whitelist for '{$provider}'."
-                . ' Allowed: ' . implode(', ', $allowed),
+                "Method '{$method}' is not in whitelist for '{$provider}'."
+                . ' Allowed core methods: ' . implode(', ', $allowed),
             );
 
             return $r;

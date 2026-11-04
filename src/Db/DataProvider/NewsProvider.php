@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Db\DataProvider;
 
-final class NewsProvider extends AbstractProvider
+class NewsProvider extends AbstractProvider
 {
     /** @var array<string, string> whitelist колонок для create/update */
     private const WRITABLE = [
