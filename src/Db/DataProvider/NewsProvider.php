@@ -38,8 +38,8 @@ final class NewsProvider extends AbstractProvider
              FROM ' . $this->physicalTable() . '
              WHERE status = :status AND lang = :lang
              ORDER BY published_at DESC, id DESC
-             LIMIT :limit',
-            ['status' => 'published', 'lang' => $lang, 'limit' => $limit],
+             LIMIT ' . $limit,
+            ['status' => 'published', 'lang' => $lang],
         )->fetchAll();
 
         $out = [];
@@ -171,11 +171,10 @@ final class NewsProvider extends AbstractProvider
              FROM ' . $this->physicalTable() . '
              WHERE status = :status AND (title LIKE :q OR content LIKE :q)
              ORDER BY published_at DESC, id DESC
-             LIMIT :limit',
+             LIMIT ' . $limit,
             [
                 'status' => 'published',
                 'q' => '%' . $query . '%',
-                'limit' => $limit,
             ],
         )->fetchAll();
 

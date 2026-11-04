@@ -65,6 +65,10 @@ abstract class AbstractProvider implements ProviderInterface
 
     /**
      * @param array<string, mixed> $params
+     *
+     * @deprecated-by-design: не биндить LIMIT как параметр — MariaDB требует
+     *                        integer literal, а PDO::execute() биндит как строку.
+     *                        Инлайнить: 'LIMIT ' . (int) $limit
      */
     protected function query(string $sql, array $params = []): PDOStatement
     {
