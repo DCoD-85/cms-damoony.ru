@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use Damoony\Cli\Commands\AiEditPageCommand;
@@ -26,7 +27,7 @@ if (!$domain || !$prompt) {
 
 $paths = new Paths(dirname(__DIR__, 2));
 $cmd = new AiEditPageCommand($paths);
-$ctx = new Context(static fn() => null);
+$ctx = new Context(static fn () => null);
 
 $args = [
     'domain' => $domain,

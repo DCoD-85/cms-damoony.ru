@@ -7,8 +7,8 @@ namespace Damoony\Cli\Commands;
 use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
-use Damoony\Db\DataProvider\Template\SelectWhereTemplate;
 use Damoony\Db\DataProvider\Template\InsertTemplate;
+use Damoony\Db\DataProvider\Template\SelectWhereTemplate;
 use Damoony\Files\Paths;
 
 final class DataproviderAddMethodCommand implements CommandInterface

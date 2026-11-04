@@ -13,10 +13,18 @@ use Damoony\Files\Paths;
 
 final class AiEditPageCommand implements CommandInterface
 {
-    public function __construct(private readonly Paths $paths) {}
+    public function __construct(private readonly Paths $paths)
+    {
+    }
 
-    public function name(): string { return 'ai:edit-page'; }
-    public function description(): string { return 'Edit page blocks via AI prompt (AIUI)'; }
+    public function name(): string
+    {
+        return 'ai:edit-page';
+    }
+    public function description(): string
+    {
+        return 'Edit page blocks via AI prompt (AIUI)';
+    }
 
     public function run(array $args, Context $context): Result
     {
@@ -34,8 +42,8 @@ final class AiEditPageCommand implements CommandInterface
 
         // 1. Читаем текущие блоки из editor.json
         $base = $this->paths->algoritm($domain, $alias);
-        $jsonFile = ($page === '__root__') 
-            ? $base . '/algoritm.editor.json' 
+        $jsonFile = ($page === '__root__')
+            ? $base . '/algoritm.editor.json'
             : $base . '/' . str_replace('_', '/', $page) . '/algoritm_' . $page . '.editor.json';
 
         $currentBlocks = [];
@@ -53,15 +61,15 @@ final class AiEditPageCommand implements CommandInterface
             . "\n\nUser request: {$prompt}\n\n"
             . "Output ONLY the updated JSON array of blocks. Keep existing blocks unless user asked to remove them.\n"
             . "Available types: h1, h2, h3, text, img, link, button, ul, nav, section, div, table, form, input, textarea, select, label.\n"
-            . "Output JSON array only, no markdown.";
+            . 'Output JSON array only, no markdown.';
 
         // 3. Спрашиваем LLM (используем наш существующий AgentChatHandler)
         $client = new AicliClient(dirname(__DIR__, 3));
         $chatHandler = new AgentChatHandler($client, dirname(__DIR__, 3));
-        
+
         $context->step('Asking AI...', true);
         $chatResult = $chatHandler->handle('agent:chat', [
-            'history' => [['role' => 'user', 'content' => $llmPrompt]]
+            'history' => [['role' => 'user', 'content' => $llmPrompt]],
         ], 'designer');
 
         if (!$chatResult->ok) {
@@ -70,7 +78,7 @@ final class AiEditPageCommand implements CommandInterface
         }
 
         $reply = (string) ($chatResult->data['reply'] ?? '');
-        
+
         // 4. Извлекаем JSON из ответа (простой парсинг)
         $reply = preg_replace('/^```json\s*|\s*```$/m', '', trim($reply));
         $newBlocks = json_decode((string) $reply, true);
@@ -84,26 +92,26 @@ final class AiEditPageCommand implements CommandInterface
         $r->data = [
             'old' => $currentBlocks,
             'new' => $newBlocks,
-            'diff' => count($newBlocks) - count($currentBlocks) . ' blocks'
+            'diff' => count($newBlocks) - count($currentBlocks) . ' blocks',
         ];
 
         if ($force) {
             $encoded = base64_encode((string) json_encode($newBlocks, JSON_UNESCAPED_UNICODE));
-            
+
             // Вызываем page:write, чтобы скомпилировать PHP
             $root = $this->paths->root();
             $cliPath = $root . '/bin/cli.php';
-            
-            $cmd = 'php ' . escapeshellarg($cliPath) . ' page:write --domain=' . escapeshellarg($domain) 
-                 . ' --allias=' . escapeshellarg($alias) 
+
+            $cmd = 'php ' . escapeshellarg($cliPath) . ' page:write --domain=' . escapeshellarg($domain)
+                 . ' --allias=' . escapeshellarg($alias)
                  . ' --name=' . escapeshellarg($page)
                  . ' --json_b64=' . escapeshellarg($encoded)
                  . ' 2>&1';
-            
+
             $output = shell_exec($cmd);
-            
+
             if (str_contains((string)$output, 'OK')) {
-                $context->step("Page recompiled successfully", true);
+                $context->step('Page recompiled successfully', true);
                 $r->data['file'] = $jsonFile;
             } else {
                 $r->error('Compilation failed: ' . $output);

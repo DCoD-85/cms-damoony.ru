@@ -1,0 +1,77 @@
+:root {
+  --primary-color: #007bff;
+  --secondary-color: #6c757d;
+  --text-color: #1e293b;
+  --bg-color: #f8fafc;
+  --font-family: 'Arial', sans-serif;
+}
+
+
+/* --- ЖЕСТКАЯ БАЗОВАЯ СЕТКА (защищена от ИИ) --- */
+img, .img-fluid { max-width: 100% !important; max-height: 500px !important; object-fit: cover; display: block; border-radius: 8px; margin: 20px 0; }
+body { margin: 0; font-family: var(--font-family, system-ui, sans-serif); background: var(--bg-color, #f4f6f8); color: var(--text-color, #1e293b); }
+/* Защита от белого текста на белом фоне */
+.center, .left, .right, p, li, span, div { color: var(--text-color, #1e293b) !important; }
+.center h1, .center h2, .center h3, .left h1, .left h2, .left h3, .right h1, .right h2, .right h3 { color: var(--primary-color, #000000) !important; }
+h1, h2, h3 { margin-top: 0; font-weight: 800; }
+p { line-height: 1.6; margin-bottom: 15px; text-align: left; }
+
+.layout { display: grid !important; grid-template-areas: "top top top" "left center right" "bottom bottom bottom" "policy policy policy" !important; grid-template-columns: 260px 1fr 260px !important; gap: 20px !important; max-width: 1400px !important; margin: 0 auto !important; padding: 20px !important; min-height: 100vh !important; box-sizing: border-box !important; }
+.layout > div { display: contents !important; }
+
+.top { grid-area: top !important; background: #fff !important; padding: 20px 30px !important; border-radius: 12px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important; display: flex !important; align-items: center !important; }
+.left { grid-area: left !important; background: var(--bg-color, #fff) !important; padding: 20px !important; border-radius: 12px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important; color: var(--text-color, #000); }
+.center, .page-content { grid-area: center !important; background: #fff !important; padding: 40px !important; border-radius: 12px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important; }
+.right { grid-area: right !important; background: var(--bg-color, #fff) !important; padding: 20px !important; border-radius: 12px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important; color: var(--text-color, #000); }
+.bottom-wrap, .bottom { grid-area: bottom !important; background: #1e293b !important; color: #94a3b8 !important; padding: 40px 20px !important; border-radius: 12px !important; text-align: center !important; margin-top: 20px !important; }
+.policy { grid-area: policy !important; background: #e2e8f0 !important; color: #64748b !important; padding: 15px !important; border-radius: 12px !important; text-align: center !important; font-size: 14px !important; }
+.left:empty, .right:empty { display: none !important; }
+
+.main-navigation { display: flex !important; gap: 30px !important; list-style: none !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
+.main-navigation li a { text-decoration: none !important; color: var(--secondary-color, #333) !important; font-weight: 600 !important; font-size: 16px !important; transition: color 0.2s !important; }
+.main-navigation li a:hover { color: var(--primary-color, #007bff) !important; }
+
+@media (max-width: 1024px) {
+    .layout { grid-template-areas: "top" "center" "bottom" "policy" !important; grid-template-columns: 1fr !important; }
+    .left, .right { display: none !important; }
+}
+/* --- Конец базовой сетки --- */
+
+
+/* Center */
+.center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
+  padding: 2rem;
+}
+
+.features-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.features-list li {
+  margin: 1rem 0;
+}
+
+.hero-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.paragraph {
+  font-size: 1rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
