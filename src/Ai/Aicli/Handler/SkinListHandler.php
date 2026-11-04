@@ -21,9 +21,8 @@ final class SkinListHandler extends AbstractHandler
         $this->validateDomain($domain);
         $this->validateAllias($allias);
 
-        return new AicliResult(
-            ok: true,
-            data: $this->client->runJson(
+        return AicliResult::fromJson(
+            $this->client->runJson(
                 'skin:list --domain=' . escapeshellarg($domain)
                 . ' --allias=' . escapeshellarg($allias),
             ),

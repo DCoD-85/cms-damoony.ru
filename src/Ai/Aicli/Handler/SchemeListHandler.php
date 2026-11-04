@@ -19,9 +19,8 @@ final class SchemeListHandler extends AbstractHandler
         $domain = $this->stringArg($args, 'domain');
         $this->validateDomain($domain);
 
-        return new AicliResult(
-            ok: true,
-            data: $this->client->runJson('scheme:list --domain=' . escapeshellarg($domain)),
+        return AicliResult::fromJson(
+            $this->client->runJson('scheme:list --domain=' . escapeshellarg($domain)),
         );
     }
 }

@@ -50,6 +50,26 @@ final readonly class AicliResult
     }
 
     /**
+     * Из результата AicliClient::runJson() (формат {ok, data, error, hint}).
+     *
+     * @param array<string, mixed> $json
+     */
+    public static function fromJson(array $json): self
+    {
+        $data = $json['data'] ?? [];
+        if (!is_array($data)) {
+            $data = [];
+        }
+
+        return new self(
+            ok: (bool) ($json['ok'] ?? false),
+            data: $data,
+            error: (string) ($json['error'] ?? ''),
+            hint: (string) ($json['hint'] ?? ''),
+        );
+    }
+
+    /**
      * @return array{ok: bool, data: array<string, mixed>, error: string, hint: string}
      */
     public function toArray(): array

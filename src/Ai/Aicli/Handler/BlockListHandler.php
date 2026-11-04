@@ -19,9 +19,8 @@ final class BlockListHandler extends AbstractHandler
         $domain = $this->stringArg($args, 'domain');
         $this->validateDomain($domain);
 
-        return new AicliResult(
-            ok: true,
-            data: $this->client->runJson('block:list --domain=' . escapeshellarg($domain)),
+        return AicliResult::fromJson(
+            $this->client->runJson('block:list --domain=' . escapeshellarg($domain)),
         );
     }
 }

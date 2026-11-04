@@ -16,6 +16,6 @@ final class DomainListHandler extends AbstractHandler
 
     public function handle(string $command, array $args, string $role): AicliResult
     {
-        return new AicliResult(ok: true, data: $this->client->runJson('domain:list'));
+        return AicliResult::fromJson($this->client->runJson('domain:list'));
     }
 }

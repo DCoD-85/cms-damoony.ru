@@ -21,9 +21,8 @@ final class PageListHandler extends AbstractHandler
         $this->validateDomain($domain);
         $this->validateAllias($allias);
 
-        return new AicliResult(
-            ok: true,
-            data: $this->client->runJson(
+        return AicliResult::fromJson(
+            $this->client->runJson(
                 'page:list --domain=' . escapeshellarg($domain)
                 . ' --allias=' . escapeshellarg($allias),
             ),
