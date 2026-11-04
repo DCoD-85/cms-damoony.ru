@@ -96,6 +96,9 @@ final class AiEditPageCommand implements CommandInterface
         ];
 
         if ($force) {
+            // ВАЖНО: Всегда сохраняем новый JSON в editor.json, чтобы ИИ видел актуальное состояние
+            file_put_contents($jsonFile, json_encode($newBlocks, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+            
             $encoded = base64_encode((string) json_encode($newBlocks, JSON_UNESCAPED_UNICODE));
 
             // Вызываем page:write, чтобы скомпилировать PHP

@@ -1,1 +1,8 @@
-{"available":["ajax"],"auth":false,"search":false,"default":false}
+{
+    "available": [
+        ""
+    ],
+    "auth": false,
+    "search": false,
+    "default": false
+}

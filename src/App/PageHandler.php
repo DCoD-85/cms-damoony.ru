@@ -122,13 +122,13 @@ final class PageHandler implements PageHandlerInterface
 
         $requested = (string) ($_COOKIE['skin'] ?? '');
         $manager = new \Damoony\Skin\SkinManager(rtrim($this->appRoot, '/') . '/www/media');
-        $skin = $manager->resolve($domain->real, $requested, $allowed);
+        $skin = $manager->resolve($domain->real, $domain->allias, $requested, $allowed);
 
-        $css = $manager->cssUrl($domain->real, $skin);
+        $css = $manager->cssUrl($domain->real, $domain->allias, $skin);
         if ($css !== null) {
             $context->meta->addCss($css, 'skin-main');
         }
-        $js = $manager->jsUrl($domain->real, $skin);
+        $js = $manager->jsUrl($domain->real, $domain->allias, $skin);
         if ($js !== null) {
             $context->meta->addJs($js, 'skin-main');
         }
