@@ -38,6 +38,7 @@ final class PageWriteCommand implements CommandInterface
         $allias = $args['allias'] ?? '';
         $name = $args['name'] ?? '';
         $parent = trim((string) ($args['parent'] ?? ''), '/');
+        $sessionId = trim((string) ($args['session'] ?? ''));
 
         // 1. Валидация
         if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain) || str_contains($domain, '..')) {
@@ -69,6 +70,17 @@ final class PageWriteCommand implements CommandInterface
             return $r;
         }
 
+        if ($sessionId !== '') {
+            if (!preg_match('/^[a-f0-9]{8,32}$/', $sessionId)) {
+                $r->error('Некорректный --session (8-32 hex символов)');
+                return $r;
+            }
+            if (!is_dir($this->paths->sessionDir($sessionId, $domain))) {
+                $r->error('Сессия не найдена: ' . $sessionId);
+                return $r;
+            }
+        }
+
         // 3. JSON
         if (isset($args['json_file'])) {
             $file = (string) $args['json_file'];
@@ -95,7 +107,14 @@ final class PageWriteCommand implements CommandInterface
         }
 
         // 4. Резолвинг
-        $page = PagePath::resolve($this->paths, $domain, $allias, $name, $parent);
+        $page = PagePath::resolve(
+            $this->paths,
+            $domain,
+            $allias,
+            $name,
+            $parent,
+            $sessionId !== '' ? $sessionId : null,
+        );
 
         if (!is_file($page->phpFile)) {
             $r->error('Страница не найдена. Сначала используйте page:new');

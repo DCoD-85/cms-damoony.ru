@@ -37,8 +37,11 @@ final class PagePath
         string $allias,
         string $name,
         string $parent = '',
+        ?string $sessionId = null,
     ): self {
-        $baseDir = rtrim($paths->algoritm($domain, $allias), '/');
+        $baseDir = $sessionId !== null
+            ? rtrim($paths->sessionDir($sessionId, $domain), '/') . '/' . $allias . '/algoritm'
+            : rtrim($paths->algoritm($domain, $allias), '/');
 
         $targetRelPath = $parent === '' ? $name : $parent . '/' . $name;
         $classChain = 'algoritm' . ($targetRelPath === '' ? '' : '_' . str_replace('/', '_', $targetRelPath));
