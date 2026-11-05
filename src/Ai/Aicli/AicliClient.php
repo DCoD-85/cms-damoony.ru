@@ -23,7 +23,19 @@ final class AicliClient
      */
     public function run(string $args): array
     {
-        $cmd = escapeshellarg(PHP_BINARY) . ' ' . $this->root . '/bin/cli.php ' . $args . ' 2>&1';
+        // Linux (prod): proc_open работает стабильно через mpm_event/mpm_prefork
+        // Windows (dev): proc_open/shell_exec ломают mpm_winnt (AH02965),
+        // поэтому запускаем CLI через "start /B" — процесс стартует вне Apache
+
+        // Под Nginx PHP_BINARY указывает на php-cgi.exe, но для CLI нужен php.exe
+        $phpBinary = PHP_BINARY;
+        if (str_contains($phpBinary, 'php-cgi')) {
+            $phpBinary = str_replace('php-cgi', 'php', $phpBinary);
+        }
+        $cmd = escapeshellarg($phpBinary)
+            . ' ' . escapeshellarg($this->root . '/bin/cli.php')
+            . ' ' . $args;
+
         $descriptors = [
             0 => ['pipe', 'r'],
             1 => ['pipe', 'w'],
@@ -53,8 +65,7 @@ final class AicliClient
 
             if (time() - $start > self::TIMEOUT_SECONDS) {
                 proc_terminate($proc, 9);
-
-                return ['ok' => false, 'error' => 'CLI timeout', 'hint' => 'Command took too long', 'output' => $output];
+                return ['ok' => false, 'error' => 'CLI timeout', 'hint' => '', 'output' => $output];
             }
 
             usleep(100000);
@@ -67,6 +78,7 @@ final class AicliClient
         return $this->parseOutput(trim($output));
     }
 
+
     /**
      * @return array<string, mixed>
      */
@@ -78,6 +90,18 @@ final class AicliClient
 
         if ($trimmed === '') {
             return ['ok' => false, 'data' => [], 'error' => 'empty output', 'hint' => 'CLI returned nothing'];
+        }
+
+        // Ищем валидный JSON от CLI (он всегда начинается с {"ok":)
+        if (preg_match('/(\{"ok":.*\})/s', $trimmed, $matches)) {
+            $trimmed = $matches[1];
+        }
+
+        // Извлекаем JSON из возможного мусора (warnings, deprecations)
+        $start = strpos($trimmed, '{');
+        $end = strrpos($trimmed, '}');
+        if ($start !== false && $end !== false && $end > $start) {
+            $trimmed = substr($trimmed, $start, $end - $start + 1);
         }
 
         $decoded = json_decode($trimmed, true);

@@ -87,12 +87,29 @@ try {
     $fc = new \Damoony\App\FrontController($container, $pages);
     $response = $fc->handle($request, sessionId: $tabId, aliasOverride: $alias);
 
-    // 4. Внедряем <base> тег, чтобы ссылки внутри превью не ломали адреса
+    // 4. Внедряем <base> тег и Wireframe CSS
     $contentType = $response->headers['content-type'] ?? '';
     if (str_contains((string)$contentType, 'text/html')) {
         $baseUrl = "/admin/preview/{$tabId}/";
+        $html = str_replace('<head>', "<head><base href=\"{$baseUrl}\">", $response->body);
+        
+        $mode = $_GET['mode'] ?? '';
+        if ($mode === 'wireframe') {
+            $wireframeCss = '<style>
+                body { margin: 0; padding: 10px; box-sizing: border-box; }
+                .layout { display: flex; flex-direction: column; gap: 15px; min-height: 100vh; }
+                .layout > div { border: 2px dashed #e74c3c; padding: 15px; position: relative; background: rgba(231, 76, 60, 0.05); }
+                .layout > div::before { content: "GLOBAL REGION"; position: absolute; top: -12px; left: 10px; background: #e74c3c; color: white; padding: 2px 6px; font-size: 10px; border-radius: 3px; font-weight: bold; letter-spacing: 1px; }
+                .layout .page-content { border-color: #2ecc71; background: rgba(46, 204, 113, 0.05); }
+                .layout .page-content::before { content: "CENTER (LOCAL BLOCKS)"; background: #2ecc71; }
+                .page-content > * { border: 1px solid #3498db; margin: 10px 0; padding: 10px; position: relative; background: #fff; }
+                .page-content > *::before { content: attr(class); position: absolute; top: -9px; right: 5px; background: #3498db; color: white; font-size: 9px; padding: 1px 5px; border-radius: 2px; }
+            </style>';
+            $html = str_replace('</head>', $wireframeCss . '</head>', $html);
+        }
+
         $response = new \Damoony\Http\Response(
-            str_replace('<head>', "<head><base href=\"{$baseUrl}\">", $response->body),
+            $html,
             $response->status,
             $response->headers,
         );
