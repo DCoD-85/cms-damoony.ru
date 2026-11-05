@@ -6,7 +6,7 @@ namespace Damoony\Ai\Orchestrator;
 
 use Damoony\Ai\Aicli\AicliClient;
 
-final class ToolsCollector
+final class ToolsCollector implements ToolsCollectorInterface
 {
     public function __construct(private readonly AicliClient $client)
     {
