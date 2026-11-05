@@ -72,8 +72,9 @@ final class AicliClient
      */
     public function runJson(string $args): array
     {
-        $output = shell_exec(escapeshellarg(PHP_BINARY) . ' ' . $this->root . '/bin/cli.php ' . $args . ' --json 2>&1');
-        $trimmed = trim((string) $output);
+        // Используем run() (proc_open) вместо shell_exec (который часто недоступен на Windows)
+        $cliOutput = $this->run($args . ' --json');
+        $trimmed = trim($cliOutput['output']);
 
         if ($trimmed === '') {
             return ['ok' => false, 'data' => [], 'error' => 'empty output', 'hint' => 'CLI returned nothing'];

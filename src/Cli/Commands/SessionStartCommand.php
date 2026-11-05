@@ -50,6 +50,15 @@ final class SessionStartCommand extends AbstractSessionCommand
 
         try {
             $this->copyTree($releaseDir, $sessionDir);
+
+            // Копируем медиа-инфраструктуру (skin/css/js/img) в session-зону,
+            // чтобы правки skin:edit не затрагивали production.
+            $projectRoot = rtrim($this->paths->root(), '/');
+            $mediaSource = $projectRoot . '/www/media/' . $domain;
+            $mediaDest = $projectRoot . '/www/media/.sess_' . $tab . '.' . $domain;
+            if (is_dir($mediaSource)) {
+                $this->copyTree($mediaSource, $mediaDest);
+            }
         } catch (\RuntimeException $e) {
             $r->error('Copy failed: ' . $e->getMessage());
             return $r;
@@ -62,6 +71,15 @@ final class SessionStartCommand extends AbstractSessionCommand
             'admin_session_id' => $adminSess,
             'created_at' => time(),
             'production_hash' => $productionHash,
+            'permissions' => [
+                'page:write' => true,
+                'block:write' => true,
+                'filler:write' => true,
+                'skin:edit' => false,
+                'scheme:save' => false,
+                'structure:check' => true,
+                'net:fetch' => true,
+            ],
         ];
         $this->writeMeta($sessionDir, $meta);
 
