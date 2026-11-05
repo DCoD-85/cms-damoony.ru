@@ -1,6 +1,12 @@
 # AI-Слой: Интеграция, AINET и Мультиагентная генерация
 
-Этот документ описывает, как локальные LLM (например, Ollama) взаимодействуют с движком. Единственная точка входа для ИИ-команд — `bin/aicli.php`. AINET (сеть) изолирован от файловой системы. Для полной автономной сборки сайтов используется Python-оркестратор `ai_agent/brain.py`.
+Этот документ описывает **внешний** AI-слой: `bin/aicli.php` (JSON-in/out для `brain.py` и сторонних агентов), роли, Navigator, AINET. Для полной автономной сборки сайтов используется Python-оркестратор `ai_agent/brain.py`.
+
+**Три независимых AI-контура:**
+
+1. **`bin/aicli.php`** — внешний JSON-in/out. Роли (`Roles.php`), HATEOAS (`Navigator`), AINET (`net:*`, `image:*`). Этот документ.
+2. **`src/Ai/Orchestrator/`** — внутренний мультиагент для AIUI (Interviewer → Architect → Coder, Blackboard, `ModelRouter`). **Не использует** `bin/aicli.php`, работает через `AicliClient` → `bin/cli.php`. Описан в `_doc/orchestrator.md`.
+3. **`ai_agent/brain.py`** — Python-оркестратор для Wizard (генерация «с нуля»). Использует `bin/aicli.php` + Ollama. Описан в §6 и `_doc/install.md`.
 
 ---
 
@@ -148,10 +154,58 @@ AI не имеет прямого доступа к терминалу. Он о�
 
 ---
 
-## 8. AIUI (AI User Interface) и brain.py integration
+## 8. AIUI (AI User Interface) — краткий обзор
 
-- **brain.py (Формы):** Автоматически определяет, нужна ли форма (через LLM или keyword-fallback), и генерирует её с CSRF-токеном через `_build_form_blocks()`.
-- **AIUI (Команда):** `php bin/cli.php ai:edit-page --domain=... --alias=... --page=... --prompt="Добавь H1"`
-- **AIUI (Web UI):** Split-screen (`www/admin/aiui.php`). Чат с LLM + превью.
-- **AIUI (Endpoint):** `POST /admin/ai_edit.php` (принимает JSON `{prompt, apply}`).
-- **Принцип:** LLM получает текущий JSON блоков, возвращает новый, `PageCompiler` перекомпилирует PHP. Никакого raw PHP от ИИ.
+Полное описание внутреннего конвейера — в `_doc/orchestrator.md`. Здесь — только контракт между AIUI и AI-слоем.
+
+### 8.1. Endpoint: `POST /admin/ai_edit.php` (JSON-in/out)
+
+4 action:
+
+- **`start`** — создать/пересоздать сессию (`SessionStartCommand`). Возвращает `{ok, tab, preview_url}`. Если сессия уже была — сносит в карантин через `SessionDiscardCommand` и создаёт заново.
+- **`preview`** — интерактивный шаг: `Orchestrator::run()` (Interviewer → chat или Architect → Coder).
+  - Если Interviewer вернул `action=chat`: `{ok, chat_only: true, reply, brief}` — превью НЕ обновляется, только чат и бриф.
+  - Если `action=build`: `{ok, preview_url, pages_total, pages_ok, progress}` — страницы записаны в сессию.
+- **`build`** — явная генерация по кнопке (без Интервьюера): `Orchestrator::build()`. Архитектор → per-page Coder → `page:new`/`page:write` для каждой страницы. Пишет `meta.build_progress` в `context.json`.
+- **`apply`** — перенос сессии в production (`SessionApplyCommand`). Блокируется, если `countBlocks() < 5` (рекурсивный счётчик по `children`).
+
+### 8.2. Frontend
+
+- `www/admin/aiui.php` — HTML-каркас через `Builder` (split-screen: слева iframe, справа чат).
+- `www/media/damoony.ru/agent/skin/default/js/aiui.js` — логика: sendPrompt, buildSite, applyChanges.
+- `www/media/damoony.ru/agent/skin/default/css/aiui.css` — тёмная тема, панель брифа, кнопка «🚀 Создать сайт».
+
+Элементы:
+- Панель брифа (📝) — живое отображение `context.input.brief`.
+- Кнопка «🚀 Создать сайт по брифу» — появляется, когда бриф непустой. Вызывает `action=build`.
+- Кнопка «Применить» — появляется после успешной генерации. Вызывает `action=apply`.
+
+### 8.3. Preview
+
+- `/admin/preview/{tab}/{alias}/{path}` → `www/admin/aipreview.php` (rewrite через `.htaccess`).
+- Внутри: `FrontController::handle($request, sessionId: $tab, aliasOverride: $alias)`.
+- `FileRouter` + `PageHandler` читают PHP из `app/.sess_{tab}.{domain}/{alias}/algoritm/`.
+- `<base href="/admin/preview/{tab}/">` инжектится в `<head>` для корректных относительных ссылок.
+
+### 8.4. Модели (ModelRouter)
+
+- Выбор по роли из `config/models.config` (`ModelRouter::resolve($role)`).
+- Рекомендуемый расклад:
+  - `reporter` → `gemma4:e4b` (чат, брифы) — лучше говорит по-русски.
+  - `architect`, `designer` → `deepseek-coder:6.7b` (JSON, план) — точнее в структуре.
+- Приоритет выбора: `args['model']` → `ModelRouter` (только для `llm_provider=local`) → `agent.config.llm_model`.
+
+### 8.5. brain.py (Wizard) — отдельный контур
+
+- Генерация сайта «с нуля» через `bin/aicli.php` + Ollama.
+- Не использует `Orchestrator` и `ModelRouter`.
+- Подробнее — §6 этого документа и `_doc/install.md`.
+
+---
+
+## 9. Связанные документы
+
+- `_doc/orchestrator.md` — внутренний мультиагентный конвейер AIUI (Blackboard, AgentInterface, ModelRouter, 4 action AIUI, build_progress).
+- `_doc/aiui.md` — UI-документация (кнопки, панели, сессия).
+- `_doc/arch.md` §4 — контракты Orchestrator и ModelRouter.
+- `_doc/dev.md` — как писать страницы/блоки (CLI).

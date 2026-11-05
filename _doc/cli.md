@@ -31,8 +31,8 @@
 
 ## 3. Страницы (Page)
 
-- `page:new --domain=[d] --allias=[a] --name=[n] [--parent=...]` — создаёт 3 файла (`algoritm_[name].php`, `.rules.json`, `.editor.json`). Родитель должен существовать.
-- `page:write --domain=[d] --allias=[a] --name=[n] --json='[...]'` — безопасная запись JSON. Флаги: `--json_b64`, `--data_file`, `--with_schema=1`. Для главной: `--name=__root__`.
+- `page:new --domain=[d] --allias=[a] --name=[n] [--parent=...] [--session=tab]` — создаёт 3 файла (`algoritm_[name].php`, `.rules.json`, `.editor.json`). Родитель должен существовать. При `--session=tab` пишет в `app/.sess_{tab}.{domain}/`.
+- `page:write --domain=[d] --allias=[a] --name=[n] --json='[...]' [--session=tab]` — безопасная запись JSON. Флаги: `--json_b64`, `--json_file`, `--data_file`, `--with_schema=1`. Для главной: `--name=__root__`. При `--session=tab` пишет в `app/.sess_{tab}.{domain}/` и сохраняет `.editor.json`.
 - `page:read --domain=[d] --allias=[a] --name=[n]` — вывод сгенерированного PHP-кода.
 - `page:toggle --domain=[d] --allias=[a] --name=[n] --key=auth|search|default --value=1|0` — переключение флага в `.rules.json`.
 - `page:list --domain=[d] --allias=[a] [--json]` — рекурсивный список страниц (с флагами).
@@ -85,3 +85,16 @@
 - Визуальный Drag&Drop для Схем (сохраняется через `scheme:save`).
 - Управление банами (rate limit).
 - Просмотр логов (`var/admin_logs.json`).
+
+---
+
+## 10. AIUI Сессии (Session-based workflow)
+
+Команды для изолированной работы AIUI (`www/admin/ai_edit.php`). Все пишут в `app/.sess_{tab}.{domain}/` и `www/media/.sess_{tab}.{domain}/`, не трогая production.
+
+- `session:start --domain=[d] --tab=[hex] [--admin-sess=login]` — копирует `app/{domain}/` и `www/media/{domain}/` в `.sess_{tab}`. Пишет `.session.json` с permissions.
+- `session:apply --domain=[d] --tab=[hex] [--admin-sess=login]` — атомарно переносит `.sess_{tab}` в production (с optimistic lock по `production_hash`). Старая папка → `_trash_sess_*`.
+- `session:discard --domain=[d] --tab=[hex]` — переносит `.sess_{tab}` в карантин.
+- `session:list [--domain=d]` — сканирует `app/.sess_*`, читает meta.
+
+**Флаг `--session=tab`** — обязательный для `page:new`, `page:write`, `block:write`, `filler:write`, `skin:edit`, `scheme:save` при работе из AIUI. Без флага команда пишет в production.

@@ -26,7 +26,10 @@
 3. **FrontController**: 
    - `DomainResolver` определяет `DomainContext` (нормализует Host, отрезает порт).
    - Проверяет доступность домена/алиаса (если выключен — 503).
-   - **FileRouter** сопоставляет URL с файлами, читая `algoritm_[name].rules.json` на каждом шаге.
+   - **Принимает `?string $sessionId = null` и `?string $aliasOverride = null`** (для AIUI-превью из `.sess_*` и переопределения алиаса в URL `/admin/preview/{tab}/{alias}/...`).
+   - Если `$aliasOverride !== null` → `$domain = $domain->withAllias($aliasOverride)`.
+   - **FileRouter** сопоставляет URL с файлами, читая `algoritm_[name].rules.json` на каждом шаге. При `$sessionId !== null` base-path = `app/.sess_{tab}.{domain}/{alias}/algoritm/`, иначе — `app/{domain}/{alias}/algoritm/`.
+   - **`PageHandler`** получает `session_id` через `RegionContext::service('session_id')` и читает PHP из `.sess_*` при наличии сессии.
 4. **PageHandler**: загружает `RegionRegistry`, подключает PHP-файл страницы, вызывает `default()`.
 5. **Response**: если `default()` вернул `null`, отдаётся `204 No Content`. Если `Node` — рендерится в HTML. Ошибки в prod → generic 500.
 
@@ -65,7 +68,15 @@
 - **ContentResponder:** `parse()`, `hostAllowed()`, `requiresAuth()`. Отдаёт только GET/HEAD. 404 при host-mismatch. 302 на логин при `page_refs` (auth).
 - **Компиляторы (`PageCompiler`, `BlockCompiler`):** Принимают JSON-массив блоков (включая тип `nav` для меню) и генерируют безопасный PHP-код. Используют `Text::raw()` для вывода разрешенных тегов `<a>` и `<strong>` (защита от XSS остальных тегов).
 - **AINET (`src/Ainet/`)**: `UrlGuard` (SSRF), `HttpClient` (GET-only, ручные редиректы), `AinetFacade` (bytes без записи на диск). URL whitelist независим от domain whitelist (`agent.config`).
-- **Wizard (`src/Ai/`)**: `WizardManager` управляет строгим State Machine (init -> domain -> plan -> content -> commit). Отделяет валидацию черновиков от реального вызова CLI. `WizardSession` — DTO для хранения состояния (JSON в `var/wizard/`).
+- **Wizard (`src/Ai/`)**: `WizardManager` управляет строгим State Machine (init -> domain -> plan -> content -> commit). Отделяет валидацию черновиков от реального вызова CLI. `WizardSession` — DTO для хранения состояния (JSON в `var/wizard/`). Используется внешним `brain.py`; **не связан** с внутренним Orchestrator.
+- **Orchestrator (`src/Ai/Orchestrator/`)** — внутренний мультиагентный конвейер для AIUI:
+  - `ContextManager` — Blackboard (чтение/запись `.sess_*_/context.json`): `meta`, `input` (prompt, brief, current_blocks, history), `tools_context`, `agent_outputs`.
+  - `ToolsCollector` — read-only снимок окружения (`structure:check`, `db:schema`) через `AicliClient::runJson()`.
+  - `Orchestrator::run()` — интерактивный режим (Interviewer -> chat/architect).
+  - `Orchestrator::build()` — пакетный режим по кнопке «Создать»: Architect -> per-page Coder -> `page:new`/`page:write`. Пишет `meta.build_progress` (per-page status).
+  - **Agents** (`src/Ai/Orchestrator/Agent/`): `InterviewerAgent` (brief accumulation через `gemma4:e4b`), `ArchitectAgent` (возвращает `{pages: [...]}` через `deepseek-coder`), `CoderAgent` (per-page JSON-блоки + strip markdown).
+  - **ModelRouter (`src/Ai/ModelRouter.php`)** — читает `config/models.config` (роль -> модель). Приоритет: `args['model']` -> `ModelRouter::resolve($role)` -> `agent.config.llm_model`.
+  - **Отличие от `bin/aicli.php`**: Orchestrator = внутренний API для `ai_edit.php` (вызывает `AicliClient`, а не `bin/aicli.php`); aicli = внешний JSON-in/out для `brain.py` и сторонних агентов.
 
 ---
 
@@ -78,8 +89,11 @@
 - `Document::release()` идемпотентен. `default(): null` возвращает 204 (не 500).
 - Path traversal guard: все CLI-команды с `--domain`/`--name` проверяют `..` и regex.
 - Карантин: destructive CLI-команды не удаляют сразу, а перемещают в `*_trash_[timestamp]/` (6 уровней).
-- AI-Слой: единственная точка входа — `bin/aicli.php`. Роль `*` (default) — надмножество всех 9 ролей.
+- AI-Слой — **две независимые точки входа**:
+  - `bin/aicli.php` — внешние AI-агенты (`brain.py`, сторонние). JSON-in/out, 9 ролей (`Roles.php`), HATEOAS (`Navigator`).
+  - `Orchestrator` (`src/Ai/Orchestrator/`) — внутренний конвейер AIUI. Вызывается из `www/admin/ai_edit.php`. Не знает о ролях aicli, использует `ModelRouter` + `AgentInterface`.
 - AI не пишет сырой PHP. Используется безопасный JSON (PageCompiler/BlockCompiler).
+- **Сессии изолируют FS**: все операции записи AIUI (`page:new`, `page:write`) идут с `--session=X` и пишут только в `app/.sess_{tab}.{domain}/` и `www/media/.sess_{tab}.{domain}/`. Production (`app/[domain]/`) меняется только через `session:apply`. Без `--session` команда пишет в production (CLI-режим для разработчика).
 - Content: запись только через CLI. AINET не пишет на диск.
 - Skin: `skin:edit` разрешает только `css/main.css` и `js/main.js` (≤ 1 MB, без `@import`/`javascript:`).
 - AINET: только GET, scheme (http/https), port (80/443), блок private IP. Whitelist без wildcard.
@@ -90,14 +104,19 @@
 
 *Список актуальных архитектурных компромиссов и известных недоработок.*
 
-1. **AI-Транзакции:** нет отката (Rollback) при падении одной из команд в цепочке. Батчи для слабых моделей (Qwen 7B) — ручные.
+1. **AI-Транзакции:** `Orchestrator::build()` уже изолирует падения постранично (try/catch на каждую страницу, продолжает со следующей; результат — `build_partial`). Но **полного rollback** цепочки нет: если 3/5 страниц упали, они остаются в сессии как `failed`. Нужен `build:rollback` (откат до `build_started`).
 2. **RegionContext::service():** возвращает `mixed` (Service Locator). Компенсируется `instanceof` на стороне вызывающего. Нужен `@template` в PHPDoc.
 3. **assert() для типов:** в prod исчезает. Заменить на явные `if (!instanceof) throw`.
-4. **Builder неполон:** нет методов `table`, `form`, `section`, `nav`, `label`, `select`, `textarea`.
+4. **Builder неполон:** нет `section`, `form`, `table`, `select`, `textarea`, `label`, `nav`. Компиляторы (`BlockCodegen`) обходят это через `Builder::el($tag)`, но это неудобно.
 5. **domains_real[$domain] в save():** работает только при self-mapping (P2 — заменить на `ConfigDomainResolver::real()`).
 6. **PageHandler::applySkin:** читает `$_COOKIE` напрямую, а не через `LanguageNegotiator`-подобный сервис.
 7. **Namespace Damoony\Algoritm:** сохранён (P2 — переименовать в `Damoony\Page`).
 8. **AINET:** только GET (POST/PUT/DELETE запрещены). Нет парсинга HTML (только JSON API и текст).
+9. **Архитектор нестабилен:** `ArchitectAgent` каждый запуск выдаёт разные имена страниц (`about` vs `company_info` vs `our_coffee`). Имена не фиксированы в промпте. P2: жёсткий whitelist slug-ов (`home`, `about`, `menu`, `contacts`, `reviews`) либо проверка на дубли после парсинга.
+10. **Coder оборачивает в `section`:** LLM часто возвращает `[{"type":"section","children":[...]}]` вместо плоского массива. Это валидно, но `build_progress.blocks` считает только верхний уровень (1). UI: показывать реальное число через рекурсивный подсчёт.
+11. **`PageNewCommand --session`:** реализовано (`--session=X`), но требует рестарта сервера, чтобы opcache перечитал класс. На prod (Linux) проблемы нет; на Windows (php-cgi) — рестарт обязателен после каждого изменения PHP-класса.
+12. **Дизайнер (CSS) не реализован:** в Orchestrator нет `DesignerAgent`. Стили генерирует только `brain.py` (Wizard). AIUI пока использует skin по умолчанию. P2: `DesignerAgent` (генерация `main.css` через `skin:edit --session`).
+13. **Markdown в Coder:** LLM иногда выдаёт `**bold**`, `[text](url)` в `content`. Частично закрыто `stripMarkdown()` в `CoderAgent`, но покрытие неполное (списки, цитаты).
 9. **AI-Оркестраторы:** `ai_agent/brain.py` — рабочий мультиагент. UI для запуска из админки пока нет (только CLI/консоль).
 10. **skin:bundle:** не реализован (сборка CSS/JS).
 11. **Скрытые дефолты:** `Slot::release()` возвращает пустую строку (слот без региона молча исчезает).

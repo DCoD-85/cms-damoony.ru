@@ -9,11 +9,15 @@
 ## 1. Идентификация
 
 - **Проект:** Damoony Engine — PHP 8.4 multi-domain CMS.
-- **Версия:** v2.0.0 (Production Ready + Multi-Agent AI + Markdown Parser).
-- **Архитектура:** CLI-First (CLI — единственный источник истины для FS), AI-Native (aicli + 9 ролей + Navigator + `ai_agent/brain.py`), Content (`/content/`, вне webroot) + Skin (`www/media/[domain]/[allias]/skin/`, git).
+- **Версия:** v3.1-dev (Multi-Agent Orchestrator + AIUI Phase B).
+- **Архитектура:** CLI-First (CLI — единственный источник истины для FS), AI-Native:
+  - **Внутренний Orchestrator** (`src/Ai/Orchestrator/`) — мультиагентный конвейер для AIUI: Interviewer → Architect → Coder, Blackboard в `context.json`, per-page генерация.
+  - **Внешний aicli** (`bin/aicli.php`) — JSON-in/out для `brain.py` и сторонних AI-агентов, 9 ролей.
+  - **Content** (`/content/`, вне webroot) + **Skin** (`www/media/[domain]/[allias]/skin/`, git).
 - **Репозиторий:** https://github.com/DCoD-85/cms-damoony.ru/
 - **Ветка:** `main`.
-- **Стек:** PHP 8.4, MariaDB 11.8, Apache 2, Composer (PSR-4/3/11), PHPUnit 10, PHPStan 8, PHP-CS-Fixer, Python 3 (для `ai_agent/brain.py`), Ollama (Qwen 2.5 Coder 7B / Gemma 4), curl + openssl + gd.
+- **Стек (dev):** PHP 8.4 (NTS), MariaDB 11.8, **Nginx + PHP-CGI** (standalone `E:\localserver`, не OSPanel), Composer (PSR-4/3/11), PHPUnit 10, PHPStan 8, PHP-CS-Fixer, Python 3 (`ai_agent/brain.py`), Ollama (`gemma4:e4b` для чата, `deepseek-coder:6.7b` для кода/JSON).
+- **Стек (prod):** Debian 13, PHP 8.4 + PHP-FPM, Nginx, MariaDB 11.8.
 
 ---
 
@@ -59,6 +63,26 @@
 - Расширения PHP: `curl`, `gd`, `openssl`, `mbstring`, `pdo_mysql`, `pdo_sqlite`, `fileinfo`, `tokenizer`, `xml`.
 - **Запрещено:** PHP/MariaDB из winget, глобальный PATH, Composer из AppData.
 
+#### Запуск CLI (Windows standalone)
+
+Системный `php` в терминале может указывать на старую версию без нужных расширений (например, без `curl`). **Всегда** запускай CLI через наш бинарник с явным конфигом:
+
+    "/e/localserver/tools/php/php.exe" -c "/e/localserver/tools/php/php.ini" bin/cli.php [команда]
+
+Для удобства — алиас в `~/.bashrc`:
+
+    alias php='/e/localserver/tools/php/php.exe'
+
+#### Управление сервером
+
+Трей-иконка **LocalDamoony** (в системном трее):
+- Правый клик -> Запустить / Остановить / Перезапустить
+- Автозагрузка при входе в Windows
+- Файлы: `E:/localserver/server.ps1`, `server.vbs`
+- Логи: `E:/localserver/logs/` (nginx, mariadb, php)
+
+Если PHP-CGI упал или завис — через трей `Остановить` -> `Запустить` (сбросит кэш opcache и перечитает php.ini).
+
 ### Production
 
 - i7, 8GB RAM, 128GB SSD + 1TB HDD, Debian 13, Apache 2, PHP 8.4.25, MariaDB 11.8.
@@ -98,6 +122,9 @@
 | Ядро | `src/` |
 | AINET (библиотека) | `src/Ainet/` |
 | AI (Roles, Navigator) | `src/Ai/` |
+| **AI Orchestrator (внутренний)** | `src/Ai/Orchestrator/` (Blackboard, State Machine) |
+| **AI Agents** | `src/Ai/Orchestrator/Agent/` (Interviewer, Architect, Coder) |
+| **Model Router** | `src/Ai/ModelRouter.php` + `config/models.config` |
 | Content responder | `src/Content/`, `www/content.php` |
 | Домен | `app/[domain]/` |
 | Страница | `app/[domain]/[allias]/algoritm/algoritm_[name].{php,rules.json,editor.json}` |
@@ -112,19 +139,25 @@
 | AI-Оркестраторы | `ai_agent/brain.py` (рабочий мультиагент) |
 | Тесты | `_dev/tests/` |
 | Runtime | `var/` (+ `var/ainet-cache/`, `var/ainet-ratelimit.json`) |
+| **Локальный сервер (Windows)** | `E:/localserver/` (tools: nginx/php/mariadb, domains: проекты) |
+| **Трей-менеджер** | `E:/localserver/server.ps1` + `server.vbs` |
+| **Session (AIUI)** | `app/.sess_{tab}.{domain}/` (изолированная копия домена) |
+| **Session media** | `www/media/.sess_{tab}.{domain}/` (изолированный скин) |
 
 ---
 
 ## 8. Быстрые команды
 
 ```bash
-# Бинарники (если не в PATH)
-export PATH="/e/localserver/modules/php/PHP_8.4:$PATH"
-export PATH="/e/localserver/modules/database/MariaDB-11.8-Win10/bin:$PATH"
+# Бинарники (Windows standalone)
+# Используй полный путь с явным php.ini (иначе системный php без cURL)
+PHP="/e/localserver/tools/php/php.exe -c /e/localserver/tools/php/php.ini"
+NGINX="/e/localserver/tools/nginx/nginx.exe"
+MYSQL="/e/localserver/tools/mariadb/bin/mariadb.exe"
 
 # Проверки (источник метрик — сам вывод, не документация)
-php vendor/bin/phpunit -c _dev/phpunit.xml
-php vendor/bin/phpstan analyse -c _dev/phpstan.neon --memory-limit=1G --no-progress
+"$PHP" vendor/bin/phpunit -c _dev/phpunit.xml
+"$PHP" vendor/bin/phpstan analyse -c _dev/phpstan.neon --memory-limit=1G --no-progress
 PHP_CS_FIXER_IGNORE_ENV=1 php vendor/bin/php-cs-fixer fix --config=_dev/.php-cs-fixer.php --dry-run
 # или: composer test / composer stan / composer cs / composer check
 
