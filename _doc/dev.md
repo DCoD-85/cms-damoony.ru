@@ -270,3 +270,36 @@ if ($this->isAuthenticated()) {
 
     python -m ai_agent.brain damoony3test.ru www "Тестовый бриф" qwen2.5-coder:7b
 
+
+---
+
+## 9. Локальный сервер (Windows standalone)
+
+Проект больше не использует OSPanel. Вместо него развернут автономный стек **Nginx + PHP-CGI + MariaDB** в папке `E:\\localserver`. 
+Это решает проблему падения `proc_open` (из-за модуля Apache `mpm_winnt`) и дает среду, максимально похожую на Debian.
+
+### 9.1. Структура
+- `E:\\localserver\\domains\\damoony3.ru\\` — корень проекта (git-репозиторий).
+- `E:\\localserver\\tools\\` — бинарники сервера (`nginx`, `php`, `mariadb`).
+- `E:\\localserver\\server.ps1` — скрипт управления (трей-иконка).
+- `E:\\localserver\\server.vbs` — лаунчер (запускает скрипт без окна консоли).
+
+### 9.2. Управление
+- **Трей-иконка:** в системном трее висит иконка (правый клик — Запустить/Остановить/Перезапустить, открыть AIUI).
+- **Автозагрузка:** сервер стартует автоматически при входе в Windows.
+- **Логи:** `E:\\localserver\\logs\\` (ошибки Nginx и access-логи).
+
+### 9.3. Запуск CLI-команд (Важно!)
+Системный `php` в терминале (GitBash/CMD) может указывать на старую версию без нужных расширений (например, без `curl`). 
+**Всегда запускайте CLI через наш бинарник с явным указанием конфига:**
+
+    "/e/localserver/tools/php/php.exe" -c "/e/localserver/tools/php/php.ini" bin/cli.php [команда]
+
+*Пример:*
+
+    "/e/localserver/tools/php/php.exe" -c "/e/localserver/tools/php/php.ini" bin/cli.php structure:check
+
+Для удобства можно создать алиас в GitBash (в `~/.bashrc`):
+
+    alias php='/e/localserver/tools/php/php.exe'
+    alias nginx='/e/localserver/tools/nginx/nginx.exe'

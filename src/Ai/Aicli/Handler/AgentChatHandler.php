@@ -28,8 +28,13 @@ final class AgentChatHandler extends AbstractHandler
         $history = $this->arrayArg($args, 'history');
         $agentConfig = $this->loadAgentConfig();
 
+        // Разрешаем внешним агентам (например, ArchitectAgent) передавать свой системный промпт
+        $systemPrompt = is_string($args['system_prompt'] ?? null) 
+            ? $args['system_prompt'] 
+            : self::SYSTEM_PROMPT;
+
         $messages = [
-            ['role' => 'system', 'content' => self::SYSTEM_PROMPT],
+            ['role' => 'system', 'content' => $systemPrompt],
         ];
         foreach ($history as $msg) {
             if (is_array($msg) && isset($msg['role'], $msg['content'])) {

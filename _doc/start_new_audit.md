@@ -52,10 +52,10 @@
 
 ### Локальное (разработка)
 
-- Intel i9-14900HX, 32GB RAM, Windows 11, OSPanel 5.4.3.
-- Корень: `E:\OSPanel543\domains\damoony3.ru\`. Терминал: gitbash + VSCode.
-- PHP CLI: `E:\OSPanel543\modules\php\PHP_8.4\` (8.4.25).
-- MariaDB client: `E:\OSPanel543\modules\database\MariaDB-11.8-Win10\bin\` (11.8).
+- Intel i9-14900HX, 32GB RAM, Windows 11, Локальный стек (Nginx + PHP-CGI + MariaDB).
+- Корень: `E:\localserver\domains\damoony3.ru\`. Терминал: gitbash + VSCode.
+- PHP CLI: `E:\localserver\tools\php\` (8.4.25).
+- MariaDB client: `E:\localserver\tools\mariadb\bin\` (11.8).
 - Расширения PHP: `curl`, `gd`, `openssl`, `mbstring`, `pdo_mysql`, `pdo_sqlite`, `fileinfo`, `tokenizer`, `xml`.
 - **Запрещено:** PHP/MariaDB из winget, глобальный PATH, Composer из AppData.
 
@@ -119,8 +119,8 @@
 
 ```bash
 # Бинарники (если не в PATH)
-export PATH="/e/OSPanel543/modules/php/PHP_8.4:$PATH"
-export PATH="/e/OSPanel543/modules/database/MariaDB-11.8-Win10/bin:$PATH"
+export PATH="/e/localserver/modules/php/PHP_8.4:$PATH"
+export PATH="/e/localserver/modules/database/MariaDB-11.8-Win10/bin:$PATH"
 
 # Проверки (источник метрик — сам вывод, не документация)
 php vendor/bin/phpunit -c _dev/phpunit.xml
