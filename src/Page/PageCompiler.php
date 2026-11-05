@@ -40,7 +40,8 @@ final class PageCompiler
             $code .= "        if (!\$paths instanceof Paths) {\n";
             $code .= "            return Response::internalError('Paths service missing');\n";
             $code .= "        }\n\n";
-            $code .= "        \$loader = new SchemeLoader(\$paths);\n";
+            $code .= "        \$sid = \$this->context->service('session_id');\n";
+            $code .= "        \$loader = new SchemeLoader(\$paths, is_string(\$sid) ? \$sid : null);\n";
             $code .= "        \$manifest = \$loader->load(\$this->context->domain, \$this->context->domain->scheme);\n";
             $code .= "        \$renderer = new SchemeRenderer();\n\n";
             $code .= "        return \$renderer->render(\$manifest, \$this->regions(), \$this->context);\n";
