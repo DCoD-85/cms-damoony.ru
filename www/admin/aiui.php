@@ -1,95 +1,74 @@
 <?php
+
 declare(strict_types=1);
-// TODO: require admin auth
-$domain = $_GET['domain'] ?? 'damoony3test.ru';
-$alias = $_GET['alias'] ?? 'ai_form_test_v2';
-$page = $_GET['page'] ?? 'contacts';
-?>
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>AIUI Editor</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
-        body { display: flex; height: 100vh; background: #f0f2f5; }
-        #preview { flex: 1; border-right: 1px solid #ccc; background: #fff; }
-        #preview iframe { width: 100%; height: 100%; border: none; }
-        #chat { width: 400px; display: flex; flex-direction: column; background: #fff; }
-        #messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
-        .msg { padding: 10px 15px; border-radius: 8px; max-width: 90%; font-size: 14px; }
-        .msg.user { background: #007bff; color: #fff; align-self: flex-end; }
-        .msg.ai { background: #e9ecef; color: #333; align-self: flex-start; }
-        .msg.error { background: #f8d7da; color: #721c24; }
-        #input-area { padding: 15px; border-top: 1px solid #ccc; display: flex; gap: 10px; }
-        #prompt { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; resize: none; }
-        #send { padding: 10px 20px; background: #28a745; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
-        #send:disabled { background: #6c757d; }
-    </style>
-</head>
-<body>
 
-<div id="preview">
-    <iframe id="site-frame" src="http://<?= htmlspecialchars($alias) ?>.<?= htmlspecialchars($domain) ?>/"></iframe>
-</div>
+use Damoony\Session\NativeSession;
+use Damoony\Ui\Builder;
 
-<div id="chat">
-    <div id="messages">
-        <div class="msg ai">Привет! Я AIUI. Что изменить на странице? Например: "Добавь заголовок H1 сверху".</div>
-    </div>
-    <div id="input-area">
-        <textarea id="prompt" rows="3" placeholder="Напишите команду..."></textarea>
-        <button id="send" onclick="sendPrompt()">→</button>
-    </div>
-</div>
+require_once __DIR__ . '/../../vendor/autoload.php';
 
-<script>
-    const domain = "<?= $domain ?>";
-    const alias = "<?= $alias ?>";
-    const page = "<?= $page ?>";
+$session = new NativeSession('ADMINSESSID', ($_SERVER['HTTPS'] ?? '') === 'on');
+$session->start();
+$adminLogin = $session->get('admin_login');
+if (!is_string($adminLogin) || $adminLogin === '') {
+    http_response_code(403);
+    exit('Forbidden: Admin authentication required.');
+}
 
-    async function sendPrompt() {
-        const input = document.getElementById('prompt');
-        const btn = document.getElementById('send');
-        const prompt = input.value.trim();
-        if (!prompt) return;
+$domain = 'damoony3.ru';
+$alias = 'www';
+$realDomain = 'damoony.ru';
 
-        addMessage(prompt, 'user');
-        input.value = '';
-        btn.disabled = true;
+$layout = Builder::div('aiui-layout');
 
-        try {
-            // Запрос к нашему endpoint
-            const res = await fetch('/admin/ai_edit.php', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ domain, alias, page, prompt, apply: true })
-            });
+$preview = Builder::div('preview-area');
+$header = Builder::div('preview-header');
+$header->append(Builder::span()->content('🔴 🟡 🟢'));
+$header->append(Builder::elA('span', ['id' => 'address'])->content("http://www.{$domain}/"));
+$header->append(Builder::elA('button', ['id' => 'btn-apply'])->content('Применить'));
+$header->append(Builder::elA('span', [
+    'id' => 'tab-badge',
+    'style' => 'margin-left: auto; font-size: 11px; color: #aaa;',
+])->content('tab: ...'));
+$preview->append($header);
+$preview->append(Builder::elA('iframe', ['id' => 'site-frame', 'src' => "http://www.{$domain}/"]));
 
-            const data = await res.json();
+$chat = Builder::div('chat-area');
 
-            if (data.ok) {
-                addMessage('Готово! Изменения применены. Обновляю превью...', 'ai');
-                // Перезагружаем iframe (сбрасываем кэш)
-                const iframe = document.getElementById('site-frame');
-                iframe.src = iframe.src;
-            } else {
-                addMessage('Ошибка: ' + data.error, 'error');
-            }
-        } catch (e) {
-            addMessage('Сетевая ошибка: ' + e.message, 'error');
-        } finally {
-            btn.disabled = false;
-        }
-    }
+$messages = Builder::elA('div', ['class' => 'messages', 'id' => 'messages']);
+$messages->append(Builder::div('msg ai')->content('Привет! Я AIUI. Что изменить на странице?'));
+$chat->append($messages);
 
-    function addMessage(text, type) {
-        const div = document.createElement('div');
-        div.className = 'msg ' + type;
-        div.innerText = text;
-        document.getElementById('messages').appendChild(div);
-        document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
-    }
-</script>
-</body>
-</html>
+$inputArea = Builder::div('input-area');
+
+$toolbar = Builder::div('toolbar');
+$select = Builder::elA('select', ['id' => 'target-block']);
+$select->append(Builder::elA('option', ['value' => 'all'])->content('Вся страница'));
+$select->append(Builder::elA('option', ['value' => 'center'])->content('Только CENTER (Контент)'));
+$select->append(Builder::elA('option', ['value' => 'top'])->content('Только TOP (Шапка)'));
+$select->append(Builder::elA('option', ['value' => 'bottom'])->content('Только BOTTOM (Футер)'));
+$toolbar->append($select);
+
+$label = Builder::elA('label');
+$label->append(Builder::elA('input', ['type' => 'checkbox', 'id' => 'wireframe-toggle'], true));
+$label->append(' Структура');
+$toolbar->append($label);
+
+$inputArea->append($toolbar);
+
+$inputRow = Builder::div('input-row');
+$inputRow->append(Builder::elA('textarea', ['id' => 'prompt', 'rows' => '2', 'placeholder' => 'Напишите команду...']));
+$inputRow->append(Builder::elA('button', ['id' => 'send'])->content('→'));
+$inputArea->append($inputRow);
+
+$chat->append($inputArea);
+$layout->append($preview);
+$layout->append($chat);
+
+echo "<!DOCTYPE html>\n<html lang=\"ru\">\n<head>\n<meta charset=\"UTF-8\">\n<title>AIUI Editor</title>\n";
+echo Builder::elA('link', ['rel' => 'stylesheet', 'href' => "/media/{$realDomain}/agent/skin/default/css/aiui.css"], true)->release();
+echo "\n</head>\n<body>\n";
+echo $layout->release();
+echo "\n";
+echo Builder::elA('script', ['src' => "/media/{$realDomain}/agent/skin/default/js/aiui.js"])->release();
+echo "\n</body>\n</html>";
