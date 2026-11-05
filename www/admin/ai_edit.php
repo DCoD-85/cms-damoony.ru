@@ -6,8 +6,12 @@ ob_start();
 ini_set('display_errors', '0');
 
 use Damoony\Ai\Aicli\AicliClient;
+use Damoony\Ai\Orchestrator\ContextManager;
+use Damoony\Ai\Orchestrator\Orchestrator;
+use Damoony\Ai\Orchestrator\ToolsCollector;
 use Damoony\Cli\Commands\SessionApplyCommand;
 use Damoony\Cli\Commands\SessionStartCommand;
+use Damoony\Cli\Commands\SessionDiscardCommand;
 use Damoony\Cli\Context;
 use Damoony\Core\Config;
 use Damoony\Domain\ConfigDomainResolver;
@@ -37,6 +41,12 @@ try {
     if (!preg_match('/^[a-f0-9]{8,32}$/', $tabId)) {
         throw new \RuntimeException('Invalid tab ID (8-32 hex chars)');
     }
+    if (!preg_match('/^[a-z][a-z0-9_]*$/', $alias)) {
+        throw new \RuntimeException('Invalid alias');
+    }
+    if ($page !== '__root__' && !preg_match('/^[a-z][a-z0-9_]*$/', $page)) {
+        throw new \RuntimeException('Invalid page name');
+    }
 
     // Admin session id (для привязки сессии)
     $sess = new NativeSession('ADMINSESSID', ($_SERVER['HTTPS'] ?? '') === 'on');
@@ -64,6 +74,11 @@ try {
 
     // === 1. START: создаём сессию, если её нет ===
     if ($action === 'start') {
+        if (is_dir($sessionDir)) {
+            // Прерогатива системы: если сессия есть, сносим её в карантин перед новой
+            $discardCmd = new SessionDiscardCommand($paths);
+            $discardCmd->run(['domain' => $realDomain, 'tab' => $tabId], $ctx);
+        }
         if (!is_dir($sessionDir)) {
             $startCmd = new SessionStartCommand($paths);
             $r = $startCmd->run([
@@ -81,12 +96,29 @@ try {
             'ok' => true,
             'tab' => $tabId,
             'preview_url' => '/admin/preview/' . $tabId . '/',
-        ]);
+        ], JSON_INVALID_UTF8_SUBSTITUTE | JSON_UNESCAPED_UNICODE);
         exit;
     }
 
     // === 2. PREVIEW: LLM пишет черновик в сессию ===
     if ($action === 'preview') {
+        // Dry-run Orchestrator: собираем tools_context в context.json.
+        // Ничего не меняет в текущем пайплайне. Ошибки только логируются.
+        try {
+            $orchPrompt = (string) ($input['prompt'] ?? '');
+            if ($orchPrompt !== '') {
+                $orchTb = (string) ($input['target_block'] ?? 'all');
+                $orchClient = new AicliClient($root);
+                $orchCtx = new ContextManager($paths, $tabId, $realDomain);
+                $orchTools = new ToolsCollector($orchClient);
+                $orchArchitect = new \Damoony\Ai\Orchestrator\Agent\ArchitectAgent($root);
+				$orchestrator = new Orchestrator($orchCtx, $orchTools, $orchArchitect);
+                $orchestrator->run($tabId, $realDomain, $alias, $orchPrompt, $orchTb);
+            }
+        } catch (\Throwable $orchErr) {
+            error_log('[orchestrator] ' . $orchErr->getMessage());
+        }
+
         $prompt = (string) ($input['prompt'] ?? '');
         if ($prompt === '') {
             throw new \RuntimeException('Missing prompt');
@@ -101,8 +133,20 @@ try {
             . '.editor.json';
         $current = is_file($jsonFile) ? json_decode((string) file_get_contents($jsonFile), true) : [];
 
+        // Контекст фокуса
+        $targetBlock = (string) ($input['target_block'] ?? 'all');
+        $targetContext = "";
+        if ($targetBlock === 'center') {
+            $targetContext = "FOCUS: You are ONLY editing the main content blocks (CENTER). Do not touch structural layout regions.\n";
+        } elseif ($targetBlock === 'top') {
+            $targetContext = "FOCUS: You are editing the top navigation block (TOP).\n";
+        } elseif ($targetBlock === 'bottom') {
+            $targetContext = "FOCUS: You are editing the footer block (BOTTOM).\n";
+        }
+
         // Формируем промпт
         $llmPrompt = "You are an AI web editor. You must output a JSON array of block objects.\n"
+            . $targetContext
             . "Current page blocks:\n" . json_encode($current, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n\n"
             . "User request: {$prompt}\n\n"
             . "CRITICAL RULES:\n"
@@ -132,32 +176,45 @@ try {
             }
         }
 
-        // Записываем в сессию через наш page:write (он работает в real домене)
-        $encoded = base64_encode((string) json_encode($newBlocks, JSON_UNESCAPED_UNICODE));
-        $cliPath = $root . '/bin/cli.php';
-        // Используем сессионную папку: подсовываем domain=".sess_{tab}.{real}"
-        // НО page:write ожидает release-домен. Проще напрямую записать editor.json + перекомпилировать.
-        // Пишем editor.json:
-        if (!is_dir(dirname($jsonFile))) {
-            mkdir(dirname($jsonFile), 0o775, true);
+        // Делегируем в CLI-First (arch.md §1.8): page:write --session=X
+        // Используем json_file, чтобы обойти лимит длины командной строки в Windows
+        $tmpJsonFile = $root . '/var/aiui_write_' . $tabId . '.json';
+        if (!is_dir($root . '/var')) {
+            mkdir($root . '/var', 0o775, true);
         }
-        file_put_contents($jsonFile, json_encode($newBlocks, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
-
-        // Компилируем PHP: используем PageCompiler напрямую
-        $compiler = new \Damoony\Page\PageCompiler();
-        $namespace = (str_replace(['.', '-'], '_', $realDomain)) . '\\' . $alias;
-        $className = $page === '__root__' ? 'algoritm' : 'algoritm_' . $page;
-        $php = $compiler->compile($namespace, $className, $newBlocks, true);
-
-        $phpFile = dirname($jsonFile) . '/' . $className . '.php';
-        file_put_contents($phpFile, $php);
+        $jsonStr = json_encode($newBlocks, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+        if ($jsonStr === false) {
+            throw new \RuntimeException('json_encode failed: ' . json_last_error_msg());
+        }
+        file_put_contents($tmpJsonFile, $jsonStr);
+        
+        $writeClient = new AicliClient($root);
+        $writeArgs = 'page:write'
+            . ' --session=' . $tabId
+            . ' --domain=' . $realDomain
+            . ' --allias=' . $alias
+            . ' --name=' . $page
+            . ' --json_file=' . escapeshellarg($tmpJsonFile)
+            . ' --with_schema=1';
+            
+        $writeRes = $writeClient->runJson($writeArgs);
+        
+        if (!($writeRes['ok'] ?? false)) {
+            $hint = (string) ($writeRes['hint'] ?? '');
+            $errMsg = 'page:write failed: ' . ($writeRes['error'] ?? 'unknown');
+            if ($hint !== '') {
+                $errMsg .= ' | hint: ' . substr($hint, 0, 300);
+            }
+            throw new \RuntimeException($errMsg);
+        }
+        @unlink($tmpJsonFile);
 
         ob_clean();
         echo json_encode([
             'ok' => true,
             'preview_url' => '/admin/preview/' . $tabId . '/',
             'blocks_count' => count($newBlocks),
-        ]);
+        ], JSON_INVALID_UTF8_SUBSTITUTE | JSON_UNESCAPED_UNICODE);
         exit;
     }
 
@@ -174,7 +231,7 @@ try {
         }
 
         ob_clean();
-        echo json_encode(['ok' => true, 'applied' => true]);
+        echo json_encode(['ok' => true, 'applied' => true], JSON_INVALID_UTF8_SUBSTITUTE | JSON_UNESCAPED_UNICODE);
         exit;
     }
 
@@ -183,8 +240,10 @@ try {
 } catch (\Throwable $e) {
     ob_clean();
     http_response_code(400);
-    echo json_encode([
-        'ok' => false,
-        'error' => $e->getMessage(),
-    ]);
+    $err = $e->getMessage();
+    $json = json_encode(
+        ['ok' => false, 'error' => $err],
+        JSON_INVALID_UTF8_SUBSTITUTE | JSON_UNESCAPED_UNICODE
+    );
+    echo $json !== false ? $json : '{"ok":false,"error":"json_encode failed: ' . addslashes(json_last_error_msg()) . '"}';
 }

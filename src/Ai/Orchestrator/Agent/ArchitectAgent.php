@@ -7,7 +7,7 @@ namespace Damoony\Ai\Orchestrator\Agent;
 use Damoony\Ai\Aicli\AicliClient;
 use Damoony\Ai\Aicli\Handler\AgentChatHandler;
 
-final class ArchitectAgent implements AgentInterface
+final class ArchitectAgent implements AgentInterface, ArchitectAgentInterface
 {
     private const SYSTEM_PROMPT = <<<'PROMPT'
 Ты — Архитектор веб-сайта (Senior Web Architect).
