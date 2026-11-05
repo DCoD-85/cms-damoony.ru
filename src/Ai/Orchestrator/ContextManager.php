@@ -19,7 +19,7 @@ final class ContextManager
     /**
      * Инициализирует пустой контекст, если файла нет.
      */
-    public function init(string $prompt, string $targetBlock = 'all'): void
+    public function init(string $prompt, string $targetBlock = 'all', array $currentBlocks = []): void
     {
         if (is_file($this->file)) {
             return;
@@ -34,6 +34,7 @@ final class ContextManager
             ],
             'input' => [
                 'prompt' => $prompt,
+                'current_blocks' => $currentBlocks,
                 'existing_schema' => [],
             ],
             'tools_context' => [], // Данные из db:schema, structure:check
@@ -62,6 +63,34 @@ final class ContextManager
             throw new \RuntimeException('Invalid context JSON');
         }
         return $decoded;
+    }
+
+
+    /**
+     * Добавляет сообщение в историю диалога.
+     * @param string $role
+     * @param string $content
+     */
+    public function addHistory(string $role, string $content): void
+    {
+        $ctx = $this->read();
+        if (!isset($ctx['input']['history'])) {
+            $ctx['input']['history'] = [];
+        }
+        $ctx['input']['history'][] = ['role' => $role, 'content' => $content];
+        $this->save($ctx);
+    }
+
+
+    /**
+     * Обновляет текущий промпт и блоки перед запуском агента.
+     */
+    public function updateInput(string $prompt, array $currentBlocks = []): void
+    {
+        $ctx = $this->read();
+        $ctx['input']['prompt'] = $prompt;
+        $ctx['input']['current_blocks'] = $currentBlocks;
+        $this->save($ctx);
     }
 
     /**

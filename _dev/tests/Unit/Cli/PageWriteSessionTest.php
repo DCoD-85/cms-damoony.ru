@@ -32,12 +32,20 @@ final class PageWriteSessionTest extends TestCase
             $this->root . '/app/damoony.ru/www/algoritm/algoritm.php',
             "<?php // prod original\n"
         );
+        file_put_contents(
+            $this->root . '/app/damoony.ru/www/algoritm/algoritm.editor.json',
+            "[]"
+        );
 
         // Session copy
         mkdir($this->root . '/app/.sess_abc12345.damoony.ru/www/algoritm', 0o775, true);
         file_put_contents(
             $this->root . '/app/.sess_abc12345.damoony.ru/www/algoritm/algoritm.php',
             "<?php // session original\n"
+        );
+        file_put_contents(
+            $this->root . '/app/.sess_abc12345.damoony.ru/www/algoritm/algoritm.editor.json',
+            "[]"
         );
     }
 
@@ -69,9 +77,18 @@ final class PageWriteSessionTest extends TestCase
             $this->root . '/app/damoony.ru/www/algoritm/algoritm.php'
         );
 
+        $sessionEditor = (string) file_get_contents(
+            $this->root . '/app/.sess_abc12345.damoony.ru/www/algoritm/algoritm.editor.json'
+        );
+        $prodEditor = (string) file_get_contents(
+            $this->root . '/app/damoony.ru/www/algoritm/algoritm.editor.json'
+        );
+
         self::assertStringContainsString('Session H1', $sessionPhp);
         self::assertStringNotContainsString('Session H1', $prodPhp);
         self::assertStringContainsString('session_id', $sessionPhp);
+        self::assertStringContainsString('Session H1', $sessionEditor);
+        self::assertStringNotContainsString('Session H1', $prodEditor);
     }
 
     public function testRejectsMissingSession(): void

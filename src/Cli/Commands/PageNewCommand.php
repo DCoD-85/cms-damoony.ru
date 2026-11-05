@@ -39,6 +39,7 @@ final class PageNewCommand implements CommandInterface
         $allias = $args['allias'] ?? '';
         $name = $args['name'] ?? '';
         $parent = trim((string) ($args['parent'] ?? ''), '/');
+        $sessionId = trim((string) ($args['session'] ?? ''));
 
         // 1. Валидация аргументов
         if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain)) {
@@ -76,7 +77,14 @@ final class PageNewCommand implements CommandInterface
         }
 
         // 3. Резолвинг путей
-        $page = PagePath::resolve($this->paths, $domain, $allias, $name, $parent);
+        $page = PagePath::resolve(
+            $this->paths,
+            $domain,
+            $allias,
+            $name,
+            $parent,
+            $sessionId !== '' ? $sessionId : null,
+        );
 
         if (Fs::isDir($page->pageDir)) {
             $r->error('Страница уже существует');

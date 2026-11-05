@@ -7,6 +7,7 @@ namespace Damoony\Tests\Unit\Ai\Orchestrator;
 use Damoony\Ai\Orchestrator\ContextManager;
 use Damoony\Ai\Orchestrator\Orchestrator;
 use Damoony\Ai\Orchestrator\Agent\ArchitectAgentInterface;
+use Damoony\Ai\Orchestrator\Agent\CoderAgentInterface;
 use Damoony\Ai\Orchestrator\ToolsCollectorInterface;
 use Damoony\Files\Paths;
 use PHPUnit\Framework\TestCase;
@@ -44,22 +45,16 @@ final class OrchestratorTest extends TestCase
         $paths = new Paths($this->root);
         $cm = new ContextManager($paths, 'a1b2c3d4', 'damoony.ru');
         $fakeArchitect = new class () implements ArchitectAgentInterface {
-            public function execute(array $context): array
-            {
-                return ['routing_tree' => [], 'slot_assignment' => []];
-            }
+            public function execute(array $context): array { return ['routing_tree' => [], 'slot_assignment' => []]; }
         };
-        $fakeArchitect = new class () implements ArchitectAgentInterface {
-            public function execute(array $context): array
-            {
-                return ['routing_tree' => [], 'slot_assignment' => []];
-            }
+        $fakeCoder = new class () implements CoderAgentInterface {
+            public function execute(array $context): array { return ['blocks' => []]; }
         };
-        $orchestrator = new Orchestrator($cm, $fake, $fakeArchitect);
+        $orchestrator = new Orchestrator($cm, $fake, $fakeArchitect, $fakeCoder);
 
         $ctx = $orchestrator->run('a1b2c3d4', 'damoony.ru', 'www', 'Test prompt', 'center');
 
-        self::assertSame('architect_done', $ctx['meta']['status']);
+        self::assertSame('coder_done', $ctx['meta']['status']);
         self::assertSame(['users', 'news'], $ctx['tools_context']['db_tables']);
         self::assertTrue($ctx['tools_context']['structure_ok']);
         self::assertSame('Test prompt', $ctx['input']['prompt']);
@@ -83,18 +78,12 @@ final class OrchestratorTest extends TestCase
         $paths = new Paths($this->root);
         $cm = new ContextManager($paths, 'a1b2c3d4', 'damoony.ru');
         $fakeArchitect = new class () implements ArchitectAgentInterface {
-            public function execute(array $context): array
-            {
-                return ['routing_tree' => [], 'slot_assignment' => []];
-            }
+            public function execute(array $context): array { return ['routing_tree' => [], 'slot_assignment' => []]; }
         };
-        $fakeArchitect = new class () implements ArchitectAgentInterface {
-            public function execute(array $context): array
-            {
-                return ['routing_tree' => [], 'slot_assignment' => []];
-            }
+        $fakeCoder = new class () implements CoderAgentInterface {
+            public function execute(array $context): array { return ['blocks' => []]; }
         };
-        $orchestrator = new Orchestrator($cm, $fake, $fakeArchitect);
+        $orchestrator = new Orchestrator($cm, $fake, $fakeArchitect, $fakeCoder);
 
         $ctx = $orchestrator->run('a1b2c3d4', 'damoony.ru', 'www', 'Test', 'all');
 
@@ -124,18 +113,12 @@ final class OrchestratorTest extends TestCase
         $paths = new Paths($this->root);
         $cm = new ContextManager($paths, 'a1b2c3d4', 'damoony.ru');
         $fakeArchitect = new class () implements ArchitectAgentInterface {
-            public function execute(array $context): array
-            {
-                return ['routing_tree' => [], 'slot_assignment' => []];
-            }
+            public function execute(array $context): array { return ['routing_tree' => [], 'slot_assignment' => []]; }
         };
-        $fakeArchitect = new class () implements ArchitectAgentInterface {
-            public function execute(array $context): array
-            {
-                return ['routing_tree' => [], 'slot_assignment' => []];
-            }
+        $fakeCoder = new class () implements CoderAgentInterface {
+            public function execute(array $context): array { return ['blocks' => []]; }
         };
-        $orchestrator = new Orchestrator($cm, $fake, $fakeArchitect);
+        $orchestrator = new Orchestrator($cm, $fake, $fakeArchitect, $fakeCoder);
 
         $orchestrator->run('a1b2c3d4', 'damoony.ru', 'www', 'Test');
 

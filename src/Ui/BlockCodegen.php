@@ -132,7 +132,12 @@ final class BlockCodegen
 
         if ($type === 'section' || $type === 'div') {
             $tag = $type === 'section' ? 'section' : 'div';
-            $code .= $pad . $var . ' = Builder::' . $tag . "();\n";
+            // section не имеет хелпера в Builder — идём через el()
+            if ($tag === 'section') {
+                $code .= $pad . $var . " = Builder::el('section');\n";
+            } else {
+                $code .= $pad . $var . " = Builder::div();\n";
+            }
             $code .= $attrs;
             if (is_array($children) && $children !== []) {
                 $code .= self::renderWithCounter($children, $var, $contextVar, $counter, $indent);

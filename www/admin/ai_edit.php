@@ -3,7 +3,10 @@
 declare(strict_types=1);
 
 ob_start();
-ini_set('display_errors', '0');
+ini_set('display_errors', '1'); // Временно включили, чтобы видеть ошибки
+ini_set('max_execution_time', '300'); // 5 минут на генерацию
+ini_set('memory_limit', '512M');
+error_reporting(E_ALL);
 
 use Damoony\Ai\Aicli\AicliClient;
 use Damoony\Ai\Orchestrator\ContextManager;
@@ -21,6 +24,26 @@ use Damoony\Session\NativeSession;
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 header('Content-Type: application/json; charset=utf-8');
+
+
+    /**
+     * Рекурсивно считает блоки (включая детей section/div).
+     * @param array<int, mixed> $blocks
+     */
+    function self_countBlocks(array $blocks): int
+    {
+        $count = 0;
+        foreach ($blocks as $block) {
+            if (!is_array($block)) {
+                continue;
+            }
+            $count++;
+            if (isset($block['children']) && is_array($block['children'])) {
+                $count += self_countBlocks($block['children']);
+            }
+        }
+        return $count;
+    }
 
 try {
     $raw = (string) file_get_contents('php://input');
@@ -48,7 +71,6 @@ try {
         throw new \RuntimeException('Invalid page name');
     }
 
-    // Admin session id (для привязки сессии)
     $sess = new NativeSession('ADMINSESSID', ($_SERVER['HTTPS'] ?? '') === 'on');
     $sess->start();
     $adminSessId = (string) $sess->get('admin_login');
@@ -62,7 +84,6 @@ try {
     $site = is_file($siteFile) ? Config::fromFile($siteFile) : Config::fromArray([]);
     $resolver = new ConfigDomainResolver($site);
 
-    // Резолвим в real (для файлов)
     try {
         $realDomain = $resolver->resolve($domain)->real;
     } catch (\Throwable) {
@@ -70,14 +91,13 @@ try {
     }
 
     $sessionDir = $paths->sessionDir($tabId, $realDomain);
-    $ctx = new Context(static fn () => null);
+    $ctxCli = new Context(static fn () => null);
 
-    // === 1. START: создаём сессию, если её нет ===
+    // === 1. START ===
     if ($action === 'start') {
         if (is_dir($sessionDir)) {
-            // Прерогатива системы: если сессия есть, сносим её в карантин перед новой
             $discardCmd = new SessionDiscardCommand($paths);
-            $discardCmd->run(['domain' => $realDomain, 'tab' => $tabId], $ctx);
+            $discardCmd->run(['domain' => $realDomain, 'tab' => $tabId], $ctxCli);
         }
         if (!is_dir($sessionDir)) {
             $startCmd = new SessionStartCommand($paths);
@@ -85,7 +105,7 @@ try {
                 'domain' => $realDomain,
                 'tab' => $tabId,
                 'admin-sess' => $adminSessId,
-            ], $ctx);
+            ], $ctxCli);
             if (!$r->ok) {
                 throw new \RuntimeException('Session start failed: ' . implode('; ', $r->errors));
             }
@@ -100,25 +120,8 @@ try {
         exit;
     }
 
-    // === 2. PREVIEW: LLM пишет черновик в сессию ===
+    // === 2. PREVIEW (Мультиагентный) ===
     if ($action === 'preview') {
-        // Dry-run Orchestrator: собираем tools_context в context.json.
-        // Ничего не меняет в текущем пайплайне. Ошибки только логируются.
-        try {
-            $orchPrompt = (string) ($input['prompt'] ?? '');
-            if ($orchPrompt !== '') {
-                $orchTb = (string) ($input['target_block'] ?? 'all');
-                $orchClient = new AicliClient($root);
-                $orchCtx = new ContextManager($paths, $tabId, $realDomain);
-                $orchTools = new ToolsCollector($orchClient);
-                $orchArchitect = new \Damoony\Ai\Orchestrator\Agent\ArchitectAgent($root);
-				$orchestrator = new Orchestrator($orchCtx, $orchTools, $orchArchitect);
-                $orchestrator->run($tabId, $realDomain, $alias, $orchPrompt, $orchTb);
-            }
-        } catch (\Throwable $orchErr) {
-            error_log('[orchestrator] ' . $orchErr->getMessage());
-        }
-
         $prompt = (string) ($input['prompt'] ?? '');
         if ($prompt === '') {
             throw new \RuntimeException('Missing prompt');
@@ -127,57 +130,51 @@ try {
             throw new \RuntimeException('Session not found. Call action=start first.');
         }
 
-        // Читаем текущий JSON из сессии
+        $targetBlock = (string) ($input['target_block'] ?? 'all');
+
+        // Читаем текущие блоки
         $jsonFile = $sessionDir . '/' . $alias . '/algoritm/'
             . ($page === '__root__' ? 'algoritm' : $page)
             . '.editor.json';
         $current = is_file($jsonFile) ? json_decode((string) file_get_contents($jsonFile), true) : [];
+        if (!is_array($current)) $current = [];
 
-        // Контекст фокуса
-        $targetBlock = (string) ($input['target_block'] ?? 'all');
-        $targetContext = "";
-        if ($targetBlock === 'center') {
-            $targetContext = "FOCUS: You are ONLY editing the main content blocks (CENTER). Do not touch structural layout regions.\n";
-        } elseif ($targetBlock === 'top') {
-            $targetContext = "FOCUS: You are editing the top navigation block (TOP).\n";
-        } elseif ($targetBlock === 'bottom') {
-            $targetContext = "FOCUS: You are editing the footer block (BOTTOM).\n";
+        // Запускаем мультиагентный Оркестратор
+        $orchClient = new AicliClient($root);
+        $orchCtx = new ContextManager($paths, $tabId, $realDomain);
+        $orchTools = new ToolsCollector($orchClient);
+        $orchInterviewer = new \Damoony\Ai\Orchestrator\Agent\InterviewerAgent($root);
+        $orchArchitect = new \Damoony\Ai\Orchestrator\Agent\ArchitectAgent($root);
+        $orchCoder = new \Damoony\Ai\Orchestrator\Agent\CoderAgent($root);
+        
+        $orchestrator = new Orchestrator($orchCtx, $orchTools, $orchInterviewer, $orchArchitect, $orchCoder, $orchClient);
+        $orchResult = $orchestrator->run($tabId, $realDomain, $alias, $prompt, $targetBlock, $current);
+
+        // Проверяем статус
+        $status = $orchResult['meta']['status'] ?? '';
+        
+        if ($status === 'chat_done') {
+            $reply = $orchResult['agent_outputs']['interviewer']['message'] ?? 'Понял вас.';
+            $brief = $orchResult['input']['brief'] ?? '';
+            
+            ob_clean();
+            echo json_encode([
+                'ok' => true, 
+                'chat_only' => true, 
+                'reply' => $reply,
+                'brief' => $brief
+            ], JSON_INVALID_UTF8_SUBSTITUTE | JSON_UNESCAPED_UNICODE);
+            exit;
         }
 
-        // Формируем промпт
-        $llmPrompt = "You are an AI web editor. You must output a JSON array of block objects.\n"
-            . $targetContext
-            . "Current page blocks:\n" . json_encode($current, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n\n"
-            . "User request: {$prompt}\n\n"
-            . "CRITICAL RULES:\n"
-            . "1. Output ONLY a valid JSON array.\n"
-            . "2. Each element MUST be an object with a 'type' field.\n"
-            . "3. Allowed types: h1, h2, h3, text, img, link, button, ul, nav, section, div, table, form, input, textarea, select, label.\n"
-            . "4. Keep existing blocks unless the user explicitly asks to delete them.\n\n"
-            . "EXAMPLE:\n[\n  {\"type\": \"h1\", \"content\": \"Hello\"},\n  {\"type\": \"text\", \"content\": \"World\"}\n]\n\n"
-            . 'Output JSON array only. No markdown, no explanations.';
-
-        $client = new AicliClient($root);
-        $handler = new \Damoony\Ai\Aicli\Handler\AgentChatHandler($client, $root);
-        $chat = $handler->handle('agent:chat', ['history' => [['role' => 'user', 'content' => $llmPrompt]]], 'designer');
-        if (!$chat->ok) {
-            throw new \RuntimeException('AI failed: ' . $chat->error);
+        if ($status !== 'coder_done') {
+            $errs = implode('; ', $orchResult['meta']['errors'] ?? []);
+            throw new \RuntimeException('Multi-agent failed: ' . $errs);
         }
 
-        $reply = (string) preg_replace('/^```json\s*|\s*```$/m', '', trim((string) ($chat->data['reply'] ?? '')));
-        $newBlocks = json_decode($reply, true);
-
-        if (!is_array($newBlocks)) {
-            throw new \RuntimeException('AI returned invalid JSON');
-        }
-        foreach ($newBlocks as $b) {
-            if (!is_array($b) || !isset($b['type']) || !is_string($b['type'])) {
-                throw new \RuntimeException('AI returned invalid block structure. Raw: ' . substr($reply, 0, 300));
-            }
-        }
-
-        // Делегируем в CLI-First (arch.md §1.8): page:write --session=X
-        // Используем json_file, чтобы обойти лимит длины командной строки в Windows
+        // Берем блоки от Кодера
+        $newBlocks = $orchResult['agent_outputs']['coder']['blocks'] ?? [];
+                // Пишем в файл через CLI
         $tmpJsonFile = $root . '/var/aiui_write_' . $tabId . '.json';
         if (!is_dir($root . '/var')) {
             mkdir($root . '/var', 0o775, true);
@@ -198,6 +195,7 @@ try {
             . ' --with_schema=1';
             
         $writeRes = $writeClient->runJson($writeArgs);
+        @unlink($tmpJsonFile);
         
         if (!($writeRes['ok'] ?? false)) {
             $hint = (string) ($writeRes['hint'] ?? '');
@@ -207,7 +205,6 @@ try {
             }
             throw new \RuntimeException($errMsg);
         }
-        @unlink($tmpJsonFile);
 
         ob_clean();
         echo json_encode([
@@ -218,14 +215,74 @@ try {
         exit;
     }
 
-    // === 3. APPLY: переносим сессию в production ===
+    // === 2b. BUILD: явная генерация по кнопке (без Интервьюера) ===
+    if ($action === 'build') {
+        if (!is_dir($sessionDir)) {
+            throw new \RuntimeException('Session not found. Call action=start first.');
+        }
+
+        $jsonFile = $sessionDir . '/' . $alias . '/algoritm/'
+            . ($page === '__root__' ? 'algoritm' : $page)
+            . '.editor.json';
+        $current = is_file($jsonFile) ? json_decode((string) file_get_contents($jsonFile), true) : [];
+        if (!is_array($current)) {
+            $current = [];
+        }
+
+        $orchClient = new AicliClient($root);
+        $orchCtx = new ContextManager($paths, $tabId, $realDomain);
+        $orchTools = new ToolsCollector($orchClient);
+        $orchInterviewer = new \Damoony\Ai\Orchestrator\Agent\InterviewerAgent($root);
+        $orchArchitect = new \Damoony\Ai\Orchestrator\Agent\ArchitectAgent($root);
+        $orchCoder = new \Damoony\Ai\Orchestrator\Agent\CoderAgent($root);
+        $orchestrator = new Orchestrator($orchCtx, $orchTools, $orchInterviewer, $orchArchitect, $orchCoder, $orchClient);
+
+        $orchResult = $orchestrator->build($tabId, $realDomain, $alias);
+        $status = $orchResult['meta']['status'] ?? '';
+
+        if (!in_array($status, ['build_done', 'build_partial'], true)) {
+            $errors = $orchResult['meta']['errors'] ?? ['Unknown build error'];
+            $errs = implode('; ', $errors);
+            throw new \RuntimeException('Build failed: ' . $errs);
+        }
+
+        $pagesTotal = (int) ($orchResult['meta']['pages_total'] ?? 0);
+        $pagesOk = (int) ($orchResult['meta']['pages_ok'] ?? 0);
+        $progress = $orchResult['meta']['build_progress'] ?? [];
+
+        ob_clean();
+        echo json_encode([
+            'ok' => true,
+            'preview_url' => '/admin/preview/' . $tabId . '/',
+            'pages_total' => $pagesTotal,
+            'pages_ok' => $pagesOk,
+            'progress' => $progress,
+            'status' => $status,
+        ], JSON_INVALID_UTF8_SUBSTITUTE | JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    // === 3. APPLY ===
     if ($action === 'apply') {
+        // ЗАЩИТА: нельзя применять почти пустую страницу
+        $sessJson = $sessionDir . '/' . $alias . '/algoritm/'
+            . ($page === '__root__' ? 'algoritm' : $page)
+            . '.editor.json';
+        $sessBlocks = is_file($sessJson) ? json_decode((string) file_get_contents($sessJson), true) : [];
+        $blockCount = is_array($sessBlocks) ? self_countBlocks($sessBlocks) : 0;
+        if ($blockCount < 5) {
+            throw new \RuntimeException(
+                'Применение заблокировано: страница содержит только ' . $blockCount
+                . ' блок(ов). Сгенерируйте более полный контент или добавьте блоки вручную.'
+            );
+        }
+
         $applyCmd = new SessionApplyCommand($paths);
         $r = $applyCmd->run([
             'domain' => $realDomain,
             'tab' => $tabId,
             'admin-sess' => $adminSessId,
-        ], $ctx);
+        ], $ctxCli);
         if (!$r->ok) {
             throw new \RuntimeException(implode('; ', $r->errors));
         }
@@ -240,7 +297,7 @@ try {
 } catch (\Throwable $e) {
     ob_clean();
     http_response_code(400);
-    $err = $e->getMessage();
+    $err = $e->getMessage() . ' | File: ' . $e->getFile() . ':' . $e->getLine();
     $json = json_encode(
         ['ok' => false, 'error' => $err],
         JSON_INVALID_UTF8_SUBSTITUTE | JSON_UNESCAPED_UNICODE

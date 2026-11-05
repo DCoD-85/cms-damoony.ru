@@ -24,14 +24,14 @@ $layout = Builder::div('aiui-layout');
 $preview = Builder::div('preview-area');
 $header = Builder::div('preview-header');
 $header->append(Builder::span()->content('🔴 🟡 🟢'));
-$header->append(Builder::elA('span', ['id' => 'address'])->content("http://www.{$domain}/"));
+$header->append(Builder::elA('span', ['id' => 'address'])->content("//www.{$domain}/"));
 $header->append(Builder::elA('button', ['id' => 'btn-apply'])->content('Применить'));
 $header->append(Builder::elA('span', [
     'id' => 'tab-badge',
     'style' => 'margin-left: auto; font-size: 11px; color: #aaa;',
 ])->content('tab: ...'));
 $preview->append($header);
-$preview->append(Builder::elA('iframe', ['id' => 'site-frame', 'src' => "http://www.{$domain}/"]));
+$preview->append(Builder::elA('iframe', ['id' => 'site-frame', 'src' => "//www.{$domain}/"]));
 
 $chat = Builder::div('chat-area');
 
@@ -41,24 +41,23 @@ $chat->append($messages);
 
 $inputArea = Builder::div('input-area');
 
-$toolbar = Builder::div('toolbar');
-$select = Builder::elA('select', ['id' => 'target-block']);
-$select->append(Builder::elA('option', ['value' => 'all'])->content('Вся страница'));
-$select->append(Builder::elA('option', ['value' => 'center'])->content('Только CENTER (Контент)'));
-$select->append(Builder::elA('option', ['value' => 'top'])->content('Только TOP (Шапка)'));
-$select->append(Builder::elA('option', ['value' => 'bottom'])->content('Только BOTTOM (Футер)'));
-$toolbar->append($select);
-
-$label = Builder::elA('label');
-$label->append(Builder::elA('input', ['type' => 'checkbox', 'id' => 'wireframe-toggle'], true));
-$label->append(' Структура');
-$toolbar->append($label);
-
-$inputArea->append($toolbar);
+// Панель брифа (скрыта по умолчанию)
+$briefPanel = Builder::elA('div', ['id' => 'brief-panel', 'style' => 'display:none;']);
+$briefPanel->append(Builder::span()->content('📝 Бриф: '));
+$briefPanel->append(Builder::elA('span', ['id' => 'brief-text'])->content(''));
+$inputArea->append($briefPanel);
 
 $inputRow = Builder::div('input-row');
-$inputRow->append(Builder::elA('textarea', ['id' => 'prompt', 'rows' => '2', 'placeholder' => 'Напишите команду...']));
+$inputRow->append(Builder::elA('textarea', ['id' => 'prompt', 'rows' => '2', 'placeholder' => 'Опишите, что нужно сделать...']));
 $inputRow->append(Builder::elA('button', ['id' => 'send'])->content('→'));
+
+// Кнопка явной генерации сайта
+$createRow = Builder::div('create-row');
+$createRow->append(
+    Builder::elA('button', ['id' => 'btn-create', 'class' => 'btn-create'])
+        ->content('🚀 Создать сайт по брифу')
+);
+$inputArea->append($createRow);
 $inputArea->append($inputRow);
 
 $chat->append($inputArea);
@@ -66,9 +65,9 @@ $layout->append($preview);
 $layout->append($chat);
 
 echo "<!DOCTYPE html>\n<html lang=\"ru\">\n<head>\n<meta charset=\"UTF-8\">\n<title>AIUI Editor</title>\n";
-echo Builder::elA('link', ['rel' => 'stylesheet', 'href' => "/media/{$realDomain}/agent/skin/default/css/aiui.css"], true)->release();
+echo Builder::elA('link', ['rel' => 'stylesheet', 'href' => "/media/{$realDomain}/agent/skin/default/css/aiui.css?v=5"], true)->release();
 echo "\n</head>\n<body>\n";
 echo $layout->release();
 echo "\n";
-echo Builder::elA('script', ['src' => "/media/{$realDomain}/agent/skin/default/js/aiui.js"])->release();
+echo Builder::elA('script', ['src' => "/media/{$realDomain}/agent/skin/default/js/aiui.js?v=5"])->release();
 echo "\n</body>\n</html>";

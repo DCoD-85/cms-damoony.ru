@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Damoony\Ai\Aicli\Handler;
 
 use Damoony\Ai\Aicli\AbstractHandler;
+use Damoony\Ai\ModelRouter;
 use Damoony\Ai\Aicli\AicliResult;
 
 final class AgentChatHandler extends AbstractHandler
@@ -48,11 +49,30 @@ final class AgentChatHandler extends AbstractHandler
 
         [$url, $model, $apiKey, $isOpenAI] = $this->resolveProvider($provider, $agentConfig);
 
+        // Приоритет: явный args['model'] → config/models.config (по роли) → resolveProvider
+        if (isset($args['model']) && is_string($args['model']) && $args['model'] !== '') {
+            $model = $args['model'];
+        } elseif ($provider === 'local') {
+            $router = new ModelRouter($this->root);
+            $model = $router->resolve($role);
+        }
+
         $payload = [
             'model' => $model,
             'messages' => $messages,
             'stream' => false,
         ];
+
+        // Для локальной Ollama принудительно включаем JSON-формат и настройки генерации
+        if ($provider === 'local') {
+            $payload['format'] = 'json';
+            $payload['options'] = [
+                'temperature' => 0.2,      // Меньше креатива, больше точности
+                'repeat_penalty' => 1.2,   // Штраф за повторение токенов (чтобы не зацикливался)
+                'repeat_last_n' => 64,     // Смотреть на 64 токена назад
+                'num_predict' => 4096,     // Максимум токенов на ответ
+            ];
+        }
 
         $headers = ['Content-Type: application/json'];
         if ($isOpenAI) {

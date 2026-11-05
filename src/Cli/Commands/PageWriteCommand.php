@@ -135,6 +135,10 @@ final class PageWriteCommand implements CommandInterface
         $oldPhp = (string) @file_get_contents($page->phpFile);
 
         Fs::writeAtomic($page->phpFile, $php);
+        Fs::writeAtomic(
+            $page->editorFile,
+            json_encode($blocks, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . "\n",
+        );
         $r->file(Fs::rel($page->phpFile, $this->paths->root()));
 
         // 8. Обновить page_refs в meta.json всех /content/... картинок (add new, remove stale)
