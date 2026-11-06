@@ -137,11 +137,23 @@
 
 ### 12.1. Wizard (State Machine)
 
-Пошаговая генерация сайта с проверкой стадий. Состояние — в `var/wizard/{domain}/{alias}/{session_id}.json` (TTL 24h).
+Пошаговая генерация сайта с проверкой стадий. Команды — **только `bin/aicli.php`** (в `bin/cli.php` wizard нет).
+State Machine: `init → domain → allias → plan → content → skin → ready → committed` (`WizardSession::STAGE_*`).
+Состояние — `var/wizard/` (см. `WizardSession::save()`); `session_id` — 32 hex-символа (regex `^[a-f0-9]{32}$`).
 
-- `wizard:start --domain=[d] --alias=[a]` — создать сессию. Возвращает `session_id`, `stage: init`, `next[]` (HATEOAS).
-- `wizard:step --session=[id] --command=[cmd] --args='{}'` — выполнить шаг (команда из `next[]`). Валидирует, что не пропущена стадия.
-- `wizard:gc [--older=24h]` — очистка старых сессий в `var/wizard/_trash_{ts}/`.
+- `wizard:start` — создать сессию (без args). Возвращает `{session_id, stage: "init", next: "wizard:domain { session_id, domain }"}`. `next` — **строка-шаблон**, не HATEOAS-массив.
+- `wizard:domain --session_id=[id] --domain=[fqdn]` — задать домен (init → domain). Regex FQDN, `..` отклоняется.
+- `wizard:allias --session_id=[id] --allias=[name]` — задать алиас (domain → allias). Проверяет `app/{domain}/{allias}/` и `site.config.alliases_real` (не занят ли). Regex `^[a-z][a-z0-9_]*$`.
+- `wizard:plan --session_id=[id] --pages='[...]'` — план страниц (allias → plan).
+- `wizard:content --session_id=[id] --page=[name] --blocks='[...]'` — блоки одной страницы (plan|content → content).
+- `wizard:skin --session_id=[id] --file=[css/main.css] --content="..."` — стили (content|skin → skin).
+- `wizard:finish --session_id=[id]` — проверка контента, переход в ready (content|skin → ready).
+- `wizard:commit --session_id=[id]` — запись в production (ready → committed).
+
+**Скрытые / фантомные:**
+- `wizard:widgets --session_id=[id] --widgets='[...]'` — есть в `WizardManager::handle()`, но **не в whitelist** ролей (`Roles.php`) — недоступна через `bin/aicli.php`.
+- `wizard:abort` — есть в `Roles.php` (architect, `*`), но **нет `case` в `WizardManager`** → вернёт `Unknown wizard action: abort`.
+- `wizard:step`, `wizard:gc` — были в предыдущей версии этого документа; в коде отсутствуют. Удалены.
 
 ### 12.2. AI-сессии
 
