@@ -131,3 +131,5 @@
 - **Карантин:** 6 уровней (`app/`, `.alliasscheme/`, `.alliasglobal/`, `/content/.trash/`, `www/media/.trash/` и т.д.). Symlink-safe `Fs::rmrf`.
 - **Content:** MIME whitelist, размер ≤ 10 MB, ≥ 200×200, дедупликация по sha256. Отдача с ETag, 304, SVG-CSP.
 - **AI Whitelist:** два независимых списка — `agent.config` (домены для `app/*`) и `ainet.config` (URL для `net:*`).
+- **Forms (`www/forms.php`):** публичный POST-endpoint для отправки форм с сайта (Phase 4.4). CSRF-токен в форме, rate-limit на IP, валидация полей по `name`. Записи в `form_submissions` (без `user_id`, с `ip`, `created_at`). Nginx: `location = /submit { rewrite ^ /forms.php last; }` (см. `install.md` §5).
+- **DataProvider write (`db:mutate`):** только с `--force`, каждая мутация пишется в `audit_log` (provider, method, params_json, result_ok, error_text, role_name, source=cli). Read-only `db:call` использует whitelist шаблонов (см. `cli.md` §11). CREATE/DROP/ALTER — запрещены всем ролям, миграции только `db:migrate` от владельца.

@@ -37,6 +37,29 @@ AIUI — интерфейс для редактирования страниц �
 - **`build`**: Явная генерация по кнопке (`Orchestrator::build()`). Возвращает прогресс по страницам.
 - **`apply`**: Применить сессию к production (`SessionApplyCommand`). Заблокировано, если блоков меньше 5 (защита от пустых страниц).
 
+**Пример ответа `action=preview` (chat_only):**
+
+    {
+      "ok": true,
+      "chat_only": true,
+      "reply": "Отлично! Какой стиль предпочитаете?",
+      "brief": "Сайт кофейни"
+    }
+
+**Пример ответа `action=build`:**
+
+    {
+      "ok": true,
+      "preview_url": "/admin/preview/{tab}/",
+      "pages_total": 5,
+      "pages_ok": 4,
+      "progress": [
+        {"page": "home", "status": "done", "blocks": 12},
+        {"page": "menu", "status": "failed", "error": "..."}
+      ],
+      "status": "build_partial"
+    }
+
 ---
 
 ## 4. Изоляция (Sessions)

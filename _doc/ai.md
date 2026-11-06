@@ -52,18 +52,25 @@ AI не имеет прямого доступа к терминалу. Он о�
 | Роль | Назначение | Основные команды |
 |---|---|---|
 | `parser` | Разбор брифа | `*:list` (read-only) |
-| `inspector` | Диагностика | `*:list`, `page:read`, `structure:check` |
+| `inspector` | Диагностика | `*:list`, `page:read`, `structure:check`, `db:schema`, `db:methods`, `db:describe`, `db:call` |
 | `planner` | План структуры | `*:list`, `page:read` |
-| `architect` | Каркас сайта | `domain:new`, `allias:new`, `block:new`, `scheme:new`, `filler:new`, `*:list` |
-| `executor` | Контент | `page:new`, `page:write`, `image:search`, `image:download`, `*:list` |
+| `architect` | Каркас сайта | `domain:new`, `allias:new`, `block:new`, `scheme:new`, `filler:new`, `dataprovider:add-method`, `*:list` |
+| `executor` | Контент + БД (write) | `page:new`, `page:write`, `image:search`, `image:download`, `db:call`, `db:mutate --force`, `*:list` |
 | `designer` | Стили | `page:write`, `block:write`, `filler:write`, `skin:edit`, `*:list` |
 | `bundler` | Сборка | `structure:check`, `*:list` |
 | `corrector` | Исправления | `page:write`, `structure:repair`, `structure:check` |
-| `reporter` | Отчёт | `*:list`, `page:read`, `structure:check` |
+| `reporter` | Отчёт | `*:list`, `page:read`, `structure:check`, `db:call` |
 
 **Роль `*` (по умолчанию):** объединяет все 9 ролей и добавляет специфичные команды (`net:*`, `skin:remove`, `block:write`, `filler:write`, `agent:chat`). Также включает все команды `wizard:*`.
 
 **Запрещено всем:** `user:new`, `db:migrate`, `admin:passwd`, а также любые destructive-команды (`*:remove`, `trash:clear`, `content:remove`).
+
+**Особые ограничения для `db:*` (см. `cli.md` §11):**
+- `db:mutate` — только с `--force`, каждая write-операция пишется в `audit_log` (provider, method, params_json, result_ok, error_text, role_name, source).
+- `db:call` — только read-шаблоны (whitelist: `select_by`, `select_where`, `select_all`, `count`, `exists`, `aggregate`, `join_select`, `group_by_count`, `sum_by`).
+- `dataprovider:add-method` — только генерация из шаблонов (AI не пишет PHP напрямую, PDO named params).
+- **CREATE / DROP / ALTER TABLE** — запрещены всем ролям. Миграции — только `db:migrate` от владельца. Это инфорцируется в `Roles::whitelist()`.
+- **DataProvider не используется в Orchestrator/AIUI** — только через `bin/aicli.php`/`brain.py` (см. `arch.md` §5).
 
 ---
 
@@ -95,7 +102,7 @@ AI не имеет прямого доступа к терминалу. Он о�
 - `net:status` — диагностика (провайдеры, лимиты, кэш).
 - `image:search` — поиск картинок (`--query="..." --count=5`). Провайдеры: `wikimedia` (default), `openverse` (fallback).
 - `image:download` — скачивание картинки в `/content/`. Возвращает `local_url`.
-- `fetch` — GET-запрос к API (`--url="..." --type=json|text`).
+- `fetch` — GET-запрос к API (`--url="..." --type=json|text`). **Единственная команда AINET без префикса `net:`** (исторически: реализована в `bin/ainet.php` до введения префиксов). В `Roles.php` whitelist — `'net:status', 'image:search', 'image:download', 'fetch'`. При расширении AINET — не переименовывать без обратной совместимости.
 
 ### Безопасность (SSRF):
 - Только GET-запросы.
