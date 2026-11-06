@@ -14,6 +14,7 @@ final class SchemeLoader
     public function __construct(
         private readonly Paths $paths,
         private readonly ?string $sessionId = null,
+        private readonly ?string $adminRole = null,
     ) {
     }
 
@@ -23,10 +24,15 @@ final class SchemeLoader
     public function load(DomainContext $domain, string $schemeName = 'www'): array
     {
         $appRoot = rtrim($this->paths->root(), '/') . '/app';
-        $domainDir = $this->sessionId !== null
-            ? '/.sess_' . $this->sessionId . '.' . $domain->real
-            : '/' . $domain->real;
-        $baseDir = $appRoot . $domainDir . '/.alliasscheme/';
+        
+        if ($this->adminRole !== null) {
+            $baseDir = $appRoot . '/.admin/' . $this->adminRole . '/.alliasscheme/';
+        } else {
+            $domainDir = $this->sessionId !== null
+                ? '/.sess_' . $this->sessionId . '.' . $domain->real
+                : '/' . $domain->real;
+            $baseDir = $appRoot . $domainDir . '/.alliasscheme/';
+        }
 
         // 1. Приоритет: схема алиаса (например, docs.php)
         $file = $baseDir . $domain->allias . '.php';

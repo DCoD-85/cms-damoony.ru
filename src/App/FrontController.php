@@ -108,6 +108,7 @@ final class FrontController
             'csrf' => $csrf,
             'i18n' => $translator,
             'session_id' => $sessionId,
+            'admin_role' => $adminRole,
         ]);
 
         return $this->pages->handle($match, $context, $adminRole);

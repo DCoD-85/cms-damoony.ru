@@ -1,0 +1,34 @@
+
+/* =========================================
+   Damoony Admin - Superadmin Skin
+   ========================================= */
+
+/* Layout */
+.admin-wrapper { display: flex; height: 100vh; background: #f4f6f8; font-family: sans-serif; margin: 0; }
+.admin-sidebar { width: 260px; background: #1e1e2d; color: #fff; display: flex; flex-direction: column; }
+.admin-logo { padding: 24px 20px; font-size: 22px; font-weight: bold; border-bottom: 1px solid #2d2d3f; color: #fff; letter-spacing: 1px;}
+.admin-menu { list-style: none; padding: 0; margin: 20px 0 0 0; }
+.admin-menu li a { display: block; padding: 14px 24px; color: #a2a3b7; text-decoration: none; border-left: 4px solid transparent; transition: all 0.2s; font-size: 15px;}
+.admin-menu li a:hover, .admin-menu li a.active { background: #1b1b28; color: #fff; border-left-color: #3699ff; }
+.admin-main { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
+.admin-header { background: #fff; padding: 20px 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+.admin-header h1 { margin: 0; font-size: 26px; color: #111; font-weight: 600;}
+.admin-content { padding: 30px; }
+
+/* Компонент Card (Element) */
+.ui-card { background: #fff; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 24px; overflow: hidden; border: 1px solid #eef0f4;}
+.ui-card-header { padding: 18px 24px; background: #f8f9fa; border-bottom: 1px solid #eef0f4; font-weight: 600; color: #333; font-size: 18px;}
+.ui-card-body { padding: 24px; }
+
+/* Компонент Table (Element) */
+.ui-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eef0f4;}
+.ui-table th, .ui-table td { padding: 16px 24px; text-align: left; border-bottom: 1px solid #eef0f4; }
+.ui-table th { background: #f8f9fa; font-weight: 600; color: #333; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;}
+.ui-table tr:hover td { background: #fdfdfd; }
+
+/* Компонент Button (Element) */
+.ui-btn { display: inline-block; padding: 12px 24px; background: #3699ff; color: #fff; text-decoration: none; border-radius: 6px; border: none; cursor: pointer; font-size: 15px; font-weight: 600; transition: background 0.2s;}
+.ui-btn:hover { background: #2672c4; }
+
+/* Компонент Box (Element) */
+.ui-box { padding: 24px; background: #fff; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 24px; border: 1px solid #eef0f4;}
