@@ -45,43 +45,23 @@ AI не имеет прямого доступа к терминалу. Он о�
 
 ---
 
-## 2. Роли (Whitelist)
+## 2. Роли
 
-Роль ограничивает доступные команды (defense in depth). Реализация: `src/Ai/Roles.php`.
+9 ролей + `*` (all). Полный whitelist — `src/Ai/Roles.php`.
 
-| Роль | Назначение | Основные команды |
-|---|---|---|
-| `parser` | Разбор брифа | `*:list` (read-only) |
-| `inspector` | Диагностика | `*:list`, `page:read`, `structure:check`, `db:schema`, `db:methods`, `db:describe`, `db:call` |
-| `planner` | План структуры | `*:list`, `page:read` |
-| `architect` | Каркас сайта | `domain:new`, `allias:new`, `block:new`, `scheme:new`, `filler:new`, `dataprovider:add-method`, `*:list` |
-| `executor` | Контент + БД (write) | `page:new`, `page:write`, `image:search`, `image:download`, `db:call`, `db:mutate --force`, `*:list` |
-| `designer` | Стили | `page:write`, `block:write`, `filler:write`, `skin:edit`, `*:list` |
-| `bundler` | Сборка | `structure:check`, `*:list` |
-| `corrector` | Исправления | `page:write`, `structure:repair`, `structure:check` |
-| `reporter` | Отчёт | `*:list`, `page:read`, `structure:check`, `db:call` |
+| Роль | Назначение |
+|---|---|
+| `parser` | Разбор брифа (`*:list` только) |
+| `inspector` | Диагностика + `db:schema/methods/describe/call` |
+| `planner` | План структуры (read-only) |
+| `architect` | Каркас: `domain:new`, `allias:new`, `block:new`, `scheme:new`, `filler:new`, `dataprovider:add-method` |
+| `executor` | Контент + БД: `page:new`, `page:write`, `db:call`, `db:mutate --force` |
+| `designer` | Стили + филлеры: `skin:edit`, `block:write`, `filler:write` |
+| `bundler` | Сборка: `structure:check` |
+| `corrector` | Исправления: `page:write`, `structure:repair` |
+| `reporter` | Отчёт: `*:list`, `structure:check`, `db:call` |
 
-**Роль `*` (по умолчанию):** объединяет все 9 ролей и добавляет специфичные команды (`net:*`, `skin:remove`, `block:write`, `filler:write`, `agent:chat`). Также включает все команды `wizard:*`.
-
-**Запрещено всем:** `user:new`, `db:migrate`, `admin:passwd`, а также любые destructive-команды (`*:remove`, `trash:clear`, `content:remove`).
-
-**Особые ограничения для `db:*` (см. `cli.md` §11):**
-- `db:mutate` — только с `--force`, каждая write-операция пишется в `audit_log` (provider, method, params_json, result_ok, error_text, role_name, source).
-- `db:call` — только read-шаблоны (whitelist: `select_by`, `select_where`, `select_all`, `count`, `exists`, `aggregate`, `join_select`, `group_by_count`, `sum_by`).
-- `dataprovider:add-method` — только генерация из шаблонов (AI не пишет PHP напрямую, PDO named params).
-- **CREATE / DROP / ALTER TABLE** — запрещены всем ролям. Миграции — только `db:migrate` от владельца. Это инфорцируется в `Roles::whitelist()`.
-- **DataProvider не используется в Orchestrator/AIUI** — только через `bin/aicli.php`/`brain.py` (см. `arch.md` §5).
-
----
-
-## 3. Navigator (Граф состояний)
-
-Скрипт `src/Ai/Navigator.php` формирует массив `next[]` на основе текущего состояния.
-
-- `OFFERABLE` = `[domain:new, allias:new, skin:new, skin:edit, page:new, page:write, page:read, image:search, image:download, done]`.
-- `next[]` фильтруется по whitelist роли.
-
----
+Запрещено всем: `user:new`, `db:migrate`, `admin:passwd`, destructive-команды, `CREATE/DROP/ALTER TABLE`. `DataProvider` — только через `bin/aicli.php`/`brain.py`, не через Orchestrator/AIUI.
 
 ## 4. Безопасная генерация контента (Компиляторы)
 
@@ -129,74 +109,8 @@ AI не имеет прямого доступа к терминалу. Он о�
 
 ---
 
-## 7. AI Wizard (Web UI)
+## 8.4. ModelRouter
 
-Веб-интерфейс для автономной генерации сайтов: пользователь общается с LLM для сбора брифа, затем асинхронно запускается `ai_agent/brain.py` в фоне с отслеживанием прогресса без перезагрузки страницы.
-
-### 7.1. Карта процессов (Data Flow)
-
-1. **Интервьюер (Frontend):** пользователь общается с LLM через чат. История диалога хранится в JS-массиве `chatHistory` в оперативной памяти браузера.
-2. **Триггер (AJAX):** при вводе команды «Создавай» JS отправляет `history` на `algoritm_ajax.php` (`action=generate`).
-3. **Background Job (PHP → Python):** PHP собирает бриф в `var/*_brief.txt`, создаёт `.bat`-скрипт и запускает `brain.py` в фоне (через `cmd /c start /B`). AJAX мгновенно возвращает `session_id`.
-4. **Multi-Agent (Python):** `brain.py` работает независимо от веб-сервера. Он вызывает `bin/aicli.php` (через `wizard:*`) для безопасной сборки сайта.
-5. **Status Polling:** JS каждые 3 секунды опрашивает `algoritm_ajax.php` (`action=status`). PHP читает лог-файл Python (`var/*_brain.log`), парсит текущую стадию (Architect, Content, CSS) и возвращает её фронтенду.
-6. **Cancel:** кнопка «Остановить» создаёт файл `var/{session_id}.cancel`. `brain.py` проверяет его наличие между задачами и корректно прерывает работу.
-7. **Finish:** при появлении в логе `Done!` JS выводит пользователю кнопку со ссылкой на сгенерированный сайт.
-
-### 7.2. Особенности реализации под standalone-стек (Windows)
-
-Wizard UI (`algoritm_ajax.php`) работает на standalone-стеке **Nginx + PHP-CGI** (см. `_doc/start_new_audit.md` §4). Раньше использовался OSPanel + Apache, но проект отказался от него (проблемы с `mpm_winnt` и `proc_open`). Текущие архитектурные решения:
-
-1. **Изоляция путей:** в `algoritm_ajax.php` жёстко прописаны абсолютные пути к `php.exe` и `python.exe`. Nginx + PHP-CGI не наследует системный `PATH` (в частности, не видит MSYS2 Python).
-2. **CLI через `php.exe`, не `php-cgi.exe`:** `AicliClient::run()` проверяет `PHP_BINARY` и заменяет `php-cgi` на `php`. Иначе CLI-команды не выполняются (CGI-режим не читает аргументы как CLI).
-3. **Асинхронность:** запуск Python — через временный `.bat`-файл в `var/` и вызов `cmd /c start /B`. Это не блокирует PHP-CGI worker и не вешает Nginx.
-4. **Таймауты (600s):** для длинных генераций — `php.ini` (`max_execution_time=600`), `nginx.conf` (`fastcgi_read_timeout 600s`, `fastcgi_send_timeout 600s`), `AgentChatHandler` (`CURLOPT_TIMEOUT=600`).
-5. **Отслеживание статуса:** статус определяется парсингом лога `brain.py` на ключевые слова (`[1/5]`, `-> Writing`, `Done!`).
-
-### 7.3. UI/UX (Frontend)
-
-Интерфейс чата реализован на нативном JavaScript (fetch API) без jQuery.
-
-- **Таймер:** засекает время с момента запуска генерации.
-- **Сброс контекста:** если пользователь пишет «Удали» или «Сброс», JS очищает массив `chatHistory` и просит LLM начать интервью заново.
-
-
----
-
-## 8. AIUI (AI User Interface) — краткий обзор
-
-Полное описание внутреннего конвейера — в `_doc/orchestrator.md`. Здесь — только контракт между AIUI и AI-слоем.
-
-### 8.1. Endpoint: `POST /admin/ai_edit.php` (JSON-in/out)
-
-4 action:
-
-- **`start`** — создать/пересоздать сессию (`SessionStartCommand`). Возвращает `{ok, tab, preview_url}`. Если сессия уже была — сносит в карантин через `SessionDiscardCommand` и создаёт заново.
-- **`preview`** — интерактивный шаг: `Orchestrator::run()` (Interviewer → chat или Architect → Coder).
-  - Если Interviewer вернул `action=chat`: `{ok, chat_only: true, reply, brief}` — превью НЕ обновляется, только чат и бриф.
-  - Если `action=build`: `{ok, preview_url, pages_total, pages_ok, progress}` — страницы записаны в сессию.
-- **`build`** — явная генерация по кнопке (без Интервьюера): `Orchestrator::build()`. Архитектор → per-page Coder → `page:new`/`page:write` для каждой страницы. Пишет `meta.build_progress` в `context.json`.
-- **`apply`** — перенос сессии в production (`SessionApplyCommand`). Блокируется, если `countBlocks() < 5` (рекурсивный счётчик по `children`).
-
-### 8.2. Frontend
-
-- `www/admin/aiui.php` — HTML-каркас через `Builder` (split-screen: слева iframe, справа чат).
-- `www/media/damoony.ru/agent/skin/default/js/aiui.js` — логика: sendPrompt, buildSite, applyChanges.
-- `www/media/damoony.ru/agent/skin/default/css/aiui.css` — тёмная тема, панель брифа, кнопка «🚀 Создать сайт».
-
-Элементы:
-- Панель брифа (📝) — живое отображение `context.input.brief`.
-- Кнопка «🚀 Создать сайт по брифу» — появляется, когда бриф непустой. Вызывает `action=build`.
-- Кнопка «Применить» — появляется после успешной генерации. Вызывает `action=apply`.
-
-### 8.3. Preview
-
-- `/admin/preview/{tab}/{alias}/{path}` → `www/admin/aipreview.php` (rewrite через `.htaccess`).
-- Внутри: `FrontController::handle($request, sessionId: $tab, aliasOverride: $alias)`.
-- `FileRouter` + `PageHandler` читают PHP из `app/.sess_{tab}.{domain}/{alias}/algoritm/`.
-- `<base href="/admin/preview/{tab}/">` инжектится в `<head>` для корректных относительных ссылок.
-
-### 8.4. Модели (ModelRouter)
 
 - Выбор по роли из `config/models.config` (`ModelRouter::resolve($role)`).
 - Рекомендуемый расклад:
@@ -204,11 +118,14 @@ Wizard UI (`algoritm_ajax.php`) работает на standalone-стеке **Ng
   - `architect`, `designer` → `deepseek-coder:6.7b` (JSON, план) — точнее в структуре.
 - Приоритет выбора: `args['model']` → `ModelRouter` (только для `llm_provider=local`) → `agent.config.llm_model`.
 
-### 8.5. brain.py (Wizard) — отдельный контур
+## 8.5. brain.py vs Orchestrator
+
 
 - Генерация сайта «с нуля» через `bin/aicli.php` + Ollama.
 - Не использует `Orchestrator` и `ModelRouter`.
 - Подробнее — §6 этого документа и `_doc/install.md`.
+
+---
 
 ---
 
