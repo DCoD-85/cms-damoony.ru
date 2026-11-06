@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Ui;
 
-final class Element implements Node
+class Element implements Node
 {
     /** @var list<Node|string> */
     private array $children = [];
