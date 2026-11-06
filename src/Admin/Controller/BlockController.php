@@ -95,7 +95,7 @@ final class BlockController extends BaseController
         }
         $card->append($tabs);
 
-        $table = (new Table())->headers(View::t('block.th_name'), View::t('block.th_type'), View::t('domain.bind_th_act'));
+        $table = new Table()->headers(View::t('block.th_name'), View::t('block.th_type'), View::t('domain.bind_th_act'));
         if ($blocks === []) {
             $table->row([Text::raw(View::t('stub.empty')), Text::raw(''), Text::raw('')]);
         } else {

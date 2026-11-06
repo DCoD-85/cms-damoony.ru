@@ -67,7 +67,7 @@ final class AlliasController extends BaseController
         $card->append(View::domainTabs($domain, 'allias'));
 
         // Таблица
-        $table = (new Table())->headers(
+        $table = new Table()->headers(
             View::t('domain.th_status'),
             View::t('allias.title'),
             View::t('allias.th_path'),

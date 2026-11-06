@@ -116,7 +116,6 @@ final class AinetFacadeTest extends TestCase
         ob_start();
         imagepng($im);
         $bytes = (string) ob_get_clean();
-        imagedestroy($im);
 
         return ['bytes' => $bytes, 'width' => $width, 'height' => $height];
     }

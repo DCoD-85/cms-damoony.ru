@@ -66,8 +66,8 @@ final class TranslatorTest extends TestCase
 
     public function testCurrentReturnsCode(): void
     {
-        self::assertSame('en', (new Translator('en', 'ru', $this->langDir))->current());
-        self::assertSame('ru', (new Translator('ru', 'ru', $this->langDir))->current());
+        self::assertSame('en', new Translator('en', 'ru', $this->langDir)->current());
+        self::assertSame('ru', new Translator('ru', 'ru', $this->langDir)->current());
     }
 
     public function testInvalidCurrentFallsBackToFallback(): void
@@ -80,6 +80,6 @@ final class TranslatorTest extends TestCase
     {
         $t = new Translator('en', 'ru');
         self::assertSame('Domains', $t->t('admin.nav.domains'));
-        self::assertSame('Домены', (new Translator('ru', 'ru'))->t('admin.nav.domains'));
+        self::assertSame('Домены', new Translator('ru', 'ru')->t('admin.nav.domains'));
     }
 }

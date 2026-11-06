@@ -50,7 +50,7 @@ final class ListCommandsTest extends TestCase
 
     public function testSchemeListEmpty(): void
     {
-        $res = (new SchemeListCommand(new Paths($this->root)))
+        $res = new SchemeListCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru'], new Context(static fn () => null));
         self::assertTrue($res->ok);
         self::assertSame([], $res->data['rows']);
@@ -66,7 +66,7 @@ final class ListCommandsTest extends TestCase
         file_put_contents($dir . '/old.php', '<?php');
         file_put_contents($dir . '/old.rules.json', json_encode(['enabled' => false]));
 
-        $res = (new SchemeListCommand(new Paths($this->root)))
+        $res = new SchemeListCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru'], new Context(static fn () => null));
         self::assertTrue($res->ok);
         self::assertCount(2, $res->data['rows']);
@@ -82,7 +82,7 @@ final class ListCommandsTest extends TestCase
 
     public function testSchemeListRejectsInvalidDomain(): void
     {
-        $res = (new SchemeListCommand(new Paths($this->root)))
+        $res = new SchemeListCommand(new Paths($this->root))
             ->run(['domain' => 'a..ru'], new Context(static fn () => null));
         self::assertFalse($res->ok);
     }
@@ -91,7 +91,7 @@ final class ListCommandsTest extends TestCase
 
     public function testBlockListEmpty(): void
     {
-        $res = (new BlockListCommand(new Paths($this->root)))
+        $res = new BlockListCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru'], new Context(static fn () => null));
         self::assertTrue($res->ok);
         self::assertSame([], $res->data['rows']);
@@ -107,7 +107,7 @@ final class ListCommandsTest extends TestCase
         file_put_contents($dir . '/center/center.php', '<?php');
         file_put_contents($dir . '/center/center.rules.json', json_encode(['enabled' => false, 'type' => 'mixed']));
 
-        $res = (new BlockListCommand(new Paths($this->root)))
+        $res = new BlockListCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru'], new Context(static fn () => null));
         self::assertTrue($res->ok);
         self::assertCount(2, $res->data['rows']);
@@ -125,7 +125,7 @@ final class ListCommandsTest extends TestCase
 
     public function testFillerListEmpty(): void
     {
-        $res = (new FillerListCommand(new Paths($this->root)))
+        $res = new FillerListCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'allias' => 'www'], new Context(static fn () => null));
         self::assertTrue($res->ok);
         self::assertSame([], $res->data['rows']);
@@ -147,7 +147,7 @@ final class ListCommandsTest extends TestCase
         $site['fillers'] = ['example.ru' => ['www' => ['top' => true, 'footer' => false]]];
         file_put_contents($this->root . '/config/site.config', json_encode($site));
 
-        $res = (new FillerListCommand(new Paths($this->root)))
+        $res = new FillerListCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'allias' => 'www'], new Context(static fn () => null));
         self::assertTrue($res->ok);
         self::assertCount(2, $res->data['rows']);
@@ -163,7 +163,7 @@ final class ListCommandsTest extends TestCase
 
     public function testFillerListRejectsInvalidAllias(): void
     {
-        $res = (new FillerListCommand(new Paths($this->root)))
+        $res = new FillerListCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'allias' => 'Bad-Name'], new Context(static fn () => null));
         self::assertFalse($res->ok);
     }

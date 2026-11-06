@@ -10,19 +10,19 @@ use Damoony\Ai\Aicli\Handler\AgentChatHandler;
 final class CoderAgent implements AgentInterface, CoderAgentInterface
 {
     private const SYSTEM_PROMPT = <<<'PROMPT'
-Ты — Верстальщик (Coder Agent).
-Тебе дают описание одной конкретной страницы. Ты генерируешь JSON-массив блоков для её центральной части.
+        Ты — Верстальщик (Coder Agent).
+        Тебе дают описание одной конкретной страницы. Ты генерируешь JSON-массив блоков для её центральной части.
 
-ПРАВИЛА:
-1. Формат простого блока: {"type": "h1", "content": "Текст"}.
-2. Формат группы: {"type": "section", "children": [{"type": "h2", "content": "..."}, {"type": "text", "content": "..."}]}.
-3. Типы: h1, h2, h3, text, p, link, button, section, div.
-4. Для section/div используй "children" (массив), а НЕ "content".
-5. ВАЖНО: в content — только PLAIN TEXT. НИКАКОГО markdown: без **, *, #, _, `, [текст](url). Пиши обычными словами.
-6. Наполняй блоки осмысленным русским текстом по теме страницы. Никакого бреда!
-7. Минимум 5-8 блоков на страницу.
-8. Выдай СТРОГО валидный JSON-массив без markdown-оберток.
-PROMPT;
+        ПРАВИЛА:
+        1. Формат простого блока: {"type": "h1", "content": "Текст"}.
+        2. Формат группы: {"type": "section", "children": [{"type": "h2", "content": "..."}, {"type": "text", "content": "..."}]}.
+        3. Типы: h1, h2, h3, text, p, link, button, section, div.
+        4. Для section/div используй "children" (массив), а НЕ "content".
+        5. ВАЖНО: в content — только PLAIN TEXT. НИКАКОГО markdown: без **, *, #, _, `, [текст](url). Пиши обычными словами.
+        6. Наполняй блоки осмысленным русским текстом по теме страницы. Никакого бреда!
+        7. Минимум 5-8 блоков на страницу.
+        8. Выдай СТРОГО валидный JSON-массив без markdown-оберток.
+        PROMPT;
 
     private AgentChatHandler $chatHandler;
 
@@ -35,6 +35,7 @@ PROMPT;
     /**
      * @param array<string, mixed> $context
      * @param array<string, mixed> $pagePlan
+     *
      * @return array{blocks: array<int, array<string, mixed>>}
      */
     public function executeForPage(array $context, array $pagePlan): array
@@ -45,8 +46,8 @@ PROMPT;
 
         $llmInput = "Страница: {$pageTitle}\n"
             . "Описание: {$pageBrief}\n"
-            . "Планируемые секции: " . json_encode($sections) . "\n\n"
-            . "Сгенерируй JSON-массив блоков для этой страницы. Plain text, без markdown.";
+            . 'Планируемые секции: ' . json_encode($sections) . "\n\n"
+            . 'Сгенерируй JSON-массив блоков для этой страницы. Plain text, без markdown.';
 
         $result = $this->chatHandler->handle('agent:chat', [
             'system_prompt' => self::SYSTEM_PROMPT,
@@ -96,7 +97,11 @@ PROMPT;
         return $this->executeForPage($context, $firstPage);
     }
 
-    /** @param array<string, mixed> $block @return array<string, mixed> */
+    /**
+     * @param array<string, mixed> $block
+     *
+     * @return array<string, mixed>
+     */
     private static function normalizeBlock(array $block): array
     {
         if (!isset($block['type']) || !is_string($block['type'])) {
@@ -125,11 +130,11 @@ PROMPT;
     private static function stripMarkdown(string $text): string
     {
         // Снимаем **жирный**, *курсив*, #заголовки, `код`, [текст](url)
-        $text = preg_replace('/\*\*(.+?)\*\*/u', '$1', $text);
-        $text = preg_replace('/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/u', '$1', $text);
-        $text = preg_replace('/`([^`]+)`/u', '$1', $text);
-        $text = preg_replace('/\[([^\]]+)\]\([^)]+\)/u', '$1', $text);
-        $text = preg_replace('/^#+\s*/mu', '', $text);
+        $text = preg_replace('/\*\*(.+?)\*\*/u', '$1', $text) ?? $text;
+        $text = preg_replace('/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/u', '$1', $text) ?? $text;
+        $text = preg_replace('/`([^`]+)`/u', '$1', $text) ?? $text;
+        $text = preg_replace('/\[([^\]]+)\]\([^)]+\)/u', '$1', $text) ?? $text;
+        $text = preg_replace('/^#+\s*/mu', '', $text) ?? $text;
         return trim($text);
     }
 }

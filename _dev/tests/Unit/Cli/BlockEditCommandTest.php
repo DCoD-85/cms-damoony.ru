@@ -57,7 +57,7 @@ final class BlockEditCommandTest extends TestCase
 
     private function createBlock(string $name = 'top'): void
     {
-        (new BlockNewCommand(new Paths($this->root)))
+        new BlockNewCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'name' => $name], $this->ctx(new Result()));
     }
 
@@ -75,7 +75,7 @@ final class BlockEditCommandTest extends TestCase
     {
         $this->createBlock();
         $paths = new Paths($this->root);
-        $res = (new BlockEditCommand($paths))->run([
+        $res = new BlockEditCommand($paths)->run([
             'domain' => 'example.ru',
             'name' => 'top',
             'file' => 'rules',
@@ -93,7 +93,7 @@ final class BlockEditCommandTest extends TestCase
     {
         $this->createBlock();
         $payload = base64_encode('{"enabled":true,"type":"script"}');
-        $res = (new BlockEditCommand(new Paths($this->root)))->run([
+        $res = new BlockEditCommand(new Paths($this->root))->run([
             'domain' => 'example.ru',
             'name' => 'top',
             'file' => 'rules',
@@ -110,7 +110,7 @@ final class BlockEditCommandTest extends TestCase
     public function testS80RejectsInvalidBase64(): void
     {
         $this->createBlock();
-        $res = (new BlockEditCommand(new Paths($this->root)))->run([
+        $res = new BlockEditCommand(new Paths($this->root))->run([
             'domain' => 'example.ru',
             'name' => 'top',
             'file' => 'rules',
@@ -124,7 +124,7 @@ final class BlockEditCommandTest extends TestCase
     public function testS80RejectsEmptyContent(): void
     {
         $this->createBlock();
-        $res = (new BlockEditCommand(new Paths($this->root)))->run([
+        $res = new BlockEditCommand(new Paths($this->root))->run([
             'domain' => 'example.ru',
             'name' => 'top',
             'file' => 'rules',
@@ -137,7 +137,7 @@ final class BlockEditCommandTest extends TestCase
     public function testS80RejectsInvalidJson(): void
     {
         $this->createBlock();
-        $res = (new BlockEditCommand(new Paths($this->root)))->run([
+        $res = new BlockEditCommand(new Paths($this->root))->run([
             'domain' => 'example.ru',
             'name' => 'top',
             'file' => 'rules',
@@ -151,7 +151,7 @@ final class BlockEditCommandTest extends TestCase
     public function testS80RejectsInvalidType(): void
     {
         $this->createBlock();
-        $res = (new BlockEditCommand(new Paths($this->root)))->run([
+        $res = new BlockEditCommand(new Paths($this->root))->run([
             'domain' => 'example.ru',
             'name' => 'top',
             'file' => 'rules',
@@ -168,7 +168,7 @@ final class BlockEditCommandTest extends TestCase
         $payload = '{"type":"visual","pad":"' . str_repeat('a', 70000) . '"}';
         self::assertGreaterThan(65536, strlen($payload));
 
-        $res = (new BlockEditCommand(new Paths($this->root)))->run([
+        $res = new BlockEditCommand(new Paths($this->root))->run([
             'domain' => 'example.ru',
             'name' => 'top',
             'file' => 'rules',
@@ -184,7 +184,7 @@ final class BlockEditCommandTest extends TestCase
     public function testS80UpdatesEditor(): void
     {
         $this->createBlock();
-        $res = (new BlockEditCommand(new Paths($this->root)))->run([
+        $res = new BlockEditCommand(new Paths($this->root))->run([
             'domain' => 'example.ru',
             'name' => 'top',
             'file' => 'editor',
@@ -203,7 +203,7 @@ final class BlockEditCommandTest extends TestCase
     public function testS80RejectsCodeWhenAllowPhpBlocksFalse(): void
     {
         $this->createBlock();
-        $res = (new BlockEditCommand(new Paths($this->root)))->run([
+        $res = new BlockEditCommand(new Paths($this->root))->run([
             'domain' => 'example.ru',
             'name' => 'top',
             'file' => 'code',
@@ -219,7 +219,7 @@ final class BlockEditCommandTest extends TestCase
     {
         $this->createBlock();
         $this->enablePhp();
-        $res = (new BlockEditCommand(new Paths($this->root)))->run([
+        $res = new BlockEditCommand(new Paths($this->root))->run([
             'domain' => 'example.ru',
             'name' => 'top',
             'file' => 'code',
@@ -234,7 +234,7 @@ final class BlockEditCommandTest extends TestCase
     {
         $this->createBlock();
         $this->enablePhp();
-        $res = (new BlockEditCommand(new Paths($this->root)))->run([
+        $res = new BlockEditCommand(new Paths($this->root))->run([
             'domain' => 'example.ru',
             'name' => 'top',
             'file' => 'code',
@@ -250,7 +250,7 @@ final class BlockEditCommandTest extends TestCase
     {
         $this->createBlock();
         $this->enablePhp();
-        $res = (new BlockEditCommand(new Paths($this->root)))->run([
+        $res = new BlockEditCommand(new Paths($this->root))->run([
             'domain' => 'example.ru',
             'name' => 'top',
             'file' => 'code',
@@ -270,7 +270,7 @@ final class BlockEditCommandTest extends TestCase
     public function testS80RejectsInvalidFile(): void
     {
         $this->createBlock();
-        $res = (new BlockEditCommand(new Paths($this->root)))->run([
+        $res = new BlockEditCommand(new Paths($this->root))->run([
             'domain' => 'example.ru',
             'name' => 'top',
             'file' => 'shell',
@@ -283,7 +283,7 @@ final class BlockEditCommandTest extends TestCase
 
     public function testS80RejectsMissingBlock(): void
     {
-        $res = (new BlockEditCommand(new Paths($this->root)))->run([
+        $res = new BlockEditCommand(new Paths($this->root))->run([
             'domain' => 'example.ru',
             'name' => 'ghost',
             'file' => 'rules',
@@ -296,7 +296,7 @@ final class BlockEditCommandTest extends TestCase
 
     public function testS80RejectsMissingDomain(): void
     {
-        $res = (new BlockEditCommand(new Paths($this->root)))->run([
+        $res = new BlockEditCommand(new Paths($this->root))->run([
             'domain' => 'other.ru',
             'name' => 'top',
             'file' => 'rules',
@@ -309,7 +309,7 @@ final class BlockEditCommandTest extends TestCase
 
     public function testS80RejectsPathTraversal(): void
     {
-        $res = (new BlockEditCommand(new Paths($this->root)))->run([
+        $res = new BlockEditCommand(new Paths($this->root))->run([
             'domain' => 'a..ru',
             'name' => 'top',
             'file' => 'rules',
@@ -321,7 +321,7 @@ final class BlockEditCommandTest extends TestCase
 
     public function testS80RejectsInvalidBlockName(): void
     {
-        $res = (new BlockEditCommand(new Paths($this->root)))->run([
+        $res = new BlockEditCommand(new Paths($this->root))->run([
             'domain' => 'example.ru',
             'name' => 'BadName',
             'file' => 'rules',

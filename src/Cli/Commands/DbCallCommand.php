@@ -160,7 +160,7 @@ final class DbCallCommand implements CommandInterface
         ];
         if (is_array($result)) {
             // array_is_list возвращает true для списков (recent), false для одной записи (by_slug)
-            $r->data['row_count'] = array_is_list($result) ? count($result) : (empty($result) ? 0 : 1);
+            $r->data['row_count'] = array_is_list($result) ? count($result) : 1;
         }
         $context->step("Called {$provider}::{$method}", true);
 

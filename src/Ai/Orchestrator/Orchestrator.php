@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Damoony\Ai\Orchestrator;
 
-use Damoony\Ai\Orchestrator\Agent\InterviewerAgentInterface;
 use Damoony\Ai\Orchestrator\Agent\ArchitectAgentInterface;
 use Damoony\Ai\Orchestrator\Agent\CoderAgentInterface;
+use Damoony\Ai\Orchestrator\Agent\InterviewerAgentInterface;
 
 final class Orchestrator
 {
@@ -21,6 +21,8 @@ final class Orchestrator
     }
 
     /**
+     * @param list<array<string, mixed>> $currentBlocks
+     *
      * @return array<string, mixed>
      */
     public function run(
@@ -53,12 +55,12 @@ final class Orchestrator
 
             $interview = $this->interviewer->execute($ctx);
             $this->context->updateAgentOutput('interviewer', $interview);
-            
+
             // Добавляем ответ агента в историю
             if (isset($interview['message'])) {
                 $this->context->addHistory('assistant', $interview['message']);
             }
-            
+
             $ctx = $this->context->read();
 
             // Сохраняем накопленный бриф

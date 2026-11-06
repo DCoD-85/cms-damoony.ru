@@ -84,11 +84,11 @@ final class DbMigrateScenarioTest extends TestCase
         $conn = new Connection(['driver' => 'sqlite', 'path' => $this->dbPath]);
 
         $r1 = new Result();
-        (new DbMigrateCommand(new Paths($this->root), connection: $conn))->run([], $this->ctx($r1));
+        new DbMigrateCommand(new Paths($this->root), connection: $conn)->run([], $this->ctx($r1));
         self::assertCount(3, $r1->steps);
 
         $r2 = new Result();
-        (new DbMigrateCommand(new Paths($this->root), connection: $conn))->run([], $this->ctx($r2));
+        new DbMigrateCommand(new Paths($this->root), connection: $conn)->run([], $this->ctx($r2));
         self::assertCount(1, $r2->steps);
         self::assertSame('Нет новых миграций', $r2->steps[0]['message']);
     }

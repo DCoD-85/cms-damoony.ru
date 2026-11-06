@@ -55,7 +55,7 @@ $inputRow->append(Builder::elA('button', ['id' => 'send'])->content('→'));
 $createRow = Builder::div('create-row');
 $createRow->append(
     Builder::elA('button', ['id' => 'btn-create', 'class' => 'btn-create'])
-        ->content('🚀 Создать сайт по брифу')
+        ->content('🚀 Создать сайт по брифу'),
 );
 $inputArea->append($createRow);
 $inputArea->append($inputRow);

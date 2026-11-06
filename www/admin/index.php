@@ -95,7 +95,7 @@ try {
     }
 
     View::setLang(new \Damoony\I18n\Translator($currentLang, $defaultLang));
-    View::setAvailableLangs($adminLangs);
+    View::setAvailableLangs(array_values($adminLangs));
 
     $paths = new Paths($root);
 

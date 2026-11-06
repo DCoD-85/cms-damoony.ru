@@ -13,7 +13,7 @@ final class PageCompilerTest extends TestCase
 
     public function testLinkWithJavascriptSchemeIsNeutralized(): void
     {
-        $php = (new PageCompiler())->compile('example_ru\\www', 'algoritm_root', [
+        $php = new PageCompiler()->compile('example_ru\\www', 'algoritm_root', [
             ['type' => 'link', 'url' => 'javascript:alert(1)', 'content' => 'Click'],
         ]);
 
@@ -24,7 +24,7 @@ final class PageCompilerTest extends TestCase
 
     public function testButtonIgnoresUrlAndRendersAsButton(): void
     {
-        $php = (new PageCompiler())->compile('example_ru\\www', 'algoritm_root', [
+        $php = new PageCompiler()->compile('example_ru\\www', 'algoritm_root', [
             ['type' => 'button', 'url' => 'javascript:void(0)', 'content' => 'Click'],
         ]);
 
@@ -35,7 +35,7 @@ final class PageCompilerTest extends TestCase
 
     public function testValidHttpsLinkPasses(): void
     {
-        $php = (new PageCompiler())->compile('example_ru\\www', 'algoritm_root', [
+        $php = new PageCompiler()->compile('example_ru\\www', 'algoritm_root', [
             ['type' => 'link', 'url' => 'https://example.com/x', 'content' => 'Go'],
         ]);
 
@@ -44,7 +44,7 @@ final class PageCompilerTest extends TestCase
 
     public function testProtocolRelativeUrlIsNeutralized(): void
     {
-        $php = (new PageCompiler())->compile('example_ru\\www', 'algoritm_root', [
+        $php = new PageCompiler()->compile('example_ru\\www', 'algoritm_root', [
             ['type' => 'link', 'url' => '//evil.example/x', 'content' => 'Evil'],
         ]);
 
@@ -57,7 +57,7 @@ final class PageCompilerTest extends TestCase
 
     public function testImgWithJavascriptSchemeIsNeutralized(): void
     {
-        $php = (new PageCompiler())->compile('example_ru\\www', 'algoritm_root', [
+        $php = new PageCompiler()->compile('example_ru\\www', 'algoritm_root', [
             ['type' => 'img', 'content' => 'javascript:alert(1)', 'alt' => 'X'],
         ]);
 
@@ -68,7 +68,7 @@ final class PageCompilerTest extends TestCase
 
     public function testImgWithDataImageIsAllowed(): void
     {
-        $php = (new PageCompiler())->compile('example_ru\\www', 'algoritm_root', [
+        $php = new PageCompiler()->compile('example_ru\\www', 'algoritm_root', [
             ['type' => 'img', 'content' => 'data:image/png;base64,iVBORw0KGgo=', 'alt' => 'Inline'],
         ]);
 
@@ -79,7 +79,7 @@ final class PageCompilerTest extends TestCase
 
     public function testNavWithJavascriptUrlIsNeutralized(): void
     {
-        $php = (new PageCompiler())->compile('example_ru\\www', 'algoritm_root', [
+        $php = new PageCompiler()->compile('example_ru\\www', 'algoritm_root', [
             [
                 'type' => 'nav',
                 'items' => [
@@ -96,7 +96,7 @@ final class PageCompilerTest extends TestCase
 
     public function testValidBlocksCompileWithoutSanitization(): void
     {
-        $php = (new PageCompiler())->compile('example_ru\\www', 'algoritm_root', [
+        $php = new PageCompiler()->compile('example_ru\\www', 'algoritm_root', [
             ['type' => 'h1', 'content' => 'Title'],
             ['type' => 'text', 'content' => 'Body'],
             ['type' => 'img', 'content' => '/content/example.ru/www/general/abc123def4567890.png', 'alt' => 'Pic'],
@@ -114,7 +114,7 @@ final class PageCompilerTest extends TestCase
 
     public function testWithSchemaCompilesWithoutSyntaxErrors(): void
     {
-        $php = (new PageCompiler())->compile(
+        $php = new PageCompiler()->compile(
             'example_ru\\www',
             'algoritm_root',
             [['type' => 'h1', 'content' => 'Hi']],

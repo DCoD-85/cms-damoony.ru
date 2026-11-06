@@ -82,7 +82,7 @@ final class FillerController extends BaseController
             $card->append(Message::success($success)->build());
         }
 
-        $table = (new Table())->headers(View::t('filler.th_block'), View::t('filler.th_status'), View::t('domain.bind_th_act'));
+        $table = new Table()->headers(View::t('filler.th_block'), View::t('filler.th_status'), View::t('domain.bind_th_act'));
         if (is_array($fillers) && $fillers !== []) {
             foreach ($fillers as $block => $enabled) {
                 $statusBadge = Builder::span('badge');

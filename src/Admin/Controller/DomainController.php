@@ -89,7 +89,7 @@ final class DomainController extends BaseController
         }
         // ---------------------------
 
-        $table = (new Table())->headers(
+        $table = new Table()->headers(
             View::t('domain.th_status'),
             View::t('domain.th_domain'),
             View::t('domain.th_ns'),
@@ -215,7 +215,7 @@ final class DomainController extends BaseController
             $card->append(Message::success(View::t('msg.saved'))->build());
         }
 
-        $table = (new Table())->headers(View::t('domain.bind_th_in'), View::t('domain.bind_th_com'), View::t('domain.bind_th_act'));
+        $table = new Table()->headers(View::t('domain.bind_th_in'), View::t('domain.bind_th_com'), View::t('domain.bind_th_act'));
 
         $index = 0;
         foreach ($incomingList as $incoming) {

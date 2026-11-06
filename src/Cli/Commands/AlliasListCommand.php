@@ -90,7 +90,7 @@ final class AlliasListCommand implements CommandInterface
 
             $row = [
                 'name' => $real,
-                'keys' => array_values($keys),
+                'keys' => $keys,
                 'dir_exists' => $exists,
                 'available' => $available,
                 'page_count' => $pageCount,

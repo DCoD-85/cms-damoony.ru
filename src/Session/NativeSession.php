@@ -86,7 +86,6 @@ final class NativeSession implements SessionInterface
                 'None' => 'None',
                 'none' => 'none',
                 'Strict' => 'Strict',
-                'strict' => 'strict',
                 default => 'Lax',
             };
 

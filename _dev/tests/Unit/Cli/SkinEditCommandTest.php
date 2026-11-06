@@ -24,7 +24,7 @@ final class SkinEditCommandTest extends TestCase
             'alliases_real' => ['example.ru' => ['www' => 'www']],
         ]));
         mkdir($this->root . '/app/example.ru/www', 0o777, true);
-        (new SkinNewCommand(new Paths($this->root)))
+        new SkinNewCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'allias' => 'www', 'name' => 'default'], $this->ctx());
     }
 
@@ -55,7 +55,7 @@ final class SkinEditCommandTest extends TestCase
 
     private function execute(array $args): Result
     {
-        return (new SkinEditCommand(new Paths($this->root)))->run($args, $this->ctx());
+        return new SkinEditCommand(new Paths($this->root))->run($args, $this->ctx());
     }
 
     public function testWritesCss(): void

@@ -55,10 +55,10 @@ final class SchemeRemoveCommandTest extends TestCase
 
     public function testRemovesThreeFilesToTrash(): void
     {
-        (new SchemeNewCommand(new Paths($this->root)))
+        new SchemeNewCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'name' => 'main'], $this->ctx(new Result()));
 
-        $res = (new SchemeRemoveCommand(new Paths($this->root)))
+        $res = new SchemeRemoveCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'name' => 'main', 'force' => '1'], $this->ctx(new Result()));
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
@@ -78,10 +78,10 @@ final class SchemeRemoveCommandTest extends TestCase
 
     public function testRejectsWithoutForce(): void
     {
-        (new SchemeNewCommand(new Paths($this->root)))
+        new SchemeNewCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'name' => 'main'], $this->ctx(new Result()));
 
-        $res = (new SchemeRemoveCommand(new Paths($this->root)))
+        $res = new SchemeRemoveCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'name' => 'main'], $this->ctx(new Result()));
 
         self::assertFalse($res->ok);
@@ -90,7 +90,7 @@ final class SchemeRemoveCommandTest extends TestCase
 
     public function testIdempotentOnMissingScheme(): void
     {
-        $res = (new SchemeRemoveCommand(new Paths($this->root)))
+        $res = new SchemeRemoveCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'name' => 'ghost', 'force' => '1'], $this->ctx(new Result()));
 
         self::assertTrue($res->ok);
@@ -99,7 +99,7 @@ final class SchemeRemoveCommandTest extends TestCase
 
     public function testRejectsMissingDomain(): void
     {
-        $res = (new SchemeRemoveCommand(new Paths($this->root)))
+        $res = new SchemeRemoveCommand(new Paths($this->root))
             ->run(['domain' => 'ghost.ru', 'name' => 'main', 'force' => '1'], $this->ctx(new Result()));
 
         self::assertFalse($res->ok);

@@ -5,8 +5,6 @@ parameters:
         - ../bin
         - ../www
     tmpDir: ../var/phpstan
-    checkMissingIterableValueType: true
-    checkGenericClassInNonGenericObjectType: true
     reportUnmatchedIgnoredErrors: true
     treatPhpDocTypesAsCertain: true
     ignoreErrors: []

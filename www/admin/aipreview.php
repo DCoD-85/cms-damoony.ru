@@ -92,7 +92,7 @@ try {
     if (str_contains((string)$contentType, 'text/html')) {
         $baseUrl = "/admin/preview/{$tabId}/";
         $html = str_replace('<head>', "<head><base href=\"{$baseUrl}\">", $response->body);
-        
+
         $mode = $_GET['mode'] ?? '';
         if ($mode === 'wireframe') {
             $wireframeCss = '<style>

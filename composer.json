@@ -1,17 +1,17 @@
 {
     "name": "damoony/engine",
-    "description": "Damoony engine — modular PHP 8.4 framework for multi-domain multi-allias sites",
+    "description": "Damoony engine — modular PHP 8.5 framework for multi-domain multi-allias sites",
     "type": "project",
     "license": "proprietary",
     "require": {
-        "php": ">=8.4",
+        "php": ">=8.5",
         "psr/log": "^3.0",
         "psr/container": "^2.0"
     },
     "require-dev": {
-        "friendsofphp/php-cs-fixer": "^3.75",
-        "phpstan/phpstan": "^1.11",
-        "phpunit/phpunit": "^10.5"
+        "friendsofphp/php-cs-fixer": "^3.64",
+        "phpstan/phpstan": "^2.0",
+        "phpunit/phpunit": "^11.0"
     },
     "autoload": {
         "psr-4": {
@@ -26,8 +26,8 @@
     "scripts": {
         "test": "phpunit -c _dev/phpunit.xml",
         "stan": "phpstan analyse -c _dev/phpstan.neon --memory-limit=1G",
-        "cs": "PHP_CS_FIXER_IGNORE_ENV=1 php-cs-fixer fix --config=_dev/.php-cs-fixer.php --dry-run --diff",
-        "cs-fix": "PHP_CS_FIXER_IGNORE_ENV=1 php-cs-fixer fix --config=_dev/.php-cs-fixer.php",
+        "cs": "php-cs-fixer fix --config=_dev/.php-cs-fixer.php --dry-run --diff",
+        "cs-fix": "php-cs-fixer fix --config=_dev/.php-cs-fixer.php",
         "check": ["@stan", "@cs", "@test"]
     },
     "config": {

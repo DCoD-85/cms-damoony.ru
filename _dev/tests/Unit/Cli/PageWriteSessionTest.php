@@ -23,29 +23,29 @@ final class PageWriteSessionTest extends TestCase
             $this->root . '/config/site.config',
             json_encode([
                 'domains_namespace' => ['damoony.ru' => 'damoony_ru'],
-            ])
+            ]),
         );
 
         // Prod page
         mkdir($this->root . '/app/damoony.ru/www/algoritm', 0o775, true);
         file_put_contents(
             $this->root . '/app/damoony.ru/www/algoritm/algoritm.php',
-            "<?php // prod original\n"
+            "<?php // prod original\n",
         );
         file_put_contents(
             $this->root . '/app/damoony.ru/www/algoritm/algoritm.editor.json',
-            "[]"
+            '[]',
         );
 
         // Session copy
         mkdir($this->root . '/app/.sess_abc12345.damoony.ru/www/algoritm', 0o775, true);
         file_put_contents(
             $this->root . '/app/.sess_abc12345.damoony.ru/www/algoritm/algoritm.php',
-            "<?php // session original\n"
+            "<?php // session original\n",
         );
         file_put_contents(
             $this->root . '/app/.sess_abc12345.damoony.ru/www/algoritm/algoritm.editor.json',
-            "[]"
+            '[]',
         );
     }
 
@@ -71,17 +71,17 @@ final class PageWriteSessionTest extends TestCase
         self::assertTrue($r->ok, 'page:write failed: ' . implode('; ', $r->errors));
 
         $sessionPhp = (string) file_get_contents(
-            $this->root . '/app/.sess_abc12345.damoony.ru/www/algoritm/algoritm.php'
+            $this->root . '/app/.sess_abc12345.damoony.ru/www/algoritm/algoritm.php',
         );
         $prodPhp = (string) file_get_contents(
-            $this->root . '/app/damoony.ru/www/algoritm/algoritm.php'
+            $this->root . '/app/damoony.ru/www/algoritm/algoritm.php',
         );
 
         $sessionEditor = (string) file_get_contents(
-            $this->root . '/app/.sess_abc12345.damoony.ru/www/algoritm/algoritm.editor.json'
+            $this->root . '/app/.sess_abc12345.damoony.ru/www/algoritm/algoritm.editor.json',
         );
         $prodEditor = (string) file_get_contents(
-            $this->root . '/app/damoony.ru/www/algoritm/algoritm.editor.json'
+            $this->root . '/app/damoony.ru/www/algoritm/algoritm.editor.json',
         );
 
         self::assertStringContainsString('Session H1', $sessionPhp);
@@ -141,10 +141,10 @@ final class PageWriteSessionTest extends TestCase
         self::assertTrue($r->ok, 'page:write failed: ' . implode('; ', $r->errors));
 
         $prodPhp = (string) file_get_contents(
-            $this->root . '/app/damoony.ru/www/algoritm/algoritm.php'
+            $this->root . '/app/damoony.ru/www/algoritm/algoritm.php',
         );
         $sessionPhp = (string) file_get_contents(
-            $this->root . '/app/.sess_abc12345.damoony.ru/www/algoritm/algoritm.php'
+            $this->root . '/app/.sess_abc12345.damoony.ru/www/algoritm/algoritm.php',
         );
 
         self::assertStringContainsString('Prod H1', $prodPhp);

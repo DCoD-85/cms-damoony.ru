@@ -18,6 +18,8 @@ final class ContextManager
 
     /**
      * Инициализирует пустой контекст, если файла нет.
+     *
+     * @param list<array<string, mixed>> $currentBlocks
      */
     public function init(string $prompt, string $targetBlock = 'all', array $currentBlocks = []): void
     {
@@ -68,8 +70,6 @@ final class ContextManager
 
     /**
      * Добавляет сообщение в историю диалога.
-     * @param string $role
-     * @param string $content
      */
     public function addHistory(string $role, string $content): void
     {
@@ -84,6 +84,8 @@ final class ContextManager
 
     /**
      * Обновляет текущий промпт и блоки перед запуском агента.
+     *
+     * @param list<array<string, mixed>> $currentBlocks
      */
     public function updateInput(string $prompt, array $currentBlocks = []): void
     {
@@ -104,12 +106,13 @@ final class ContextManager
         }
         file_put_contents(
             $this->file,
-            json_encode($context, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
+            json_encode($context, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
         );
     }
 
     /**
      * Обновляет конкретную секцию контекста.
+     *
      * @param array<string, mixed> $data
      */
     public function updateAgentOutput(string $agent, array $data): void

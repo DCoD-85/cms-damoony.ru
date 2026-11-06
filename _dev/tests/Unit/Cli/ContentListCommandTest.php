@@ -55,9 +55,8 @@ final class ContentListCommandTest extends TestCase
         ob_start();
         imagepng($im);
         $bytes = (string) ob_get_clean();
-        imagedestroy($im);
 
-        (new ContentStoreCommand(new Paths($this->root)))->run([
+        new ContentStoreCommand(new Paths($this->root))->run([
             'domain' => 'example.ru',
             'allias' => 'www',
             'category' => $category,
@@ -70,7 +69,7 @@ final class ContentListCommandTest extends TestCase
 
     private function execute(array $args): Result
     {
-        return (new ContentListCommand(new Paths($this->root)))
+        return new ContentListCommand(new Paths($this->root))
             ->run($args, new Context(static fn () => null));
     }
 

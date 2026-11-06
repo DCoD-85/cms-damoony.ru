@@ -63,7 +63,7 @@ final class FillerCommandsTest extends TestCase
     public function testS06CreateFiller(): void
     {
         $r = new Result();
-        $res = (new FillerNewCommand(new Paths($this->root)))
+        $res = new FillerNewCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'allias' => 'www', 'block' => 'top'], $this->ctx($r));
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
@@ -86,7 +86,7 @@ final class FillerCommandsTest extends TestCase
 
     public function testS06RejectsMissingBlock(): void
     {
-        $res = (new FillerNewCommand(new Paths($this->root)))
+        $res = new FillerNewCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'allias' => 'www', 'block' => 'ghost'], $this->ctx(new Result()));
         self::assertFalse($res->ok);
         self::assertStringContainsString('Блок не найден', $res->errors[0]);
@@ -94,7 +94,7 @@ final class FillerCommandsTest extends TestCase
 
     public function testS06RejectsMissingAllias(): void
     {
-        $res = (new FillerNewCommand(new Paths($this->root)))
+        $res = new FillerNewCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'allias' => 'ghost', 'block' => 'top'], $this->ctx(new Result()));
         self::assertFalse($res->ok);
         self::assertStringContainsString('Алиас не найден', $res->errors[0]);
@@ -102,7 +102,7 @@ final class FillerCommandsTest extends TestCase
 
     public function testS06RejectsPathTraversal(): void
     {
-        $res = (new FillerNewCommand(new Paths($this->root)))
+        $res = new FillerNewCommand(new Paths($this->root))
             ->run(['domain' => 'a..ru', 'allias' => 'www', 'block' => 'top'], $this->ctx(new Result()));
         self::assertFalse($res->ok);
     }
@@ -110,9 +110,9 @@ final class FillerCommandsTest extends TestCase
     public function testS07ToggleOff(): void
     {
         $paths = new Paths($this->root);
-        (new FillerNewCommand($paths))->run(['domain' => 'example.ru', 'allias' => 'www', 'block' => 'top'], $this->ctx(new Result()));
+        new FillerNewCommand($paths)->run(['domain' => 'example.ru', 'allias' => 'www', 'block' => 'top'], $this->ctx(new Result()));
 
-        $res = (new FillerToggleCommand($paths))
+        $res = new FillerToggleCommand($paths)
             ->run(['domain' => 'example.ru', 'allias' => 'www', 'block' => 'top', 'value' => '0'], $this->ctx(new Result()));
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
@@ -123,9 +123,9 @@ final class FillerCommandsTest extends TestCase
     public function testS07ToggleOn(): void
     {
         $paths = new Paths($this->root);
-        (new FillerToggleCommand($paths))
+        new FillerToggleCommand($paths)
             ->run(['domain' => 'example.ru', 'allias' => 'www', 'block' => 'top', 'value' => '0'], $this->ctx(new Result()));
-        $res = (new FillerToggleCommand($paths))
+        $res = new FillerToggleCommand($paths)
             ->run(['domain' => 'example.ru', 'allias' => 'www', 'block' => 'top', 'value' => '1'], $this->ctx(new Result()));
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
@@ -136,14 +136,14 @@ final class FillerCommandsTest extends TestCase
     public function testS07ToggleIdempotentOnSameValue(): void
     {
         $paths = new Paths($this->root);
-        (new FillerToggleCommand($paths))
+        new FillerToggleCommand($paths)
             ->run(['domain' => 'example.ru', 'allias' => 'www', 'block' => 'top', 'value' => '0'], $this->ctx(new Result()));
 
         // Запоминаем состояние файла
         $siteBefore = (string) file_get_contents($this->root . '/config/site.config');
 
         // Повторный toggle на то же значение — не должен менять файл
-        $res = (new FillerToggleCommand($paths))
+        $res = new FillerToggleCommand($paths)
             ->run(['domain' => 'example.ru', 'allias' => 'www', 'block' => 'top', 'value' => '0'], $this->ctx(new Result()));
 
         self::assertTrue($res->ok);
@@ -152,7 +152,7 @@ final class FillerCommandsTest extends TestCase
 
     public function testS07ToggleRejectsMissingBlock(): void
     {
-        $res = (new FillerToggleCommand(new Paths($this->root)))
+        $res = new FillerToggleCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'allias' => 'www', 'block' => 'ghost', 'value' => '1'], $this->ctx(new Result()));
 
         self::assertFalse($res->ok);
@@ -161,7 +161,7 @@ final class FillerCommandsTest extends TestCase
 
     public function testS07ToggleRejectsMissingAllias(): void
     {
-        $res = (new FillerToggleCommand(new Paths($this->root)))
+        $res = new FillerToggleCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'allias' => 'ghost', 'block' => 'top', 'value' => '1'], $this->ctx(new Result()));
 
         self::assertFalse($res->ok);
@@ -170,7 +170,7 @@ final class FillerCommandsTest extends TestCase
 
     public function testS07ToggleRejectsPathTraversal(): void
     {
-        $res = (new FillerToggleCommand(new Paths($this->root)))
+        $res = new FillerToggleCommand(new Paths($this->root))
             ->run(['domain' => 'a..ru', 'allias' => 'www', 'block' => 'top', 'value' => '1'], $this->ctx(new Result()));
 
         self::assertFalse($res->ok);

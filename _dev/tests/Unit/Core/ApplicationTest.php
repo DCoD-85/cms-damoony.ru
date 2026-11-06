@@ -24,6 +24,16 @@ final class ApplicationTest extends TestCase
         return new Application($container, $env, $config, $logger, new ErrorHandler($logger, $env));
     }
 
+    protected function tearDown(): void
+    {
+        restore_error_handler();
+        restore_exception_handler();
+        parent::tearDown();
+    }
+
+    #[\PHPUnit\Framework\Attributes\RunInSeparateProcess]
+    #[\PHPUnit\Framework\Attributes\PreserveGlobalState(false)]
+    #[\PHPUnit\Framework\Attributes\WithoutErrorHandler]
     public function testAccessors(): void
     {
         $app = $this->make(Env::Dev);
@@ -36,6 +46,9 @@ final class ApplicationTest extends TestCase
         self::assertInstanceOf(ErrorHandler::class, $app->errorHandler());
     }
 
+    #[\PHPUnit\Framework\Attributes\RunInSeparateProcess]
+    #[\PHPUnit\Framework\Attributes\PreserveGlobalState(false)]
+    #[\PHPUnit\Framework\Attributes\WithoutErrorHandler]
     public function testBootIsIdempotent(): void
     {
         $app = $this->make();

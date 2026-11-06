@@ -32,7 +32,7 @@ final class ComponentsTest extends TestCase
 
     public function testTableBasic(): void
     {
-        $t = (new Table())
+        $t = new Table()
             ->headers('ID', 'Название')
             ->row(['1', 'Первая'])
             ->row(['2', 'Вторая']);

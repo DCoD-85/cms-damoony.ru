@@ -140,7 +140,7 @@ final class BlockCodegen
             }
             $code .= $attrs;
             if (is_array($children) && $children !== []) {
-                $code .= self::renderWithCounter($children, $var, $contextVar, $counter, $indent);
+                $code .= self::renderWithCounter(array_values($children), $var, $contextVar, $counter, $indent);
             }
             $code .= $pad . $parentVar . '->append(' . $var . ");\n\n";
             return $code;
@@ -214,6 +214,7 @@ final class BlockCodegen
             }
 
             if (is_array($children) && $children !== []) {
+                /** @var list<array<string, mixed>> $children */
                 $code .= self::renderWithCounter($children, $var, $contextVar, $counter, $indent);
             }
             $code .= $pad . $parentVar . '->append(' . $var . ");\n\n";

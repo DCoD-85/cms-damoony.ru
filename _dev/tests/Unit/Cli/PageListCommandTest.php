@@ -68,7 +68,7 @@ final class PageListCommandTest extends TestCase
 
     private function execute(array $args): Result
     {
-        return (new PageListCommand(new Paths($this->root)))
+        return new PageListCommand(new Paths($this->root))
             ->run($args, new Context(static fn () => null));
     }
 

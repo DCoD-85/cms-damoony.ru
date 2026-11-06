@@ -13,8 +13,8 @@ use Damoony\Ai\Orchestrator\ContextManager;
 use Damoony\Ai\Orchestrator\Orchestrator;
 use Damoony\Ai\Orchestrator\ToolsCollector;
 use Damoony\Cli\Commands\SessionApplyCommand;
-use Damoony\Cli\Commands\SessionStartCommand;
 use Damoony\Cli\Commands\SessionDiscardCommand;
+use Damoony\Cli\Commands\SessionStartCommand;
 use Damoony\Cli\Context;
 use Damoony\Core\Config;
 use Damoony\Domain\ConfigDomainResolver;
@@ -26,24 +26,25 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 header('Content-Type: application/json; charset=utf-8');
 
 
-    /**
-     * Рекурсивно считает блоки (включая детей section/div).
-     * @param array<int, mixed> $blocks
-     */
-    function self_countBlocks(array $blocks): int
-    {
-        $count = 0;
-        foreach ($blocks as $block) {
-            if (!is_array($block)) {
-                continue;
-            }
-            $count++;
-            if (isset($block['children']) && is_array($block['children'])) {
-                $count += self_countBlocks($block['children']);
-            }
+/**
+ * Рекурсивно считает блоки (включая детей section/div).
+ *
+ * @param array<int, mixed> $blocks
+ */
+function self_countBlocks(array $blocks): int
+{
+    $count = 0;
+    foreach ($blocks as $block) {
+        if (!is_array($block)) {
+            continue;
         }
-        return $count;
+        $count++;
+        if (isset($block['children']) && is_array($block['children'])) {
+            $count += self_countBlocks($block['children']);
+        }
     }
+    return $count;
+}
 
 try {
     $raw = (string) file_get_contents('php://input');
@@ -137,7 +138,9 @@ try {
             . ($page === '__root__' ? 'algoritm' : $page)
             . '.editor.json';
         $current = is_file($jsonFile) ? json_decode((string) file_get_contents($jsonFile), true) : [];
-        if (!is_array($current)) $current = [];
+        if (!is_array($current)) {
+            $current = [];
+        }
 
         // Запускаем мультиагентный Оркестратор
         $orchClient = new AicliClient($root);
@@ -146,23 +149,24 @@ try {
         $orchInterviewer = new \Damoony\Ai\Orchestrator\Agent\InterviewerAgent($root);
         $orchArchitect = new \Damoony\Ai\Orchestrator\Agent\ArchitectAgent($root);
         $orchCoder = new \Damoony\Ai\Orchestrator\Agent\CoderAgent($root);
-        
+
         $orchestrator = new Orchestrator($orchCtx, $orchTools, $orchInterviewer, $orchArchitect, $orchCoder, $orchClient);
+        /** @var list<array<string, mixed>> $current */
         $orchResult = $orchestrator->run($tabId, $realDomain, $alias, $prompt, $targetBlock, $current);
 
         // Проверяем статус
         $status = $orchResult['meta']['status'] ?? '';
-        
+
         if ($status === 'chat_done') {
             $reply = $orchResult['agent_outputs']['interviewer']['message'] ?? 'Понял вас.';
             $brief = $orchResult['input']['brief'] ?? '';
-            
+
             ob_clean();
             echo json_encode([
-                'ok' => true, 
-                'chat_only' => true, 
+                'ok' => true,
+                'chat_only' => true,
                 'reply' => $reply,
-                'brief' => $brief
+                'brief' => $brief,
             ], JSON_INVALID_UTF8_SUBSTITUTE | JSON_UNESCAPED_UNICODE);
             exit;
         }
@@ -174,7 +178,7 @@ try {
 
         // Берем блоки от Кодера
         $newBlocks = $orchResult['agent_outputs']['coder']['blocks'] ?? [];
-                // Пишем в файл через CLI
+        // Пишем в файл через CLI
         $tmpJsonFile = $root . '/var/aiui_write_' . $tabId . '.json';
         if (!is_dir($root . '/var')) {
             mkdir($root . '/var', 0o775, true);
@@ -184,7 +188,7 @@ try {
             throw new \RuntimeException('json_encode failed: ' . json_last_error_msg());
         }
         file_put_contents($tmpJsonFile, $jsonStr);
-        
+
         $writeClient = new AicliClient($root);
         $writeArgs = 'page:write'
             . ' --session=' . $tabId
@@ -193,10 +197,10 @@ try {
             . ' --name=' . $page
             . ' --json_file=' . escapeshellarg($tmpJsonFile)
             . ' --with_schema=1';
-            
+
         $writeRes = $writeClient->runJson($writeArgs);
         @unlink($tmpJsonFile);
-        
+
         if (!($writeRes['ok'] ?? false)) {
             $hint = (string) ($writeRes['hint'] ?? '');
             $errMsg = 'page:write failed: ' . ($writeRes['error'] ?? 'unknown');
@@ -273,7 +277,7 @@ try {
         if ($blockCount < 5) {
             throw new \RuntimeException(
                 'Применение заблокировано: страница содержит только ' . $blockCount
-                . ' блок(ов). Сгенерируйте более полный контент или добавьте блоки вручную.'
+                . ' блок(ов). Сгенерируйте более полный контент или добавьте блоки вручную.',
             );
         }
 
@@ -300,7 +304,7 @@ try {
     $err = $e->getMessage() . ' | File: ' . $e->getFile() . ':' . $e->getLine();
     $json = json_encode(
         ['ok' => false, 'error' => $err],
-        JSON_INVALID_UTF8_SUBSTITUTE | JSON_UNESCAPED_UNICODE
+        JSON_INVALID_UTF8_SUBSTITUTE | JSON_UNESCAPED_UNICODE,
     );
     echo $json !== false ? $json : '{"ok":false,"error":"json_encode failed: ' . addslashes(json_last_error_msg()) . '"}';
 }

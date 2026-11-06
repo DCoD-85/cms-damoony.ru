@@ -26,7 +26,7 @@ final class SchemeCopyCommandTest extends TestCase
         mkdir($this->root . '/app/example.ru', 0o777, true);
 
         // Создаём исходную схему через SchemeNewCommand
-        (new SchemeNewCommand(new Paths($this->root)))
+        new SchemeNewCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'name' => 'main'], $this->ctx(new Result()));
     }
 
@@ -59,7 +59,7 @@ final class SchemeCopyCommandTest extends TestCase
 
     public function testCopiesThreeFiles(): void
     {
-        $res = (new SchemeCopyCommand(new Paths($this->root)))
+        $res = new SchemeCopyCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'name' => 'main'], $this->ctx(new Result()));
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
@@ -85,7 +85,7 @@ final class SchemeCopyCommandTest extends TestCase
 
     public function testRejectsMissingScheme(): void
     {
-        $res = (new SchemeCopyCommand(new Paths($this->root)))
+        $res = new SchemeCopyCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'name' => 'ghost'], $this->ctx(new Result()));
 
         self::assertFalse($res->ok);
@@ -94,7 +94,7 @@ final class SchemeCopyCommandTest extends TestCase
 
     public function testRejectsInvalidName(): void
     {
-        $res = (new SchemeCopyCommand(new Paths($this->root)))
+        $res = new SchemeCopyCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'name' => 'Bad-Name'], $this->ctx(new Result()));
 
         self::assertFalse($res->ok);
@@ -102,7 +102,7 @@ final class SchemeCopyCommandTest extends TestCase
 
     public function testRejectsMissingDomain(): void
     {
-        $res = (new SchemeCopyCommand(new Paths($this->root)))
+        $res = new SchemeCopyCommand(new Paths($this->root))
             ->run(['domain' => 'ghost.ru', 'name' => 'main'], $this->ctx(new Result()));
 
         self::assertFalse($res->ok);

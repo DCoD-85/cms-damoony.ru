@@ -107,7 +107,7 @@ final class AdminRouterTest extends TestCase
 
     public function testUnknownResourceIs404(): void
     {
-        $r = (new AdminRouter())->dispatch(new Request('GET', '/admin/', query: ['p' => 'ghost']));
+        $r = new AdminRouter()->dispatch(new Request('GET', '/admin/', query: ['p' => 'ghost']));
         self::assertSame(404, $r->status);
     }
 

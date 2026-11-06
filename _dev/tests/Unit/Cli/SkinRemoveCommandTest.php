@@ -53,13 +53,13 @@ final class SkinRemoveCommandTest extends TestCase
 
     private function makeSkin(string $name): void
     {
-        (new SkinNewCommand(new Paths($this->root)))
+        new SkinNewCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'allias' => 'www', 'name' => $name], $this->ctx());
     }
 
     private function execute(array $args): Result
     {
-        return (new SkinRemoveCommand(new Paths($this->root)))->run($args, $this->ctx());
+        return new SkinRemoveCommand(new Paths($this->root))->run($args, $this->ctx());
     }
 
     public function testRemovesToTrash(): void

@@ -61,7 +61,7 @@ final class FillerEditCommandTest extends TestCase
 
     private function createFiller(string $allias = 'www', string $block = 'top'): void
     {
-        (new FillerNewCommand(new Paths($this->root)))
+        new FillerNewCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'allias' => $allias, 'block' => $block], $this->ctx(new Result()));
     }
 
@@ -78,7 +78,7 @@ final class FillerEditCommandTest extends TestCase
     public function testS81UpdatesRules(): void
     {
         $this->createFiller();
-        $res = (new FillerEditCommand(new Paths($this->root)))->run([
+        $res = new FillerEditCommand(new Paths($this->root))->run([
             'domain' => 'example.ru',
             'allias' => 'www',
             'block' => 'top',
@@ -96,7 +96,7 @@ final class FillerEditCommandTest extends TestCase
     public function testS81UpdatesEditor(): void
     {
         $this->createFiller();
-        $res = (new FillerEditCommand(new Paths($this->root)))->run([
+        $res = new FillerEditCommand(new Paths($this->root))->run([
             'domain' => 'example.ru',
             'allias' => 'www',
             'block' => 'top',
@@ -114,7 +114,7 @@ final class FillerEditCommandTest extends TestCase
     public function testS81RejectsInvalidJson(): void
     {
         $this->createFiller();
-        $res = (new FillerEditCommand(new Paths($this->root)))->run([
+        $res = new FillerEditCommand(new Paths($this->root))->run([
             'domain' => 'example.ru',
             'allias' => 'www',
             'block' => 'top',
@@ -131,7 +131,7 @@ final class FillerEditCommandTest extends TestCase
     public function testS81RejectsCodeWhenAllowPhpBlocksFalse(): void
     {
         $this->createFiller();
-        $res = (new FillerEditCommand(new Paths($this->root)))->run([
+        $res = new FillerEditCommand(new Paths($this->root))->run([
             'domain' => 'example.ru',
             'allias' => 'www',
             'block' => 'top',
@@ -148,7 +148,7 @@ final class FillerEditCommandTest extends TestCase
     {
         $this->createFiller();
         $this->enablePhp();
-        $res = (new FillerEditCommand(new Paths($this->root)))->run([
+        $res = new FillerEditCommand(new Paths($this->root))->run([
             'domain' => 'example.ru',
             'allias' => 'www',
             'block' => 'top',
@@ -169,7 +169,7 @@ final class FillerEditCommandTest extends TestCase
     public function testS81RejectsMissingFiller(): void
     {
         // Filler не создан — нет top_www.php
-        $res = (new FillerEditCommand(new Paths($this->root)))->run([
+        $res = new FillerEditCommand(new Paths($this->root))->run([
             'domain' => 'example.ru',
             'allias' => 'www',
             'block' => 'top',
@@ -184,7 +184,7 @@ final class FillerEditCommandTest extends TestCase
     public function testS81RejectsMissingBlock(): void
     {
         $this->createFiller();
-        $res = (new FillerEditCommand(new Paths($this->root)))->run([
+        $res = new FillerEditCommand(new Paths($this->root))->run([
             'domain' => 'example.ru',
             'allias' => 'www',
             'block' => 'ghost',
@@ -199,7 +199,7 @@ final class FillerEditCommandTest extends TestCase
     public function testS81RejectsInvalidFile(): void
     {
         $this->createFiller();
-        $res = (new FillerEditCommand(new Paths($this->root)))->run([
+        $res = new FillerEditCommand(new Paths($this->root))->run([
             'domain' => 'example.ru',
             'allias' => 'www',
             'block' => 'top',
@@ -213,7 +213,7 @@ final class FillerEditCommandTest extends TestCase
 
     public function testS81RejectsPathTraversal(): void
     {
-        $res = (new FillerEditCommand(new Paths($this->root)))->run([
+        $res = new FillerEditCommand(new Paths($this->root))->run([
             'domain' => 'a..ru',
             'allias' => 'www',
             'block' => 'top',
@@ -226,7 +226,7 @@ final class FillerEditCommandTest extends TestCase
 
     public function testS81RejectsInvalidAllias(): void
     {
-        $res = (new FillerEditCommand(new Paths($this->root)))->run([
+        $res = new FillerEditCommand(new Paths($this->root))->run([
             'domain' => 'example.ru',
             'allias' => 'Bad-Allias',
             'block' => 'top',

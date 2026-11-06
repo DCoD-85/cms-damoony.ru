@@ -8,6 +8,7 @@ interface InterviewerAgentInterface
 {
     /**
      * @param array<string, mixed> $context
+     *
      * @return array<string, mixed>
      */
     public function execute(array $context): array;

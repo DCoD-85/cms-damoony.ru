@@ -71,7 +71,7 @@ final class PageCommandsTest extends TestCase
     public function testS08CreatePage(): void
     {
         $r = new Result();
-        $res = (new PageNewCommand(new Paths($this->root)))
+        $res = new PageNewCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'allias' => 'www', 'name' => 'about'], $this->ctx($r));
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
@@ -104,7 +104,7 @@ final class PageCommandsTest extends TestCase
 
     public function testS08RejectsMissingAllias(): void
     {
-        $res = (new PageNewCommand(new Paths($this->root)))
+        $res = new PageNewCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'allias' => 'ghost', 'name' => 'about'], $this->ctx(new Result()));
         self::assertFalse($res->ok);
     }
@@ -112,13 +112,13 @@ final class PageCommandsTest extends TestCase
     public function testS09ToggleAuth(): void
     {
         $paths = new Paths($this->root);
-        (new PageNewCommand($paths))->run(
+        new PageNewCommand($paths)->run(
             ['domain' => 'example.ru', 'allias' => 'www', 'name' => 'about'],
             $this->ctx(new Result()),
         );
 
         // --name вместо --path
-        $res = (new PageToggleCommand($paths))
+        $res = new PageToggleCommand($paths)
             ->run(
                 ['domain' => 'example.ru', 'allias' => 'www', 'name' => 'about', 'key' => 'auth', 'value' => '1'],
                 $this->ctx(new Result()),
@@ -136,7 +136,7 @@ final class PageCommandsTest extends TestCase
 
     public function testS09RejectsBadKey(): void
     {
-        $res = (new PageToggleCommand(new Paths($this->root)))
+        $res = new PageToggleCommand(new Paths($this->root))
             ->run(
                 ['domain' => 'example.ru', 'allias' => 'www', 'name' => '__root__', 'key' => 'weird'],
                 $this->ctx(new Result()),
@@ -146,7 +146,7 @@ final class PageCommandsTest extends TestCase
 
     public function testS09RejectsMissingPage(): void
     {
-        $res = (new PageToggleCommand(new Paths($this->root)))
+        $res = new PageToggleCommand(new Paths($this->root))
             ->run(
                 ['domain' => 'example.ru', 'allias' => 'www', 'name' => 'ghost', 'key' => 'auth'],
                 $this->ctx(new Result()),
@@ -157,12 +157,12 @@ final class PageCommandsTest extends TestCase
     public function testWriteCompilesContent(): void
     {
         $paths = new Paths($this->root);
-        (new PageNewCommand($paths))->run(
+        new PageNewCommand($paths)->run(
             ['domain' => 'example.ru', 'allias' => 'www', 'name' => 'about'],
             $this->ctx(new Result()),
         );
 
-        $res = (new PageWriteCommand($paths))->run(
+        $res = new PageWriteCommand($paths)->run(
             [
                 'domain' => 'example.ru',
                 'allias' => 'www',
@@ -181,7 +181,7 @@ final class PageCommandsTest extends TestCase
 
     public function testWriteRejectsMissingPage(): void
     {
-        $res = (new PageWriteCommand(new Paths($this->root)))->run(
+        $res = new PageWriteCommand(new Paths($this->root))->run(
             [
                 'domain' => 'example.ru',
                 'allias' => 'www',
@@ -196,13 +196,13 @@ final class PageCommandsTest extends TestCase
     public function testReadReturnsCode(): void
     {
         $paths = new Paths($this->root);
-        (new PageNewCommand($paths))->run(
+        new PageNewCommand($paths)->run(
             ['domain' => 'example.ru', 'allias' => 'www', 'name' => 'about'],
             $this->ctx(new Result()),
         );
 
         $r = new Result();
-        $res = (new PageReadCommand($paths))->run(
+        $res = new PageReadCommand($paths)->run(
             ['domain' => 'example.ru', 'allias' => 'www', 'name' => 'about'],
             $this->ctx($r),
         );
@@ -217,7 +217,7 @@ final class PageCommandsTest extends TestCase
         $paths = new Paths($this->root);
 
         // __root__ указывает на algoritm/algoritm.php
-        $res = (new PageWriteCommand($paths))->run(
+        $res = new PageWriteCommand($paths)->run(
             [
                 'domain' => 'example.ru',
                 'allias' => 'www',
@@ -236,7 +236,7 @@ final class PageCommandsTest extends TestCase
 
     public function testWriteRejectsPathTraversalInName(): void
     {
-        $res = (new PageWriteCommand(new Paths($this->root)))->run(
+        $res = new PageWriteCommand(new Paths($this->root))->run(
             [
                 'domain' => 'example.ru',
                 'allias' => 'www',
@@ -252,7 +252,7 @@ final class PageCommandsTest extends TestCase
 
     public function testWriteRejectsInvalidName(): void
     {
-        $res = (new PageWriteCommand(new Paths($this->root)))->run(
+        $res = new PageWriteCommand(new Paths($this->root))->run(
             [
                 'domain' => 'example.ru',
                 'allias' => 'www',
@@ -268,7 +268,7 @@ final class PageCommandsTest extends TestCase
 
     public function testReadRejectsPathTraversalInName(): void
     {
-        $res = (new PageReadCommand(new Paths($this->root)))->run(
+        $res = new PageReadCommand(new Paths($this->root))->run(
             [
                 'domain' => 'example.ru',
                 'allias' => 'www',
@@ -283,7 +283,7 @@ final class PageCommandsTest extends TestCase
 
     public function testReadRejectsInvalidName(): void
     {
-        $res = (new PageReadCommand(new Paths($this->root)))->run(
+        $res = new PageReadCommand(new Paths($this->root))->run(
             [
                 'domain' => 'example.ru',
                 'allias' => 'www',

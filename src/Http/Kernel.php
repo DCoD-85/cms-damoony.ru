@@ -22,11 +22,6 @@ final class Kernel implements KernelInterface
     {
         try {
             $response = ($this->handler)($request);
-            if (!$response instanceof Response) {
-                $this->logger->error('Handler returned non-Response', ['type' => get_debug_type($response)]);
-                return Response::internalError();
-            }
-
             return $response;
         } catch (Throwable $e) {
             $this->logger->error('Kernel caught exception: ' . $e->getMessage(), [

@@ -25,7 +25,7 @@ final class SchemeSaveCommandTest extends TestCase
         ]));
         mkdir($this->root . '/app/example.ru', 0o777, true);
 
-        (new SchemeNewCommand(new Paths($this->root)))
+        new SchemeNewCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'name' => 'main'], $this->ctx(new Result()));
     }
 
@@ -67,7 +67,7 @@ final class SchemeSaveCommandTest extends TestCase
         ];
         $json = json_encode($scheme);
 
-        $res = (new SchemeSaveCommand(new Paths($this->root)))
+        $res = new SchemeSaveCommand(new Paths($this->root))
             ->run(
                 ['domain' => 'example.ru', 'name' => 'main', 'scheme_json' => $json],
                 $this->ctx(new Result()),
@@ -91,7 +91,7 @@ final class SchemeSaveCommandTest extends TestCase
         $scheme = ['children' => [['type' => 'slot', 'name' => 'top']], 'scripts' => []];
         $b64 = base64_encode((string) json_encode($scheme));
 
-        $res = (new SchemeSaveCommand(new Paths($this->root)))
+        $res = new SchemeSaveCommand(new Paths($this->root))
             ->run(
                 ['domain' => 'example.ru', 'name' => 'main', 'scheme_json_b64' => $b64],
                 $this->ctx(new Result()),
@@ -102,7 +102,7 @@ final class SchemeSaveCommandTest extends TestCase
 
     public function testRejectsMissingJson(): void
     {
-        $res = (new SchemeSaveCommand(new Paths($this->root)))
+        $res = new SchemeSaveCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'name' => 'main'], $this->ctx(new Result()));
 
         self::assertFalse($res->ok);
@@ -114,7 +114,7 @@ final class SchemeSaveCommandTest extends TestCase
         // Удаляем editor.json
         unlink($this->root . '/app/example.ru/.alliasscheme/main.editor.json');
 
-        $res = (new SchemeSaveCommand(new Paths($this->root)))
+        $res = new SchemeSaveCommand(new Paths($this->root))
             ->run(
                 ['domain' => 'example.ru', 'name' => 'main', 'scheme_json' => '{"children":[]}'],
                 $this->ctx(new Result()),
@@ -126,7 +126,7 @@ final class SchemeSaveCommandTest extends TestCase
 
     public function testRejectsInvalidJson(): void
     {
-        $res = (new SchemeSaveCommand(new Paths($this->root)))
+        $res = new SchemeSaveCommand(new Paths($this->root))
             ->run(
                 ['domain' => 'example.ru', 'name' => 'main', 'scheme_json' => '{not valid'],
                 $this->ctx(new Result()),
@@ -149,7 +149,7 @@ final class SchemeSaveCommandTest extends TestCase
             ],
         ];
 
-        $res = (new SchemeSaveCommand(new Paths($this->root)))
+        $res = new SchemeSaveCommand(new Paths($this->root))
             ->run(
                 ['domain' => 'example.ru', 'name' => 'main', 'scheme_json' => json_encode($scheme)],
                 $this->ctx(new Result()),
@@ -182,7 +182,7 @@ final class SchemeSaveCommandTest extends TestCase
             ],
         ];
 
-        $res = (new SchemeSaveCommand(new Paths($this->root)))
+        $res = new SchemeSaveCommand(new Paths($this->root))
             ->run(
                 ['domain' => 'example.ru', 'name' => 'main', 'scheme_json' => json_encode($scheme)],
                 $this->ctx(new Result()),

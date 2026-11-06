@@ -55,14 +55,13 @@ final class ContentStoreCommandTest extends TestCase
         ob_start();
         imagepng($im);
         $bytes = (string) ob_get_clean();
-        imagedestroy($im);
 
         return ['bytes' => $bytes, 'base64' => base64_encode($bytes)];
     }
 
     private function execute(array $args): Result
     {
-        return (new ContentStoreCommand(new Paths($this->root)))
+        return new ContentStoreCommand(new Paths($this->root))
             ->run($args, new Context(static fn () => null));
     }
 

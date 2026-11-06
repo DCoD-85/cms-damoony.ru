@@ -23,6 +23,7 @@ final class ErrorHandlerTest extends TestCase
     protected function tearDown(): void
     {
         restore_error_handler();
+        parent::tearDown();
     }
 
     private function make(Env $env = Env::Test): ErrorHandler
@@ -32,13 +33,24 @@ final class ErrorHandlerTest extends TestCase
         return new ErrorHandler($logger, $env);
     }
 
+    #[\PHPUnit\Framework\Attributes\RunInSeparateProcess]
+    #[\PHPUnit\Framework\Attributes\PreserveGlobalState(false)]
+    #[\PHPUnit\Framework\Attributes\WithoutErrorHandler]
     public function testHandleErrorThrowsWhenReported(): void
     {
         $h = $this->make();
-        $this->expectException(ErrorException::class);
-        $h->handleError(E_WARNING, 'boom', __FILE__, __LINE__);
+        $prevReporting = error_reporting(E_ALL);
+        try {
+            $this->expectException(ErrorException::class);
+            $h->handleError(E_WARNING, 'boom', __FILE__, __LINE__);
+        } finally {
+            error_reporting($prevReporting);
+        }
     }
 
+    #[\PHPUnit\Framework\Attributes\RunInSeparateProcess]
+    #[\PHPUnit\Framework\Attributes\PreserveGlobalState(false)]
+    #[\PHPUnit\Framework\Attributes\WithoutErrorHandler]
     public function testHandleErrorReturnsFalseWhenSuppressed(): void
     {
         $h = $this->make();
@@ -50,10 +62,12 @@ final class ErrorHandlerTest extends TestCase
         }
     }
 
+    #[\PHPUnit\Framework\Attributes\RunInSeparateProcess]
+    #[\PHPUnit\Framework\Attributes\PreserveGlobalState(false)]
+    #[\PHPUnit\Framework\Attributes\WithoutErrorHandler]
     public function testHandleShutdownIgnoresNonFatal(): void
     {
         $h = $this->make();
-        // simply must not throw
         $h->handleShutdown();
         self::assertTrue(true);
     }

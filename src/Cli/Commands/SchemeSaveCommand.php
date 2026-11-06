@@ -134,9 +134,6 @@ final class SchemeSaveCommand implements CommandInterface
     {
         $result = [];
         foreach ($children as $child) {
-            if (!is_array($child)) {
-                continue;
-            }
 
             if (($child['type'] ?? '') === 'slot') {
                 $slotName = (string) ($child['name'] ?? '');

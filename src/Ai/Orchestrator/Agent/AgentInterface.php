@@ -11,6 +11,7 @@ interface AgentInterface
      * Возвращает обновленные данные для записи в context.json.
      *
      * @param array<string, mixed> $context
+     *
      * @return array<string, mixed>
      */
     public function execute(array $context): array;

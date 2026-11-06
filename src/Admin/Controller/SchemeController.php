@@ -91,14 +91,10 @@ final class SchemeController extends BaseController
 
         $card->append(View::domainTabs($domain, 'schemes'));
 
-        $table = (new Table())->headers(View::t('scheme.col_name'), View::t('domain.bind_th_act'));
+        $table = new Table()->headers(View::t('scheme.col_name'), View::t('domain.bind_th_act'));
 
         if ($schemes !== []) {
             foreach ($schemes as $s) {
-                if (!is_string($s)) {
-                    continue;
-                }
-
                 $editUrl = '/admin/?p=scheme:visual&domain=' . urlencode($domain) . '&name=' . urlencode($s);
                 $codeFile = '.alliasscheme/' . $s . '.php';
                 $codeUrl = '/admin/?p=editor&domain=' . urlencode($domain) . '&file=' . urlencode($codeFile);

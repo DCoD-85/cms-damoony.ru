@@ -94,7 +94,7 @@ final class MediaController extends BaseController
         $card->append($hr);
 
         // Таблица файлов
-        $table = (new Table())->headers('Файл', 'Размер', 'Действия');
+        $table = new Table()->headers('Файл', 'Размер', 'Действия');
 
         if ($files === []) {
             $table->row([View::t('media.empty'), Text::raw(''), Text::raw('')]);

@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Ai\Orchestrator;
 
-use Damoony\Ai\Orchestrator\ContextManager;
-use Damoony\Ai\Orchestrator\Orchestrator;
 use Damoony\Ai\Orchestrator\Agent\ArchitectAgentInterface;
 use Damoony\Ai\Orchestrator\Agent\CoderAgentInterface;
+use Damoony\Ai\Orchestrator\Agent\InterviewerAgentInterface;
+use Damoony\Ai\Orchestrator\ContextManager;
+use Damoony\Ai\Orchestrator\Orchestrator;
 use Damoony\Ai\Orchestrator\ToolsCollectorInterface;
 use Damoony\Files\Paths;
 use PHPUnit\Framework\TestCase;
@@ -44,13 +45,30 @@ final class OrchestratorTest extends TestCase
 
         $paths = new Paths($this->root);
         $cm = new ContextManager($paths, 'a1b2c3d4', 'damoony.ru');
+        $fakeInterviewer = new class () implements InterviewerAgentInterface {
+            public function execute(array $context): array
+            {
+                return ['action' => 'build', 'message' => 'test', 'brief' => 'Test prompt'];
+            }
+        };
         $fakeArchitect = new class () implements ArchitectAgentInterface {
-            public function execute(array $context): array { return ['routing_tree' => [], 'slot_assignment' => []]; }
+            public function execute(array $context): array
+            {
+                return ['routing_tree' => [], 'slot_assignment' => []];
+            }
         };
         $fakeCoder = new class () implements CoderAgentInterface {
-            public function execute(array $context): array { return ['blocks' => []]; }
+            public function execute(array $context): array
+            {
+                return ['blocks' => []];
+            }
+            public function executeForPage(array $context, array $pagePlan): array
+            {
+                return ['blocks' => []];
+            }
         };
-        $orchestrator = new Orchestrator($cm, $fake, $fakeArchitect, $fakeCoder);
+        $fakeAicli = new \Damoony\Ai\Aicli\AicliClient($this->root);
+        $orchestrator = new Orchestrator($cm, $fake, $fakeInterviewer, $fakeArchitect, $fakeCoder, $fakeAicli);
 
         $ctx = $orchestrator->run('a1b2c3d4', 'damoony.ru', 'www', 'Test prompt', 'center');
 
@@ -77,13 +95,30 @@ final class OrchestratorTest extends TestCase
 
         $paths = new Paths($this->root);
         $cm = new ContextManager($paths, 'a1b2c3d4', 'damoony.ru');
+        $fakeInterviewer = new class () implements InterviewerAgentInterface {
+            public function execute(array $context): array
+            {
+                return ['action' => 'build', 'message' => 'test', 'brief' => 'Test prompt'];
+            }
+        };
         $fakeArchitect = new class () implements ArchitectAgentInterface {
-            public function execute(array $context): array { return ['routing_tree' => [], 'slot_assignment' => []]; }
+            public function execute(array $context): array
+            {
+                return ['routing_tree' => [], 'slot_assignment' => []];
+            }
         };
         $fakeCoder = new class () implements CoderAgentInterface {
-            public function execute(array $context): array { return ['blocks' => []]; }
+            public function execute(array $context): array
+            {
+                return ['blocks' => []];
+            }
+            public function executeForPage(array $context, array $pagePlan): array
+            {
+                return ['blocks' => []];
+            }
         };
-        $orchestrator = new Orchestrator($cm, $fake, $fakeArchitect, $fakeCoder);
+        $fakeAicli = new \Damoony\Ai\Aicli\AicliClient($this->root);
+        $orchestrator = new Orchestrator($cm, $fake, $fakeInterviewer, $fakeArchitect, $fakeCoder, $fakeAicli);
 
         $ctx = $orchestrator->run('a1b2c3d4', 'damoony.ru', 'www', 'Test', 'all');
 
@@ -112,13 +147,30 @@ final class OrchestratorTest extends TestCase
 
         $paths = new Paths($this->root);
         $cm = new ContextManager($paths, 'a1b2c3d4', 'damoony.ru');
+        $fakeInterviewer = new class () implements InterviewerAgentInterface {
+            public function execute(array $context): array
+            {
+                return ['action' => 'build', 'message' => 'test', 'brief' => 'Test prompt'];
+            }
+        };
         $fakeArchitect = new class () implements ArchitectAgentInterface {
-            public function execute(array $context): array { return ['routing_tree' => [], 'slot_assignment' => []]; }
+            public function execute(array $context): array
+            {
+                return ['routing_tree' => [], 'slot_assignment' => []];
+            }
         };
         $fakeCoder = new class () implements CoderAgentInterface {
-            public function execute(array $context): array { return ['blocks' => []]; }
+            public function execute(array $context): array
+            {
+                return ['blocks' => []];
+            }
+            public function executeForPage(array $context, array $pagePlan): array
+            {
+                return ['blocks' => []];
+            }
         };
-        $orchestrator = new Orchestrator($cm, $fake, $fakeArchitect, $fakeCoder);
+        $fakeAicli = new \Damoony\Ai\Aicli\AicliClient($this->root);
+        $orchestrator = new Orchestrator($cm, $fake, $fakeInterviewer, $fakeArchitect, $fakeCoder, $fakeAicli);
 
         $orchestrator->run('a1b2c3d4', 'damoony.ru', 'www', 'Test');
 

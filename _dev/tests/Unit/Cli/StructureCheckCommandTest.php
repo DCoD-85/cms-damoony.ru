@@ -55,7 +55,8 @@ final class StructureCheckCommandTest extends TestCase
             $this->config(['www' => 'www']),
         );
 
-        $result = $cmd->run([], new Context(function (): void {}));
+        $result = $cmd->run([], new Context(function (): void {
+        }));
 
         self::assertTrue($result->ok);
     }

@@ -8,7 +8,7 @@
 
 ## 1. Идентификация
 
-- **Проект:** Damoony Engine — PHP 8.4 multi-domain CMS.
+- **Проект:** Damoony Engine — PHP 8.5 multi-domain CMS.
 - **Версия:** v3.1-dev (Multi-Agent Orchestrator + AIUI Phase B).
 - **Архитектура:** CLI-First (CLI — единственный источник истины для FS), AI-Native:
   - **Внутренний Orchestrator** (`src/Ai/Orchestrator/`) — мультиагентный конвейер для AIUI: Interviewer → Architect → Coder, Blackboard в `context.json`, per-page генерация.
@@ -16,8 +16,8 @@
   - **Content** (`/content/`, вне webroot) + **Skin** (`www/media/[domain]/[allias]/skin/`, git).
 - **Репозиторий:** https://github.com/DCoD-85/cms-damoony.ru/
 - **Ветка:** `main`.
-- **Стек (dev):** PHP 8.4 (NTS), MariaDB 11.8, **Nginx + PHP-CGI** (standalone `E:\localserver`, не OSPanel), Composer (PSR-4/3/11), PHPUnit 10, PHPStan 8, PHP-CS-Fixer, Python 3 (`ai_agent/brain.py`), Ollama (`gemma4:e4b` для чата, `deepseek-coder:6.7b` для кода/JSON).
-- **Стек (prod):** Debian 13, PHP 8.4 + PHP-FPM, Nginx, MariaDB 11.8.
+- **Стек (dev):** PHP 8.5 (NTS), MariaDB 11.8, **Nginx + PHP-CGI** (standalone `E:\localserver`, не OSPanel), Composer (PSR-4/3/11), PHPUnit 10, PHPStan 8, PHP-CS-Fixer, Python 3 (`ai_agent/brain.py`), Ollama (`gemma4:e4b` для чата, `deepseek-coder:6.7b` для кода/JSON).
+- **Стек (prod):** Debian 13, PHP 8.5 + PHP-FPM, Nginx, MariaDB 11.8.
 
 ---
 
@@ -77,7 +77,7 @@
 
 ### Production
 
-- i7, 8GB RAM, 128GB SSD + 1TB HDD, Debian 13, Apache 2, PHP 8.4.25, MariaDB 11.8.
+- i7, 8GB RAM, 128GB SSD + 1TB HDD, Debian 13, Apache 2, PHP 8.5.25, MariaDB 11.8.
 - Корень: `/var/www/damoony.ru/`. Только `git pull`. Прямое редактирование запрещено.
 
 ---

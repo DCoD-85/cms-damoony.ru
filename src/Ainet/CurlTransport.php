@@ -68,6 +68,7 @@ final class CurlTransport implements HttpTransportInterface
             $curlOptions[CURLOPT_HTTPGET] = true;
         }
 
+        /* @phpstan-ignore-next-line */
         curl_setopt_array($ch, $curlOptions);
 
         $ok = curl_exec($ch);

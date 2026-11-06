@@ -113,7 +113,7 @@ final class AlliasCommandsTest extends TestCase
     public function testS03WithoutForceCancels(): void
     {
         $paths = new Paths($this->root);
-        (new AlliasNewCommand($paths))->run(['domain' => 'example.ru', 'name' => 'admin'], $this->context(new Result()));
+        new AlliasNewCommand($paths)->run(['domain' => 'example.ru', 'name' => 'admin'], $this->context(new Result()));
 
         $cmd = new AlliasRemoveCommand($paths);
         $r = new Result();

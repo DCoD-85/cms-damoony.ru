@@ -56,6 +56,6 @@ final class HandlerRegistry
             array_keys($this->prefixes),
         );
 
-        return array_values(array_merge(array_keys($this->exact), $prefixes));
+        return array_merge(array_keys($this->exact), $prefixes);
     }
 }

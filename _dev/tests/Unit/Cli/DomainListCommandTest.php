@@ -47,7 +47,7 @@ final class DomainListCommandTest extends TestCase
 
     private function execute(): Result
     {
-        return (new DomainListCommand(new Paths($this->root)))
+        return new DomainListCommand(new Paths($this->root))
             ->run([], new Context(static fn () => null));
     }
 

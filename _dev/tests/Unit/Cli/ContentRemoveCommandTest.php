@@ -54,9 +54,8 @@ final class ContentRemoveCommandTest extends TestCase
         ob_start();
         imagepng($im);
         $bytes = (string) ob_get_clean();
-        imagedestroy($im);
 
-        (new ContentStoreCommand(new Paths($this->root)))->run([
+        new ContentStoreCommand(new Paths($this->root))->run([
             'domain' => 'example.ru',
             'allias' => 'www',
             'category' => 'coffee',
@@ -69,7 +68,7 @@ final class ContentRemoveCommandTest extends TestCase
 
     private function execute(array $args): Result
     {
-        return (new ContentRemoveCommand(new Paths($this->root)))
+        return new ContentRemoveCommand(new Paths($this->root))
             ->run($args, new Context(static fn () => null));
     }
 

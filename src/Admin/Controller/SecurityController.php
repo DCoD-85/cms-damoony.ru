@@ -95,7 +95,7 @@ final class SecurityController extends BaseController
             $unbanAllNode->attrs()->styleAdd('margin-bottom: 15px;');
             $card->append($unbanAllNode);
 
-            $table = (new Table())->headers('IP', View::t('security.time_left'), View::t('security.actions'));
+            $table = new Table()->headers('IP', View::t('security.time_left'), View::t('security.actions'));
             foreach ($activeBans as $ban) {
                 // Форма для разбана конкретного IP (POST + CSRF)
                 $unbanForm = Form::create('/admin/?p=security:unban', 'POST')

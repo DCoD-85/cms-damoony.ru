@@ -129,7 +129,7 @@ final class PageWriteCommand implements CommandInterface
         // 6. Компиляция и запись
         $withSchema = isset($args['with_schema']) && $args['with_schema'] === '1';
         $compiler = new PageCompiler();
-        $php = $compiler->compile($namespace . '\\' . $allias, $page->classChain, $blocks, $withSchema);
+        $php = $compiler->compile($namespace . '\\' . $allias, $page->classChain, array_values($blocks), $withSchema);
 
         // 7. Читаем старый .php ДО перезаписи (для diff page_refs)
         $oldPhp = (string) @file_get_contents($page->phpFile);

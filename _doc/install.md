@@ -6,7 +6,7 @@
 
 ## 1. Требования
 
-- **PHP >= 8.4** (расширения: `mbstring`, `json`, `pdo_mysql`, `openssl`, `fileinfo`, `tokenizer`, `xml`, `curl`, `gd`).
+- **PHP >= 8.5** (расширения: `mbstring`, `json`, `pdo_mysql`, `openssl`, `fileinfo`, `tokenizer`, `xml`, `curl`, `gd`).
 - **Composer**.
 - **MariaDB 11+** (или MySQL 8+). SQLite — только для тестов.
 - **Apache 2.4** + `mod_rewrite` или **Nginx** + PHP-FPM.

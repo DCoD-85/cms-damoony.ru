@@ -49,14 +49,14 @@ final class AjaxMinStructTest extends TestCase
 
     public function testMinToResponse(): void
     {
-        $r = (new MinStruct())->error(true)->toResponse(422);
+        $r = new MinStruct()->error(true)->toResponse(422);
         self::assertSame(422, $r->status);
         self::assertSame('application/json; charset=utf-8', $r->headers['content-type']);
     }
 
     public function testAjaxDefaults(): void
     {
-        $a = (new AjaxStruct())->toArray();
+        $a = new AjaxStruct()->toArray();
         self::assertFalse($a['error']);
         self::assertSame('', $a['address']);
         self::assertSame('', $a['header']);
@@ -66,7 +66,7 @@ final class AjaxMinStructTest extends TestCase
 
     public function testAjaxFilled(): void
     {
-        $s = (new AjaxStruct())
+        $s = new AjaxStruct()
             ->address('/x')
             ->header('<h1>h</h1>')
             ->center('<p>c</p>')
@@ -81,13 +81,13 @@ final class AjaxMinStructTest extends TestCase
 
     public function testAjaxUnknownLayerIgnored(): void
     {
-        $s = (new AjaxStruct())->layer('nonexistent', 'x');
+        $s = new AjaxStruct()->layer('nonexistent', 'x');
         self::assertArrayNotHasKey('nonexistent', $s->toArray()['layers']);
     }
 
     public function testAjaxToResponse(): void
     {
-        $r = (new AjaxStruct())->toResponse();
+        $r = new AjaxStruct()->toResponse();
         self::assertSame(200, $r->status);
         self::assertSame('application/json; charset=utf-8', $r->headers['content-type']);
     }

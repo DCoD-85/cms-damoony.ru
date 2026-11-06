@@ -57,7 +57,7 @@ final class SchemeNewCommandTest extends TestCase
     public function testS10CreateScheme(): void
     {
         $r = new Result();
-        $res = (new SchemeNewCommand(new Paths($this->root)))
+        $res = new SchemeNewCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'name' => 'visuo'], $this->ctx($r));
 
         self::assertTrue($res->ok);
@@ -85,14 +85,14 @@ final class SchemeNewCommandTest extends TestCase
 
     public function testS10RejectsInvalidName(): void
     {
-        $res = (new SchemeNewCommand(new Paths($this->root)))
+        $res = new SchemeNewCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'name' => 'BadName'], $this->ctx(new Result()));
         self::assertFalse($res->ok);
     }
 
     public function testS10RejectsMissingDomain(): void
     {
-        $res = (new SchemeNewCommand(new Paths($this->root)))
+        $res = new SchemeNewCommand(new Paths($this->root))
             ->run(['domain' => 'ghost.ru', 'name' => 'visuo'], $this->ctx(new Result()));
         self::assertFalse($res->ok);
     }

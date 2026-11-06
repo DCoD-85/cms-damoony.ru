@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Damoony\Ai\Aicli\Handler;
 
 use Damoony\Ai\Aicli\AbstractHandler;
-use Damoony\Ai\ModelRouter;
 use Damoony\Ai\Aicli\AicliResult;
+use Damoony\Ai\ModelRouter;
 
 final class AgentChatHandler extends AbstractHandler
 {
@@ -30,8 +30,8 @@ final class AgentChatHandler extends AbstractHandler
         $agentConfig = $this->loadAgentConfig();
 
         // Разрешаем внешним агентам (например, ArchitectAgent) передавать свой системный промпт
-        $systemPrompt = is_string($args['system_prompt'] ?? null) 
-            ? $args['system_prompt'] 
+        $systemPrompt = is_string($args['system_prompt'] ?? null)
+            ? $args['system_prompt']
             : self::SYSTEM_PROMPT;
 
         $messages = [
@@ -85,7 +85,7 @@ final class AgentChatHandler extends AbstractHandler
         }
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        curl_setopt($ch, CURLOPT_POSTFIELDS, (string) json_encode($payload));
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($ch, CURLOPT_TIMEOUT, 120);
         curl_setopt($ch, CURLOPT_HEADER, true);

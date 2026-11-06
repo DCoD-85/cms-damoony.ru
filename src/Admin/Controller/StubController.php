@@ -48,7 +48,7 @@ final class StubController extends BaseController
         if ($files === [] || $files === false) {
             $card->append(Message::info(View::t('stub.empty'))->build());
         } else {
-            $table = (new Table())->headers(View::t('stub.th_name'), View::t('stub.th_actions'));
+            $table = new Table()->headers(View::t('stub.th_name'), View::t('stub.th_actions'));
             foreach ($files as $file) {
                 $name = basename($file, '.html');
                 $actionsHtml = Builder::div('table-actions');

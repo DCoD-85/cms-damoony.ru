@@ -22,7 +22,7 @@ final class CliApplicationTest extends TestCase
         $registry->add(new HelpCommand($registry));
 
         ob_start();
-        $code = (new Application($registry, new ArgvParser(), new Renderer()))
+        $code = new Application($registry, new ArgvParser(), new Renderer())
             ->run(['cli', 'help']);
         $out = (string) ob_get_clean();
 
@@ -37,7 +37,7 @@ final class CliApplicationTest extends TestCase
         $registry = new CommandRegistry();
 
         ob_start();
-        $code = (new Application($registry, new ArgvParser(), new Renderer()))
+        $code = new Application($registry, new ArgvParser(), new Renderer())
             ->run(['cli', 'nope']);
         $out = (string) ob_get_clean();
 
@@ -71,7 +71,7 @@ final class CliApplicationTest extends TestCase
         $registry->add($cmd);
 
         ob_start();
-        $code = (new Application($registry, new ArgvParser(), new Renderer()))
+        $code = new Application($registry, new ArgvParser(), new Renderer())
             ->run(['cli', 'greet', '--name=John']);
         $out = (string) ob_get_clean();
 
@@ -102,7 +102,7 @@ final class CliApplicationTest extends TestCase
         $registry->add($cmd);
 
         ob_start();
-        $code = (new Application($registry, new ArgvParser(), new Renderer()))
+        $code = new Application($registry, new ArgvParser(), new Renderer())
             ->run(['cli', 'boom']);
         $out = (string) ob_get_clean();
 
@@ -112,7 +112,7 @@ final class CliApplicationTest extends TestCase
 
     public function testArgvParser(): void
     {
-        $parsed = (new ArgvParser())->parse(['cli', 'greet', '--name=John', '--force', 'a', 'b']);
+        $parsed = new ArgvParser()->parse(['cli', 'greet', '--name=John', '--force', 'a', 'b']);
         self::assertSame('greet', $parsed['command']);
         self::assertSame('John', $parsed['args']['name']);
         self::assertSame('1', $parsed['args']['force']);

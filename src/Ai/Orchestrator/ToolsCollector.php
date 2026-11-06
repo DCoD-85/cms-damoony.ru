@@ -30,7 +30,7 @@ final class ToolsCollector implements ToolsCollectorInterface
         ];
 
         $structure = $this->client->runJson(
-            'structure:check --domain=' . escapeshellarg($domain)
+            'structure:check --domain=' . escapeshellarg($domain),
         );
         $parsed = self::parseStructure($structure, $domain);
         $result['structure_ok'] = $parsed['structure_ok'];
@@ -41,7 +41,7 @@ final class ToolsCollector implements ToolsCollectorInterface
 
         $schema = $this->client->runJson(
             'db:schema --domain=' . escapeshellarg($domain)
-            . ' --alias=' . escapeshellarg($alias)
+            . ' --alias=' . escapeshellarg($alias),
         );
         $parsed = self::parseSchema($schema);
         $result['db_tables'] = $parsed['db_tables'];
@@ -54,6 +54,7 @@ final class ToolsCollector implements ToolsCollectorInterface
 
     /**
      * @param array<string, mixed> $json
+     *
      * @return array{structure_ok: bool, structure_errors: list<string>, error: string}
      */
     public static function parseStructure(array $json, string $domain): array
@@ -91,6 +92,7 @@ final class ToolsCollector implements ToolsCollectorInterface
 
     /**
      * @param array<string, mixed> $json
+     *
      * @return array{db_tables: list<string>, error: string}
      */
     public static function parseSchema(array $json): array

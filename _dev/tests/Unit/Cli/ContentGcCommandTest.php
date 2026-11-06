@@ -87,7 +87,7 @@ final class ContentGcCommandTest extends TestCase
 
     public function testRequiresForceOrDry(): void
     {
-        $res = (new ContentGcCommand(new Paths($this->root)))
+        $res = new ContentGcCommand(new Paths($this->root))
             ->run([], $this->ctx(new Result()));
         self::assertFalse($res->ok);
         self::assertStringContainsString('--force', $res->errors[0]);
@@ -99,7 +99,7 @@ final class ContentGcCommandTest extends TestCase
         $path = $this->root . '/content/example.ru/www/coffee/aaaaaaaaaaaaaaaa.png';
         self::assertFileExists($path);
 
-        $res = (new ContentGcCommand(new Paths($this->root)))
+        $res = new ContentGcCommand(new Paths($this->root))
             ->run(['dry' => '1', 'force' => '1'], $this->ctx(new Result()));
 
         self::assertTrue($res->ok);
@@ -110,7 +110,7 @@ final class ContentGcCommandTest extends TestCase
     {
         $this->makeContent('example.ru', 'www', 'coffee', 'aaaaaaaaaaaaaaaa', ['page_refs' => []]);
 
-        $res = (new ContentGcCommand(new Paths($this->root)))
+        $res = new ContentGcCommand(new Paths($this->root))
             ->run(['force' => '1'], $this->ctx(new Result()));
 
         self::assertTrue($res->ok);
@@ -122,7 +122,7 @@ final class ContentGcCommandTest extends TestCase
     {
         $this->makeContent('example.ru', 'www', 'coffee', 'bbbbbbbbbbbbbbbb', ['page_refs' => ['ghost']]);
 
-        $res = (new ContentGcCommand(new Paths($this->root)))
+        $res = new ContentGcCommand(new Paths($this->root))
             ->run(['force' => '1'], $this->ctx(new Result()));
 
         self::assertTrue($res->ok);
@@ -134,7 +134,7 @@ final class ContentGcCommandTest extends TestCase
         $this->makeContent('example.ru', 'www', 'coffee', 'cccccccccccccccc', ['page_refs' => ['about']]);
         $this->makePage('example.ru', 'www', 'about');
 
-        $res = (new ContentGcCommand(new Paths($this->root)))
+        $res = new ContentGcCommand(new Paths($this->root))
             ->run(['force' => '1'], $this->ctx(new Result()));
 
         self::assertTrue($res->ok);
@@ -146,7 +146,7 @@ final class ContentGcCommandTest extends TestCase
         $this->makeContent('example.ru', 'www', 'coffee', 'dddddddddddddddd', ['page_refs' => ['__root__']]);
         $this->makePage('example.ru', 'www', '');
 
-        $res = (new ContentGcCommand(new Paths($this->root)))
+        $res = new ContentGcCommand(new Paths($this->root))
             ->run(['force' => '1'], $this->ctx(new Result()));
 
         self::assertTrue($res->ok);
@@ -158,7 +158,7 @@ final class ContentGcCommandTest extends TestCase
         $this->makeContent('example.ru', 'www', 'coffee', 'eeeeeeeeeeeeeeee', ['page_refs' => []]);
         $this->makeContent('other.ru', 'www', 'coffee', 'ffffffffffffffff', ['page_refs' => []]);
 
-        $res = (new ContentGcCommand(new Paths($this->root)))
+        $res = new ContentGcCommand(new Paths($this->root))
             ->run(['force' => '1', 'domain' => 'example.ru'], $this->ctx(new Result()));
 
         self::assertTrue($res->ok);
@@ -175,7 +175,7 @@ final class ContentGcCommandTest extends TestCase
         $path = $this->root . '/content/example.ru/www/coffee/1111111111111111.png';
         self::assertFileExists($path);
 
-        $res = (new ContentGcCommand(new Paths($this->root)))
+        $res = new ContentGcCommand(new Paths($this->root))
             ->run(['force' => '1'], $this->ctx(new Result()));
 
         self::assertTrue($res->ok);
@@ -189,7 +189,7 @@ final class ContentGcCommandTest extends TestCase
         $metaPath = $this->root . '/content/example.ru/www/coffee/2222222222222222.meta.json';
         touch($metaPath, time() - 3600); // 1 час назад — свежее 7 дней
 
-        $res = (new ContentGcCommand(new Paths($this->root)))
+        $res = new ContentGcCommand(new Paths($this->root))
             ->run(['force' => '1', 'older' => '7d'], $this->ctx(new Result()));
 
         self::assertTrue($res->ok);

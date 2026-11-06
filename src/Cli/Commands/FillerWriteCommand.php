@@ -72,7 +72,7 @@ final class FillerWriteCommand implements CommandInterface
 
         $className = 'alliasglobal_' . $block . '_' . $allias;
         $compiler = new BlockCompiler();
-        $phpCode = $compiler->compile($namespace, $className, $block, $blocks);
+        $phpCode = $compiler->compile($namespace, $className, $block, array_values($blocks));
 
         Fs::writeAtomic($target, $phpCode);
 

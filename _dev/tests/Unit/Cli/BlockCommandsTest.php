@@ -58,7 +58,7 @@ final class BlockCommandsTest extends TestCase
     public function testS04CreateBlock(): void
     {
         $r = new Result();
-        $res = (new BlockNewCommand(new Paths($this->root)))
+        $res = new BlockNewCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'name' => 'custom'], $this->ctx($r));
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
@@ -84,14 +84,14 @@ final class BlockCommandsTest extends TestCase
 
     public function testS04RejectsInvalidName(): void
     {
-        $res = (new BlockNewCommand(new Paths($this->root)))
+        $res = new BlockNewCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'name' => 'BadName'], $this->ctx(new Result()));
         self::assertFalse($res->ok);
     }
 
     public function testS04RejectsPathTraversal(): void
     {
-        $res = (new BlockNewCommand(new Paths($this->root)))
+        $res = new BlockNewCommand(new Paths($this->root))
             ->run(['domain' => 'a..ru', 'name' => 'custom'], $this->ctx(new Result()));
         self::assertFalse($res->ok);
     }
@@ -99,9 +99,9 @@ final class BlockCommandsTest extends TestCase
     public function testS05RemoveBlock(): void
     {
         $paths = new Paths($this->root);
-        (new BlockNewCommand($paths))->run(['domain' => 'example.ru', 'name' => 'custom'], $this->ctx(new Result()));
+        new BlockNewCommand($paths)->run(['domain' => 'example.ru', 'name' => 'custom'], $this->ctx(new Result()));
 
-        $res = (new BlockRemoveCommand($paths))
+        $res = new BlockRemoveCommand($paths)
             ->run(['domain' => 'example.ru', 'name' => 'custom', 'force' => '1'], $this->ctx(new Result()));
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
@@ -116,9 +116,9 @@ final class BlockCommandsTest extends TestCase
     public function testS05RemoveRequiresForce(): void
     {
         $paths = new Paths($this->root);
-        (new BlockNewCommand($paths))->run(['domain' => 'example.ru', 'name' => 'custom'], $this->ctx(new Result()));
+        new BlockNewCommand($paths)->run(['domain' => 'example.ru', 'name' => 'custom'], $this->ctx(new Result()));
 
-        $res = (new BlockRemoveCommand($paths))
+        $res = new BlockRemoveCommand($paths)
             ->run(['domain' => 'example.ru', 'name' => 'custom'], $this->ctx(new Result()));
 
         self::assertFalse($res->ok);
@@ -128,7 +128,7 @@ final class BlockCommandsTest extends TestCase
 
     public function testS05MissingBlock(): void
     {
-        $res = (new BlockRemoveCommand(new Paths($this->root)))
+        $res = new BlockRemoveCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'name' => 'ghost', 'force' => '1'], $this->ctx(new Result()));
 
         // Idempotent: warn + ok

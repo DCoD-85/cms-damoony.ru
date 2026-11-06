@@ -56,7 +56,7 @@ final class Request
     {
         $headers = [];
         foreach ($server as $key => $value) {
-            if (!is_string($key) || !is_string($value)) {
+            if (!is_string($value)) {
                 continue;
             }
             if (str_starts_with($key, 'HTTP_')) {
@@ -127,6 +127,6 @@ final class Request
     public function isHttps(): bool
     {
         $https = $this->server['HTTPS'] ?? '';
-        return is_string($https) && strtolower($https) === 'on';
+        return strtolower($https) === 'on';
     }
 }

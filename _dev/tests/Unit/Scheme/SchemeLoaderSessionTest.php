@@ -20,13 +20,13 @@ final class SchemeLoaderSessionTest extends TestCase
         mkdir($this->root . '/app/example.ru/.alliasscheme', 0o775, true);
         file_put_contents(
             $this->root . '/app/example.ru/.alliasscheme/www.php',
-            '<?php return ["tag" => "div", "class" => "prod-scheme"];'
+            '<?php return ["tag" => "div", "class" => "prod-scheme"];',
         );
 
         mkdir($this->root . '/app/.sess_abc.example.ru/.alliasscheme', 0o775, true);
         file_put_contents(
             $this->root . '/app/.sess_abc.example.ru/.alliasscheme/www.php',
-            '<?php return ["tag" => "div", "class" => "session-scheme"];'
+            '<?php return ["tag" => "div", "class" => "session-scheme"];',
         );
     }
 

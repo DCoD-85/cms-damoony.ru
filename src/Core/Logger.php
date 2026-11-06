@@ -29,7 +29,7 @@ final class Logger extends AbstractLogger
     public function log(mixed $level, string|Stringable $message, array $context = []): void
     {
         $record = [
-            'ts' => (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d\TH:i:s.u\Z'),
+            'ts' => new \DateTimeImmutable('now', new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.u\Z'),
             'env' => $this->env->value,
             'level' => (string) $level,
             'message' => (string) $message,

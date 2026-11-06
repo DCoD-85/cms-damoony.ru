@@ -69,7 +69,8 @@ final class BlockWriteCommand implements CommandInterface
 
         $className = 'alliasglobal_' . $name;
         $compiler = new BlockCompiler();
-        $phpCode = $compiler->compile($namespace, $className, $name, $blocks);
+        $phpCode = /** @var list<array<string, mixed>> \$blocks */
+        $compiler->compile($namespace, $className, $name, array_values($blocks));
 
         $target = $blockDir . '/' . $name . '.php';
         Fs::writeAtomic($target, $phpCode);

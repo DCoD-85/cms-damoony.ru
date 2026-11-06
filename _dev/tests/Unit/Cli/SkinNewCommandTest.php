@@ -47,7 +47,7 @@ final class SkinNewCommandTest extends TestCase
 
     private function execute(array $args): Result
     {
-        return (new SkinNewCommand(new Paths($this->root)))
+        return new SkinNewCommand(new Paths($this->root))
             ->run($args, new Context(static fn () => null));
     }
 

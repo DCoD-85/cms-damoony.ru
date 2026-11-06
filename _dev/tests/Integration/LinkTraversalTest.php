@@ -23,7 +23,6 @@ final class LinkTraversalTest extends TestCase
         curl_setopt($ch, CURLOPT_TIMEOUT, 2);
         curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
 
         if ($httpCode === 0) {
             $this->markTestSkipped('Test server is not running on ' . $this->baseUrl);
@@ -94,7 +93,6 @@ final class LinkTraversalTest extends TestCase
         }
 
         $response = curl_exec($ch);
-        curl_close($ch);
 
         return $response;
     }

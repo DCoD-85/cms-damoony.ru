@@ -72,9 +72,8 @@ final class PageContentRefsTest extends TestCase
         ob_start();
         imagepng($im);
         $bytes = (string) ob_get_clean();
-        imagedestroy($im);
 
-        (new ContentStoreCommand($this->paths))->run([
+        new ContentStoreCommand($this->paths)->run([
             'domain' => 'example.ru',
             'allias' => 'www',
             'category' => 'coffee',
@@ -94,7 +93,7 @@ final class PageContentRefsTest extends TestCase
 
     private function writePage(string $name, array $blocks): Result
     {
-        return (new PageWriteCommand($this->paths))->run([
+        return new PageWriteCommand($this->paths)->run([
             'domain' => 'example.ru',
             'allias' => 'www',
             'name' => $name,
@@ -104,7 +103,7 @@ final class PageContentRefsTest extends TestCase
 
     public function testAddsRefOnPageWrite(): void
     {
-        (new PageNewCommand($this->paths))->run([
+        new PageNewCommand($this->paths)->run([
             'domain' => 'example.ru', 'allias' => 'www', 'name' => 'about',
         ], new Context(static fn () => null));
 
@@ -124,10 +123,10 @@ final class PageContentRefsTest extends TestCase
 
     public function testTwoPagesShareImage(): void
     {
-        (new PageNewCommand($this->paths))->run([
+        new PageNewCommand($this->paths)->run([
             'domain' => 'example.ru', 'allias' => 'www', 'name' => 'about',
         ], new Context(static fn () => null));
-        (new PageNewCommand($this->paths))->run([
+        new PageNewCommand($this->paths)->run([
             'domain' => 'example.ru', 'allias' => 'www', 'name' => 'menu',
         ], new Context(static fn () => null));
 
@@ -148,7 +147,7 @@ final class PageContentRefsTest extends TestCase
 
     public function testRemovesRefWhenImageRemoved(): void
     {
-        (new PageNewCommand($this->paths))->run([
+        new PageNewCommand($this->paths)->run([
             'domain' => 'example.ru', 'allias' => 'www', 'name' => 'about',
         ], new Context(static fn () => null));
 
@@ -172,7 +171,7 @@ final class PageContentRefsTest extends TestCase
 
     public function testReplacesImageUpdatesRefs(): void
     {
-        (new PageNewCommand($this->paths))->run([
+        new PageNewCommand($this->paths)->run([
             'domain' => 'example.ru', 'allias' => 'www', 'name' => 'about',
         ], new Context(static fn () => null));
 
@@ -208,7 +207,7 @@ final class PageContentRefsTest extends TestCase
 
     public function testOtherDomainUrlIgnored(): void
     {
-        (new PageNewCommand($this->paths))->run([
+        new PageNewCommand($this->paths)->run([
             'domain' => 'example.ru', 'allias' => 'www', 'name' => 'about',
         ], new Context(static fn () => null));
 

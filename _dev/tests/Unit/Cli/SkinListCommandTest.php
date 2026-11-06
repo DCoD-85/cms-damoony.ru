@@ -52,13 +52,13 @@ final class SkinListCommandTest extends TestCase
 
     private function makeSkin(string $name): void
     {
-        (new SkinNewCommand(new Paths($this->root)))
+        new SkinNewCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'allias' => 'www', 'name' => $name], $this->ctx());
     }
 
     public function testEmptyList(): void
     {
-        $res = (new SkinListCommand(new Paths($this->root)))
+        $res = new SkinListCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'allias' => 'www'], $this->ctx());
         self::assertTrue($res->ok);
         self::assertSame([], $res->data['rows']);
@@ -70,7 +70,7 @@ final class SkinListCommandTest extends TestCase
         $this->makeSkin('default');
         $this->makeSkin('dark');
 
-        $res = (new SkinListCommand(new Paths($this->root)))
+        $res = new SkinListCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'allias' => 'www'], $this->ctx());
         self::assertTrue($res->ok);
         self::assertCount(2, $res->data['rows']);
@@ -87,7 +87,7 @@ final class SkinListCommandTest extends TestCase
 
     public function testRejectsInvalidAllias(): void
     {
-        $res = (new SkinListCommand(new Paths($this->root)))
+        $res = new SkinListCommand(new Paths($this->root))
             ->run(['domain' => 'example.ru', 'allias' => 'Bad-Name'], $this->ctx());
         self::assertFalse($res->ok);
     }
