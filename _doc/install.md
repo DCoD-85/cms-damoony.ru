@@ -108,6 +108,25 @@ cp config/ainet.config.example config/ainet.config
 
 ---
 
+### 3.6. Модели AI (config/models.config)
+
+Используется ModelRouter (см. _doc/orchestrator.md §3.3). Маппинг role -> model для внутреннего AI-контура AIUI.
+
+Пример структуры (4-пробельный отступ = код в markdown):
+
+    {
+      "default": "deepseek-coder:6.7b",
+      "roles": {
+        "reporter":  "gemma4:e4b",
+        "architect": "deepseek-coder:6.7b",
+        "designer":  "deepseek-coder:6.7b"
+      }
+    }
+
+Ключи с подчёркиванием в начале (`_readme` и т.п.) игнорируются кодом и служат документацией. Файл коммитится в git (секретов не содержит).
+
+**Важно:** без `models.config` AIUI не запустится. ModelRouter вернёт fallback `qwen2.5-coder:7b`; если такой модели в Ollama нет — Orchestrator упадёт с ошибкой.
+
 ## 4. База данных
 
 Создайте базу:
@@ -147,10 +166,24 @@ server {
         try_files $uri $uri/ /content.php?$query_string;
     }
 
+    # AIUI preview (изолированная сессия)
+    location /admin/preview/ {
+        rewrite ^/admin/preview/([a-f0-9]+)/([a-z0-9_]+)/?(.*)$ /admin/aipreview.php?tab=$1&alias=$2&path=/$3 last;
+    }
+
+    # Публичные формы (POST endpoint)
+    location = /submit {
+        rewrite ^ /forms.php last;
+    }
+
     location ~ \.php$ {
         include fastcgi_params;
         fastcgi_pass unix:/run/php/php8.4-fpm.sock;
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        # Таймауты для AIUI (генерация может занимать несколько минут)
+        fastcgi_read_timeout 600s;
+        fastcgi_send_timeout 600s;
+        fastcgi_connect_timeout 60s;
     }
 }
 ```
@@ -164,14 +197,16 @@ server {
 ## 6. Права доступа (Linux)
 
 Пользователь веб-сервера (например, `www-data`) должен иметь права на запись в:
-- `var/` (логи, кэш, rate-limit)
-- `content/` (runtime-контент AI)
-- `www/media/` (скины, сгенерированные CSS)
+- `var/` — логи, кэш, rate-limit, сессии (`var/wizard/`, `var/sessions/`)
+- `content/` — runtime-контент AI
+- `www/media/` — скины, сгенерированные CSS, **сессионные медиа-копии** (`.sess_*`)
+- `app/` — **контент доменов и сессии AIUI**: админка создаёт/меняет файлы через `bin/cli.php` (`domain:new`, `allias:new`, `page:write`, `session:start`, `session:apply`). Без прав на `app/` — 500 при любом сохранении из UI.
 
-```bash
-chown -R www-data:www-data var/ content/ www/media/
-chmod -R 775 var/ content/ www/media/
-```
+    chown -R www-data:www-data app/ content/ var/ www/media/
+    chmod -R 775 app/ content/ var/ www/media/
+
+⚠️ **Не давайте права на `config/`**: конфиги содержат секреты (DB password, API keys) и не должны быть доступны веб-процессу. Управление — только через CLI от владельца (root/sudo), не из админки.
+
 
 ---
 

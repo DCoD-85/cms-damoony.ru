@@ -1,6 +1,18 @@
 # Roadmap: Путь к v3.0.0 (AI-Fullstack Factory)
 
-Этот документ описывает стратегические планы развития Damoony Engine после релиза v2.0.0. Детали текущей реализации — в `arch.md` и `ai.md`.
+**Статус (2026-11-06):** частично superseded by `_doc/v3.1-design.md`.
+
+Этот документ описывает исходные планы v3.0.0. **Актуальный план** — `_doc/v3.1-design.md` (DataProvider вместо DbCompiler, Multi-Agent Orchestrator как параллельный трек). При расхождении приоритет — у `v3.1-design.md`.
+
+Что осталось актуальным из этого документа:
+- §1 Wizard State Machine — реализован как `wizard:*` в `bin/aicli.php`.
+- §3 damoonyengine.js — **не реализован** (P3).
+- §4 Иерархическое планирование — **не реализован** (P3).
+
+Что заменено:
+- §2 DbCompiler (JSON → SQL) → **DataProvider** (`_doc/v3.1-design.md` §3).
+
+Детали текущей реализации — в `_doc/arch.md`, `_doc/ai.md`, `_doc/orchestrator.md`.
 
 ---
 

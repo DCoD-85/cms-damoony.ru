@@ -140,7 +140,7 @@ $this->context->meta->addCss('/media/example.ru/www/skin/default/css/main.css');
 $this->context->meta->addJs('/media/example.ru/www/skin/default/js/main.js');
 ```
 
-**Единый CSS-файл:** Блоки больше не генерируют отдельные CSS-файлы. Все стили сайта (включая шапку, меню и контент) генерируются AI-Дизайнером в единый файл `www/media/{domain}/{allias}/skin/default/css/main.css`. Команда `skin:edit` позволяет записывать любые `.css` файлы внутри папки `css/`.
+**Единый CSS-файл:** `BlockNewCommand` CSS-файлов не создаёт. `BlockCompiler` подключает `{blockName}.css` по имени блока, если файл существует (404 — браузер игнорирует, не падает). `brain.py` (Wizard) пишет два файла: `main.css` (base + layout + center) и `top.css` (меню). См. `arch.md` §3.4 (единственный источник истины). `skin:edit` позволяет записывать любые `.css` внутри папки `css/`.
 
 ---
 

@@ -98,3 +98,65 @@
 - `session:list [--domain=d]` — сканирует `app/.sess_*`, читает meta.
 
 **Флаг `--session=tab`** — обязательный для `page:new`, `page:write`, `block:write`, `filler:write`, `skin:edit`, `scheme:save` при работе из AIUI. Без флага команда пишет в production.
+
+---
+
+## 11. DB & DataProvider (read-only + safe write)
+
+Команды для introspection схемы БД и безопасного вызова методов провайдеров. Используются AI-агентами (aicli) и админкой. Никакого сырого SQL от AI — только именованные методы (см. `v3.1-design.md` §3, §6).
+
+### 11.1. Introspection (read-only)
+
+- `db:schema --domain=[d] --alias=[a]` — список таблиц и колонок алиаса (из information_schema). Возвращает `{tables: [{name, columns: [{name, type, nullable, key, default}]}]}`.
+- `db:methods --domain=[d] --alias=[a] --provider=[p]` — список публичных методов провайдера (через Reflection).
+- `db:describe --domain=[d] --alias=[a] --provider=[p] --method=[m]` — сигнатура: params, return type, summary.
+
+### 11.2. Invocation (безопасный вызов)
+
+- `db:call --domain=[d] --alias=[a] --provider=[p] --method=[m] --params='{}'` — read-only метод (whitelist шаблонов `select_by`, `select_where`, `select_all`, `count`, `exists`, `aggregate`, `join_select`, `group_by_count`, `sum_by`). Dry-run не требуется.
+- `db:mutate --domain=[d] --alias=[a] --provider=[p] --method=[m] --params='{}' --force` — write-метод (`insert`, `update`, `delete`). **Требует `--force`.** Каждый вызов логируется в `audit_log` (`domain`, `alias_name`, `provider`, `method`, `params_json`, `result_ok`, `error_text`, `source=cli`, `role_name`).
+
+### 11.3. Генерация методов (templates only)
+
+- `dataprovider:add-method --domain=[d] --alias=[a] --provider=[p] --template=[t] --args='{}'` — генерирует метод из шаблона (шаблоны: см. `v3.1-design.md` §4, реализован `select_where`). AI не пишет PHP — генерируется шаблон с PDO named params.
+
+### 11.4. Роли (в `bin/aicli.php`, см. `v3.1-design.md` §6.2)
+
+- `db:schema`, `db:methods`, `db:describe` — роль `inspector`.
+- `db:call` — роли `inspector`, `executor`, `reporter`.
+- `db:mutate` — роль `executor` (только с `--force`).
+- `dataprovider:add-method` — роль `architect`.
+
+**Запрещено всем ролям:** `CREATE/DROP/ALTER TABLE` (миграции — только `db:migrate` от владельца, не от AI), `TRUNCATE`, `GRANT/REVOKE`. Это инфорцируется в `Roles::whitelist()`.
+
+---
+
+## 12. Wizard и AI-команды
+
+Внутренние AI-команды (используются `ai_agent/brain.py` и администратором). Низкоуровневый JSON-протокол — `ai.md` §1-3.
+
+### 12.1. Wizard (State Machine)
+
+Пошаговая генерация сайта с проверкой стадий. Состояние — в `var/wizard/{domain}/{alias}/{session_id}.json` (TTL 24h).
+
+- `wizard:start --domain=[d] --alias=[a]` — создать сессию. Возвращает `session_id`, `stage: init`, `next[]` (HATEOAS).
+- `wizard:step --session=[id] --command=[cmd] --args='{}'` — выполнить шаг (команда из `next[]`). Валидирует, что не пропущена стадия.
+- `wizard:gc [--older=24h]` — очистка старых сессий в `var/wizard/_trash_{ts}/`.
+
+### 12.2. AI-сессии
+
+- `ai:start --role=[r]` — инициализация AI-сессии. Возвращает `role`, `next[]` (Navigator).
+- `agent:chat --history='[...]' --model=[m] [--system_prompt=...]` — низкоуровневый вызов LLM (используется `InterviewerAgent`/`CoderAgent` через `AgentChatHandler`, а также `brain.py`). Возвращает `{reply: string}`.
+
+### 12.3. Admin-only
+
+- `ai:edit-page --domain=[d] --alias=[a] --page=[p] --prompt="..." [--force=1]` — редактирование страницы через LLM. **Только для администратора** (не доступна через `bin/aicli.php`). Без `--force` — dry-run (diff блоков, без сохранения). См. `_doc/aiui.md`.
+
+### 12.4. AINET (сеть)
+
+- `net:status` — диагностика провайдеров, лимитов, кэша.
+- `image:search --query="..." --count=5` — поиск картинок (провайдеры: `wikimedia`, `openverse`).
+- `image:download --url="..." --domain=[d] --alias=[a] --category=[c]` — скачать в `/content/`. Возвращает `local_url`.
+- `fetch --url="..." --type=json|text` — GET-запрос к whitelist-хосту (`config/ainet.config`).
+
+Полное описание — `_doc/ai.md` §5.

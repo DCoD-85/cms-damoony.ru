@@ -238,15 +238,24 @@ AI не видит файловую систему напрямую. Никог�
 
 Жди отчёт (зелёные тесты или ошибки) и только потом иди дальше. Красные проверки блокируют push.
 
-### 10.7. Текущая фаза (v2.0.0 → аудит)
+### 10.7. Текущая фаза (v3.1-dev)
 
-В отличие от ранних итераций (где фокус был на Wizard/State Machine, реализованном в `7e3975c` + `5c5af6a`), текущая работа — **оптимизация и консолидация**:
+Стратегия: **Tools-First**. AI — ассистент, не генератор. Основной продукт работает без AI (IDE-подсказки, JSON-редактор, DataProvider). AI остаётся опциональным (wizard, bulk, review).
 
-1. Phase 2 — ✅ чистка мусора (P0).
-2. Phase 3 — консолидация документации (12 → 8 файлов + `README.md`).
-3. Phase 4 — качество тестов (skip → `#[RequiresPhpExtension]`, `assertFileExists` вместо `markTestSkipped`).
-4. Phase 5 — единые точки входа (`www/index.php`, `www/admin/index.php`, `bin/cli.php`, `bin/aicli.php`).
-5. Phase 6 — упрощение кода (по одному файлу за шаг).
+**Закрытые фазы:**
 
-Актуальный roadmap v3.0.0 — в `_doc/roadmap.md`. Открытые P2 — в `_doc/arch.md`, раздел «Открытые P2».
+- **Фаза A** (изоляция FS): `--session` для `page:new`/`page:write`, `SchemeLoader` session-aware, `SessionStartCommand` копирует `www/media/` + `.alliasscheme/` + пишет `permissions` в `.session.json`. См. коммиты `1916b46`, `23d1f9e`.
+- **Фаза B** (Multi-Agent Orchestrator): Blackboard (`context.json`), Interviewer -> Architect -> Coder, `ModelRouter` (`config/models.config`), AIUI (`/admin/aiui.php`, 4 action). См. `_doc/orchestrator.md`, `_doc/aiui.md`, коммиты `441e060`, `b7500ef`.
+
+**Текущая работа:**
+
+- **Фаза C** (Tools-First IDE): `api:reflect` (reflection Builder/Element/Attrs/Text/RegionContext -> `api.json`), CodeMirror hint, snippets, детерминированный Linter. **Не AI.** См. план в `_doc/dev.md` §10.
+
+**Следующие фазы:**
+
+- **Фаза D** (SPA + DataProvider): SPA-админка с табами инструментов, постраничные схемы (Page -> Alias -> Stub), DataProvider алиаса, БД до идеала. См. план в `_doc/dev.md` §10 и `_doc/v3.1-design.md`.
+
+**Актуальные статусы фаз v3.1:** см. `_doc/v3.1-design.md` (шапка «Что реализовано» / «Что отложено» / «Параллельный трек»).
+**Открытые P2:** `_doc/arch.md` §6 (15 пунктов).
+**Roadmap v3.0.0:** `_doc/roadmap.md` (частично superseded by `v3.1-design.md`).
 

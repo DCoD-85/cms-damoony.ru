@@ -51,11 +51,11 @@
 - **Приоритет схем:** При рендеринге страницы `SchemeLoader` сначала ищет локальную схему алиаса (`{allias}.php`). И только если её нет — использует базовую (`www.php`).
 - **Базовые Meta (CSS/JS):** Схемы содержат массив `meta`. При сборке финального `Document` эти данные автоматически вливаются в `<head>`.
 
-### 3.4. Модульный CSS и Layout
+### 3.4. CSS и Layout (факты)
 - **Layout:** Базовые стили сетки (`.layout`, `.page-content`) и защита от переполнения картинок (`img { max-width: 100%; max-height: 500px; }`) жестко зашиты в `ai_agent/brain.py` и не могут быть сломаны LLM.
-- **Модульность:** Вместо одного огромного `main.css`, стили генерируются по блокам: `main.css` (переменные), `top.css` (меню), `center.css` (контент). Блоки автоматически подключают свои CSS-файлы при рендеринге.
+- **Факт (2026-11-06):** `block:new` CSS не создаёт. `brain.py` (Wizard) пишет два файла: `main.css` (base + layout + center) и `top.css` (меню). Отдельного `center.css` нет.
 - **Защита от ИИ (Grid):** Сгенерированные сайты используют жестко зашитую CSS Grid-сетку (через `brain.py`). Для того чтобы обертки `<div>` от `SchemeRenderer` не ломали сетку, применяется CSS-хак `display: contents` для прямых потомков `.layout`.
-- **Автогенерация стилей блоков:** При создании блока (`block:new`) движок автоматически создает CSS-файл для него в базовом скине (`www/media/{domain}/{allias}/skin/default/css/{block}.css`).
+- **Автогенерация стилей блоков:** НЕ реализована. `BlockCompiler` подключает `{blockName}.css` по имени блока, если файл существует (404 игнорируется).
 
 ---
 
@@ -97,6 +97,7 @@
 - Content: запись только через CLI. AINET не пишет на диск.
 - Skin: `skin:edit` разрешает только `css/main.css` и `js/main.js` (≤ 1 MB, без `@import`/`javascript:`).
 - AINET: только GET, scheme (http/https), port (80/443), блок private IP. Whitelist без wildcard.
+- **DataProvider — только через `bin/aicli.php`/`brain.py`.** Orchestrator (AIUI) не использует `db:*` (schema, call, mutate). Разделение сознательное: `db:*` — для wizard/bulk-генерации, не для пошагового редактирования в UI. См. `_doc/cli.md` §11 и `_doc/v3.1-design.md` §6.2.
 
 ---
 
@@ -115,13 +116,10 @@
 9. **Архитектор нестабилен:** `ArchitectAgent` каждый запуск выдаёт разные имена страниц (`about` vs `company_info` vs `our_coffee`). Имена не фиксированы в промпте. P2: жёсткий whitelist slug-ов (`home`, `about`, `menu`, `contacts`, `reviews`) либо проверка на дубли после парсинга.
 10. **Coder оборачивает в `section`:** LLM часто возвращает `[{"type":"section","children":[...]}]` вместо плоского массива. Это валидно, но `build_progress.blocks` считает только верхний уровень (1). UI: показывать реальное число через рекурсивный подсчёт.
 11. **`PageNewCommand --session`:** реализовано (`--session=X`), но требует рестарта сервера, чтобы opcache перечитал класс. На prod (Linux) проблемы нет; на Windows (php-cgi) — рестарт обязателен после каждого изменения PHP-класса.
-12. **Дизайнер (CSS) не реализован:** в Orchestrator нет `DesignerAgent`. Стили генерирует только `brain.py` (Wizard). AIUI пока использует skin по умолчанию. P2: `DesignerAgent` (генерация `main.css` через `skin:edit --session`).
+12. **Дизайнер (CSS) не реализован в AIUI:** в Orchestrator нет `DesignerAgent`. Стили генерирует только `brain.py` (Wizard). AIUI использует skin по умолчанию (голый HTML). P2: `DesignerAgent` (генерация `main.css` через `skin:edit --session`). Пользователю AIUI стоит сообщать: «стили не генерируются, см. skin:new/skin:edit».
 13. **Markdown в Coder:** LLM иногда выдаёт `**bold**`, `[text](url)` в `content`. Частично закрыто `stripMarkdown()` в `CoderAgent`, но покрытие неполное (списки, цитаты).
-9. **AI-Оркестраторы:** `ai_agent/brain.py` — рабочий мультиагент. UI для запуска из админки пока нет (только CLI/консоль).
-10. **skin:bundle:** не реализован (сборка CSS/JS).
-11. **Скрытые дефолты:** `Slot::release()` возвращает пустую строку (слот без региона молча исчезает).
-12. **`www/admin/index.php` — собственный bootstrap** (session/auth/csrf) by design. Параметризация через `AppFactory` отвергнута: admin-сессия (`ADMINSESSID`) независима от site-сессии (`SITE_SESSID`), `Auth` (admin) отличается от `DbAuth` (user). Не «оптимизировать» без пересмотра этой архитектуры.
-13. **`bin/aicli.php` — монолит** (812 строк, 40+ if-блоков, двойной subprocess через `proc_open` + `shell_exec` на каждую AI-команду). Прежде чем расширять aicli (DataProvider, схемы, визуализация) — разбить на `AicliHandlerInterface` (Command pattern) + registry. Требует отдельного дизайн-проекта (Roadmap v3.1, фаза 4).
+14. **skin:bundle:** не реализован (сборка CSS/JS).
+15. **Скрытые дефолты:** `Slot::release()` возвращает пустую строку (слот без региона молча исчезает).
 
 ---
 
