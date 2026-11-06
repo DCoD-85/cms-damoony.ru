@@ -103,25 +103,23 @@
 
 ## 6. Открытые P2 (Технический долг)
 
-*Список актуальных архитектурных компромиссов и известных недоработок.*
+15 пунктов. Развёрнуто — `git log -p _doc/arch.md`, `git log -p _doc/orchestrator.md`, issues.
 
-1. **AI-Транзакции:** `Orchestrator::build()` уже изолирует падения постранично (try/catch на каждую страницу, продолжает со следующей; результат — `build_partial`). Но **полного rollback** цепочки нет: если 3/5 страниц упали, они остаются в сессии как `failed`. Нужен `build:rollback` (откат до `build_started`).
-2. **RegionContext::service():** возвращает `mixed` (Service Locator). Компенсируется `instanceof` на стороне вызывающего. Нужен `@template` в PHPDoc.
-3. **assert() для типов:** в prod исчезает. Заменить на явные `if (!instanceof) throw`.
-4. **Builder неполон:** нет `section`, `form`, `table`, `select`, `textarea`, `label`, `nav`. Компиляторы (`BlockCodegen`) обходят это через `Builder::el($tag)`, но это неудобно.
-5. **domains_real[$domain] в save():** работает только при self-mapping (P2 — заменить на `ConfigDomainResolver::real()`).
-6. **PageHandler::applySkin:** читает `$_COOKIE` напрямую, а не через `LanguageNegotiator`-подобный сервис.
-7. **Namespace Damoony\Algoritm:** сохранён (P2 — переименовать в `Damoony\Page`).
-8. **AINET:** только GET (POST/PUT/DELETE запрещены). Нет парсинга HTML (только JSON API и текст).
-9. **Архитектор нестабилен:** `ArchitectAgent` каждый запуск выдаёт разные имена страниц (`about` vs `company_info` vs `our_coffee`). Имена не фиксированы в промпте. P2: жёсткий whitelist slug-ов (`home`, `about`, `menu`, `contacts`, `reviews`) либо проверка на дубли после парсинга.
-10. **Coder оборачивает в `section`:** LLM часто возвращает `[{"type":"section","children":[...]}]` вместо плоского массива. Это валидно, но `build_progress.blocks` считает только верхний уровень (1). UI: показывать реальное число через рекурсивный подсчёт.
-11. **`PageNewCommand --session`:** реализовано (`--session=X`), но требует рестарта сервера, чтобы opcache перечитал класс. На prod (Linux) проблемы нет; на Windows (php-cgi) — рестарт обязателен после каждого изменения PHP-класса.
-12. **Дизайнер (CSS) не реализован в AIUI:** в Orchestrator нет `DesignerAgent`. Стили генерирует только `brain.py` (Wizard). AIUI использует skin по умолчанию (голый HTML). P2: `DesignerAgent` (генерация `main.css` через `skin:edit --session`). Пользователю AIUI стоит сообщать: «стили не генерируются, см. skin:new/skin:edit».
-13. **Markdown в Coder:** LLM иногда выдаёт `**bold**`, `[text](url)` в `content`. Частично закрыто `stripMarkdown()` в `CoderAgent`, но покрытие неполное (списки, цитаты).
-14. **skin:bundle:** не реализован (сборка CSS/JS).
+1. **AI-Транзакции:** нет `build:rollback`; failed-страницы остаются в `build_progress`.
+2. **RegionContext::service():** возвращает `mixed`; нужен `@template` PHPDoc.
+3. **assert():** в prod исчезает; заменить на явные `if (!instanceof) throw`.
+4. **Builder неполон:** нет `section/form/table/select/textarea/label/nav`; компиляторы обходят через `Builder::el($tag)`.
+5. **domains_real[$domain] в save():** работает только при self-mapping.
+6. **PageHandler::applySkin:** читает `$_COOKIE` напрямую, не через сервис.
+7. **Namespace `Damoony\Algoritm`:** унаследован; P2 — переименовать в `Damoony\Page`.
+8. **AINET:** только GET; нет парсинга HTML.
+9. **ArchitectAgent нестабилен:** разные имена страниц в разных запусках; P2 — whitelist slug-ов.
+10. **Coder wrap в `section`:** `build_progress.blocks` считает только верхний уровень.
+11. **`PageNewCommand --session`:** требует рестарт php-cgi (opcache) на Windows.
+12. **Designer (CSS) в AIUI отсутствует:** только `brain.py`. AIUI использует skin по умолчанию.
+13. **Markdown в Coder:** `stripMarkdown()` покрывает не всё (списки, цитаты, таблицы).
+14. **skin:bundle:** не реализован.
 15. **Скрытые дефолты:** `Slot::release()` возвращает пустую строку (слот без региона молча исчезает).
-
----
 
 ## 7. Безопасность (архитектурные решения)
 

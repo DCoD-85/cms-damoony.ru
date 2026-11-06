@@ -240,23 +240,14 @@ Read-only снимок окружения до вызова LLM. Через Aicl
 
 ---
 
-## 10. P2 / ограничения (связано с _doc/arch.md §6)
+## 10. P2 / ограничения
 
-- **Нестабильность Архитектора**: разные имена страниц в разных запусках (about vs company_info). Имена не фиксированы в промпте.
-- **Coder wrap**: LLM часто возвращает section с children вместо плоского массива. Валидно, но build_progress.blocks считает только верхний уровень (1).
-- **PageNewCommand --session**: после изменения PHP-класса нужен рестарт PHP-CGI (opcache).
-- **DesignerAgent отсутствует**: CSS-генерации в AIUI нет.
-- **WriterAgent отсутствует**: тексты генерирует CoderAgent.
-- **CriticAgent отсутствует**: валидация только детерминированная (page:write + PageCompiler).
-- **Нет build:rollback**.
+Полный список — `_doc/arch.md` §6 (пункты 1, 9-14 касаются Orchestrator напрямую). Краткая сводка:
 
----
+- **Архитектор нестабилен** (п.9): разные имена страниц в разных запусках.
+- **Coder wrap** (п.10): LLM часто возвращает `section` с children; `build_progress.blocks` считает только верхний уровень.
+- **`PageNewCommand --session`** (п.11): на Windows (php-cgi) требует рестарт opcache.
+- **DesignerAgent / WriterAgent / CriticAgent** отсутствуют (п.12): CSS не генерируется, тексты — CoderAgent, валидация — детерминированная (`page:write` + `PageCompiler`).
+- **Нет `build:rollback`** (п.1).
 
-## 11. Тесты
-
-- `_dev/tests/Unit/Ai/Orchestrator/ContextManagerTest.php` — read/write/init/update.
-- `_dev/tests/Unit/Ai/Orchestrator/ToolsCollectorTest.php` — парсинг вывода CLI (fixtures из реального вывода).
-- `_dev/tests/Unit/Ai/Orchestrator/OrchestratorTest.php` — run() с fake-агентами.
-- End-to-end: AIUI в браузере (см. _doc/aiui.md §5).
-
-Юнит-тесты агентов используют fake-реализации ArchitectAgentInterface и CoderAgentInterface — без реального Ollama.
+Тесты — `_dev/tests/Unit/Ai/Orchestrator/`, запуск — `composer test`.

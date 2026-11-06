@@ -181,126 +181,21 @@ if ($this->isAuthenticated()) {
 
 ---
 
-## 8. Python smoke tests (`ai_agent/brain.py`)
+## 8. Python smoke tests
 
-Не-CI смоук-тесты для Python-слоя. Проверяют **чистые функции** без LLM, без Ollama, без CLI, без БД. Не входят в `composer test` (там только PHPUnit).
+Не-CI смоук-тесты для `ai_agent/brain.py`. Не входят в `composer test`.
 
-Запускать вручную: перед E2E `python -m ai_agent.brain ...` и после любой правки `ai_agent/brain.py`.
-
-### 8.1. Расположение
+    python _dev/smoketests/test_brain_safety.py
 
 | Файл | Назначение |
 |---|---|
-| `_dev/smoketests/test_brain_safety.py` | 23 теста, встроенный плейн-раннер |
-| `_dev/smoketests/test_brain_forms.py` | Smoke-тесты auto-detect форм (Phase 4.5) |
+| `_dev/smoketests/test_brain_safety.py` | `_safe_href`, `_sanitize_name`, `validate_plan` (23 теста) |
+| `_dev/smoketests/test_brain_forms.py` | auto-detect форм (Phase 4.5) |
 | `_dev/smoketests/requirements.txt` | `pytest>=7.0` (опционально) |
 
-### 8.2. Запуск без зависимостей (рекомендуется)
-
-    python _dev/smoketests/test_brain_safety.py
-
-Ожидаемый вывод:
-
-      ✓ test_safe_href_anchor
-      ✓ test_safe_href_data_rejected
-      ...
-      ✓ test_validate_plan_topo_sort
-
-    23 passed, 0 failed
-
-Работает на любом Python 3.10+ без `pip install`.
-
-### 8.3. Запуск с pytest (опционально)
-
-Сначала убедись, что `python` и `pytest` — один интерпретатор:
-
-    python -c "import sys; print(sys.executable)"
-    python -m pytest --version
-
-Если `No module named pytest` — два Python (MSYS2 + Windows). Не смешивай. Варианты:
-
-    # A. Поставить в тот python, что в PATH (MSYS2)
-    python -m pip install --user pytest
-
-    # B. Использовать Windows python
-    py -3 -m pip install --user pytest
-    py -3 -m pytest _dev/smoketests/ -v
-
-    # C. Плейн-раннер (без pytest) — полностью покрывает
-    python _dev/smoketests/test_brain_safety.py
-
-### 8.4. Покрытие
-
-**`_safe_href(url)`** — валидация URL перед `<a href>`:
-
-| Кейс | Ожидание |
-|---|---|
-| `/about`, `#anchor`, `https://...`, `http://...` | без изменений |
-| `javascript:`, `data:`, `vbscript:`, `file:`, `//evil` | `None` |
-| `/foo" onclick="x` | `/foo%22 onclick=%22x` |
-| `/foo<script>` | `/foo%3Cscript%3E` |
-
-Закрывает XSS через `[LINK: ...]`: `PageCompiler`/`BlockCompiler` используют `Text::raw(strip_tags($s, '<a><strong>'))` — тег `<a>` выживает, но href санитизирован на стороне Python.
-
-**`_sanitize_name(name)`** — санитизация имени страницы:
-
-| Вход | Выход |
-|---|---|
-| `About` / `About Us` / `Care-Guide!` | `about` / `aboutus` / `careguide` |
-| `__root__` | `__root__` |
-| `123page` | `page_123page` |
-| `''` | `page` |
-
-Закрывает path traversal в имени до CLI.
-
-**`validate_plan(plan)`** — детерминированная правка плана LLM:
-
-- topo sort (parent перед child)
-- drop orphan parent → `None`
-- split склеенных имён: `care_guide_documentation` → `documentation`
-- sanitize parent: `Parent With Spaces` → orphan → `None`
-- cycle guard (A↔B не вешает)
-
-### 8.5. Что не покрыто (требует интеграции)
-
-- `preflight` — нужен `bin/aicli.php` + `config/agent.config`
-- `fetch_image` — нужен AINET + whitelist
-- `run_multi_agent` — полный пайплайн с Ollama
-
-Для этого — E2E на тестовом домене:
-
-    python -m ai_agent.brain damoony3test.ru www "Тестовый бриф" qwen2.5-coder:7b
-
-
----
+Правила и покрытие — в самом тест-файле. Не покрыто (требует интеграции): `preflight`, `fetch_image`, `run_multi_agent` — E2E на тестовом домене.
 
 ## 9. Локальный сервер (Windows standalone)
 
-Проект больше не использует OSPanel. Вместо него развернут автономный стек **Nginx + PHP-CGI + MariaDB** в папке `E:\\localserver`. 
-Это решает проблему падения `proc_open` (из-за модуля Apache `mpm_winnt`) и дает среду, максимально похожую на Debian.
+Окружение и запуск — единственный источник истины: `_doc/start_new_audit.md` §4. Здесь не дублируется.
 
-### 9.1. Структура
-- `E:\\localserver\\domains\\damoony3.ru\\` — корень проекта (git-репозиторий).
-- `E:\\localserver\\tools\\` — бинарники сервера (`nginx`, `php`, `mariadb`).
-- `E:\\localserver\\server.ps1` — скрипт управления (трей-иконка).
-- `E:\\localserver\\server.vbs` — лаунчер (запускает скрипт без окна консоли).
-
-### 9.2. Управление
-- **Трей-иконка:** в системном трее висит иконка (правый клик — Запустить/Остановить/Перезапустить, открыть AIUI).
-- **Автозагрузка:** сервер стартует автоматически при входе в Windows.
-- **Логи:** `E:\\localserver\\logs\\` (ошибки Nginx и access-логи).
-
-### 9.3. Запуск CLI-команд (Важно!)
-Системный `php` в терминале (GitBash/CMD) может указывать на старую версию без нужных расширений (например, без `curl`). 
-**Всегда запускайте CLI через наш бинарник с явным указанием конфига:**
-
-    "/e/localserver/tools/php/php.exe" -c "/e/localserver/tools/php/php.ini" bin/cli.php [команда]
-
-*Пример:*
-
-    "/e/localserver/tools/php/php.exe" -c "/e/localserver/tools/php/php.ini" bin/cli.php structure:check
-
-Для удобства можно создать алиас в GitBash (в `~/.bashrc`):
-
-    alias php='/e/localserver/tools/php/php.exe'
-    alias nginx='/e/localserver/tools/nginx/nginx.exe'
