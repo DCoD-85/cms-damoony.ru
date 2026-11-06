@@ -189,8 +189,9 @@ server {
 ```
 ⚠️ `/content/` — вне webroot (файлы лежат в корне проекта, не в `www/`). Запросы к `/content/...` проксируются на `www/content.php`. Прямой доступ к папке `/content/` невозможен.
 
-### Apache
-Включите `mod_rewrite`. Убедитесь, что в `www/.htaccess` разрешены переопределения (`AllowOverride All`). Настройте проксирование `/content/` на `content.php`.
+### Apache (legacy, не используется на проде)
+
+Прод — nginx + PHP-FPM (см. `start_new_audit.md` §1). Для локальной отладки на Apache 2.4: `mod_rewrite` + `AllowOverride All` в `www/.htaccess` + проксирование `/content/` на `content.php`.
 
 ---
 
