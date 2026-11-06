@@ -247,9 +247,9 @@ AI не видит файловую систему напрямую. Никог�
 
 **Следующие фазы:**
 
-- **Фаза D** (SPA + DataProvider): SPA-админка с табами инструментов, постраничные схемы (Page -> Alias -> Stub), DataProvider алиаса, БД до идеала. См. план в `_doc/dev.md` §10 и `_doc/v3.1-design.md`.
+- **Фаза D** (SPA + DataProvider): SPA-админка с табами инструментов, постраничные схемы (Page -> Alias -> Stub), DataProvider алиаса, БД до идеала. См. план в `_doc/dev.md` §10 и `_doc/dataprovider-design.md`.
 
-**Актуальные статусы фаз v3.1:** см. `_doc/v3.1-design.md` (шапка «Что реализовано» / «Что отложено» / «Параллельный трек»).
+**Актуальные статусы фаз v3.1:** см. `_doc/dataprovider-design.md` (шапка «Что реализовано» / «Что отложено» / «Параллельный трек»).
 **Открытые P2:** `_doc/arch.md` §6 (15 пунктов).
-**Roadmap v3.0.0:** `_doc/roadmap.md` (частично superseded by `v3.1-design.md`).
+**Roadmap v3.0.0:** `_doc/roadmap.md` (частично superseded by `dataprovider-design.md`).
 

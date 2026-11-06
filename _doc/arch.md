@@ -97,7 +97,7 @@
 - Content: запись только через CLI. AINET не пишет на диск.
 - Skin: `skin:edit` разрешает `css/*.css` и `js/main.js` (≤ 1 MB, без `@import`/`javascript:`).
 - AINET: только GET, scheme (http/https), port (80/443), блок private IP. Whitelist без wildcard.
-- **DataProvider — только через `bin/aicli.php`/`brain.py`.** Orchestrator (AIUI) не использует `db:*` (schema, call, mutate). Разделение сознательное: `db:*` — для wizard/bulk-генерации, не для пошагового редактирования в UI. См. `_doc/cli.md` §11 и `_doc/v3.1-design.md` §6.2.
+- **DataProvider — только через `bin/aicli.php`/`brain.py`.** Orchestrator (AIUI) не использует `db:*` (schema, call, mutate). Разделение сознательное: `db:*` — для wizard/bulk-генерации, не для пошагового редактирования в UI. См. `_doc/cli.md` §11 и `_doc/dataprovider-design.md` §6.2.
 
 ---
 

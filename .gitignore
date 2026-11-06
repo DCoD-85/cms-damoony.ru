@@ -103,3 +103,9 @@ app/*_trash_*
 # Session media copies (runtime, AIUI preview)
 /www/media/.sess_*/
 /www/media/_trash_sess_*/
+
+# --- AIUI sessions (runtime) ---
+/app/.sess_*/
+/www/media/.sess_*/
+/app/_trash_sess_*/
+/www/media/_trash_sess_*/

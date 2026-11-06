@@ -1,6 +1,6 @@
-# v3.1: DataProvider + Introspection
+# DataProvider & DB Architecture
 
-Актуальный дизайн. История — `git log`, планы — issues.
+Дизайн-документ слоя работы с базой данных. Общий roadmap v3.1 (включая AIUI, Orchestrator, standalone-сервер) находится в `_doc/start_new_audit.md` §10.7.
 
 ## 1. Цель и границы
 
@@ -86,7 +86,7 @@ AI не пишет PHP: вызывает готовые методы (`db:call`,
 
 Pending (Phase 4.8): `select_by`, `select_all`, `update`, `delete`, `count`, `exists`, `aggregate`, `join_select`, `group_by_count`, `sum_by`.
 
-## 5. API
+## 5. API (bin/aicli.php)
 
 ### 5.1. Команды (`bin/cli.php`)
 
@@ -94,10 +94,10 @@ Pending (Phase 4.8): `select_by`, `select_all`, `update`, `delete`, `count`, `ex
 - `db:methods --domain --alias --provider` — методы провайдера.
 - `db:describe --domain --alias --provider --method` — сигнатура.
 - `db:call --domain --alias --provider --method --params='{}'` — read-only.
-- `db:mutate … --force` — write + audit_log.
+- `db:mutate … --force=1` — write + audit_log.
 - `dataprovider:add-method --template=… --args='{}'` — генерация.
 
-Per-command флаги — `_doc/cli.md` §11.
+Per-command флаги — `_doc/cli.md` §10.
 
 ### 5.2. Роли (`bin/aicli.php`)
 
@@ -131,4 +131,4 @@ Per-command флаги — `_doc/cli.md` §11.
 | 4.8 | Остальные 10 шаблонов | pending |
 | 5 | Wizard integration (`db:introspect → plan → generate → test`) | pending |
 
-Детали — `git log`, `arch.md` §4/§5, `cli.md` §11.
+Детали — `git log`, `arch.md` §4/§5, `cli.md` §10.

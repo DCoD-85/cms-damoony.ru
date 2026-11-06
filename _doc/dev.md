@@ -1,30 +1,37 @@
 # Руководство разработчика
 
-Этот документ описывает, как создавать структуру сайта, писать код страниц и блоков, а также работать с безопасной компиляцией. Все файловые операции выполняются через CLI (см. `CLI.md`).
+Как создавать структуру сайта, писать код страниц и блоков, использовать безопасную компиляцию. Все файловые операции — через CLI (см. `cli.md`).
 
-⚠️ **Важно:** Визуальные редакторы для Страниц и Блоков удалены в целях безопасности (защита от RCE). Всё редактирование кода происходит через CodeMirror в админке. Визуальный Drag&Drop оставлен ТОЛЬКО для Схем.
+⚠️ **Визуальные редакторы для Страниц и Блоков удалены** (RCE). Редактирование кода — только CodeMirror в админке. Drag&Drop — только для Схем.
 
 ---
 
 ## 1. Структура и Правило 3 файлов
 
-Любая сущность (Страница, Блок, Схема, Скин) состоит из трёх файлов:
+Любая сущность (Страница, Блок, Схема, Скин) состоит из 3 файлов:
 1. `[name].php` — код.
 2. `[name].rules.json` — настройки (auth, type, enabled).
 3. `[name].editor.json` — данные для UI.
 
-**Для страниц** все три файла имеют единый префикс `algoritm_`:
+**Страницы** — единый префикс `algoritm_`:
 - Root: `algoritm/algoritm.{php,rules.json,editor.json}`
 - Вложенная: `algoritm/about/algoritm_about.{php,rules.json,editor.json}`
+
+**Блоки / Схемы:** `[name].{php,rules.json,editor.json}` в `.alliasglobal/` или `.alliasscheme/`.
 
 ---
 
 ## 2. Написание страниц (Page)
 
-Базовый класс `Page` предоставляет методы `$this->context` (Meta, Domain), `$this->regions()` и `$this->isAuthenticated()`.
+Базовый класс — `Damoony\Algoritm\Page`. Даёт:
+- `$this->context` — `Meta`, `Domain`, `Request`, `service($name)`.
+- `$this->regions()` — `RegionRegistry` (слоты схемы).
+- `$this->setContent(string $slot, Node $node)` — наполнить слот.
+- `$this->isAuthenticated()`, `$this->user()`.
 
 ### Вариант A: страница со схемой (рекомендуется)
-Чтобы страница имела шапку, подвал и другие блоки, её нужно обернуть в Схему.
+
+Схема даёт шапку, подвал, сайдбары. Страница наполняет слот `center`:
 
 ```php
 <?php
@@ -34,35 +41,40 @@ declare(strict_types=1);
 namespace example_ru\www;
 
 use Damoony\Algoritm\Page;
-use Damoony\Files\Paths;
 use Damoony\Http\Response;
+use Damoony\Files\Paths;
 use Damoony\Scheme\SchemeLoader;
 use Damoony\Scheme\SchemeRenderer;
+use Damoony\Ui\Builder;
 use Damoony\Ui\Node;
+use Damoony\Ui\Text;
 
-final class algoritm_about extends Page
+final class algoritm extends Page
 {
     public function default(): Node|Response|null
     {
-        $this->context->meta->setTitle('О нас');
+        $content = Builder::div('page-content');
+        $content->append(Builder::h(1)->append(Text::raw('Заголовок')));
+        $content->append(Builder::p()->append(Text::raw('Параграф')));
+
+        $this->setContent('center', $content);
 
         $paths = $this->context->service('paths');
         if (!$paths instanceof Paths) {
             return Response::internalError('Paths service missing');
         }
 
-        $schemeLoader = new SchemeLoader($paths);
-        $manifest = $schemeLoader->load($this->context->domain, $this->context->domain->scheme);
+        $loader = new SchemeLoader($paths);
+        $manifest = $loader->load($this->context->domain, $this->context->domain->scheme);
 
-        $renderer = new SchemeRenderer();
-
-        return $renderer->render($manifest, $this->regions(), $this->context);
+        return (new SchemeRenderer())->render($manifest, $this->regions(), $this->context);
     }
 }
 ```
 
 ### Вариант B: «голая» страница (API, AJAX)
-Если шапка и футер не нужны, возвращайте `Node` напрямую (или `Response`).
+
+Без схемы — вернуть `Node` или `Response` напрямую:
 
 ```php
 final class algoritm_api extends Page
@@ -74,11 +86,13 @@ final class algoritm_api extends Page
 }
 ```
 
+**Правило:** `default()` возвращает `Node`, `Response` или `null` (→ 204 No Content).
+
 ---
 
 ## 3. Создание блоков (Регионы)
 
-Блок (Регион) — это независимый элемент (шапка, футер, сайдбар). Он должен реализовывать `RegionInterface`. Создаётся через `block:new`.
+Блок (Регион) — независимый элемент (шапка, футер, сайдбар). Создаётся через `block:new`.
 
 ```php
 <?php
@@ -105,52 +119,68 @@ final class alliasglobal_header implements RegionInterface
     }
 }
 ```
-*Управление из кода:* `$this->regions()->disable('header')` или `$this->setContent('center', $node)`.
-*Приоритет:* `disabled` -> `forcedGlobal` -> `filler` -> `base`.
+
+**Контракт `RegionInterface`:** `name(): string`, `enabled(): bool`, `render(RegionContext): Node`.
+
+**Управление из страницы:** `$this->regions()->disable('header')`, `$this->setContent('center', $node)`.
+
+**Приоритет:** `disabled` → `forcedGlobal` → `filler` → `base`.
 
 ---
 
 ## 4. Безопасная компиляция (AI & JSON)
 
-Для AI-агентов и автоматизации используется **PageCompiler** и **BlockCompiler**. AI не пишет PHP-код. Он передаёт JSON-массив блоков через `page:write` (или `block:write`, `filler:write`).
-Поддерживаемые типы: `h1`, `h2`, `h3`, `text`, `img`, `link`, `button`, `ul`, `nav`. 
-Атрибуты: `class`, `id`, `style`, `url`, `alt`.
+AI **не пишет PHP**. Передаёт JSON-массив блоков через `page:write` / `block:write` / `filler:write`. Компилятор — `Damoony\Ui\BlockCodegen::render()` — генерирует безопасный PHP.
 
-**Тип `nav`:** Генерирует список ссылок `<ul class="menu"><li><a href="/...">...</a></li></ul>`. Ожидает `items` в виде `[{"title": "...", "url": "..."}]`. Используется для меню.
+**Типы блоков:** `h1`–`h6`, `text`/`p`, `img`, `link`, `button`, `ul`, `nav`. Phase 4.2 добавила `section`, `div`. Точный список — `src/Ui/BlockCodegen.php`.
 
-Компиляторы используют только безопасные методы `Builder` и `var_export`, что исключает выполнение вредоносного кода (RCE).
+**Атрибуты:** `class`, `id`, `style`, `url`, `alt`, `button_type` (submit|button|reset), `items` (для `ul`), `children` (для вложенных).
+
+**XSS-защита:**
+- Текстовые узлы (`h*`, `p`, `link`, `button`, `li`): `Text::raw(strip_tags($content, '<a><strong>'))` — выживают только `<a>` и `<strong>`, остальное режется.
+- URL: `UrlSanitizer::forSrc()` для `img`, `UrlSanitizer::forHref()` для `link`.
+
+**Builder (`src/Ui/Builder.php`)** — 12 методов: `el`, `elA`, `div`, `span`, `p`, `h`, `a`, `img`, `input`, `ul`, `li`, `button`. Нет `form`/`table`/`select`/`textarea`/`label`/`nav` — обход через `Builder::el($tag)` (P2, `arch.md` §6 п.4).
+
+**RCE:** `BlockCompiler` не поддерживает типы `custom`/`if`/`endif`. Сырой PHP в блоки через `block:write`/`filler:write` не попадает. `allow_php_blocks=false` по умолчанию.
 
 ---
 
-## 5. Content и Skin (Медиа и Стили)
-
-Это две разные зоны. Не смешивайте их!
+## 5. Content и Skin (две разные зоны)
 
 ### 5.1. Content (`/content/`)
-Runtime-хранилище AI-контента (картинки, скачанные из интернета). **Вне webroot.**
-- Запись: только через CLI `content:store`.
-- Получение пути (local_url): `/content/[domain]/[allias]/[category]/[hash].[ext]`.
-- В коде страницы используйте этот URL для тега `<img>`.
 
-### 5.2. Skin (`www/media/[domain]/[allias]/skin/`)
-Git-tracked инфраструктура (CSS/JS темы). Управление — через `skin:new` / `skin:edit`.
-В коде страницы (или в схеме) подключайте их через `Meta`:
+Runtime-контент AI (картинки). **Вне webroot**, отдаётся через `www/content.php`.
+
+- Формат: `/content/[domain]/[allias]/[category]/[hash].[ext]` + `[hash].meta.json`.
+- Запись: только CLI `content:store`.
+- Чтение: URL `/content/...` для `<img src>`.
+- Удаление: `content:remove` (в `/content/.trash/`).
+
+### 5.2. Skin (`www/media/[domain]/[allias]/skin/[name]/`)
+
+Git-tracked инфраструктура темы (CSS/JS).
+
+- Файлы: `css/*.css`, `js/main.js`, `img/`, `skin.json`.
+- Управление: `skin:new`, `skin:edit`, `skin:remove`.
+- `skin:edit` разрешает файлы `css/<name>.css` (только `[a-z0-9_]` в имени) и `js/main.js`. Размер ≤ 1 MB. Блокирует `@import` и `javascript:`.
+
+**Подключение в коде (страница или схема):**
+
 ```php
 $this->context->meta->addCss('/media/example.ru/www/skin/default/css/main.css');
 $this->context->meta->addJs('/media/example.ru/www/skin/default/js/main.js');
 ```
 
-**Единый CSS-файл:** `BlockNewCommand` CSS-файлов не создаёт. `BlockCompiler` подключает `{blockName}.css` по имени блока, если файл существует (404 — браузер игнорирует, не падает). `brain.py` (Wizard) пишет два файла: `main.css` (base + layout + center) и `top.css` (меню). См. `arch.md` §3.4 (единственный источник истины). `skin:edit` позволяет записывать любые `.css` внутри папки `css/`.
+**Факты:** `BlockNewCommand` CSS не создаёт. `BlockCompiler` подключает `{blockName}.css` если файл существует (404 — браузер игнорирует). `brain.py` (Wizard) пишет `main.css` (base + layout + center) и `top.css` (menu). Отдельного `center.css` нет. Подробности — `arch.md` §3.4.
 
 ---
 
 ## 6. Работа с БД и Мета-информацией
 
 ```php
-// Установка заголовка
 $this->context->meta->setTitle('Моя страница');
 
-// Работа с БД через PDO
 $db = $this->context->service('db');
 if (!$db instanceof \Damoony\Db\Connection) {
     return Response::internalError('DB service missing');
@@ -165,27 +195,37 @@ foreach ($news as $item) {
 return $ul;
 ```
 
+⚠️ **DataProvider-инвариант** (`arch.md` §5): raw SQL в страницах/регионах — только для чтения через `$db->pdo()`. Запись — через `DataProvider` (`db:mutate`). Если нужна бизнес-логика — пишется в `app/[domain]/[alias]/provider/` (см. `dataprovider-design.md` §3).
+
 ---
 
 ## 7. Защита страниц (Auth)
 
-Чтобы страница требовала вход, переключите флаг через CLI:
-`php bin/cli.php page:toggle --domain=[d] --allias=[a] --name=[n] --key=auth --value=1`
+Флаг включается через CLI:
+
+```
+php bin/cli.php page:toggle --domain=[d] --allias=[a] --name=[n] --key=auth --value=1
+```
 
 В коде проверка:
+
 ```php
 if ($this->isAuthenticated()) {
     $user = $this->user();
 }
 ```
 
+Пользователи сайта создаются через `user:new` (см. `cli.md` §8).
+
 ---
 
-## 8. Python smoke tests
+## 8. Python smoke tests (`ai_agent/brain.py`)
 
-Не-CI смоук-тесты для `ai_agent/brain.py`. Не входят в `composer test`.
+Не-CI смоук-тесты для Python-слоя. Проверяют **чистые функции** без LLM, без Ollama, без CLI, без БД. Не входят в `composer test`.
 
-    python _dev/smoketests/test_brain_safety.py
+```
+python _dev/smoketests/test_brain_safety.py
+```
 
 | Файл | Назначение |
 |---|---|
@@ -195,7 +235,53 @@ if ($this->isAuthenticated()) {
 
 Правила и покрытие — в самом тест-файле. Не покрыто (требует интеграции): `preflight`, `fetch_image`, `run_multi_agent` — E2E на тестовом домене.
 
+---
+
 ## 9. Локальный сервер (Windows standalone)
 
 Окружение и запуск — единственный источник истины: `_doc/start_new_audit.md` §4. Здесь не дублируется.
 
+---
+
+## 10. Multi-agent pipeline (шпаргалка)
+
+Два независимых AI-контура для генерации контента.
+
+### 10.1. Orchestrator (AIUI)
+
+`src/Ai/Orchestrator/` — мультиагентный конвейер для `/admin/aiui.php`.
+
+- **Blackboard:** `app/.sess_{tab}.{domain}/context.json` (мета, вход, `tools_context`, `agent_outputs`).
+- **Агенты:** `InterviewerAgent` (`gemma4:e4b`) → `ArchitectAgent` (`deepseek-coder:6.7b`) → `CoderAgent` (`gemma4:e4b`).
+- **Модели:** `ModelRouter::resolve($role)` из `config/models.config`.
+- **Вход:** `POST /admin/ai_edit.php` (4 action: `start` / `preview` / `build` / `apply`).
+- **Выход:** страницы в `.sess_*` (изолированы), при `apply` — в production.
+
+Детали — `orchestrator.md`.
+
+### 10.2. brain.py (Wizard)
+
+`ai_agent/brain.py` — Map-Reduce, запуск «с нуля» через CLI или Web UI.
+
+- **5 шагов:** Architect (plan) → Widgets → Content (Markdown) → main.css → top.css.
+- **Вход:** `python -m ai_agent.brain <domain> <allias> [brief или @file] <model>`.
+- **Детерминированные функции:** `validate_plan`, `_safe_href`, `_sanitize_name`.
+- **Web UI:** `app/[domain]/agent/algoritm/ajax/algoritm_ajax.php` (4 action: chat/generate/status/cancel).
+
+Детали — `ai.md` §6–§7.
+
+### 10.3. Инварианты
+
+- AI не пишет PHP — только JSON через `page:write`/`block:write`/`filler:write`.
+- Сессии изолированы: `--session=X` → `.sess_*` (только `page:new`/`page:write`).
+- `context.json` — единственный source of truth для Orchestrator.
+- `brain.py` **не использует** Orchestrator и наоборот — разные контуры.
+
+---
+
+## См. также
+
+- `cli.md` — команды `bin/cli.php`.
+- `ai.md` — `bin/aicli.php`, brain.py, AINET.
+- `orchestrator.md` — внутренний конвейер AIUI.
+- `arch.md` §3.2 (Content vs Skin), §3.4 (CSS-факты), §5 (инварианты).

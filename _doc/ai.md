@@ -1,137 +1,236 @@
 # AI-Слой: Интеграция, AINET и Мультиагентная генерация
 
-Этот документ описывает **внешний** AI-слой: `bin/aicli.php` (JSON-in/out для `brain.py` и сторонних агентов), роли, AINET. Для полной автономной сборки сайтов используется Python-оркестратор `ai_agent/brain.py`.
+Точка входа: `bin/aicli.php` (JSON-in/out). Три независимых контура:
 
-**Три независимых AI-контура:**
-
-1. **`bin/aicli.php`** — внешний JSON-in/out. Роли (`Roles.php`), HATEOAS (`Navigator`), AINET (`net:*`, `image:*`). Этот документ.
-2. **`src/Ai/Orchestrator/`** — внутренний мультиагент для AIUI (Interviewer → Architect → Coder, Blackboard, `ModelRouter`). **Не использует** `bin/aicli.php`, работает через `AicliClient` → `bin/cli.php`. Описан в `_doc/orchestrator.md`.
-3. **`ai_agent/brain.py`** — Python-оркестратор для Wizard (генерация «с нуля»). Использует `bin/aicli.php` + Ollama. Описан в §6 и `_doc/install.md`.
-
----
+1. **aicli** (`bin/aicli.php`) — внешний JSON-in/out, 9 ролей, HATEOAS, AINET. Этот документ.
+2. **Orchestrator** (`src/Ai/Orchestrator/`) — внутренний AIUI (Interviewer → Architect → Coder, Blackboard). Описан в `orchestrator.md`, `aiui.md`.
+3. **brain.py** (`ai_agent/brain.py`) — Python-оркестратор Wizard (генерация «с нуля»). Описан в §6–§7.
 
 ## 1. Архитектура и Контракт (HATEOAS)
 
-AI не имеет прямого доступа к терминалу. Он отправляет JSON в STDIN `bin/aicli.php` и получает JSON в STDOUT.
+AI не имеет прямого доступа к терминалу. Отправляет JSON в STDIN `bin/aicli.php`, получает JSON в STDOUT.
 
 **Запрос:**
 ```json
-{
-  "command": "domain:new",
-  "args": {"domain": "example.ru"},
-  "role": "architect"
-}
+{"command": "domain:new", "args": {"domain": "example.ru"}, "role": "architect"}
 ```
-*`role` — опционально, по умолчанию `*`.*
+`role` опционален, default — `*`.
 
 **Ответ:**
 ```json
 {
   "ok": true,
-  "data": {"...": "результат"},
+  "data": {...},
   "error": "", "hint": "",
   "role": "architect",
-  "next": [
-    {"cmd": "allias:new", "args": {"domain": "example.ru", "name": "[name]"}, "hint": "Создать алиас"},
-    {"cmd": "done", "args": [], "hint": "Завершить"}
-  ]
+  "next": [{"cmd": "allias:new", "args": {"domain": "example.ru", "name": "<name>"}, "hint": "Создать алиас"}]
 }
 ```
 
 **Правила:**
-1. `next[]` — это HATEOAS-подсказка (что логично сделать дальше). Агент может игнорировать её и вызвать любую команду из своего whitelist.
-2. `done` — доступен всегда. Завершает сессию.
-3. Если `ok: false`, поле `hint` содержит инструкцию для самокоррекции.
+1. `next[]` — HATEOAS-подсказка (`Navigator::after()`). Агент может игнорировать и вызвать любую команду из своего whitelist.
+2. `done` — доступен всегда, завершает сессию.
+3. `ok: false` → `hint` содержит инструкцию для самокоррекции.
 
----
+## 2. Роли (Whitelist)
 
-## 2. Роли
+9 ролей + `*`. Полный whitelist — `src/Ai/Roles.php`.
 
-9 ролей + `*` (all). Полный whitelist — `src/Ai/Roles.php`.
-
-| Роль | Назначение |
+| Роль | Назначение (compact) |
 |---|---|
-| `parser` | Разбор брифа (`*:list` только) |
-| `inspector` | Диагностика + `db:schema/methods/describe/call` |
-| `planner` | План структуры (read-only) |
-| `architect` | Каркас: `domain:new`, `allias:new`, `block:new`, `scheme:new`, `filler:new`, `dataprovider:add-method` |
-| `executor` | Контент + БД: `page:new`, `page:write`, `db:call`, `db:mutate --force` |
-| `designer` | Стили + филлеры: `skin:edit`, `block:write`, `filler:write` |
+| `parser` | Разбор брифа: `*:list` |
+| `inspector` | Диагностика: `*:list`, `structure:check`, `db:schema/methods/describe/call` |
+| `planner` | План: `*:list`, `structure:check` |
+| `architect` | Каркас: `domain:new`, `allias:new`, `block:new`, `scheme:new`, `filler:new`, `skin:new`, `dataprovider:add-method` |
+| `executor` | Контент + БД: `page:new`, `page:write`, `image:search/download`, `db:call`, `db:mutate --force` |
+| `designer` | Стили + JSON: `skin:edit`, `block:write`, `filler:write`, `scheme:save`, `page:write` |
 | `bundler` | Сборка: `structure:check` |
-| `corrector` | Исправления: `page:write`, `structure:repair` |
+| `corrector` | Исправления: `page:write`, `structure:repair`, `structure:check` |
 | `reporter` | Отчёт: `*:list`, `structure:check`, `db:call` |
 
-Запрещено всем: `user:new`, `db:migrate`, `admin:passwd`, destructive-команды, `CREATE/DROP/ALTER TABLE`. `DataProvider` — только через `bin/aicli.php`/`brain.py`, не через Orchestrator/AIUI.
+**`wizard:*`:** start/domain/allias/plan/abort → architect; content/finish → executor; skin → designer.
+
+**Роль `*`:** объединяет все 9 + специфичные: `wizard:*`, `agent:chat`, `ai:start`, `done`, `engine_status`, `net:*`, `image:search/download`, `fetch`, `block:write`, `filler:write`.
+
+**Запрещено всем:** `user:new`, `db:migrate`, `admin:passwd`, destructive (`*:remove`, `trash:clear`, `content:remove`).
+
+**Известные полуреализации:**
+- `wizard:abort` — в `Roles.php` есть (architect, `*`), `case` в `WizardManager::handle()` нет → `Unknown wizard action`.
+- `wizard:widgets` — реализован в `WizardManager`, но отсутствует в `Roles.php` → недоступен через aicli.
+
+**DataProvider-инвариант:** `db:*` — только через `bin/aicli.php`/`brain.py`, не через Orchestrator/AIUI (см. `arch.md` §5).
+
+## 3. Navigator (Граф состояний)
+
+`src/Ai/Navigator.php` формирует `next[]` из текущего состояния.
+
+- **OFFERABLE (10 команд):** `domain:new`, `allias:new`, `skin:new`, `skin:edit`, `page:new`, `page:write`, `page:read`, `image:search`, `image:download`, `done`.
+- **`start(state)`** — начальные подсказки (1–2): нет доменов → `domain:new`; иначе `allias:new` + `domain:new`.
+- **`after(cmd)`** — match по 9 командам: `domain:new` → `allias:new`+`done`; `page:new` → `page:write`+`image:search`+`done`; `page:write` → `page:new`+`page:read`+`done`; `done` → `[]`. Полный граф — `Navigator::after()`.
+
+`next[]` фильтруется по whitelist роли.
 
 ## 4. Безопасная генерация контента (Компиляторы)
 
-⚠️ **AI НЕ ПИШЕТ PHP-КОД.** Он передаёт JSON-массив блоков через `page:write`, `block:write` или `filler:write`.
+⚠️ **AI не пишет PHP.** Отдаёт JSON через `page:write`/`block:write`/`filler:write`.
 
-**Поддерживаемые типы:** `h1`, `h2`, `h3`, `text`, `img`, `link`, `button`, `ul`, `nav`.
+**Типы блоков** (по `BlockCodegen`): базовые `h1`, `h2`, `h3`, `text`, `img`, `link`, `button`, `ul`, `nav`; Phase 4.2 расширила `section`, `div`. Точный список — `src/Ui/BlockCodegen.php`.
 **Атрибуты:** `class`, `id`, `style`, `url`, `alt`.
 
-*Особенность:* `PageCompiler` и `BlockCompiler` используют `Text::raw()` для безопасного вывода тегов `<a>` и `<strong>` (сгенерированных Markdown-парсером), но жестко фильтруют остальные теги (`strip_tags`), исключая XSS.
+**Builder** (`src/Ui/Builder.php`) — 12 методов: `el`, `elA`, `div`, `span`, `p`, `h`, `a`, `img`, `input`, `ul`, `li`, `button`. Нет `section`/`form`/`table`/`select`/`textarea`/`label`/`nav` — обход через `Builder::el($tag)` (P2, `arch.md` §6 п.4).
 
----
+**XSS:** `PageCompiler`/`BlockCodegen` используют `Text::raw()` для `<a>`/`<strong>`, жёстко фильтруя остальные теги. `allow_php_blocks=false` по умолчанию — блоки с сырым PHP запрещены.
 
 ## 5. AINET (Выход в интернет)
 
-Библиотека `src/Ainet/` позволяет AI искать картинки и получать данные. **AINET не пишет на диск** — он передаёт байты в CLI (`content:store`).
+Библиотека `src/Ainet/`. AINET не пишет на диск — передаёт байты в CLI (`content:store`).
 
-### Команды:
+### Команды
+
 - `net:status` — диагностика (провайдеры, лимиты, кэш).
-- `image:search` — поиск картинок (`--query="..." --count=5`). Провайдеры: `wikimedia` (default), `openverse` (fallback).
-- `image:download` — скачивание картинки в `/content/`. Возвращает `local_url`.
-- `fetch` — GET-запрос к API (`--url="..." --type=json|text`). **Единственная команда AINET без префикса `net:`** (исторически: реализована в `bin/ainet.php` до введения префиксов). В `Roles.php` whitelist — `'net:status', 'image:search', 'image:download', 'fetch'`. При расширении AINET — не переименовывать без обратной совместимости.
+- `image:search --query="..." --count=5` — поиск картинок. Провайдеры: `wikimedia` (default), `openverse` (fallback). Unsplash/Pexels — ключи в config пусты, провайдер не реализован.
+- `image:download --url="..." --domain=[d] --allias=[a] --category=[c]` — скачать в `/content/`. Возвращает `local_url`.
+- `fetch --url="..." --type=json|text` — GET-запрос. **Единственная команда без префикса `net:`** (исторически).
 
-### Безопасность (SSRF):
-- Только GET-запросы.
-- Whitelist URL-доменов в `config/ainet.config` (без wildcard). Независим от `agent.config`.
-- Блокировка private IP (`127.0.0.1`, `10.0.0.0/8`, AWS metadata `169.254.169.254` и т.д.).
-- Ручные редиректы (`CURLOPT_FOLLOWLOCATION=false`), повторный UrlGuard на каждый Location.
-- Rate limit: 30 req/min. Кэш: 7 дней.
+### SSRF-защита (`src/Ainet/UrlGuard.php`)
 
----
+10-шаговая валидация (в порядке):
+1. URL ≤ 4096 chars, парсится `parse_url`.
+2. Scheme ∈ `allowed_schemes` (config: `["https"]`; код default — `http,https`).
+3. Host не пустой.
+4. Нет `user:pass` в URL.
+5. Port ∈ `allowed_ports` (80, 443).
+6. Прямой IP → private IP check ДО whitelist.
+7. Host ∈ whitelist (точный матч, без wildcard).
+8. Query ≤ 2048.
+9. Hostname → DNS → private IP check.
+10. Fragment отрезается.
 
-## 6. Мультиагентная генерация (E2E)
+Редиректы — ручные (`CURLOPT_FOLLOWLOCATION=false`), повторный `UrlGuard` на каждый `Location`.
 
-Для автономной сборки используется Python-скрипт `ai_agent/brain.py`. Архитектура построена на паттерне Map-Reduce (очистка контекста LLM на каждом шаге):
+### Конфиг (`config/ainet.config`)
 
-1. **Architect (Structure):** Создает карту сайта, включая вложенные страницы (через параметр `parent`), и заголовки на языке брифа.
-2. **Plan Corrector (Validator):** Детерминированная функция `validate_plan()`. Исправляет ошибки нейросети (например, склеивание имен `care_guide_documentation` -> `documentation`) до отправки в CLI.
-3. **Builder:** Вызывает CLI для создания структуры папок (с учетом вложенности), блоков, меню и схемы. Меню автоматически строит правильные URL (например, `/care_guide/documentation`).
-4. **Content Workers (Markdown Mode):** LLM генерирует текст в формате Markdown. Python-парсер разбирает его на блоки, конвертирует Markdown-ссылки в безопасный HTML (`<a>`, `<strong>`) и скачивает картинки через AINET.
-5. **Modular Designer:** LLM анализирует классы и генерирует два CSS-файла: `main.css` (base + layout + стили центра) и `top.css` (меню). Отдельного `center.css` нет — центральные стили в `main.css`. Базовый layout (сетка, ограничение картинок) зашит в Python-код.
+- **Whitelist (11 доменов):** openverse, unsplash, pexels, wikimedia, wikipedia, github.
+- **Providers:** `default=wikimedia`, `keys.unsplash=""`, `keys.pexels=""`.
+- **Limits:** `max_size=25MB`, `max_redirects=3`, `rate_per_min=30`, `min_image_dimension=200`.
+- **Cache:** `cache_ttl_days=7`.
+- **MIME:** `image/jpeg`, `image/png`, `image/gif`, `image/webp`, `image/svg+xml`.
 
-**Запуск:**
+URL whitelist независим от domain whitelist (`agent.config`).
 
-    python -m ai_agent.brain <domain> <allias> "<brief|@file>" <model_name> [--session=ID]
+## 6. Мультиагентная генерация (brain.py)
 
----
+`ai_agent/brain.py` — Python-оркестратор Wizard. **Запуск — CLI или через Web UI (§7):**
+```
+python -m ai_agent.brain <domain> <allias> "<brief|@file>" <model> [--session=ID]
+```
 
-## 8.4. ModelRouter
+5 шагов (по логу):
+1. `[1/5] Wizard started` — инициализация, preflight.
+2. `[2/5] Architect is planning the structure...` — LLM генерирует `{pages: [{name, title, parent}]}`. name — английский, title — русский.
+3. `[*] Generating global widgets...` — LLM генерирует глобальные блоки (left/right/bottom/policy).
+4. `[3/5] Generating content (Markdown mode)...` — per-page контент через Markdown-парсер → JSON-блоки. + auto-detect форм (`needs_form`, `fields`).
+5. `[4/5] Designer is creating main.css...`, `[5/5] Designer is styling top.css...` — 2 CSS-файла (base+layout и меню).
 
+**Детерминированные функции** (не LLM):
+- `validate_plan(plan)` — topo sort, drop orphan parent, sanitize, cycle guard.
+- `_safe_href(url)` — валидация href перед `<a>` (блокирует `javascript:`, `data:`, `vbscript:`, `file:`, `//evil`).
+- `_sanitize_name(name)` — санитизация имени страницы (path traversal guard).
 
-- Выбор по роли из `config/models.config` (`ModelRouter::resolve($role)`).
-- Рекомендуемый расклад:
-  - `reporter` → `gemma4:e4b` (чат, брифы) — лучше говорит по-русски.
-  - `architect`, `designer` → `deepseek-coder:6.7b` (JSON, план) — точнее в структуре.
-- Приоритет выбора: `args['model']` → `ModelRouter` (только для `llm_provider=local`) → `agent.config.llm_model`.
+**Проверка без LLM:** `python _dev/smoketests/test_brain_safety.py` (23 теста).
 
-## 8.5. brain.py vs Orchestrator
+## 7. AI Wizard Web UI (алиас `agent`)
 
+Web UI — `app/[domain]/agent/algoritm/ajax/algoritm_ajax.php` (наследник `Damoony\Algoritm\Page`). 4 action:
 
-- Генерация сайта «с нуля» через `bin/aicli.php` + Ollama.
-- Не использует `Orchestrator` и `ModelRouter`.
-- Подробнее — §6 этого документа и `_doc/install.md`.
+### `action=chat`
+```
+POST {action: "chat", history: "[...]"}
+→ bin/aicli.php {command: "agent:chat", role: "*", args: {history}}
+→ JSON
+```
+Интервьюер. История — JS-массив `chatHistory` (браузер).
 
----
+### `action=generate`
+```
+POST {action: "generate", history: "[...]"}
+→ PHP: brief = "Клиент: ...\nДизайнер: ..." из history
+→ var/{session_id}_brief.txt
+→ Windows: var/{session_id}_run.bat + cmd /c start /B "..." 
+  Linux: nohup {python} -u -m ai_agent.brain {domain} auto @{brief_file} --session={session_id} > {log} 2>&1 &
+→ JSON {ok: true, session_id: "gen_XXXX"}
+```
+- `domain` — из `config/agent.config` (`target_domain`) или из `HTTP_HOST` (без `agent.`).
+- `allias=auto` — Python сам придумает.
+- `python` — из `config/agent.config` (`python_path`) или `python`.
+- Домен добавляется в `agent.config.allowed_domains` (авто).
 
----
+### `action=status`
+```
+POST {action: "status", session_id: "gen_XXXX"}
+→ читает var/{session_id}_brain.log
+→ парсит последнюю строку из [1/5]... [=>], -> Writing:
+→ JSON {ok, done: bool, status_text | link}
+```
+Маппинг → UI-статус:
+- `[1/5] Wizard started` → «Инициализация...»
+- `[2/5] Architect is planning...` → «Проектирование структуры...»
+- `[*] Generating global widgets...` → «Генерация виджетов...»
+- `[3/5] Generating content...` → «Генерация контента...»
+- `[4/5] Designer is creating main.css...` → «Создание стилей (main.css)...»
+- `[5/5] Designer is styling top.css...` → «Настройка навигации (top.css)...»
+- `[=>] All drafts collected...` → «Сборка файлов на диске...»
+- `-> Writing:` → «Написание текста для:»
+
+**Финал:** `Done! Total time:` + `SITE_URL: http...` → `{done: true, link: ...}`.
+
+**Ошибки:** `Fatal error` / `Aborting session` / «уже занят» → `{ok: false, error: "..."}`. Таймаут: лог 0 байт > 180 сек → «Модель не отвечает».
+
+### `action=cancel`
+```
+POST {action: "cancel", session_id: "gen_XXXX"}
+→ file_put_contents(var/{session_id}.cancel, "1")
+→ JSON {ok: true}
+```
+`brain.py` проверяет `.cancel` между задачами, при нахождении — `Aborting session` → status покажет `Отменено пользователем`.
+
+**Таймауты:** 600s (`php.ini max_execution_time`, `nginx.conf fastcgi_read_timeout`).
+
+**JS:** встроен в `algoritm_ajax.php` (не отдельный файл). `aiui.js` — это для AIUI (`/admin/aiui.php`), не для Wizard.
+
+## 8. ModelRouter и Orchestrator
+
+### 8.1 ModelRouter
+
+`src/Ai/ModelRouter.php` — выбор модели по роли. Приоритет: `roles[role]` → `default` → `qwen2.5-coder:7b`.
+
+`config/models.config` (трекается в git, секретов нет):
+- `default: "deepseek-coder:6.7b"`
+- `reporter: "gemma4:e4b"` (чат, брифы)
+- `architect: "deepseek-coder:6.7b"` (JSON, план)
+- `designer: "gemma4:e4b"` (JSON-блоки)
+- `parser/inspector/planner/executor/bundler/corrector: "deepseek-coder:6.7b"`
+
+Ключи с `_` (например `_readme`) игнорируются кодом.
+
+Приоритет в Orchestrator: `args['model']` → `ModelRouter::resolve($role)` → `agent.config.llm_model`.
+
+### 8.2 brain.py vs Orchestrator
+
+| Контур | Где | Вход | Выход | Модели |
+|---|---|---|---|---|
+| **aicli** | `bin/aicli.php` | JSON (stdin) | JSON (stdout) | Ollama/DeepSeek/Cloud (`agent.config`) |
+| **Orchestrator** | `src/Ai/Orchestrator/` | prompt (AIUI) | blocks → `.sess_*/context.json` | ModelRouter |
+| **brain.py** | `ai_agent/brain.py` | brief (CLI или `@file`) | страницы в `app/` | Ollama (deepseek/gemma) |
+
+Orchestrator — не CLI. Живёт в памяти PHP-запроса `POST /admin/ai_edit.php`, использует `AicliClient` (PHP-класс) для `bin/cli.php`. Состояние — `context.json` в `.sess_*`.
+
+brain.py — независимый Python-процесс, вызывает `bin/aicli.php` через subprocess. **Не связан** с Orchestrator. Детали — `orchestrator.md`.
 
 ## 9. Связанные документы
 
 - `_doc/orchestrator.md` — внутренний мультиагентный конвейер AIUI (Blackboard, AgentInterface, ModelRouter, 4 action AIUI, build_progress).
-- `_doc/aiui.md` — UI-документация (кнопки, панели, сессия).
+- `_doc/aiui.md` — UI-документация AIUI (кнопки, панели, сессия).
 - `_doc/arch.md` §4 — контракты Orchestrator и ModelRouter.
-- `_doc/dev.md` — как писать страницы/блоки (CLI).
+- `_doc/cli.md` — файловые команды (`bin/cli.php`), которые вызывает aicli.
+- `_doc/dev.md` — как писать страницы/блоки.

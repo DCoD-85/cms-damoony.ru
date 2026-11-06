@@ -2,7 +2,7 @@
 
 Лёгкий PHP 8.4 движок для мультидоменных сайтов с архитектурой CLI-First и нативной интеграцией AI-агентов.
 
-**Статус:** v3.1-dev (Multi-Agent Orchestrator + AIUI). Полное состояние — [`_doc/arch.md`](_doc/arch.md). Дорожная карта — [`_doc/v3.1-design.md`](_doc/v3.1-design.md).
+**Статус:** v3.1-dev (Multi-Agent Orchestrator + AIUI). Полное состояние — [`_doc/arch.md`](_doc/arch.md). Дорожная карта — [`_doc/dataprovider-design.md`](_doc/dataprovider-design.md).
 
 ---
 
