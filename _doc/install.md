@@ -35,7 +35,7 @@ php -r "var_dump(function_exists('curl_init'), function_exists('imagecreatetruec
 
 ## 3. Конфигурация (config/*.config)
 
-Все конфиги не коммитятся (они в `.gitignore`). Создаются копированием из примеров или вручную.
+Все конфиги не коммитятся (они в `.gitignore`), кроме `config/models.config` (трекается, секретов не содержит — см. §3.6). Создаются копированием из примеров или вручную.
 
 ### 3.1. `config/engine.config` — главный конфиг движка
 ```json
@@ -68,10 +68,10 @@ php -r "var_dump(function_exists('curl_init'), function_exists('imagecreatetruec
     "damoony.ru": "damoony_ru"
   },
   "alliases_real": {
-    "damoony.ru": { "www": "www", "doc": "doc" }
+    "damoony.ru": { "www": "www", "doc": "doc", "agent": "agent" }
   },
   "alliases_available": {
-    "damoony.ru": { "www": true, "doc": true }
+    "damoony.ru": { "www": true, "doc": true, "agent": true }
   },
   "alliases_langs": {
     "damoony.ru": { "www": ["ru"] }
@@ -245,4 +245,9 @@ python -m ai_agent.brain damoony3test.ru coffee "Сделай лендинг IT-
 ```bash
 php bin/cli.php structure:check
 ```
-Команда проверит наличие всех 3 файлов, корневых правил и схем. Ожидаемый результат: `✓ Все проверки пройдены успешно!`.
+Команда проверит наличие всех 3 файлов, корневых правил и схем.
+
+Возможные итоги:
+- **0 ошибок, 0 предупреждений:** `✓ Все проверки пройдены успешно!`, exit 0.
+- **0 ошибок, N предупреждений:** `Все критичные проверки пройдены, предупреждений: N`, exit 0.
+- **N ошибок:** `Ошибки:` + `✗ Найдено ошибок: N` + `FAILED`, exit 1.

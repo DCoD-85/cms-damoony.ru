@@ -95,7 +95,7 @@
 - AI не пишет сырой PHP. Используется безопасный JSON (PageCompiler/BlockCompiler).
 - **Сессии изолируют FS**: все операции записи AIUI (`page:new`, `page:write`) идут с `--session=X` и пишут только в `app/.sess_{tab}.{domain}/` и `www/media/.sess_{tab}.{domain}/`. Production (`app/[domain]/`) меняется только через `session:apply`. Без `--session` команда пишет в production (CLI-режим для разработчика).
 - Content: запись только через CLI. AINET не пишет на диск.
-- Skin: `skin:edit` разрешает только `css/main.css` и `js/main.js` (≤ 1 MB, без `@import`/`javascript:`).
+- Skin: `skin:edit` разрешает `css/*.css` и `js/main.js` (≤ 1 MB, без `@import`/`javascript:`).
 - AINET: только GET, scheme (http/https), port (80/443), блок private IP. Whitelist без wildcard.
 - **DataProvider — только через `bin/aicli.php`/`brain.py`.** Orchestrator (AIUI) не использует `db:*` (schema, call, mutate). Разделение сознательное: `db:*` — для wizard/bulk-генерации, не для пошагового редактирования в UI. См. `_doc/cli.md` §11 и `_doc/v3.1-design.md` §6.2.
 
