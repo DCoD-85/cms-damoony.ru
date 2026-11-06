@@ -33,6 +33,7 @@ final class FrontController
         ?string $aliasOverride = null,
         ?string $adminRole = null,
         ?\Damoony\Domain\DomainContext $adminDomainContext = null,
+        ?object $authOverride = null,
     ): Response {
         $resolver = $this->container->get(DomainResolverInterface::class);
         assert($resolver instanceof DomainResolverInterface);
@@ -78,10 +79,10 @@ final class FrontController
                 : ErrorPage::notFound($domain->language);
         }
 
-        $auth = $this->container->get(AuthInterface::class);
+        $auth = $authOverride instanceof AuthInterface ? $authOverride : $this->container->get(AuthInterface::class);
         assert($auth instanceof AuthInterface);
 
-        if ($match->auth && !$auth->isAuthenticated()) {
+        if ($adminRole === null && $match->auth && !$auth->isAuthenticated()) {
             return Response::redirect('/login?return=' . urlencode($request->path), 302);
         }
 

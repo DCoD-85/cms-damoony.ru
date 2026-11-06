@@ -97,7 +97,13 @@ try {
     View::setLang(new \Damoony\I18n\Translator($currentLang, $defaultLang));
     View::setAvailableLangs(array_values($adminLangs));
 
+    
+    $app = \Damoony\App\AppFactory::create($root);
+    $container = $app->container();
+    $pages = $container->get(\Damoony\App\PageHandlerInterface::class);
+    assert($pages instanceof \Damoony\App\PageHandlerInterface);
     $paths = new Paths($root);
+
 
     // --- ИНИЦИАЛИЗАЦИЯ БД ДЛЯ АДМИНКИ ---
     $dbConfig = $engineConfig->getByKey(['db'], []);
@@ -167,10 +173,52 @@ try {
         whitelist: $rlWhitelist,
     ));
 
-    $handler = static fn (Request $r) => $stack->dispatch(
-        $r,
-        static fn (Request $r2) => $router->dispatch($r2),
-    );
+    $handler = static function (Request $r) use ($stack, $router, $auth, $container, $pages) {
+        return $stack->dispatch($r, static function (Request $r2) use ($router, $auth, $container, $pages) {
+            // Если не авторизован — отдаем старому роутеру (он покажет логин)
+            if (!$auth->isLoggedIn()) {
+                return $router->dispatch($r2);
+            }
+
+            // Получаем контекст из сессии или ставим дефолт (superadmin)
+            $ctxDomain = $_SESSION['admin_context']['domain'] ?? 'damoony.ru';
+            $ctxAlias  = $_SESSION['admin_context']['alias'] ?? 'www';
+            $ctxRole   = $_SESSION['admin_context']['role'] ?? 'superadmin';
+
+            // Создаем DomainContext через резолвер
+            $resolver = $container->get(\Damoony\Domain\DomainResolverInterface::class);
+            $domainContext = $resolver->resolve($ctxDomain);
+            if ($ctxAlias !== $domainContext->allias) {
+                $domainContext = $domainContext->withAllias($ctxAlias);
+            }
+
+            // Пытаемся найти новый файл в app/.admin/
+            try {
+                $path = $r2->path;
+                if (str_starts_with($path, '/admin')) {
+                    $path = substr($path, 6);
+                }
+                if ($path === '') {
+                    $path = '/';
+                }
+
+                $adminRequest = $r2->withPath($path);
+                $fc = new \Damoony\App\FrontController($container, $pages);
+                
+                $response = $fc->handle($adminRequest, null, null, $ctxRole, $domainContext, $auth);
+                
+                // Если новый роутер нашел файл, отдаем его
+                if ($response->status !== 404) {
+                    return $response;
+                }
+            } catch (\Throwable $e) {
+                // В случае ошибки нового роутера падаем в старый
+            }
+
+            // Если файла нет — отдаем старому роутеру
+            return $router->dispatch($r2);
+        });
+    };
 
     $kernel = new Kernel($handler, $logger, $env);
     $response = $kernel->handle(Request::fromGlobals());
