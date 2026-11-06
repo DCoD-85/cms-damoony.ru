@@ -22,7 +22,7 @@
 
 ## 2. Домены и Алиасы
 
-- `domain:new --domain=[fqdn]` — создаёт папку домена, алиас `www`, глобальную схему, root-страницу.
+- `domain:new --domain=[fqdn] [--namespace=...]` — создаёт папку домена, алиас `www`, глобальную схему, root-страницу. `--namespace` опционален (default — `str_replace(['.','-'], '_', domain)`), regex `^[a-z][a-z0-9_]*$`.
 - `domain:remove --domain=[fqdn] --force` — в карантин. Полная очистка конфига (16 ключей). Idempotent.
 - `domain:list` — список реальных доменов (без `''`).
 - `allias:new --domain=[fqdn] --name=[allias]` — создаёт алиас (root-страницу через PageCompiler + дефолтную схему).
@@ -60,7 +60,7 @@
 
 ## 6. Контент (Content — `/content/`)
 
-- `content:store --domain=[d] --allias=[a] --category=[c] --data_b64=[b] --mime=image/png [--alt=...]` — запись байтов (вызывается из `aicli.php`). Валидация: MIME, ≤ 10 MB, ≥ 200×200. Дедупликация по hash.
+- `content:store --domain=[d] --allias=[a] --category=[c] (--data_b64=[b] | --data_file=[path]) --mime=image/png [--alt=...]` — запись байтов (вызывается из `aicli.php`). Приоритет у `--data_file` над `--data_b64`. Валидация: MIME, ≤ 10 MB, ≥ 200×200. Дедупликация по hash.
 - `content:remove --domain=[d] --allias=[a] --category=[c] --hash=[h] --force` — в карантин (`/content/.trash/`).
 - `content:list --domain=[d] [--allias=...] [--category=...]` — список (mime, size, page_refs).
 - `content:gc [--force] [--older=...] [--domain=...]` — поиск orphan-контента и отправка в карантин.
@@ -113,12 +113,12 @@
 
 ### 11.2. Invocation (безопасный вызов)
 
-- `db:call --domain=[d] --alias=[a] --provider=[p] --method=[m] --params='{}'` — read-only метод (whitelist шаблонов `select_by`, `select_where`, `select_all`, `count`, `exists`, `aggregate`, `join_select`, `group_by_count`, `sum_by`). Dry-run не требуется.
-- `db:mutate --domain=[d] --alias=[a] --provider=[p] --method=[m] --params='{}' --force` — write-метод (`insert`, `update`, `delete`). **Требует `--force`.** Каждый вызов логируется в `audit_log` (`domain`, `alias_name`, `provider`, `method`, `params_json`, `result_ok`, `error_text`, `source=cli`, `role_name`).
+- `db:call --domain=[d] --alias=[a] --provider=[p] --method=[m] --params='{}'` — read-only метод. Реализованные шаблоны: `select_where` (остальные — Phase 4.8, см. `v3.1-design.md` §4). Dry-run не требуется.
+- `db:mutate --domain=[d] --alias=[a] --provider=[p] --method=[m] --params='{}' --force` — write-метод. Реализован шаблон `insert` (`update`/`delete` — Phase 4.8). **Требует `--force`.** Каждый вызов логируется в `audit_log` (`domain`, `alias_name`, `provider`, `method`, `params_json`, `result_ok`, `error_text`, `source=cli`, `role_name`).
 
 ### 11.3. Генерация методов (templates only)
 
-- `dataprovider:add-method --domain=[d] --alias=[a] --provider=[p] --template=[t] --args='{}'` — генерирует метод из шаблона (шаблоны: см. `v3.1-design.md` §4, реализован `select_where`). AI не пишет PHP — генерируется шаблон с PDO named params.
+- `dataprovider:add-method --domain=[d] --alias=[a] --provider=[p] --template=[t] --args='{}'` — генерирует метод из шаблона (реализованы `select_where`, `insert`; остальные — Phase 4.8). AI не пишет PHP — генерируется шаблон с PDO named params.
 
 ### 11.4. Роли (в `bin/aicli.php`, см. `v3.1-design.md` §6.2)
 
