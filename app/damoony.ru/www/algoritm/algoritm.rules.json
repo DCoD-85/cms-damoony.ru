@@ -1,7 +1,8 @@
 {
     "available": [
         "",
-        "about"
+        "about",
+		"ui"
     ],
     "auth": false,
     "search": false,
