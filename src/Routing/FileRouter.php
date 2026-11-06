@@ -17,11 +17,13 @@ final class FileRouter implements RouterInterface
     ) {
     }
 
-    public function match(string $path, DomainContext $domain, ?string $sessionId = null): RouteMatch
+    public function match(string $path, DomainContext $domain, ?string $sessionId = null, ?string $adminRole = null): RouteMatch
     {
         $segments = $this->segments($path);
 
-        if ($sessionId !== null) {
+        if ($adminRole !== null) {
+            $base = $this->appRoot . '/app/.admin/' . $adminRole . '/algoritm';
+        } elseif ($sessionId !== null) {
             $base = $this->appRoot . '/app/.sess_' . $sessionId . '.' . $domain->real . '/' . $domain->allias . '/algoritm';
         } else {
             $base = $this->appRoot . '/app/' . $domain->real . '/' . $domain->allias . '/algoritm';
@@ -53,6 +55,17 @@ final class FileRouter implements RouterInterface
 
             if ($rules === null) {
                 return RouteMatch::notFound();
+            }
+
+            if (!empty($rules['terminate'])) {
+                $remaining = array_slice($segments, $i);
+                foreach ($remaining as $part) {
+                    $kv = explode(':', $part, 2);
+                    if (count($kv) === 2) {
+                        $args[$kv[0]] = $kv[1];
+                    }
+                }
+                break;
             }
 
             $matched = $this->matcher->matchSegment($segment, $rules);

@@ -8,5 +8,5 @@ use Damoony\Domain\DomainContext;
 
 interface RouterInterface
 {
-    public function match(string $path, DomainContext $domain, ?string $sessionId = null): RouteMatch;
+    public function match(string $path, DomainContext $domain, ?string $sessionId = null, ?string $adminRole = null): RouteMatch;
 }

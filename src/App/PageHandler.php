@@ -26,7 +26,7 @@ final class PageHandler implements PageHandlerInterface
     ) {
     }
 
-    public function handle(RouteMatch $match, RegionContext $context): Response
+    public function handle(RouteMatch $match, RegionContext $context, ?string $adminRole = null): Response
     {
         $sessionIdRaw = $context->service('session_id');
         $sessionId = is_string($sessionIdRaw) && $sessionIdRaw !== '' ? $sessionIdRaw : null;
@@ -35,13 +35,17 @@ final class PageHandler implements PageHandlerInterface
         }
 
         $domain = $context->domain;
-        $file = $this->path($domain, $match->pathRel, $match->classChain, $sessionId);
+        $file = $this->path($domain, $match->pathRel, $match->classChain, $sessionId, $adminRole);
         if (!is_file($file)) {
             return Response::notFound();
         }
 
-        $ns = $this->resolver->namespace($domain->real);
-        $class = $ns . '\\' . $domain->allias . '\\' . $match->classChain;
+        if ($adminRole !== null) {
+            $class = 'Damoony\\Admin\\Pages\\' . $adminRole . '\\' . $match->classChain;
+        } else {
+            $ns = $this->resolver->namespace($domain->real);
+            $class = $ns . '\\' . $domain->allias . '\\' . $match->classChain;
+        }
 
         if (!class_exists($class, false)) {
             require_once $file;
@@ -79,8 +83,14 @@ final class PageHandler implements PageHandlerInterface
         }
     }
 
-    private function path(DomainContext $domain, string $pathRel, string $classChain, ?string $sessionId = null): string
+    private function path(DomainContext $domain, string $pathRel, string $classChain, ?string $sessionId = null, ?string $adminRole = null): string
     {
+        if ($adminRole !== null) {
+            return rtrim($this->appRoot, '/') . '/app/.admin/' . $adminRole . '/algoritm'
+                . ($pathRel === '' ? '' : '/' . $pathRel)
+                . '/' . $classChain . '.php';
+        }
+
         $domainDir = $sessionId !== null
             ? '/app/.sess_' . $sessionId . '.' . $domain->real
             : '/app/' . $domain->real;

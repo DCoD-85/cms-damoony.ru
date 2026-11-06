@@ -10,5 +10,5 @@ use Damoony\Routing\RouteMatch;
 
 interface PageHandlerInterface
 {
-    public function handle(RouteMatch $match, RegionContext $context): Response;
+    public function handle(RouteMatch $match, RegionContext $context, ?string $adminRole = null): Response;
 }

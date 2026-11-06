@@ -31,12 +31,19 @@ final class FrontController
         Request $request,
         ?string $sessionId = null,
         ?string $aliasOverride = null,
+        ?string $adminRole = null,
+        ?\Damoony\Domain\DomainContext $adminDomainContext = null,
     ): Response {
         $resolver = $this->container->get(DomainResolverInterface::class);
         assert($resolver instanceof DomainResolverInterface);
 
-        $host = (string) ($request->header('host') ?? $request->server['SERVER_NAME'] ?? '');
-        $domain = $resolver->resolve($host);
+        $host = '';
+        if ($adminDomainContext !== null) {
+            $domain = $adminDomainContext;
+        } else {
+            $host = (string) ($request->header('host') ?? $request->server['SERVER_NAME'] ?? '');
+            $domain = $resolver->resolve($host);
+        }
 
         if ($aliasOverride !== null && $aliasOverride !== '' && $aliasOverride !== $domain->allias) {
             $domain = $domain->withAllias($aliasOverride);
@@ -64,7 +71,7 @@ final class FrontController
         $router = $this->container->get(RouterInterface::class);
         assert($router instanceof RouterInterface);
 
-        $match = $router->match($request->path, $domain, $sessionId);
+        $match = $router->match($request->path, $domain, $sessionId, $adminRole);
         if (!$match->found) {
             return $match->code === 403
                 ? ErrorPage::forbidden($domain->language)
@@ -102,6 +109,6 @@ final class FrontController
             'session_id' => $sessionId,
         ]);
 
-        return $this->pages->handle($match, $context);
+        return $this->pages->handle($match, $context, $adminRole);
     }
 }
