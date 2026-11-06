@@ -192,6 +192,7 @@ if ($this->isAuthenticated()) {
 | Файл | Назначение |
 |---|---|
 | `_dev/smoketests/test_brain_safety.py` | 23 теста, встроенный плейн-раннер |
+| `_dev/smoketests/test_brain_forms.py` | Smoke-тесты auto-detect форм (Phase 4.5) |
 | `_dev/smoketests/requirements.txt` | `pytest>=7.0` (опционально) |
 
 ### 8.2. Запуск без зависимостей (рекомендуется)

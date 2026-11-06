@@ -29,8 +29,11 @@
 4. `_doc/dev.md` — how-to: страница (A/B), блок, схема, скин, контент, компиляция.
 5. `_doc/ai.md` — aicli (HATEOAS, роли, Navigator), AINET (SSRF, провайдеры), мультиагентная генерация (`brain.py`), Markdown-парсер и валидатор.
 6. `_doc/aiui.md` — AIUI (AI-редактор страниц), ai:edit-page, BlockCodegen.
-7. `_doc/install.md` — развёртывание (только установка с нуля).
-8. `_doc/admin.md` — UI админки (что можно, что только через CLI).
+7. `_doc/orchestrator.md` — внутренний мультиагентный конвейер (Blackboard, AgentInterface, ModelRouter).
+8. `_doc/install.md` — развёртывание (только установка с нуля).
+9. `_doc/admin.md` — UI админки (что можно, что только через CLI).
+10. `_doc/v3.1-design.md` — актуальный roadmap (DataProvider + Introspection).
+11. `_doc/roadmap.md` — исторический roadmap v3.0.0 (частично superseded by v3.1-design.md).
 
 ---
 
@@ -44,6 +47,7 @@
 | `dev.md` | Как писать страницу/блок/схему/скин/контент | Установку, UI, per-command флаги |
 | `ai.md` | aicli-контракт, роли, Navigator, AINET, мультиагентная генерация | Установку, UI, per-command флаги |
 | `aiui.md` | AIUI (чат + превью), ai:edit-page, BlockCodegen | Внутренности LLM, установку |
+| `orchestrator.md` | Внутренний мультиагентный конвейер AIUI (Blackboard, State Machine, ModelRouter) | Внешний aicli, brain.py |
 | `install.md` | Требования, конфиги, веб-сервер, первый запуск, проверка | How-to разработчика, историю миграций |
 | `admin.md` | UI админки + делегирование CLI | Per-command флаги (ссылка в CLI) |
 | `README.md` (корень) | Обзор, стек, быстрый старт, ссылки | Метрики (ссылка), историю |
@@ -69,9 +73,9 @@
 
     "/e/localserver/tools/php/php.exe" -c "/e/localserver/tools/php/php.ini" bin/cli.php [команда]
 
-Для удобства — алиас в `~/.bashrc`:
+Для удобства — алиас в `~/.bashrc` (с `-c`, чтобы совпадало с командой выше):
 
-    alias php='/e/localserver/tools/php/php.exe'
+    alias php='/e/localserver/tools/php/php.exe -c /e/localserver/tools/php/php.ini'
 
 #### Управление сервером
 

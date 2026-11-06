@@ -65,7 +65,7 @@ ArchitectAgent (создает pages[]) ──> CoderAgent (генерирует
 
 Read-only снимок окружения до вызова LLM. Через AicliClient::runJson():
 - `structure:check --domain=X` — ошибки структуры (фильтруются state machine по домену).
-- `db:schema --domain=X --alias=Y` — имена таблиц (без колонок — экономия контекста LLM).
+- `db:schema --domain=X --alias=Y` — CLI возвращает таблицы **с колонками** (`information_schema.COLUMNS`); `ToolsCollector` оставляет только `name` (экономия контекста LLM).
 
 Возвращает массив:
 - structure_ok (bool)
