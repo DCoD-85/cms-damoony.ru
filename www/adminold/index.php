@@ -97,7 +97,7 @@ try {
     View::setLang(new \Damoony\I18n\Translator($currentLang, $defaultLang));
     View::setAvailableLangs(array_values($adminLangs));
 
-    
+
     $app = \Damoony\App\AppFactory::create($root);
     $container = $app->container();
     $pages = $container->get(\Damoony\App\PageHandlerInterface::class);
@@ -204,9 +204,9 @@ try {
 
                 $adminRequest = $r2->withPath($path);
                 $fc = new \Damoony\App\FrontController($container, $pages);
-                
+
                 $response = $fc->handle($adminRequest, null, null, $ctxRole, $domainContext, $auth);
-                
+
                 // Если новый роутер нашел файл, отдаем его
                 if ($response->status !== 404) {
                     return $response;

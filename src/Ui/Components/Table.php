@@ -1,6 +1,9 @@
 <?php
+
 declare(strict_types=1);
+
 namespace Damoony\Ui\Components;
+
 use Damoony\Ui\Element;
 use Damoony\Ui\Node;
 
@@ -10,7 +13,9 @@ class Table extends Element
     {
         parent::__construct('table');
         $this->attrs()->classAdd('ui-table');
-        if ($class !== '') $this->attrs()->classAdd($class);
+        if ($class !== '') {
+            $this->attrs()->classAdd($class);
+        }
     }
     public function add(Node $child): self
     {

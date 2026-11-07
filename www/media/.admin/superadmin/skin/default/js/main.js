@@ -147,3 +147,59 @@ document.addEventListener('DOMContentLoaded', () => {
         loadPage(window.location.href, false);
     });
 });
+
+// Обработчик для переключателей статуса домена
+document.addEventListener('change', async (e) => {
+    if (e.target.matches('.ui-toggle input[type="checkbox"]')) {
+        const checkbox = e.target;
+        const domain = checkbox.getAttribute('data-domain');
+        const lang = checkbox.getAttribute('data-lang');
+        const isChecked = checkbox.checked;
+
+        // Визуальная блокировка на время запроса
+        checkbox.disabled = true;
+
+        try {
+            const formData = new URLSearchParams();
+            formData.append('domain', domain);
+            formData.append('active', isChecked ? 'true' : 'false');
+
+            const response = await fetch(`/admin/${lang}/domains/toggle`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData.toString()
+            });
+
+            const text = await response.text();
+            let result;
+            
+            try {
+                result = JSON.parse(text);
+            } catch (err) {
+                throw new Error('Сервер вернул ошибку (не JSON): ' + text.substring(0, 100));
+            }
+            
+            if (!result.ok) {
+                throw new Error(result.error || 'Unknown error');
+            }
+            
+            // Визуальный успех (зеленая рамка на секунду)
+            const row = checkbox.closest('tr');
+            if (row) {
+                row.style.backgroundColor = '#e6f9e6';
+                setTimeout(() => { row.style.backgroundColor = ''; }, 1000);
+            }
+            
+        } catch (error) {
+            console.error('Toggle failed:', error);
+            // Откатываем состояние обратно при ошибке
+            checkbox.checked = !isChecked;
+            alert('Ошибка сохранения: ' + error.message);
+        } finally {
+            checkbox.disabled = false;
+        }
+    }
+});

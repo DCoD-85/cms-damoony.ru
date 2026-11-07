@@ -1,8 +1,11 @@
 <?php
+
 declare(strict_types=1);
+
 namespace Damoony\Ui\Components;
-use Damoony\Ui\Element;
+
 use Damoony\Ui\Builder;
+use Damoony\Ui\Element;
 use Damoony\Ui\Node;
 
 class Form extends Element
@@ -13,8 +16,10 @@ class Form extends Element
     {
         parent::__construct('div');
         $this->attrs()->classAdd('form_box');
-        if ($class !== '') $this->attrs()->classAdd($class);
-        
+        if ($class !== '') {
+            $this->attrs()->classAdd($class);
+        }
+
         $this->formNode = Builder::el('form');
         $this->formNode->attrs()->classAdd('form_form');
         parent::append($this->formNode);

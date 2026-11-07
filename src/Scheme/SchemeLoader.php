@@ -24,7 +24,7 @@ final class SchemeLoader
     public function load(DomainContext $domain, string $schemeName = 'www'): array
     {
         $appRoot = rtrim($this->paths->root(), '/') . '/app';
-        
+
         if ($this->adminRole !== null) {
             $baseDir = $appRoot . '/.admin/' . $this->adminRole . '/.alliasscheme/';
         } else {

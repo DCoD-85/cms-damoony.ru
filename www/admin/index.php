@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
+use Damoony\Admin\Auth;
 use Damoony\App\AppFactory;
 use Damoony\App\FrontController;
 use Damoony\App\PageHandlerInterface;
-use Damoony\Http\Request;
-use Damoony\Domain\DomainResolverInterface;
-use Damoony\Session\NativeSession;
-use Damoony\Admin\Auth;
 use Damoony\Core\Config;
+use Damoony\Domain\DomainResolverInterface;
+use Damoony\Http\Request;
+use Damoony\Session\NativeSession;
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 $root = dirname(__DIR__, 2);
@@ -57,5 +57,5 @@ try {
     $response->send();
 } catch (\Throwable $e) {
     http_response_code(500);
-    echo "<h1>Admin Error</h1><pre>" . htmlspecialchars($e->getMessage()) . "</pre>";
+    echo '<h1>Admin Error</h1><pre>' . htmlspecialchars($e->getMessage()) . '</pre>';
 }

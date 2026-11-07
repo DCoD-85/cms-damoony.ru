@@ -1,6 +1,9 @@
 <?php
+
 declare(strict_types=1);
+
 namespace Damoony\Ui\Components;
+
 use Damoony\Ui\Element;
 
 class Textarea extends Element
@@ -10,7 +13,11 @@ class Textarea extends Element
         parent::__construct('textarea');
         $this->attrs()->classAdd('ui-textarea');
         $this->attrs()->add('rows', (string) $rows);
-        if ($name !== '') $this->attrs()->add('name', $name);
-        if ($value !== '') $this->content($value);
+        if ($name !== '') {
+            $this->attrs()->add('name', $name);
+        }
+        if ($value !== '') {
+            $this->content($value);
+        }
     }
 }

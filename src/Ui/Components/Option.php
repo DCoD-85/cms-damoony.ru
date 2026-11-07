@@ -1,6 +1,9 @@
 <?php
+
 declare(strict_types=1);
+
 namespace Damoony\Ui\Components;
+
 use Damoony\Ui\Element;
 
 class Option extends Element
@@ -9,7 +12,9 @@ class Option extends Element
     {
         parent::__construct('option');
         $this->attrs()->add('value', $value);
-        if ($selected) $this->attrs()->add('selected', 'selected');
+        if ($selected) {
+            $this->attrs()->add('selected', 'selected');
+        }
         $this->content($text);
     }
 }

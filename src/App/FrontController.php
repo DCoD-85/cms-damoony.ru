@@ -55,7 +55,8 @@ final class FrontController
             return ErrorPage::notFound($domain->language);
         }
 
-        if (!$domain->available && !str_starts_with($request->path, '/admin')) {
+        // Показываем заглушку только для публичного сайта (не для админки)
+        if ($adminRole === null && !$domain->available && !str_starts_with($request->path, '/admin')) {
             $paths = $this->container->has(Paths::class) ? $this->container->get(Paths::class) : null;
 
             if ($paths instanceof Paths) {
