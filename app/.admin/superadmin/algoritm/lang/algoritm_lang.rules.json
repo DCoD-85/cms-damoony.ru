@@ -1,0 +1,8 @@
+{
+    "auth": true,
+    "available": [
+        "dashboard",
+        "profile",
+        "domains"
+    ]
+}

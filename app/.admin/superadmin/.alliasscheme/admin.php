@@ -9,15 +9,22 @@ return [
             'class' => 'admin-sidebar',
             'children' => [
                 ['tag' => 'div', 'class' => 'admin-logo', 'content' => 'Damoony Admin'],
-                ['tag' => 'div', 'slot' => 'menu'],
+                ['tag' => 'div', 'slot' => 'menu', 'attrs' => ['data-slot' => 'menu']],
             ]
         ],
         [
             'tag' => 'div',
             'class' => 'admin-main',
             'children' => [
-                ['tag' => 'div', 'class' => 'admin-header', 'slot' => 'title'],
-                ['tag' => 'div', 'class' => 'admin-content', 'slot' => 'center'],
+                [
+                    'tag' => 'div', 
+                    'class' => 'admin-header d-flex justify-content-between align-items-center', 
+                    'children' => [
+                        ['tag' => 'div', 'slot' => 'title', 'attrs' => ['data-slot' => 'title']],
+                        ['tag' => 'div', 'slot' => 'lang', 'attrs' => ['data-slot' => 'lang']]
+                    ]
+                ],
+                ['tag' => 'div', 'class' => 'admin-content', 'slot' => 'center', 'attrs' => ['data-slot' => 'center']],
             ]
         ]
     ],

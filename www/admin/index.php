@@ -2,242 +2,60 @@
 
 declare(strict_types=1);
 
-use Damoony\Admin\AdminRouter;
-use Damoony\Admin\Auth;
-use Damoony\Admin\Controller\AliasDbController;
-use Damoony\Admin\Controller\AliasSchemeController;
-use Damoony\Admin\Controller\AlliasController;
-use Damoony\Admin\Controller\BaseController;
-use Damoony\Admin\Controller\DashboardController;
-use Damoony\Admin\Controller\DomainController;
-use Damoony\Admin\Controller\EditorController;
-use Damoony\Admin\Controller\LoginController;
-use Damoony\Admin\Controller\LogoutController;
-use Damoony\Admin\Controller\OverviewController;
-use Damoony\Admin\Controller\ProfileController;
-use Damoony\Admin\Controller\SecurityController;
-use Damoony\Admin\Controller\StubController;
-use Damoony\Admin\View;
-use Damoony\Core\Config;
-use Damoony\Core\Env;
-use Damoony\Core\ErrorHandler;
-use Damoony\Core\Logger;
-use Damoony\Files\Paths;
-use Damoony\Http\Kernel;
-use Damoony\Http\Middleware\RateLimitMiddleware;
-use Damoony\Http\Middleware\SecurityHeadersMiddleware;
-use Damoony\Http\MiddlewareStack;
+use Damoony\App\AppFactory;
+use Damoony\App\FrontController;
+use Damoony\App\PageHandlerInterface;
 use Damoony\Http\Request;
-use Damoony\Security\Csrf;
+use Damoony\Domain\DomainResolverInterface;
 use Damoony\Session\NativeSession;
+use Damoony\Admin\Auth;
+use Damoony\Core\Config;
 
+require_once __DIR__ . '/../../vendor/autoload.php';
 $root = dirname(__DIR__, 2);
-if (is_file($root . '/_dev/.dev')) {
-    putenv('APP_ENV=dev');
+
+$app = AppFactory::create($root);
+$container = $app->container();
+
+$adminConfig = Config::fromFile($root . '/config/admin.config');
+$session = new NativeSession('ADMINSESSID', ($_SERVER['HTTPS'] ?? '') === 'on');
+$session->start();
+
+$auth = new Auth(
+    adminConfig: $adminConfig,
+    session: $session,
+    failsFile: $root . '/var/admin_fails.json',
+    logsFile: $root . '/var/admin_logs.json',
+    ip: (string) ($_SERVER['REMOTE_ADDR'] ?? ''),
+);
+
+$pages = $container->get(PageHandlerInterface::class);
+$req = Request::fromGlobals();
+
+$ctxRole = $_SESSION['admin_context']['role'] ?? 'superadmin';
+$ctxDomain = $_SESSION['admin_context']['domain'] ?? 'damoony.ru';
+$ctxAlias = $_SESSION['admin_context']['alias'] ?? 'www';
+
+$resolver = $container->get(DomainResolverInterface::class);
+$domainContext = $resolver->resolve($ctxDomain);
+if ($ctxAlias !== $domainContext->allias) {
+    $domainContext = $domainContext->withAllias($ctxAlias);
 }
 
-require_once $root . '/vendor/autoload.php';
+$path = $req->path;
+if (str_starts_with($path, '/admin')) {
+    $path = substr($path, 6);
+}
+if ($path === '') {
+    $path = '/';
+}
+$adminRequest = $req->withPath($path);
 
 try {
-    $env = Env::fromServer();
-
-    $adminConfigFile = $root . '/config/admin.config';
-    $adminConfig = is_file($adminConfigFile) ? Config::fromFile($adminConfigFile) : Config::fromArray([]);
-
-    $siteConfigFile = $root . '/config/site.config';
-    $siteConfig = is_file($siteConfigFile) ? Config::fromFile($siteConfigFile) : Config::fromArray([]);
-
-    $engineConfigFile = $root . '/config/engine.config';
-    $engineConfig = is_file($engineConfigFile) ? Config::fromFile($engineConfigFile) : Config::fromArray([]);
-
-    $logger = new Logger(null, $env);
-    $errorHandler = new ErrorHandler($logger, $env);
-    $errorHandler->register();
-
-    $session = new NativeSession('ADMINSESSID', ($_SERVER['HTTPS'] ?? '') === 'on');
-    $session->start();
-
-    $csrf = new Csrf($session);
-    $auth = new Auth(
-        adminConfig: $adminConfig,
-        session: $session,
-        failsFile: $root . '/var/admin_fails.json',
-        logsFile: $root . '/var/admin_logs.json',
-        ip: (string) ($_SERVER['REMOTE_ADDR'] ?? ''),
-    );
-
-    $view = new View('Damoony Admin');
-    \Damoony\Admin\View::setLoggedIn($auth->isLoggedIn());
-
-    $adminLangs = $adminConfig->get('domains_langs', ['ru']);
-    if (!is_array($adminLangs) || $adminLangs === []) {
-        $adminLangs = ['ru'];
-    }
-    $defaultLang = (string) $adminConfig->get('default_lang', 'ru');
-    if (!in_array($defaultLang, $adminLangs, true)) {
-        $defaultLang = (string) $adminLangs[0];
-    }
-
-    $reqLang = (string) ($_GET['lang'] ?? '');
-    if ($reqLang !== '' && in_array($reqLang, $adminLangs, true)) {
-        if (!headers_sent()) {
-            setcookie('admin_lang', $reqLang, [
-                'expires' => time() + 86400 * 365,
-                'path' => '/',
-                'httponly' => false,
-                'samesite' => 'Lax',
-            ]);
-        }
-        $currentLang = $reqLang;
-    } else {
-        $cookieLang = (string) ($_COOKIE['admin_lang'] ?? '');
-        $currentLang = in_array($cookieLang, $adminLangs, true) ? $cookieLang : $defaultLang;
-    }
-
-    View::setLang(new \Damoony\I18n\Translator($currentLang, $defaultLang));
-    View::setAvailableLangs(array_values($adminLangs));
-
-    
-    $app = \Damoony\App\AppFactory::create($root);
-    $container = $app->container();
-    $pages = $container->get(\Damoony\App\PageHandlerInterface::class);
-    assert($pages instanceof \Damoony\App\PageHandlerInterface);
-    $paths = new Paths($root);
-
-
-    // --- ИНИЦИАЛИЗАЦИЯ БД ДЛЯ АДМИНКИ ---
-    $dbConfig = $engineConfig->getByKey(['db'], []);
-    if (!is_array($dbConfig) || $dbConfig === []) {
-        $dbConfig = ['driver' => 'sqlite', 'path' => $root . '/var/damoony.db'];
-    } elseif (($dbConfig['driver'] ?? '') === 'sqlite' && isset($dbConfig['path'])) {
-        $path = (string) $dbConfig['path'];
-        if (!str_starts_with($path, '/') && !preg_match('/^[a-zA-Z]:[\\\\\/]/', $path)) {
-            $dbConfig['path'] = $root . '/' . ltrim($path, '/\\');
-        }
-    }
-    $db = new \Damoony\Db\Connection($dbConfig);
-    // ------------------------------------
-
-    $router = new AdminRouter();
-    $router->register('login', new LoginController($auth, $csrf, $view));
-    $router->register('logout', new LogoutController($auth, $csrf, $view));
-    $router->register('dashboard', new DashboardController($auth, $csrf, $view, $siteConfig));
-    $router->register('domain', new DomainController($auth, $csrf, $view, $paths, $siteConfig));
-    $router->register('allias', new AlliasController($auth, $csrf, $view, $paths, $siteConfig));
-    $router->register('block', new \Damoony\Admin\Controller\BlockController($auth, $csrf, $view, $paths));
-    $router->register('page', new \Damoony\Admin\Controller\PageController($auth, $csrf, $view, $paths));
-    $router->register('filler', new \Damoony\Admin\Controller\FillerController($auth, $csrf, $view, $paths, $siteConfig));
-    $router->register('scheme', new \Damoony\Admin\Controller\SchemeController($auth, $csrf, $view, $paths));
-    $router->register('media', new \Damoony\Admin\Controller\MediaController($auth, $csrf, $view, $root));
-    $router->register('settings', new \Damoony\Admin\Controller\SettingsController($auth, $csrf, $view, $siteConfig, $root));
-    $router->register('editor', new EditorController($auth, $csrf, $view, $root));
-
-    $router->register('domain_db', new class ($auth, $csrf, $view) extends BaseController {
-        public function index(\Damoony\Http\Request $request): \Damoony\Http\Response
-        {
-            $domain = (string) $request->query('domain', '');
-            $card = \Damoony\Ui\Builder::div('admin-card');
-            $card->append(\Damoony\Ui\Builder::h(1)->content('База данных домена: ' . $domain));
-            $card->append(\Damoony\Admin\View::domainTabs($domain, 'db'));
-            $card->append(\Damoony\Ui\Message::info('Раздел находится в разработке.')->build());
-            return \Damoony\Http\Response::html($this->view->render($card, ['title' => 'БД домена']));
-        }
-    });
-
-    $router->register('allias_scheme', new AliasSchemeController($auth, $csrf, $view, $paths, $siteConfig));
-    $router->register('allias_db', new AliasDbController($auth, $csrf, $view, $engineConfig, $db));
-    $router->register('stub', new StubController($auth, $csrf, $view, $paths));
-    $router->register('security', new SecurityController($auth, $csrf, $view, $paths, $engineConfig));
-
-    $router->register('profile', new ProfileController($auth, $csrf, $view, $adminConfig, $root));
-    $router->register('profile_clearLogs', new ProfileController($auth, $csrf, $view, $adminConfig, $root));
-    $router->register('profile_archiveLogs', new ProfileController($auth, $csrf, $view, $adminConfig, $root));
-
-    $router->register('page_save', new \Damoony\Admin\Controller\PageController($auth, $csrf, $view, $paths));
-    $router->register('overview', new OverviewController($auth, $csrf, $view, $paths, $siteConfig));
-
-
-    $loopback = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
-    $rlWhitelist = $env->isDev() ? $loopback : [];
-
-    $stack = new MiddlewareStack(new \Damoony\Core\Container());
-    $stack->add(new SecurityHeadersMiddleware(
-        isHttps: ($_SERVER['HTTPS'] ?? '') === 'on',
-        csp: (string) $engineConfig->get('csp', "default-src 'self'; frame-ancestors 'none'"),
-    ));
-    $stack->add(new RateLimitMiddleware(
-        storageDir: $root . '/var/ratelimit/admin',
-        max: 60,
-        window: 60,
-        ban: 900,
-        whitelist: $rlWhitelist,
-    ));
-
-    $handler = static function (Request $r) use ($stack, $router, $auth, $container, $pages) {
-        return $stack->dispatch($r, static function (Request $r2) use ($router, $auth, $container, $pages) {
-            // Если не авторизован — отдаем старому роутеру (он покажет логин)
-            if (!$auth->isLoggedIn()) {
-                return $router->dispatch($r2);
-            }
-
-            // Получаем контекст из сессии или ставим дефолт (superadmin)
-            $ctxDomain = $_SESSION['admin_context']['domain'] ?? 'damoony.ru';
-            $ctxAlias  = $_SESSION['admin_context']['alias'] ?? 'www';
-            $ctxRole   = $_SESSION['admin_context']['role'] ?? 'superadmin';
-
-            // Создаем DomainContext через резолвер
-            $resolver = $container->get(\Damoony\Domain\DomainResolverInterface::class);
-            $domainContext = $resolver->resolve($ctxDomain);
-            if ($ctxAlias !== $domainContext->allias) {
-                $domainContext = $domainContext->withAllias($ctxAlias);
-            }
-
-            // Пытаемся найти новый файл в app/.admin/
-            try {
-                $path = $r2->path;
-                if (str_starts_with($path, '/admin')) {
-                    $path = substr($path, 6);
-                }
-                if ($path === '') {
-                    $path = '/';
-                }
-
-                $adminRequest = $r2->withPath($path);
-                $fc = new \Damoony\App\FrontController($container, $pages);
-                
-                $response = $fc->handle($adminRequest, null, null, $ctxRole, $domainContext, $auth);
-                
-                // Если новый роутер нашел файл, отдаем его
-                if ($response->status !== 404) {
-                    return $response;
-                }
-            } catch (\Throwable $e) {
-                // В случае ошибки нового роутера падаем в старый
-            }
-
-            // Если файла нет — отдаем старому роутеру
-            return $router->dispatch($r2);
-        });
-    };
-
-    $kernel = new Kernel($handler, $logger, $env);
-    $response = $kernel->handle(Request::fromGlobals());
-
-    if ($response->status === 429) {
-        $retryAfter = (int) ($response->headers['retry-after'] ?? 60);
-        $response = \Damoony\Error\ErrorPage::tooManyRequests('ru', $retryAfter);
-    }
-
+    $fc = new FrontController($container, $pages);
+    $response = $fc->handle($adminRequest, null, null, $ctxRole, $domainContext, $auth);
     $response->send();
-
 } catch (\Throwable $e) {
-    // АВАРИЙНЫЙ РЕЖИМ (Safe Mode)
     http_response_code(500);
-    echo "<!DOCTYPE html><html><head><title>Ошибка конфигурации</title></head><body style='font-family:sans-serif; padding:50px;'>";
-    echo "<h1 style='color:red;'>Критическая ошибка</h1>";
-    echo '<p>Админка не может загрузиться из-за ошибки в конфигурации или коде.</p>';
-    echo "<pre style='background:#f4f4f4; padding:15px; border:1px solid #ccc; border-radius:4px;'>" . htmlspecialchars($e->getMessage()) . '</pre>';
-    echo "<p><a href='/admin/'>Попробовать снова</a></p>";
-    echo '</body></html>';
-    exit;
+    echo "<h1>Admin Error</h1><pre>" . htmlspecialchars($e->getMessage()) . "</pre>";
 }

@@ -1,7 +1,9 @@
 {
     "auth": true,
-    "terminate": true,
     "available": [
+        "([a-z]{2})|lang",
+        "login",
+        "logout",
         ""
     ]
 }

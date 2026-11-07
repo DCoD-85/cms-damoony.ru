@@ -79,10 +79,22 @@ final class FrontController
                 : ErrorPage::notFound($domain->language);
         }
 
-        $auth = $authOverride instanceof AuthInterface ? $authOverride : $this->container->get(AuthInterface::class);
-        assert($auth instanceof AuthInterface);
+        if ($authOverride instanceof AuthInterface || $authOverride instanceof \Damoony\Admin\AuthInterface) {
+            $auth = $authOverride;
+        } else {
+            $auth = $this->container->get(AuthInterface::class);
+        }
+        $isAuth = false;
+        if ($adminRole !== null && $auth instanceof \Damoony\Admin\AuthInterface) {
+            $isAuth = $auth->isLoggedIn();
+        } elseif ($auth instanceof AuthInterface) {
+            $isAuth = $auth->isAuthenticated();
+        }
 
-        if ($adminRole === null && $match->auth && !$auth->isAuthenticated()) {
+        if ($match->auth && !$isAuth) {
+            if ($adminRole !== null) {
+                return Response::redirect('/admin/login', 302);
+            }
             return Response::redirect('/login?return=' . urlencode($request->path), 302);
         }
 
@@ -96,8 +108,13 @@ final class FrontController
         assert($site instanceof Config);
 
         // O11: Определяем язык (URL -> Cookie -> Конфиг)
-        $negotiator = new LanguageNegotiator();
-        $lang = $negotiator->resolve($request, $domain);
+        $lang = 'ru';
+        if ($adminRole !== null && isset($match->args['lang'])) {
+            $lang = $match->args['lang'];
+        } else {
+            $negotiator = new LanguageNegotiator();
+            $lang = $negotiator->resolve($request, $domain);
+        }
         $translator = new Translator($lang, 'ru');
 
         $meta = new Meta();

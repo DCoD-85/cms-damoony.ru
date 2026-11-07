@@ -32,3 +32,70 @@
 
 /* Компонент Box (Element) */
 .ui-box { padding: 24px; background: #fff; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 24px; border: 1px solid #eef0f4;}
+
+
+
+/* Переключатель языков */
+.lang-switcher { display: flex; gap: 8px; align-items: center; font-size: 14px; font-weight: 600; color: #666; }
+.lang-switcher a { color: #3699ff; text-decoration: none; padding: 4px 8px; border-radius: 4px; transition: 0.2s;}
+.lang-switcher a:hover { background: #e6f2ff; }
+.lang-switcher a.active { background: #3699ff; color: #fff; }
+
+/* Login Page */
+.login-page-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: #f4f6f8;
+}
+
+.login-page-wrapper .ui-card {
+    width: 100%;
+    max-width: 400px;
+    margin: 0;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.login-page-wrapper .form_box {
+    padding: 0;
+}
+
+.login-page-wrapper .form_form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.login-page-wrapper .ui-label {
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+    margin-bottom: -10px;
+}
+
+.login-page-wrapper .ui-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 15px;
+    box-sizing: border-box;
+}
+
+.login-page-wrapper .ui-btn {
+    margin-top: 10px;
+    width: 100%;
+    padding: 14px;
+}
+
+.error-msg {
+    color: #d9534f;
+    background: #fdf7f7;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    border: 1px solid #f5c6cb;
+    text-align: center;
+    font-size: 14px;
+}
