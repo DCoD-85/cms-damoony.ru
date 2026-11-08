@@ -24,48 +24,53 @@ final class algoritm_lang_domains_create extends Page
         $lang = $this->args['lang'] ?? 'ru';
         $role = $this->context->service('admin_role') ?? 'superadmin';
         $t = $this->context->service('i18n');
+        $paths = $this->context->service('paths');
+        $flash = $this->context->service('flash');
 
-        // Меню
-        $menu = Builder::ul('admin-menu');
-        $menu->append(Builder::li()->append(Builder::a("/admin/{$lang}/dashboard")->content($t->t('admin.dash.title'))));
-        $menu->append(Builder::li()->append(Builder::a("/admin/{$lang}/domains", 'active')->content($t->t('admin.tab.domains'))));
-        $menu->append(Builder::li()->append(Builder::a("/admin/{$lang}/profile")->content($t->t('admin.profile.title'))));
-        $menu->append(Builder::li()->append(Builder::a('/admin/logout')->content($t->t('admin.logout'))));
-        $this->setContent('menu', $menu);
+        if ($this->context->request->isPost()) {
+            $domain = trim((string) $this->context->request->post('domain', ''));
+            
+            if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain)) {
+                if ($flash instanceof \Damoony\Core\Flash) {
+                    $flash->error($t->t('admin.domain.create.error_format'));
+                }
+            } else {
+                $phpBinary = PHP_BINARY;
+                $cliPath = $paths instanceof Paths ? $paths->root() . '/bin/cli.php' : 'bin/cli.php';
+                $cmd = escapeshellarg($phpBinary) . ' ' . escapeshellarg($cliPath) . ' domain:new --domain=' . escapeshellarg($domain) . ' 2>&1';
+                
+                exec($cmd, $output, $returnCode);
 
-        // Языки
-        $langs = Builder::div('lang-switcher');
-        $langs->append(Builder::span('lang-label')->content($t->t('admin.dash.lang') ?? 'Язык: '));
-        foreach (['ru', 'en', 'zh'] as $l) {
-            $a = Builder::a("/admin/{$l}/domains/create");
-            $a->content(strtoupper($l));
-            $a->attrs()->add('data-update', 'all');
-            if ($l === $lang) $a->attrs()->classAdd('active');
-            $langs->append($a);
+                if ($returnCode === 0) {
+                    if ($flash instanceof \Damoony\Core\Flash) {
+                        $flash->success($t->t('admin.domain.create.success', ['domain' => $domain]));
+                    }
+                    return Response::redirect("/admin/{$lang}/domains");
+                } else {
+                    if ($flash instanceof \Damoony\Core\Flash) {
+                        $flash->error('Ошибка CLI: ' . implode(' | ', $output));
+                    }
+                }
+            }
         }
-        $this->setContent('lang', $langs);
 
-        $this->setContent('title', Builder::h(1)->content('Добавление домена'));
-
-        $content = new Card('Новый домен');
+        $content = new Card($t->t('admin.domain.create.new'));
 
         $form = new Form();
         $form->action("/admin/{$lang}/domains/create")->method('POST');
         
-        $form->add(new Label('Имя домена (FQDN)'));
+        $form->add(new Label($t->t('admin.domain.create.fqdn')));
         $form->add(new Input('text', 'domain', ''));
-
-        $form->add(new Button('Создать домен'));
+        $form->add(new Button($t->t('admin.domain.create.submit')));
 
         $content->add($form);
 
-        $backBtn = new \Damoony\Ui\Components\Link("/admin/{$lang}/domains", 'Назад к списку');
+        $backBtn = new \Damoony\Ui\Components\Link("/admin/{$lang}/domains", $t->t('admin.domain.create.back'));
         $backBtn->attrs()->classAdd('ui-btn')->classAdd('ui-btn-outline');
         $content->add($backBtn);
 
         $this->setContent('center', $content);
 
-        $paths = $this->context->service('paths');
         $loader = new SchemeLoader($paths, null, $role);
         $manifest = $loader->load($this->context->domain, 'admin');
 

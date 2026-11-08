@@ -9,7 +9,20 @@ use Damoony\Http\Response;
 use Damoony\Ui\Node;
 use Damoony\Ui\Builder;
 use Damoony\Ui\Components\Card;
+use Damoony\Ui\Components\Table;
+use Damoony\Ui\Components\Thead;
+use Damoony\Ui\Components\Tbody;
+use Damoony\Ui\Components\Tr;
+use Damoony\Ui\Components\Th;
+use Damoony\Ui\Components\Td;
+use Damoony\Ui\Components\Link;
+use Damoony\Ui\Components\Toggle;
+use Damoony\Ui\Components\Form;
+use Damoony\Ui\Components\Input;
+use Damoony\Ui\Components\Button;
+use Damoony\Ui\Components\Label;
 use Damoony\Files\Paths;
+use Damoony\Core\Config;
 use Damoony\Scheme\SchemeLoader;
 use Damoony\Scheme\SchemeRenderer;
 
@@ -18,44 +31,140 @@ final class algoritm_lang_domain extends Page
     public function default(): Node|Response|null
     {
         $lang = $this->args['lang'] ?? 'ru';
+        $domainName = $this->args['id'] ?? $this->args['domain'] ?? '';
         $role = $this->context->service('admin_role') ?? 'superadmin';
         $t = $this->context->service('i18n');
-        
-        // Достаем имя домена из аргументов (переданного в URL)
-        $domainName = $this->args['domain'] ?? 'Неизвестный домен';
+        $site = $this->context->service('site');
+        $paths = $this->context->service('paths');
 
-        // Меню
-        $menu = Builder::ul('admin-menu');
-        $menu->append(Builder::li()->append(Builder::a("/admin/{$lang}/dashboard")->content($t->t('admin.dash.title'))));
-        $menu->append(Builder::li()->append(Builder::a("/admin/{$lang}/domains", 'active')->content($t->t('admin.tab.domains'))));
-        $menu->append(Builder::li()->append(Builder::a("/admin/{$lang}/profile")->content($t->t('admin.profile.title'))));
-        $menu->append(Builder::li()->append(Builder::a('/admin/logout')->content($t->t('admin.logout'))));
-        $this->setContent('menu', $menu);
-
-        // Языки
-        $langs = Builder::div('lang-switcher');
-        $langs->append(Builder::span('lang-label')->content($t->t('admin.dash.lang') ?? 'Язык: '));
-        foreach (['ru', 'en', 'zh'] as $l) {
-            $a = Builder::a("/admin/{$l}/domain/{$domainName}");
-            $a->content(strtoupper($l));
-            $a->attrs()->add('data-update', 'all');
-            if ($l === $lang) $a->attrs()->classAdd('active');
-            $langs->append($a);
+        if ($domainName === '') {
+            return Response::redirect("/admin/{$lang}/domains");
         }
-        $this->setContent('lang', $langs);
 
-        $this->setContent('title', Builder::h(1)->content("Настройки домена: {$domainName}"));
+        // Проверка: существует ли домен в конфиге
+        $domainsMap = $site instanceof Config ? $site->getByKey(['domains_real'], []) : [];
+        $realDomains = is_array($domainsMap) ? array_values($domainsMap) : [];
         
-        $content = new Card("Домен: {$domainName}");
-        $content->add(Builder::p()->content('Здесь будут настройки домена, его алиасы, безопасность и т.д.'));
+        if (!in_array($domainName, $realDomains, true)) {
+            $errorCard = new Card('Ошибка 404');
+            $errorCard->add(Builder::div('error-msg')->content("Домен '{$domainName}' не найден в конфигурации."));
+            
+            $backBtn = new Link("/admin/{$lang}/domains", 'Назад к списку');
+            $backBtn->attrs()->classAdd('ui-btn');
+            $errorCard->add($backBtn);
+            
+            $this->setContent('center', $errorCard);
+            
+            $loader = new SchemeLoader($paths, null, $role);
+            $manifest = $loader->load($this->context->domain, 'admin');
+            return (new SchemeRenderer())->render($manifest, $this->regions(), $this->context);
+        }
+
+        $error = '';
+        $success = '';
+
+        // Обработка добавления алиаса
+        if ($this->context->request->isPost()) {
+            $aliasName = trim((string) $this->context->request->post('alias', ''));
+            
+            if (!preg_match('/^[a-z][a-z0-9_]*$/', $aliasName)) {
+                $error = 'Некорректное имя алиаса (только a-z, 0-9, _)';
+            } else {
+                // Вызов CLI: allias:new --domain=... --name=...
+                $phpBinary = PHP_BINARY;
+                $cliPath = $paths instanceof Paths ? $paths->root() . '/bin/cli.php' : 'bin/cli.php';
+                $cmd = escapeshellarg($phpBinary) . ' ' . escapeshellarg($cliPath) . ' allias:new --domain=' . escapeshellarg($domainName) . ' --name=' . escapeshellarg($aliasName) . ' 2>&1';
+                
+                exec($cmd, $output, $returnCode);
+
+                if ($returnCode === 0) {
+                    return Response::redirect("/admin/{$lang}/domain/{$domainName}");
+                } else {
+                    $error = 'Ошибка: ' . implode('\n', $output);
+                }
+            }
+        }
+
+        $content = Builder::div('');
+
+        // Заголовок домена и кнопка назад
+        $header = Builder::div('admin-actions');
+        $header->append(Builder::h(2)->content("Настройки домена: {$domainName}"));
+        $backBtn = new Link("/admin/{$lang}/domains", 'Назад к списку');
+        $backBtn->attrs()->classAdd('ui-btn')->classAdd('ui-btn-sm');
+        $header->append($backBtn);
+        $content->append($header);
+
+        if ($error !== '') {
+            $content->append(Builder::div('error-msg')->content($error));
+        }
+
+        // Таблица алиасов
+        $aliasesMap = [];
+        $aliasesAvailMap = [];
+        if ($site instanceof Config) {
+            $map = $site->getByKey(['alliases_real', $domainName], []);
+            if (is_array($map)) $aliasesMap = $map;
+            
+            $avail = $site->getByKey(['alliases_available', $domainName], []);
+            if (is_array($avail)) $aliasesAvailMap = $avail;
+        }
+
+        $table = new Table();
+        $thead = new Thead();
+        $trHead = new Tr();
+        $trHead->add(new Th('Алиас'));
+        $trHead->add(new Th('Статус'));
+        $trHead->add(new Th('Действия'));
+        $thead->add($trHead);
+
+        $tbody = new Tbody();
+        if (empty($aliasesMap)) {
+            $tr = new Tr();
+            $td = new Td();
+            $td->attrs()->add('colspan', '3');
+            $td->content('Алиасы не найдены.');
+            $tr->add($td);
+            $tbody->add($tr);
+        } else {
+            foreach ($aliasesMap as $aliasKey => $realName) {
+                if ($aliasKey === '') continue; // Пропускаем пустой ключ
+                $isActive = $aliasesAvailMap[$aliasKey] ?? false;
+                
+                $tr = new Tr();
+                $tr->add((new Td())->content($aliasKey));
+                
+                $toggle = new Toggle('alias_active', $isActive);
+                $input = $toggle->children()[0];
+                if ($input instanceof \Damoony\Ui\Element) {
+                    $input->attrs()->add('data-domain', $domainName);
+                    $input->attrs()->add('data-alias', $aliasKey);
+                    $input->attrs()->add('data-lang', $lang);
+                }
+                $tr->add((new Td())->add($toggle));
+                
+                $tr->add((new Td())->content('—')); // В будущем сюда добавим кнопку "Редактировать"
+                $tbody->add($tr);
+            }
+        }
+        $table->add($thead);
+        $table->add($tbody);
+        $content->append($table);
+
+        // Форма добавления нового алиаса
+        $addCard = new Card('Добавить алиас');
+        $form = new Form();
+        $form->action("/admin/{$lang}/domain/{$domainName}")->method('POST');
         
-        $backBtn = new \Damoony\Ui\Components\Link("/admin/{$lang}/domains", 'Назад к списку');
-        $backBtn->attrs()->classAdd('ui-btn');
-        $content->add($backBtn);
+        $form->add(new Label('Имя алиаса (например: www, shop, blog)'));
+        $form->add(new Input('text', 'alias', ''));
+        $form->add(new Button('Создать алиас'));
         
+        $addCard->add($form);
+        $content->append($addCard);
+
         $this->setContent('center', $content);
 
-        $paths = $this->context->service('paths');
         $loader = new SchemeLoader($paths, null, $role);
         $manifest = $loader->load($this->context->domain, 'admin');
 

@@ -69,6 +69,7 @@ final class PageHandler implements PageHandlerInterface
         $loader = new RegionLoader(
             $paths,
             $site instanceof Config ? $site : null,
+            $adminRole,
         );
         $regions = $loader->load($domain);
 
@@ -114,6 +115,20 @@ final class PageHandler implements PageHandlerInterface
             $doc = new Document($context->meta);
             $doc->lang($domain->language);
             $doc->body()->append($result);
+
+            // Внедряем Flash-сообщения
+            $flash = $context->service('flash');
+            if ($flash instanceof \Damoony\Core\Flash) {
+                $messages = $flash->pull();
+                if (!empty($messages)) {
+                    $script = new \Damoony\Ui\Element('script');
+                    $script->attrs()->add('id', 'flash-data');
+                    $script->attrs()->add('type', 'application/json');
+                    $script->append(\Damoony\Ui\Text::raw((string) json_encode($messages)));
+                    $doc->body()->append($script);
+                }
+            }
+
             return Response::html($doc->release());
         }
 

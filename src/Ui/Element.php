@@ -116,10 +116,16 @@ class Element implements Node
             $el->append(new Slot((string) $data['slot']));
         }
 
+        if (isset($data['content']) && is_string($data['content'])) {
+            $el->content($data['content']);
+        }
+
         if (!empty($data['children']) && is_array($data['children'])) {
             foreach ($data['children'] as $child) {
                 if (is_array($child)) {
                     $el->append(self::fromArray($child));
+                } elseif (is_string($child)) {
+                    $el->content($child);
                 }
             }
         }

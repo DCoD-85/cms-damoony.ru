@@ -119,6 +119,14 @@ final class FrontController
         $translator = new Translator($lang, 'ru');
 
         $meta = new Meta();
+        $session = $this->container->has(\Damoony\Session\SessionInterface::class)
+            ? $this->container->get(\Damoony\Session\SessionInterface::class) : null;
+        $flash = $session instanceof \Damoony\Session\SessionInterface
+            ? new \Damoony\Core\Flash($session) : null;
+
+        $db = $this->container->has(\Damoony\Db\Connection::class)
+            ? $this->container->get(\Damoony\Db\Connection::class) : null;
+
         $context = new RegionContext($request, $domain, $meta, [
             'paths' => $paths,
             'site' => $site,
@@ -127,6 +135,8 @@ final class FrontController
             'i18n' => $translator,
             'session_id' => $sessionId,
             'admin_role' => $adminRole,
+            'flash' => $flash,
+            'db' => $db,
         ]);
 
         return $this->pages->handle($match, $context, $adminRole);

@@ -33,8 +33,6 @@ final class FileRouter implements RouterInterface
             return RouteMatch::notFound();
         }
 
-        // Модель: класс N хранит свои правила в algoritm/algoritm.rules.json,
-        // класс N+M — в algoritm/<pathRel>/algoritm_<pathRel>.rules.json
         $rootRules = $this->loadRules($base . '/algoritm.rules.json');
         if ($rootRules === null) {
             return RouteMatch::notFound();
@@ -57,26 +55,33 @@ final class FileRouter implements RouterInterface
                 return RouteMatch::notFound();
             }
 
-            if (!empty($rules['terminate'])) {
-                $remaining = array_slice($segments, $i);
-                foreach ($remaining as $part) {
-                    $kv = explode(':', $part, 2);
-                    if (count($kv) === 2) {
-                        $args[$kv[0]] = $kv[1];
-                    }
-                }
-                break;
-            }
-
             $matched = $this->matcher->matchSegment($segment, $rules);
             if ($matched === null) {
                 return RouteMatch::notFound();
             }
 
             [$target, $segArgs] = $matched;
+
+            // Если пустая строка (слеш на конце) - просто пропускаем
+            if ($target === '') {
+                continue;
+            }
+
+            // Если сработала регулярка (переменная)
+            if ($segArgs !== []) {
+                $args = array_merge($args, $segArgs);
+
+                // Если target - это реальная папка (например, 'lang'), обновляем путь
+                $checkDir = $base . '/' . ($pathRel === '' ? '' : $pathRel . '/') . $target;
+                if (is_dir($checkDir)) {
+                    $pathRel = $pathRel === '' ? $target : $pathRel . '/' . $target;
+                    $classChain .= '_' . $target;
+                }
+                continue;
+            }
+
             $pathRel = $pathRel === '' ? $target : $pathRel . '/' . $target;
             $classChain .= '_' . $target;
-            $args = array_merge($args, $segArgs);
 
             $candidatePhp = $base . '/' . $pathRel . '/' . $classChain . '.php';
             if (!is_file($candidatePhp)) {
@@ -84,16 +89,13 @@ final class FileRouter implements RouterInterface
             }
         }
 
-        // Листовые правила = правила последнего класса
         $leafRules = $this->loadRules($base . '/' . $pathRel . '/' . $classChain . '.rules.json') ?? [];
         $auth = $this->matcher->requiresAuth($leafRules);
 
         return RouteMatch::found($classChain, $pathRel, $args, $auth);
     }
 
-    /**
-     * @return list<string>
-     */
+    /** @return list<string> */
     private function segments(string $path): array
     {
         $trimmed = trim($path, '/');
@@ -104,9 +106,7 @@ final class FileRouter implements RouterInterface
         return explode('/', $trimmed);
     }
 
-    /**
-     * @return array<string, mixed>|null
-     */
+    /** @return array<string, mixed>|null */
     private function loadRules(string $file): ?array
     {
         if (isset($this->rulesCache[$file])) {
@@ -127,7 +127,6 @@ final class FileRouter implements RouterInterface
             return null;
         }
 
-        /** @var array<string, mixed> $decoded */
         return $this->rulesCache[$file] = $decoded;
     }
 }

@@ -3,6 +3,10 @@
     "available": [
         "create",
         "toggle",
+        "(.+)|domain",
+        "db",
+        "schemes",
+        "blocks",
         ""
     ]
 }

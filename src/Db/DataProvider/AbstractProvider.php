@@ -49,23 +49,31 @@ abstract class AbstractProvider implements ProviderInterface
 
     final public function physicalTable(): string
     {
+        return $this->prefixTable($this->table());
+    }
+
+    /**
+     * Резолвит физическое имя для ЛЮБОЙ логической таблицы.
+     */
+    protected function prefixTable(string $table): string
+    {
         if ($this->isGlobal()) {
-            return $this->table();
+            return $table;
         }
 
         $map = $this->site->getByKey(['domains_aliases_storage'], []);
         if (!is_array($map)) {
-            return $this->table();
+            return $table;
         }
 
         $domainMap = $map[$this->domain] ?? null;
         if (!is_array($domainMap)) {
-            return $this->table();
+            return $table;
         }
 
         $aliasMap = $domainMap[$this->alias] ?? null;
         if (!is_array($aliasMap)) {
-            return $this->table();
+            return $table;
         }
 
         $prefix = $aliasMap['prefix'] ?? '';
@@ -73,7 +81,7 @@ abstract class AbstractProvider implements ProviderInterface
             $prefix = '';
         }
 
-        return $prefix . $this->table();
+        return $prefix . $table;
     }
 
     /**

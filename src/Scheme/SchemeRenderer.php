@@ -36,6 +36,7 @@ final class SchemeRenderer
 
         $root = Element::fromArray($skeleton);
         $this->replaceSlots($root, $regions, $context);
+
         return $root;
     }
 

@@ -43,14 +43,15 @@ final class RulesMatcher
             }
 
             [$regex, $target] = explode('|', $pattern, 2) + [1 => ''];
-            if ($regex === '' || $target === '') {
+            if ($regex === '') {
                 continue;
             }
 
             $full = '#^' . $regex . '$#u';
             $matched = @preg_match($full, $segment);
             if ($matched === 1) {
-                return [$target, [$target => $segment]];
+                $key = $target === '' ? 'id' : $target;
+                return [$target, [$key => $segment]];
             }
         }
 

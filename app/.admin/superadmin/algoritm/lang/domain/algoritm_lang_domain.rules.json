@@ -1,7 +1,6 @@
 {
     "auth": true,
-    "terminate": true,
     "available": [
-        ""
+        ".+|"
     ]
 }

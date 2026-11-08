@@ -13,13 +13,21 @@ final class RegionLoader
     public function __construct(
         private readonly Paths $paths,
         private readonly ?Config $site = null,
+        private readonly ?string $adminRole = null,
     ) {
     }
 
     public function load(DomainContext $domain): RegionRegistry
     {
         $registry = new RegionRegistry();
-        $baseDir = $this->paths->domain($domain->real) . '/.alliasglobal';
+
+        if ($this->adminRole !== null) {
+            $baseDir = rtrim($this->paths->root(), '/') . '/app/.admin/' . $this->adminRole . '/.alliasglobal';
+            $namespace = 'Damoony\\Admin\\Pages\\' . $this->adminRole;
+        } else {
+            $baseDir = $this->paths->domain($domain->real) . '/.alliasglobal';
+            $namespace = $domain->namespace;
+        }
 
         if (!is_dir($baseDir)) {
             return $registry;
@@ -43,7 +51,7 @@ final class RegionLoader
             // Загружаем базовый
             if (is_file($baseFile)) {
                 require_once $baseFile;
-                $baseClass = $domain->namespace . '\\alliasglobal_' . $item;
+                $baseClass = $namespace . '\\alliasglobal_' . $item;
                 if (class_exists($baseClass, false) && is_subclass_of($baseClass, RegionInterface::class)) {
                     $registry->add(new $baseClass(), true);
                 }
@@ -52,7 +60,7 @@ final class RegionLoader
             // Загружаем филлер
             if ($isFillerEnabled && is_file($fillerFile)) {
                 require_once $fillerFile;
-                $fillerClass = $domain->namespace . '\\alliasglobal_' . $item . '_' . $domain->allias;
+                $fillerClass = $namespace . '\\alliasglobal_' . $item . '_' . $domain->allias;
                 if (class_exists($fillerClass, false) && is_subclass_of($fillerClass, RegionInterface::class)) {
                     $registry->add(new $fillerClass(), false);
                 }

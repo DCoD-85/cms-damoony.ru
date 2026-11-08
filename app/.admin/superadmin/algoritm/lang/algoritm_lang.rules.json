@@ -3,6 +3,9 @@
     "available": [
         "dashboard",
         "profile",
-        "domains"
+        "domains",
+        "logout",
+        "([a-z]{2})|lang",
+        ""
     ]
 }

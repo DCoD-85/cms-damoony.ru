@@ -9,6 +9,17 @@ use Damoony\Http\Response;
 use Damoony\Ui\Node;
 use Damoony\Ui\Builder;
 use Damoony\Ui\Components\Card;
+use Damoony\Ui\Components\Table;
+use Damoony\Ui\Components\Thead;
+use Damoony\Ui\Components\Tbody;
+use Damoony\Ui\Components\Tr;
+use Damoony\Ui\Components\Th;
+use Damoony\Ui\Components\Td;
+use Damoony\Ui\Components\Link;
+use Damoony\Ui\Components\Form;
+use Damoony\Ui\Components\Input;
+use Damoony\Ui\Components\Button;
+use Damoony\Ui\Components\Label;
 use Damoony\Files\Paths;
 use Damoony\Scheme\SchemeLoader;
 use Damoony\Scheme\SchemeRenderer;
@@ -20,31 +31,14 @@ final class algoritm_lang_profile extends Page
         $lang = $this->args['lang'] ?? 'ru';
         $role = $this->context->service('admin_role') ?? 'superadmin';
         $t = $this->context->service('i18n');
+        $site = $this->context->service('site');
 
-        // Меню
-        $menu = Builder::ul('admin-menu');
-        $menu->append(Builder::li()->append(Builder::a("/admin/{$lang}/dashboard")->content($t->t('admin.dash.title'))));
-        $menu->append(Builder::li()->append(Builder::a("/admin/{$lang}/profile", 'active')->content($t->t('admin.tab.profile'))));
-        $menu->append(Builder::li()->append(Builder::a("/admin/{$lang}/profile")->content($t->t('admin.profile.title'))));
-        $menu->append(Builder::li()->append(Builder::a('/admin/logout')->content($t->t('admin.logout'))));
-        $this->setContent('menu', $menu);
-
-        // Языки
-        $langs = Builder::div('lang-switcher');
-        $langs->append(Builder::span('lang-label')->content($t->t('admin.dash.lang') ?? 'Язык: '));
-        foreach (['ru', 'en', 'zh'] as $l) {
-            $a = Builder::a("/admin/{$l}/profile");
-            $a->content(strtoupper($l));
-            $a->attrs()->add('data-update', 'all');
-            if ($l === $lang) $a->attrs()->classAdd('active');
-            $langs->append($a);
-        }
-        $this->setContent('lang', $langs);
-
-        $this->setContent('title', Builder::h(1)->content($t->t('admin.tab.profile')));
+        // Наполняем только центр
         
-        $content = new Card($t->t('admin.tab.profile'));
-        $content->add(Builder::p()->content("Здесь будет профиль администратора."));
+        $content = new Card($t->t('admin.profile.title'));
+        $content->add(Builder::p()->content('Здесь будет профиль администратора.'));
+        
+
         $this->setContent('center', $content);
 
         $paths = $this->context->service('paths');
