@@ -16,7 +16,7 @@
   - **Content** (`/content/`, вне webroot) + **Skin** (`www/media/[domain]/[allias]/skin/`, git).
 - **Репозиторий:** https://github.com/DCoD-85/cms-damoony.ru/
 - **Ветка:** `main`.
-- **Стек (dev):** PHP 8.5 (NTS), MariaDB 11.8, **Nginx + PHP-CGI** (standalone `E:\localserver`, не OSPanel), Composer (PSR-4/3/11), PHPUnit 10, PHPStan 8, PHP-CS-Fixer, Python 3 (`ai_agent/brain.py`), Ollama (`gemma4:e4b` для чата, `deepseek-coder:6.7b` для кода/JSON).
+- **Стек (dev):** PHP 8.5 (NTS), MariaDB 11.8, **Nginx + PHP-CGI** (standalone `E:\localserver`, не OSPanel), Composer (PSR-4/3/11), PHPUnit 11, PHPStan 8, PHP-CS-Fixer, Python 3 (`ai_agent/brain.py`), Ollama (`gemma4:e4b` для чата, `deepseek-coder:6.7b` для кода/JSON).
 - **Стек (prod):** Debian 13, PHP 8.5 + PHP-FPM, Nginx, MariaDB 11.8.
 
 ---
@@ -38,6 +38,7 @@
 | `orchestrator.md` | Внутренний мультиагентный конвейер AIUI (Blackboard, State Machine, ModelRouter) | Внешний aicli, brain.py |
 | `install.md` | Требования, конфиги, веб-сервер, первый запуск, проверка | How-to разработчика, историю миграций |
 | `admin.md` | UI админки + делегирование CLI | Per-command флаги (ссылка в CLI) |
+| `dbcli.md` | Декларативная работа с БД (JSON-схемы, генерация SQL и PHP) | SQL-инъекции, ручное написание миграций |
 | `README.md` (корень) | Обзор, стек, быстрый старт, ссылки | Метрики (ссылка), историю |
 
 **Правило:** один факт — одно место. Метрики, перечень команд, требования — не дублируются, только ссылки.
@@ -50,7 +51,7 @@
 
 - Intel i9-14900HX, 32GB RAM, Windows 11, Локальный стек (Nginx + PHP-CGI + MariaDB).
 - Корень: `E:\localserver\domains\damoony3.ru\`. Терминал: gitbash + VSCode.
-- PHP CLI: `E:\localserver\tools\php\` (8.4.25).
+- PHP CLI: `E:\localserver\tools\php8.5.12\` (8.5.12).
 - MariaDB client: `E:\localserver\tools\mariadb\bin\` (11.8).
 - Расширения PHP: `curl`, `gd`, `openssl`, `mbstring`, `pdo_mysql`, `pdo_sqlite`, `fileinfo`, `tokenizer`, `xml`.
 - **Запрещено:** PHP/MariaDB из winget, глобальный PATH, Composer из AppData.
@@ -59,11 +60,11 @@
 
 Системный `php` в терминале может указывать на старую версию без нужных расширений (например, без `curl`). **Всегда** запускай CLI через наш бинарник с явным конфигом:
 
-    "/e/localserver/tools/php/php.exe" -c "/e/localserver/tools/php/php.ini" bin/cli.php [команда]
+    "/e/localserver/tools/php8.5.12/php.exe" -c "/e/localserver/tools/php8.5.12/php.ini" bin/cli.php [команда]
 
 Для удобства — алиас в `~/.bashrc` (с `-c`, чтобы совпадало с командой выше):
 
-    alias php='/e/localserver/tools/php/php.exe -c /e/localserver/tools/php/php.ini'
+    alias php='/e/localserver/tools/php8.5.12/php.exe -c /e/localserver/tools/php8.5.12/php.ini'
 
 #### Управление сервером
 
@@ -77,7 +78,7 @@
 
 ### Production
 
-- i7, 8GB RAM, 128GB SSD + 1TB HDD, Debian 13, Apache 2, PHP 8.5.25, MariaDB 11.8.
+- i7, 8GB RAM, 128GB SSD + 1TB HDD, Debian 13, Nginx, PHP 8.5, MariaDB 11.8.
 - Корень: `/var/www/damoony.ru/`. Только `git pull`. Прямое редактирование запрещено.
 
 ---
@@ -99,10 +100,10 @@
 **Запрещено без явного запроса владельца:**
 
 - Production: прямое редактирование `/var/www/damoony.ru/`.
-- Ядро: `src/Core/`, `src/Http/Kernel.php`, `src/App/AppFactory.php`, `bin/aicli.php`, `bin/ainet.php`.
-- AI-контракт: `src/Ai/Roles.php`, `src/Ai/Navigator.php`, `PageCompiler`, `BlockCompiler`, `AinetFacade`.
-- Роутинг: `PagePath`, `PageRules`, `FileRouter`.
-- Безопасность: механизм карантина, path traversal guard, SSRF (UrlGuard), `www/content.php`/`ContentResponder`, `skin:edit` whitelist.
+- Ядро: `src/Core/`, `src/Core/Http/Kernel.php`, `src/Core/App/AppFactory.php`, `bin/aicli.php`, `bin/ainet.php`, `bin/dbcli.php`.
+- AI-контракт: `src/Ai/Roles.php`, `src/Ai/Navigator.php`, `src/UI/Page/PageCompiler.php`, `src/UI/Region/BlockCompiler.php`, `src/Ainet/AinetFacade.php`.
+- Роутинг: `src/UI/Page/PagePath.php`, `src/UI/Page/PageRules.php`, `src/Core/Routing/FileRouter.php`.
+- Безопасность: механизм карантина, path traversal guard, SSRF (UrlGuard), `www/content.php`/`src/Core/Content/ContentResponder.php`, `skin:edit` whitelist.
 - Git: push в `main` при красных проверках; commit `config/*.config`; изменение `composer.lock`.
 
 ---
@@ -111,13 +112,16 @@
 
 | Что | Путь |
 |---|---|
-| Ядро | `src/` |
+| Ядро | `src/Core/` (App, Http, Routing, Domain, I18n, Security, Session) |
+| UI (Верстка) | `src/UI/` (Element, Page, Region, Scheme, Skin, Components) |
+| Data (БД) | `src/Data/` (Db, DataProvider, Auth) |
+| CLI | `src/Cli/` (Commands, Db, Ai) |
 | AINET (библиотека) | `src/Ainet/` |
 | AI (Roles, Navigator) | `src/Ai/` |
 | **AI Orchestrator (внутренний)** | `src/Ai/Orchestrator/` (Blackboard, State Machine) |
 | **AI Agents** | `src/Ai/Orchestrator/Agent/` (Interviewer, Architect, Coder) |
 | **Model Router** | `src/Ai/ModelRouter.php` + `config/models.config` |
-| Content responder | `src/Content/`, `www/content.php` |
+| Content responder | `src/Core/Content/`, `www/content.php` |
 | Домен | `app/[domain]/` |
 | Страница | `app/[domain]/[allias]/algoritm/algoritm_[name].{php,rules.json,editor.json}` |
 | Root алиаса | `app/[domain]/[allias]/algoritm/algoritm.{php,rules.json,editor.json}` |
@@ -127,7 +131,7 @@
 | Skin (git) | `www/media/[domain]/[allias]/skin/[name]/{css,js,img,skin.json}` |
 | Карантин (6 уровней) | `app/[d]_trash_[ts]/`, `app/[d]/[a]_trash_[ts]/`, `.alliasscheme/[n]_trash_[ts]/`, `.alliasglobal/[n]_trash_[ts]/`, `/content/.trash/...`, `www/media/.trash/...` |
 | Конфиги | `config/*.config` (`engine`, `site`, `admin`, `agent`, `ainet`) |
-| Точки входа | `www/index.php` (сайт), `www/admin/index.php` (админка), `www/content.php` (content), `bin/cli.php` (CLI), `bin/aicli.php` (AI, единственная), `bin/ainet.php` (standalone-отладка, не для AI) |
+| Точки входа | `www/index.php` (сайт), `www/admin/index.php` (админка), `www/content.php` (content), `bin/cli.php` (CLI), `bin/dbcli.php` (работа с БД), `bin/aicli.php` (AI), `bin/ainet.php` (AINET) |
 | AI-Оркестраторы | `ai_agent/brain.py` (рабочий мультиагент) |
 | Тесты | `_dev/tests/` |
 | Runtime | `var/` (+ `var/ainet-cache/`, `var/ainet-ratelimit.json`) |
@@ -143,14 +147,14 @@
 ```bash
 # Бинарники (Windows standalone)
 # Используй полный путь с явным php.ini (иначе системный php без cURL)
-PHP="/e/localserver/tools/php/php.exe -c /e/localserver/tools/php/php.ini"
+PHP="/e/localserver/tools/php8.5.12/php.exe -c /e/localserver/tools/php8.5.12/php.ini"
 NGINX="/e/localserver/tools/nginx/nginx.exe"
 MYSQL="/e/localserver/tools/mariadb/bin/mariadb.exe"
 
 # Проверки (источник метрик — сам вывод, не документация)
 "$PHP" vendor/bin/phpunit -c _dev/phpunit.xml
 "$PHP" vendor/bin/phpstan analyse -c _dev/phpstan.neon --memory-limit=1G --no-progress
-PHP_CS_FIXER_IGNORE_ENV=1 php vendor/bin/php-cs-fixer fix --config=_dev/.php-cs-fixer.php --dry-run
+php vendor/bin/php-cs-fixer fix --config=_dev/.php-cs-fixer.php --dry-run
 # или: composer test / composer stan / composer cs / composer check
 
 # Диагностика структуры
@@ -163,6 +167,10 @@ php bin/cli.php help
 # Карантин (dry-run -> --force)
 php bin/cli.php trash:clear
 php bin/cli.php trash:clear --force --older=7d
+
+# Работа с БД (dbcli)
+php bin/dbcli.php db:schema:init --domain=example.ru --table=products
+php bin/dbcli.php db:schema:generate-sql --domain=example.ru
 
 # Запуск мультиагента (E2E генерация сайта)
 python -m ai_agent.brain <domain> <allias> "<brief>" <model_name>
@@ -243,13 +251,12 @@ AI не видит файловую систему напрямую. Никог�
 
 **Текущая работа:**
 
-- **Фаза C** (Tools-First IDE): `api:reflect` (reflection Builder/Element/Attrs/Text/RegionContext -> `api.json`), CodeMirror hint, snippets, детерминированный Linter. **Не AI.** См. план в `_doc/dev.md` §10.
+- **Фаза E** (DB CLI): Инструмент `bin/dbcli.php` — декларативное управление БД через JSON-схемы (`schema.json`). Генерация SQL-миграций и PHP-провайдеров без ручного кода. См. `_doc/dbcli.md`.
 
 **Следующие фазы:**
 
-- **Фаза D** (SPA + DataProvider): SPA-админка с табами инструментов, постраничные схемы (Page -> Alias -> Stub), DataProvider алиаса, БД до идеала. См. план в `_doc/dev.md` §10 и `_doc/dataprovider-design.md`.
+- **Фаза F** (E-commerce Admin): UI для управления таблицами БД в админке, CRUD для товаров, новостей и заказов. См. план в `_doc/dev.md` §10.
+- **Фаза C** (Tools-First IDE): `api:reflect` (reflection Builder/Element/Attrs/Text/RegionContext -> `api.json`), CodeMirror hint, snippets, детерминированный Linter. **Не AI.** См. план в `_doc/dev.md` §10.
 
-**Актуальные статусы фаз v3.1:** см. `_doc/dataprovider-design.md` (шапка «Что реализовано» / «Что отложено» / «Параллельный трек»).
 **Открытые P2:** `_doc/arch.md` §6 (15 пунктов).
-**Roadmap v3.0.0:** `_doc/roadmap.md` (частично superseded by `dataprovider-design.md`).
 

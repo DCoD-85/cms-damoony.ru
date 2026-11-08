@@ -138,3 +138,23 @@
 - `wizard:abort` — в `Roles.php` есть (architect, `*`), `case` в `WizardManager::handle()` нет → `Unknown wizard action`.
 - `wizard:widgets` — реализован (`WizardManager.php:45`, `setWidgets`), но отсутствует в `Roles.php` → недоступен через aicli.
 - `--session` для `block:write`, `filler:write`, `skin:edit`, `scheme:save` — не реализован (см. §9).
+
+## 13. `dbcli` (Управление БД)
+
+Точка входа: `php bin/dbcli.php [command] [--key=value]`. Инструмент для **декларативного управления БД** (без сырого SQL). Создает JSON-схемы, из которых генерируются SQL-миграции и PHP-провайдеры.
+
+- `db:schema:init --domain=[d] --table=[t]` — создать JSON-схему таблицы в `app/[d]/.db/schema.json` (базовая структура: `id`, `created_at`).
+- `db:schema:add-column --domain=[d] --table=[t] --name=[n] --type=[varchar|int|text|timestamp|decimal] [--length=255] [--null=1]` — добавить колонку в таблицу JSON-схемы.
+- `db:schema:generate-sql --domain=[d]` — сгенерировать SQL-миграцию из `schema.json` в папку `migrations/`.
+- `db:schema:generate-provider --domain=[d] --table=[t] [--alias=www]` — сгенерировать PHP-класс провайдера (унаследованный от `BasicCrudProvider`) в `app/[d]/[alias]/provider/`.
+
+**Полный цикл:**
+```bash
+php bin/dbcli.php db:schema:init --domain=mysite.ru --table=products
+php bin/dbcli.php db:schema:add-column --domain=mysite.ru --table=products --name=title --type=varchar
+php bin/dbcli.php db:schema:generate-sql --domain=mysite.ru
+php bin/cli.php db:migrate
+php bin/dbcli.php db:schema:generate-provider --domain=mysite.ru --table=products
+```
+
+После генерации провайдера его можно использовать в `db:call` и `db:mutate` (см. §10). Подробнее — `_doc/dbcli.md`.

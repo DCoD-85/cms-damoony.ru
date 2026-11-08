@@ -76,10 +76,10 @@ AI не имеет прямого доступа к терминалу. Отпр
 
 ⚠️ **AI не пишет PHP.** Отдаёт JSON через `page:write`/`block:write`/`filler:write`.
 
-**Типы блоков** (по `BlockCodegen`): базовые `h1`, `h2`, `h3`, `text`, `img`, `link`, `button`, `ul`, `nav`; Phase 4.2 расширила `section`, `div`. Точный список — `src/Ui/BlockCodegen.php`.
+**Типы блоков** (по `BlockCodegen`): базовые `h1`, `h2`, `h3`, `text`, `img`, `link`, `button`, `ul`, `nav`; Phase 4.2 расширила `section`, `div`. Точный список — `src/UI/BlockCodegen.php`.
 **Атрибуты:** `class`, `id`, `style`, `url`, `alt`.
 
-**Builder** (`src/Ui/Builder.php`) — 12 методов: `el`, `elA`, `div`, `span`, `p`, `h`, `a`, `img`, `input`, `ul`, `li`, `button`. Нет `section`/`form`/`table`/`select`/`textarea`/`label`/`nav` — обход через `Builder::el($tag)` (P2, `arch.md` §6 п.4).
+**Builder** (`src/UI/Builder.php`) — 12 методов: `el`, `elA`, `div`, `span`, `p`, `h`, `a`, `img`, `input`, `ul`, `li`, `button`. Нет `section`/`form`/`table`/`select`/`textarea`/`label`/`nav` — обход через `Builder::el($tag)` (P2, `arch.md` §6 п.4).
 
 **XSS:** `PageCompiler`/`BlockCodegen` используют `Text::raw()` для `<a>`/`<strong>`, жёстко фильтруя остальные теги. `allow_php_blocks=false` по умолчанию — блоки с сырым PHP запрещены.
 

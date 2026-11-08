@@ -39,19 +39,34 @@
 
 ## 3. Слои и структура данных
 
-### 3.1. Правило 3 файлов
+### 3.1. Модульная структура
+
+`src/` разделён на 6 модулей. Каждый модуль решает только свою задачу.
+
+| Модуль | Путь | Ответственность |
+|---|---|---|
+| **Core** | `src/Core/` | Ядро: HTTP (Kernel, Request, Response), Роутинг (FileRouter), Домены, Файлы, Безопасность (Csrf), Сессии, I18n. |
+| **UI** | `src/UI/` | Всё для отрисовки: `Element`, `Builder`, `Page`, `Region`, `Scheme`, `Skin`, `Components`. |
+| **Data** | `src/Data/` | Работа с БД: `Connection`, `DataProvider`, `Auth`. |
+| **Cli** | `src/Cli/` | Все консольные команды: `Commands/` (для `bin/cli.php`), `Db/` (для `bin/dbcli.php`), `Ai/` (для `bin/aicli.php`). |
+| **Admin** | `src/Admin/` | Специфика старой админки (MVC). Новая админка использует `UI` и `Cli`. |
+| **Ai** | `src/Ai/` | Мультиагентный Orchestrator, ModelRouter, Roles, Navigator. |
+
+**Правило:** если код нужен и сайту, и админке, и CLI — он живёт в `Core` или `UI`. Если только CLI — в `Cli`.
+
+### 3.2. Правило 3 файлов
 - **Страница:** `algoritm_[name].{php,rules.json,editor.json}` (все три в одной папке). Root: `algoritm/algoritm.{php,rules.json,editor.json}`.
 - **Блок / Схема:** `[name].{php,rules.json,editor.json}` в `.alliasglobal/` или `.alliasscheme/`.
 
-### 3.2. Content vs Skin (две разные зоны)
+### 3.3. Content vs Skin (две разные зоны)
 - **Content (`/content/[domain]/[allias]/[category]/`)** — runtime AI-контент. Вне webroot. Формат: `[hash].[ext]` + `[hash].meta.json`. Отдаётся через `www/content.php`. Запись только через CLI (`content:store`).
 - **Skin (`www/media/[domain]/[allias]/skin/[name]/`)** — git-tracked инфраструктура. Файлы: `css/main.css`, `js/main.js`, `img/`, `skin.json`. Управление через CLI (`skin:*`).
 
-### 3.3. Приоритет схем и Базовые Meta
+### 3.4. Приоритет схем и Базовые Meta
 - **Приоритет схем:** При рендеринге страницы `SchemeLoader` сначала ищет локальную схему алиаса (`{allias}.php`). И только если её нет — использует базовую (`www.php`).
 - **Базовые Meta (CSS/JS):** Схемы содержат массив `meta`. При сборке финального `Document` эти данные автоматически вливаются в `<head>`.
 
-### 3.4. CSS и Layout (факты)
+### 3.5. CSS и Layout (факты)
 - **Layout:** Базовые стили сетки (`.layout`, `.page-content`) и защита от переполнения картинок (`img { max-width: 100%; max-height: 500px; }`) жестко зашиты в `ai_agent/brain.py` и не могут быть сломаны LLM.
 - **Факт (2026-11-06):** `block:new` CSS не создаёт. `brain.py` (Wizard) пишет два файла: `main.css` (base + layout + center) и `top.css` (меню). Отдельного `center.css` нет.
 - **Защита от ИИ (Grid):** Сгенерированные сайты используют жестко зашитую CSS Grid-сетку (через `brain.py`). Для того чтобы обертки `<div>` от `SchemeRenderer` не ломали сетку, применяется CSS-хак `display: contents` для прямых потомков `.layout`.

@@ -132,7 +132,7 @@ final class alliasglobal_header implements RegionInterface
 
 AI **не пишет PHP**. Передаёт JSON-массив блоков через `page:write` / `block:write` / `filler:write`. Компилятор — `Damoony\Ui\BlockCodegen::render()` — генерирует безопасный PHP.
 
-**Типы блоков:** `h1`–`h6`, `text`/`p`, `img`, `link`, `button`, `ul`, `nav`. Phase 4.2 добавила `section`, `div`. Точный список — `src/Ui/BlockCodegen.php`.
+**Типы блоков:** `h1`–`h6`, `text`/`p`, `img`, `link`, `button`, `ul`, `nav`. Phase 4.2 добавила `section`, `div`. Точный список — `src/UI/BlockCodegen.php`.
 
 **Атрибуты:** `class`, `id`, `style`, `url`, `alt`, `button_type` (submit|button|reset), `items` (для `ul`), `children` (для вложенных).
 
@@ -140,7 +140,7 @@ AI **не пишет PHP**. Передаёт JSON-массив блоков че
 - Текстовые узлы (`h*`, `p`, `link`, `button`, `li`): `Text::raw(strip_tags($content, '<a><strong>'))` — выживают только `<a>` и `<strong>`, остальное режется.
 - URL: `UrlSanitizer::forSrc()` для `img`, `UrlSanitizer::forHref()` для `link`.
 
-**Builder (`src/Ui/Builder.php`)** — 12 методов: `el`, `elA`, `div`, `span`, `p`, `h`, `a`, `img`, `input`, `ul`, `li`, `button`. Нет `form`/`table`/`select`/`textarea`/`label`/`nav` — обход через `Builder::el($tag)` (P2, `arch.md` §6 п.4).
+**Builder (`src/UI/Builder.php`)** — 12 методов: `el`, `elA`, `div`, `span`, `p`, `h`, `a`, `img`, `input`, `ul`, `li`, `button`. Нет `form`/`table`/`select`/`textarea`/`label`/`nav` — обход через `Builder::el($tag)` (P2, `arch.md` §6 п.4).
 
 **RCE:** `BlockCompiler` не поддерживает типы `custom`/`if`/`endif`. Сырой PHP в блоки через `block:write`/`filler:write` не попадает. `allow_php_blocks=false` по умолчанию.
 
@@ -278,6 +278,28 @@ python _dev/smoketests/test_brain_safety.py
 - `brain.py` **не использует** Orchestrator и наоборот — разные контуры.
 
 ---
+
+## 11. Создание таблиц через dbcli
+
+Для новых таблиц **не пишите провайдеры руками**. Используйте декларативный подход через `bin/dbcli.php`:
+
+```bash
+# 1. Создать схему таблицы (JSON)
+php bin/dbcli.php db:schema:init --domain=example.ru --table=products
+
+# 2. Добавить колонки
+php bin/dbcli.php db:schema:add-column --domain=example.ru --table=products --name=title --type=varchar --length=255
+php bin/dbcli.php db:schema:add-column --domain=example.ru --table=products --name=price --type=decimal
+
+# 3. Сгенерировать SQL и применить миграцию
+php bin/dbcli.php db:schema:generate-sql --domain=example.ru
+php bin/cli.php db:migrate
+
+# 4. Сгенерировать PHP-провайдер
+php bin/dbcli.php db:schema:generate-provider --domain=example.ru --table=products
+```
+
+После этого провайдер `ProductsProvider` будет доступен в `db:call` и `db:mutate`. Подробнее — `_doc/dbcli.md`.
 
 ## См. также
 
