@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Core;
 
-use Damoony\Session\SessionInterface;
+use Damoony\Core\Session\SessionInterface;
 
 final class Flash
 {

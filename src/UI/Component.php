@@ -1,0 +1,15 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Damoony\UI;
+
+abstract class Component
+{
+    abstract public function build(): Node;
+
+    final public function release(): string
+    {
+        return $this->build()->release();
+    }
+}

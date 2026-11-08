@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace damoony_ru\www;
 
-use Damoony\Algoritm\Page;
-use Damoony\Http\Response;
-use Damoony\Ui\Builder;
-use Damoony\Ui\Node;
-use Damoony\Files\Paths;
-use Damoony\Scheme\SchemeLoader;
-use Damoony\Scheme\SchemeRenderer;
+use Damoony\UI\Algoritm\Page;
+use Damoony\Core\Http\Response;
+use Damoony\UI\Builder;
+use Damoony\UI\Node;
+use Damoony\Core\Files\Paths;
+use Damoony\UI\Scheme\SchemeLoader;
+use Damoony\UI\Scheme\SchemeRenderer;
 
 final class algoritm_about extends Page
 {

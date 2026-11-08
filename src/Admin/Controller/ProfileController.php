@@ -6,20 +6,20 @@ namespace Damoony\Admin\Controller;
 
 use Damoony\Admin\View;
 use Damoony\Core\Config;
-use Damoony\Files\Fs;
-use Damoony\Http\Request;
-use Damoony\Http\Response;
-use Damoony\Ui\Builder;
-use Damoony\Ui\Field;
-use Damoony\Ui\Form;
-use Damoony\Ui\Message;
-use Damoony\Ui\Node;
+use Damoony\Core\Files\Fs;
+use Damoony\Core\Http\Request;
+use Damoony\Core\Http\Response;
+use Damoony\UI\Builder;
+use Damoony\UI\Field;
+use Damoony\UI\Form;
+use Damoony\UI\Message;
+use Damoony\UI\Node;
 
 final class ProfileController extends BaseController
 {
     public function __construct(
         \Damoony\Admin\AuthInterface $auth,
-        \Damoony\Security\Csrf $csrf,
+        \Damoony\Core\Security\Csrf $csrf,
         View $view,
         private readonly Config $adminConfig,
         private readonly string $root,

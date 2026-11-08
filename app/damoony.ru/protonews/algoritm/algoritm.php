@@ -8,11 +8,11 @@ require_once __DIR__ . '/../provider/ArticlesProvider.php';
 require_once __DIR__ . '/../provider/CategoriesProvider.php';
 
 
-use Damoony\Algoritm\Page;
-use Damoony\Http\Response;
-use Damoony\Ui\Builder;
-use Damoony\Ui\Node;
-use Damoony\Db\Connection;
+use Damoony\UI\Algoritm\Page;
+use Damoony\Core\Http\Response;
+use Damoony\UI\Builder;
+use Damoony\UI\Node;
+use Damoony\Data\Db\Connection;
 use Damoony\Core\Config;
 
 final class algoritm extends Page

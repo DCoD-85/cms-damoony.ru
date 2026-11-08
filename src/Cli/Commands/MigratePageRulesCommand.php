@@ -7,9 +7,9 @@ namespace Damoony\Cli\Commands;
 use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
-use Damoony\Files\Fs;
-use Damoony\Files\Paths;
-use Damoony\Page\PageRules;
+use Damoony\Core\Files\Fs;
+use Damoony\Core\Files\Paths;
+use Damoony\UI\Page\PageRules;
 
 /**
  * Одноразовая миграция старых .rules.json → новая модель (algoritm_{name}.rules.json).

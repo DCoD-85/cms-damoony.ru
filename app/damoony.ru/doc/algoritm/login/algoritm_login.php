@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace damoony_ru\doc;
 
-use Damoony\Algoritm\Page;
-use Damoony\Auth\AuthInterface;
-use Damoony\Http\Response;
-use Damoony\Security\Csrf;
-use Damoony\Ui\Builder;
-use Damoony\Ui\Field;
-use Damoony\Ui\Form;
-use Damoony\Ui\Message;
-use Damoony\Ui\Node;
+use Damoony\UI\Algoritm\Page;
+use Damoony\Data\Auth\AuthInterface;
+use Damoony\Core\Http\Response;
+use Damoony\Core\Security\Csrf;
+use Damoony\UI\Builder;
+use Damoony\UI\Field;
+use Damoony\UI\Form;
+use Damoony\UI\Message;
+use Damoony\UI\Node;
 
 class algoritm_login extends Page
 {

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Damoony\Ai;
 
 use Damoony\Cli\Result;
-use Damoony\Files\Fs;
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Fs;
+use Damoony\Core\Files\Paths;
 
 final class WizardManager
 {

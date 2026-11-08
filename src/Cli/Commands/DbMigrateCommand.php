@@ -7,9 +7,9 @@ namespace Damoony\Cli\Commands;
 use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
-use Damoony\Db\Connection;
-use Damoony\Db\MigrationRunner;
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Paths;
+use Damoony\Data\Db\Connection;
+use Damoony\Data\Db\MigrationRunner;
 
 final class DbMigrateCommand implements CommandInterface
 {

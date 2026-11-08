@@ -6,22 +6,22 @@ namespace Damoony\Admin\Controller;
 
 use Damoony\Admin\View;
 use Damoony\Core\Config;
-use Damoony\Files\Fs;
-use Damoony\Files\Paths;
-use Damoony\Http\Request;
-use Damoony\Http\Response;
-use Damoony\Ui\Builder;
-use Damoony\Ui\Field;
-use Damoony\Ui\Form;
-use Damoony\Ui\Message;
-use Damoony\Ui\Table;
-use Damoony\Ui\Text;
+use Damoony\Core\Files\Fs;
+use Damoony\Core\Files\Paths;
+use Damoony\Core\Http\Request;
+use Damoony\Core\Http\Response;
+use Damoony\UI\Builder;
+use Damoony\UI\Field;
+use Damoony\UI\Form;
+use Damoony\UI\Message;
+use Damoony\UI\Table;
+use Damoony\UI\Text;
 
 final class SecurityController extends BaseController
 {
     public function __construct(
         \Damoony\Admin\AuthInterface $auth,
-        \Damoony\Security\Csrf $csrf,
+        \Damoony\Core\Security\Csrf $csrf,
         View $view,
         private readonly Paths $paths,
         private readonly Config $engineConfig,
@@ -105,7 +105,7 @@ final class SecurityController extends BaseController
                 $unbanBtn = $unbanForm->build();
                 // Делаем кнопку маленькой и красной
                 foreach ($unbanBtn->children() as $child) {
-                    if ($child instanceof \Damoony\Ui\Element && $child->tag() === 'button') {
+                    if ($child instanceof \Damoony\UI\Element && $child->tag() === 'button') {
                         $child->attrs()->classAdd('btn btn-danger');
                         $child->attrs()->styleAdd('padding: 6px 12px; font-size: 13px;');
                     }

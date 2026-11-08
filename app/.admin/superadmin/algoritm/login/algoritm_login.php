@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Damoony\Admin\Pages\superadmin;
 
-use Damoony\Algoritm\Page;
-use Damoony\Http\Response;
-use Damoony\Ui\Node;
-use Damoony\Ui\Builder;
-use Damoony\Ui\Components\Card;
-use Damoony\Ui\Components\Form;
-use Damoony\Ui\Components\Input;
-use Damoony\Ui\Components\Button;
-use Damoony\Ui\Components\Label;
+use Damoony\UI\Algoritm\Page;
+use Damoony\Core\Http\Response;
+use Damoony\UI\Node;
+use Damoony\UI\Builder;
+use Damoony\UI\Components\Card;
+use Damoony\UI\Components\Form;
+use Damoony\UI\Components\Input;
+use Damoony\UI\Components\Button;
+use Damoony\UI\Components\Label;
 
 final class algoritm_login extends Page
 {
@@ -38,7 +38,7 @@ final class algoritm_login extends Page
         $form = new Form();
         $form->action('/admin/login')->method('POST');
         
-        if ($csrf instanceof \Damoony\Security\Csrf) {
+        if ($csrf instanceof \Damoony\Core\Security\Csrf) {
             $token = new Input('hidden', '_csrf');
             $token->attrs()->add('value', $csrf->token());
             $form->add($token);

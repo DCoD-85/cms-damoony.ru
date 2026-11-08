@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-use Damoony\App\AppFactory;
+use Damoony\Core\App\AppFactory;
 use Damoony\Core\Config;
-use Damoony\Db\Connection;
-use Damoony\Db\DataProvider\FormSubmissionProvider;
-use Damoony\Http\Middleware\RateLimitMiddleware;
-use Damoony\Http\Request;
-use Damoony\Http\Response;
-use Damoony\Security\Csrf;
+use Damoony\Core\Http\Middleware\RateLimitMiddleware;
+use Damoony\Core\Http\Request;
+use Damoony\Core\Http\Response;
+use Damoony\Core\Security\Csrf;
+use Damoony\Data\Db\Connection;
+use Damoony\Data\Db\DataProvider\FormSubmissionProvider;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 

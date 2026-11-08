@@ -4,25 +4,25 @@ declare(strict_types=1);
 
 namespace Damoony\Admin\Pages\superadmin;
 
-use Damoony\Algoritm\Page;
-use Damoony\Http\Response;
-use Damoony\Ui\Node;
-use Damoony\Ui\Builder;
-use Damoony\Ui\Components\Card;
-use Damoony\Ui\Components\Table;
-use Damoony\Ui\Components\Thead;
-use Damoony\Ui\Components\Tbody;
-use Damoony\Ui\Components\Tr;
-use Damoony\Ui\Components\Th;
-use Damoony\Ui\Components\Td;
-use Damoony\Ui\Components\Link;
-use Damoony\Ui\Components\Form;
-use Damoony\Ui\Components\Input;
-use Damoony\Ui\Components\Button;
-use Damoony\Ui\Components\Label;
-use Damoony\Files\Paths;
-use Damoony\Scheme\SchemeLoader;
-use Damoony\Scheme\SchemeRenderer;
+use Damoony\UI\Algoritm\Page;
+use Damoony\Core\Http\Response;
+use Damoony\UI\Node;
+use Damoony\UI\Builder;
+use Damoony\UI\Components\Card;
+use Damoony\UI\Components\Table;
+use Damoony\UI\Components\Thead;
+use Damoony\UI\Components\Tbody;
+use Damoony\UI\Components\Tr;
+use Damoony\UI\Components\Th;
+use Damoony\UI\Components\Td;
+use Damoony\UI\Components\Link;
+use Damoony\UI\Components\Form;
+use Damoony\UI\Components\Input;
+use Damoony\UI\Components\Button;
+use Damoony\UI\Components\Label;
+use Damoony\Core\Files\Paths;
+use Damoony\UI\Scheme\SchemeLoader;
+use Damoony\UI\Scheme\SchemeRenderer;
 
 final class algoritm_lang_profile extends Page
 {

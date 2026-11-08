@@ -8,7 +8,7 @@ use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
 use Damoony\Core\Config;
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Paths;
 
 final class FillerListCommand implements CommandInterface
 {

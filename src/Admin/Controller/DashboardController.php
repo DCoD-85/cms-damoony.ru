@@ -6,15 +6,15 @@ namespace Damoony\Admin\Controller;
 
 use Damoony\Admin\View;
 use Damoony\Core\Config;
-use Damoony\Http\Request;
-use Damoony\Http\Response;
-use Damoony\Ui\Builder;
+use Damoony\Core\Http\Request;
+use Damoony\Core\Http\Response;
+use Damoony\UI\Builder;
 
 final class DashboardController extends BaseController
 {
     public function __construct(
         \Damoony\Admin\AuthInterface $auth,
-        \Damoony\Security\Csrf $csrf,
+        \Damoony\Core\Security\Csrf $csrf,
         View $view,
         private readonly Config $siteConfig,
     ) {

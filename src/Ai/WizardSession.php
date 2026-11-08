@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Damoony\Ai;
 
-use Damoony\Files\Fs;
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Fs;
+use Damoony\Core\Files\Paths;
 
 /**
  * Хранилище состояния сессии Wizard.

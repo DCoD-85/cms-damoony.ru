@@ -16,7 +16,7 @@ final class Orchestrator
         private readonly InterviewerAgentInterface $interviewer,
         private readonly ArchitectAgentInterface $architect,
         private readonly CoderAgentInterface $coder,
-        private readonly \Damoony\Ai\Aicli\AicliClient $aicli,
+        private readonly \Damoony\Cli\Ai\AicliClient $aicli,
     ) {
     }
 

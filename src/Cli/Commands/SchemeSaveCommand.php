@@ -8,9 +8,9 @@ use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
 use Damoony\Core\Config;
-use Damoony\Files\Fs;
-use Damoony\Files\Paths;
-use Damoony\Scheme\SchemeCompiler;
+use Damoony\Core\Files\Fs;
+use Damoony\Core\Files\Paths;
+use Damoony\UI\Scheme\SchemeCompiler;
 
 final class SchemeSaveCommand implements CommandInterface
 {

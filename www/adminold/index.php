@@ -21,15 +21,15 @@ use Damoony\Admin\View;
 use Damoony\Core\Config;
 use Damoony\Core\Env;
 use Damoony\Core\ErrorHandler;
+use Damoony\Core\Files\Paths;
+use Damoony\Core\Http\Kernel;
+use Damoony\Core\Http\Middleware\RateLimitMiddleware;
+use Damoony\Core\Http\Middleware\SecurityHeadersMiddleware;
+use Damoony\Core\Http\MiddlewareStack;
+use Damoony\Core\Http\Request;
 use Damoony\Core\Logger;
-use Damoony\Files\Paths;
-use Damoony\Http\Kernel;
-use Damoony\Http\Middleware\RateLimitMiddleware;
-use Damoony\Http\Middleware\SecurityHeadersMiddleware;
-use Damoony\Http\MiddlewareStack;
-use Damoony\Http\Request;
-use Damoony\Security\Csrf;
-use Damoony\Session\NativeSession;
+use Damoony\Core\Security\Csrf;
+use Damoony\Core\Session\NativeSession;
 
 $root = dirname(__DIR__, 2);
 if (is_file($root . '/_dev/.dev')) {
@@ -94,14 +94,14 @@ try {
         $currentLang = in_array($cookieLang, $adminLangs, true) ? $cookieLang : $defaultLang;
     }
 
-    View::setLang(new \Damoony\I18n\Translator($currentLang, $defaultLang));
+    View::setLang(new \Damoony\Core\I18n\Translator($currentLang, $defaultLang));
     View::setAvailableLangs(array_values($adminLangs));
 
 
-    $app = \Damoony\App\AppFactory::create($root);
+    $app = \Damoony\Core\App\AppFactory::create($root);
     $container = $app->container();
-    $pages = $container->get(\Damoony\App\PageHandlerInterface::class);
-    assert($pages instanceof \Damoony\App\PageHandlerInterface);
+    $pages = $container->get(\Damoony\Core\App\PageHandlerInterface::class);
+    assert($pages instanceof \Damoony\Core\App\PageHandlerInterface);
     $paths = new Paths($root);
 
 
@@ -115,7 +115,7 @@ try {
             $dbConfig['path'] = $root . '/' . ltrim($path, '/\\');
         }
     }
-    $db = new \Damoony\Db\Connection($dbConfig);
+    $db = new \Damoony\Data\Db\Connection($dbConfig);
     // ------------------------------------
 
     $router = new AdminRouter();
@@ -133,14 +133,14 @@ try {
     $router->register('editor', new EditorController($auth, $csrf, $view, $root));
 
     $router->register('domain_db', new class ($auth, $csrf, $view) extends BaseController {
-        public function index(\Damoony\Http\Request $request): \Damoony\Http\Response
+        public function index(\Damoony\Core\Http\Request $request): \Damoony\Core\Http\Response
         {
             $domain = (string) $request->query('domain', '');
-            $card = \Damoony\Ui\Builder::div('admin-card');
-            $card->append(\Damoony\Ui\Builder::h(1)->content('База данных домена: ' . $domain));
+            $card = \Damoony\UI\Builder::div('admin-card');
+            $card->append(\Damoony\UI\Builder::h(1)->content('База данных домена: ' . $domain));
             $card->append(\Damoony\Admin\View::domainTabs($domain, 'db'));
-            $card->append(\Damoony\Ui\Message::info('Раздел находится в разработке.')->build());
-            return \Damoony\Http\Response::html($this->view->render($card, ['title' => 'БД домена']));
+            $card->append(\Damoony\UI\Message::info('Раздел находится в разработке.')->build());
+            return \Damoony\Core\Http\Response::html($this->view->render($card, ['title' => 'БД домена']));
         }
     });
 
@@ -186,7 +186,7 @@ try {
             $ctxRole   = $_SESSION['admin_context']['role'] ?? 'superadmin';
 
             // Создаем DomainContext через резолвер
-            $resolver = $container->get(\Damoony\Domain\DomainResolverInterface::class);
+            $resolver = $container->get(\Damoony\Core\Domain\DomainResolverInterface::class);
             $domainContext = $resolver->resolve($ctxDomain);
             if ($ctxAlias !== $domainContext->allias) {
                 $domainContext = $domainContext->withAllias($ctxAlias);
@@ -203,7 +203,7 @@ try {
                 }
 
                 $adminRequest = $r2->withPath($path);
-                $fc = new \Damoony\App\FrontController($container, $pages);
+                $fc = new \Damoony\Core\App\FrontController($container, $pages);
 
                 $response = $fc->handle($adminRequest, null, null, $ctxRole, $domainContext, $auth);
 
@@ -225,7 +225,7 @@ try {
 
     if ($response->status === 429) {
         $retryAfter = (int) ($response->headers['retry-after'] ?? 60);
-        $response = \Damoony\Error\ErrorPage::tooManyRequests('ru', $retryAfter);
+        $response = \Damoony\Core\Error\ErrorPage::tooManyRequests('ru', $retryAfter);
     }
 
     $response->send();

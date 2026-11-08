@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-use Damoony\App\AppFactory;
-use Damoony\Auth\AuthInterface;
-use Damoony\Content\ContentResponder;
+use Damoony\Core\App\AppFactory;
 use Damoony\Core\Config;
-use Damoony\Files\Paths;
+use Damoony\Core\Content\ContentResponder;
+use Damoony\Core\Files\Paths;
+use Damoony\Data\Auth\AuthInterface;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 

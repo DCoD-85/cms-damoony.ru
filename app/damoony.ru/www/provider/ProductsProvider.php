@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace damoony_ru\www;
 
-use Damoony\Db\DataProvider\BasicCrudProvider;
+use Damoony\Data\Db\DataProvider\BasicCrudProvider;
 
 final class ProductsProvider extends BasicCrudProvider
 {

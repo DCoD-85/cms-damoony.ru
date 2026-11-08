@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Damoony\Admin;
 
-use Damoony\I18n\Translator;
-use Damoony\Ui\Builder;
-use Damoony\Ui\Document;
-use Damoony\Ui\Element;
-use Damoony\Ui\Node;
-use Damoony\Ui\Text;
+use Damoony\Core\I18n\Translator;
+use Damoony\UI\Builder;
+use Damoony\UI\Document;
+use Damoony\UI\Element;
+use Damoony\UI\Node;
+use Damoony\UI\Text;
 
 final class View
 {

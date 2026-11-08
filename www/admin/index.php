@@ -3,13 +3,13 @@
 declare(strict_types=1);
 
 use Damoony\Admin\Auth;
-use Damoony\App\AppFactory;
-use Damoony\App\FrontController;
-use Damoony\App\PageHandlerInterface;
+use Damoony\Core\App\AppFactory;
+use Damoony\Core\App\FrontController;
+use Damoony\Core\App\PageHandlerInterface;
 use Damoony\Core\Config;
-use Damoony\Domain\DomainResolverInterface;
-use Damoony\Http\Request;
-use Damoony\Session\NativeSession;
+use Damoony\Core\Domain\DomainResolverInterface;
+use Damoony\Core\Http\Request;
+use Damoony\Core\Session\NativeSession;
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 $root = dirname(__DIR__, 2);

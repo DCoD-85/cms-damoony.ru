@@ -8,18 +8,18 @@ ini_set('max_execution_time', '300'); // 5 минут на генерацию
 ini_set('memory_limit', '512M');
 error_reporting(E_ALL);
 
-use Damoony\Ai\Aicli\AicliClient;
 use Damoony\Ai\Orchestrator\ContextManager;
 use Damoony\Ai\Orchestrator\Orchestrator;
 use Damoony\Ai\Orchestrator\ToolsCollector;
+use Damoony\Cli\Ai\AicliClient;
 use Damoony\Cli\Commands\SessionApplyCommand;
 use Damoony\Cli\Commands\SessionDiscardCommand;
 use Damoony\Cli\Commands\SessionStartCommand;
 use Damoony\Cli\Context;
 use Damoony\Core\Config;
-use Damoony\Domain\ConfigDomainResolver;
-use Damoony\Files\Paths;
-use Damoony\Session\NativeSession;
+use Damoony\Core\Domain\ConfigDomainResolver;
+use Damoony\Core\Files\Paths;
+use Damoony\Core\Session\NativeSession;
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 

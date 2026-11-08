@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Damoony\Ui\Components;
+namespace Damoony\UI\Components;
 
-use Damoony\Ui\Builder;
-use Damoony\Ui\Element;
+use Damoony\UI\Builder;
+use Damoony\UI\Element;
 
 class LangSwitcher extends Element
 {

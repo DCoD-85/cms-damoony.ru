@@ -8,8 +8,8 @@ use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
 use Damoony\Core\Config;
-use Damoony\Files\Fs;
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Fs;
+use Damoony\Core\Files\Paths;
 
 final class FillerNewCommand implements CommandInterface
 {
@@ -93,10 +93,10 @@ final class FillerNewCommand implements CommandInterface
         $php = "<?php\n\n"
             . "declare(strict_types=1);\n\n"
             . "namespace {$namespace};\n\n"
-            . "use Damoony\\Region\\RegionContext;\n"
-            . "use Damoony\\Region\\RegionInterface;\n"
-            . "use Damoony\\Ui\\Builder;\n"
-            . "use Damoony\\Ui\\Node;\n\n"
+            . "use Damoony\\UI\\Region\\RegionContext;\n"
+            . "use Damoony\\UI\\Region\\RegionInterface;\n"
+            . "use Damoony\\UI\\Builder;\n"
+            . "use Damoony\\UI\\Node;\n\n"
             . "final class {$className} implements RegionInterface\n"
             . "{\n"
             . "    public function name(): string\n"

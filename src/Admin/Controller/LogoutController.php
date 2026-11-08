@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Damoony\Admin\Controller;
 
-use Damoony\Http\Request;
-use Damoony\Http\Response;
+use Damoony\Core\Http\Request;
+use Damoony\Core\Http\Response;
 
 final class LogoutController extends BaseController
 {

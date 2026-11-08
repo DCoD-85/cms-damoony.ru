@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Damoony\Ui\Components;
+namespace Damoony\UI\Components;
 
-use Damoony\Ui\Element;
-use Damoony\Ui\Node;
+use Damoony\UI\Element;
+use Damoony\UI\Node;
 
 class Select extends Element
 {

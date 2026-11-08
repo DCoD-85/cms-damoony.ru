@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-use Damoony\App\AppFactory;
+use Damoony\Core\App\AppFactory;
 use Damoony\Core\Config;
-use Damoony\Files\Paths;
-use Damoony\Http\Request;
-use Damoony\Session\NativeSession;
+use Damoony\Core\Files\Paths;
+use Damoony\Core\Http\Request;
+use Damoony\Core\Session\NativeSession;
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
@@ -47,7 +47,7 @@ try {
     // Резолвим хост в реальный домен
     $siteConfigFile = $root . '/config/site.config';
     $site = is_file($siteConfigFile) ? Config::fromFile($siteConfigFile) : Config::fromArray([]);
-    $resolver = new \Damoony\Domain\ConfigDomainResolver($site);
+    $resolver = new \Damoony\Core\Domain\ConfigDomainResolver($site);
 
     try {
         $domainCtx = $resolver->resolve($host);
@@ -80,11 +80,11 @@ try {
     $container = $app->container();
 
     // Получаем FrontController и передаем ему ID сессии
-    $pages = $container->get(\Damoony\App\PageHandlerInterface::class);
-    if (!$pages instanceof \Damoony\App\PageHandlerInterface) {
+    $pages = $container->get(\Damoony\Core\App\PageHandlerInterface::class);
+    if (!$pages instanceof \Damoony\Core\App\PageHandlerInterface) {
         throw new \RuntimeException('PageHandler missing');
     }
-    $fc = new \Damoony\App\FrontController($container, $pages);
+    $fc = new \Damoony\Core\App\FrontController($container, $pages);
     $response = $fc->handle($request, sessionId: $tabId, aliasOverride: $alias);
 
     // 4. Внедряем <base> тег и Wireframe CSS
@@ -108,7 +108,7 @@ try {
             $html = str_replace('</head>', $wireframeCss . '</head>', $html);
         }
 
-        $response = new \Damoony\Http\Response(
+        $response = new \Damoony\Core\Http\Response(
             $html,
             $response->status,
             $response->headers,

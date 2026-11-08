@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Ai\Orchestrator;
 
-use Damoony\Ai\Aicli\AicliClient;
+use Damoony\Cli\Ai\AicliClient;
 
 final class ToolsCollector implements ToolsCollectorInterface
 {

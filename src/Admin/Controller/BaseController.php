@@ -6,9 +6,9 @@ namespace Damoony\Admin\Controller;
 
 use Damoony\Admin\AuthInterface;
 use Damoony\Admin\View;
-use Damoony\Http\Request;
-use Damoony\Http\Response;
-use Damoony\Security\Csrf;
+use Damoony\Core\Http\Request;
+use Damoony\Core\Http\Response;
+use Damoony\Core\Security\Csrf;
 
 abstract class BaseController
 {

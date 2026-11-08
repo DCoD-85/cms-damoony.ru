@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Damoony\Demo\Page;
 
-use Damoony\Algoritm\Page;
-use Damoony\Http\Response;
-use Damoony\Response\AjaxStruct;
-use Damoony\Response\MinStruct;
-use Damoony\Ui\Builder;
-use Damoony\Ui\Node;
+use Damoony\Core\Http\Response;
+use Damoony\UI\Algoritm\Page;
+use Damoony\UI\Builder;
+use Damoony\UI\Node;
+use Damoony\UI\Response\AjaxStruct;
+use Damoony\UI\Response\MinStruct;
 
 class AjaxPage extends Page
 {

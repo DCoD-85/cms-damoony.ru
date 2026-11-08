@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace damoony_ru\www;
 
-use Damoony\Algoritm\Page;
-use Damoony\Ui\Builder;
-use Damoony\Ui\Node;
-use Damoony\Ui\Text;
-use Damoony\Ui\UrlSanitizer;
-use Damoony\Http\Response;
-use Damoony\Files\Paths;
-use Damoony\Scheme\SchemeLoader;
-use Damoony\Scheme\SchemeRenderer;
+use Damoony\UI\Algoritm\Page;
+use Damoony\UI\Builder;
+use Damoony\UI\Node;
+use Damoony\UI\Text;
+use Damoony\UI\UrlSanitizer;
+use Damoony\Core\Http\Response;
+use Damoony\Core\Files\Paths;
+use Damoony\UI\Scheme\SchemeLoader;
+use Damoony\UI\Scheme\SchemeRenderer;
 
 final class algoritm extends Page
 {

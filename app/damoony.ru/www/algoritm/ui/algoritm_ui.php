@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace damoony_ru\www;
 
-use Damoony\Algoritm\Page;
-use Damoony\Http\Response;
-use Damoony\Ui\Node;
-use Damoony\Ui\Builder;
-use Damoony\Ui\Components\Form;
-use Damoony\Ui\Components\Table;
-use Damoony\Ui\Components\Tbody;
-use Damoony\Ui\Components\Tr;
-use Damoony\Ui\Components\Td;
-use Damoony\Ui\Components\Select;
-use Damoony\Ui\Components\Option;
-use Damoony\Ui\Components\Input;
-use Damoony\Ui\Components\Button;
+use Damoony\UI\Algoritm\Page;
+use Damoony\Core\Http\Response;
+use Damoony\UI\Node;
+use Damoony\UI\Builder;
+use Damoony\UI\Components\Form;
+use Damoony\UI\Components\Table;
+use Damoony\UI\Components\Tbody;
+use Damoony\UI\Components\Tr;
+use Damoony\UI\Components\Td;
+use Damoony\UI\Components\Select;
+use Damoony\UI\Components\Option;
+use Damoony\UI\Components\Input;
+use Damoony\UI\Components\Button;
 
 final class algoritm_ui extends Page
 {
@@ -48,7 +48,7 @@ final class algoritm_ui extends Page
 
         // Строка 3: Кнопка отправки
         $tr3 = new Tr();
-        $tr3->add((new Td())->add(\Damoony\Ui\Builder::span())); // Пустая ячейка
+        $tr3->add((new Td())->add(\Damoony\UI\Builder::span())); // Пустая ячейка
         $tr3->add((new Td())->add(new Button('Отправить')));
         $tbody->add($tr3);
 

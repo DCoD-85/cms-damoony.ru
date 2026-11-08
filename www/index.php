@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 $start = microtime(true); // Запуск таймера
 
-use Damoony\App\AppFactory;
-use Damoony\App\FrontController;
-use Damoony\App\PageHandlerInterface;
-use Damoony\Http\Kernel;
-use Damoony\Http\Middleware\LanguageCookieMiddleware;
-use Damoony\Http\Middleware\RateLimitMiddleware;
-use Damoony\Http\Middleware\SecurityHeadersMiddleware;
-use Damoony\Http\Middleware\SkinCookieMiddleware;
-use Damoony\Http\MiddlewareStack;
-use Damoony\Http\Request;
-use Damoony\Http\Response;
-use Damoony\Session\SessionInterface;
+use Damoony\Core\App\AppFactory;
+use Damoony\Core\App\FrontController;
+use Damoony\Core\App\PageHandlerInterface;
+use Damoony\Core\Http\Kernel;
+use Damoony\Core\Http\Middleware\LanguageCookieMiddleware;
+use Damoony\Core\Http\Middleware\RateLimitMiddleware;
+use Damoony\Core\Http\Middleware\SecurityHeadersMiddleware;
+use Damoony\Core\Http\Middleware\SkinCookieMiddleware;
+use Damoony\Core\Http\MiddlewareStack;
+use Damoony\Core\Http\Request;
+use Damoony\Core\Http\Response;
+use Damoony\Core\Session\SessionInterface;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -81,7 +81,7 @@ $kernel = new Kernel($handler, $app->logger(), $app->env());
 $response = $kernel->handle(Request::fromGlobals());
 if ($response->status === 429) {
     $retryAfter = (int) ($response->headers['retry-after'] ?? 60);
-    $response = \Damoony\Error\ErrorPage::tooManyRequests('ru', $retryAfter);
+    $response = \Damoony\Core\Error\ErrorPage::tooManyRequests('ru', $retryAfter);
 }
 
 // Остановка таймера и внедрение красивой плашки

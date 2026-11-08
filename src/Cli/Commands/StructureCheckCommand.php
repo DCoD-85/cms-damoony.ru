@@ -8,8 +8,8 @@ use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
 use Damoony\Core\Config;
+use Damoony\Core\Files\Paths;
 use Damoony\Diagnostics\StructureChecker;
-use Damoony\Files\Paths;
 
 final class StructureCheckCommand implements CommandInterface
 {

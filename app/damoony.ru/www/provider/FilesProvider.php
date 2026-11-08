@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace damoony_ru\www\provider;
 
-use Damoony\Db\DataProvider\FilesProvider as BaseProvider;
+use Damoony\Data\Db\DataProvider\FilesProvider as BaseProvider;
 
 final class FilesProvider extends BaseProvider
 {

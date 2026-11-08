@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Damoony\Cli\Commands;
 
 use Damoony\Cli\CommandInterface;
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Paths;
 
 abstract class AbstractSessionCommand implements CommandInterface
 {

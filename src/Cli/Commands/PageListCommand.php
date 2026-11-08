@@ -8,8 +8,8 @@ use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
 use Damoony\Core\Config;
-use Damoony\Files\Paths;
-use Damoony\Page\PageRules;
+use Damoony\Core\Files\Paths;
+use Damoony\UI\Page\PageRules;
 
 final class PageListCommand implements CommandInterface
 {

@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Damoony\Cli\Commands;
 
-use Damoony\Ai\Aicli\AicliClient;
-use Damoony\Ai\Aicli\Handler\AgentChatHandler;
+use Damoony\Cli\Ai\AicliClient;
+use Damoony\Cli\Ai\Handler\AgentChatHandler;
 use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
-use Damoony\Domain\DomainResolverInterface;
-use Damoony\Files\Paths;
+use Damoony\Core\Domain\DomainResolverInterface;
+use Damoony\Core\Files\Paths;
 
 final class AiEditPageCommand implements CommandInterface
 {

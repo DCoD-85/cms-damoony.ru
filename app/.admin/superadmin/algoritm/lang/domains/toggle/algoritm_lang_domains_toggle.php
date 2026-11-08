@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Damoony\Admin\Pages\superadmin;
 
-use Damoony\Algoritm\Page;
-use Damoony\Http\Response;
-use Damoony\Ui\Node;
+use Damoony\UI\Algoritm\Page;
+use Damoony\Core\Http\Response;
+use Damoony\UI\Node;
 use Damoony\Core\Config;
-use Damoony\Files\Fs;
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Fs;
+use Damoony\Core\Files\Paths;
 
 final class algoritm_lang_domains_toggle extends Page
 {

@@ -8,22 +8,22 @@ use Damoony\Admin\View;
 use Damoony\Cli\Commands\DomainNewCommand;
 use Damoony\Cli\Context;
 use Damoony\Core\Config;
-use Damoony\Files\Fs;
-use Damoony\Files\Paths;
-use Damoony\Http\Request;
-use Damoony\Http\Response;
-use Damoony\Ui\Builder;
-use Damoony\Ui\Field;
-use Damoony\Ui\Form;
-use Damoony\Ui\Message;
-use Damoony\Ui\Table;
-use Damoony\Ui\Text;
+use Damoony\Core\Files\Fs;
+use Damoony\Core\Files\Paths;
+use Damoony\Core\Http\Request;
+use Damoony\Core\Http\Response;
+use Damoony\UI\Builder;
+use Damoony\UI\Field;
+use Damoony\UI\Form;
+use Damoony\UI\Message;
+use Damoony\UI\Table;
+use Damoony\UI\Text;
 
 final class DomainController extends BaseController
 {
     public function __construct(
         \Damoony\Admin\AuthInterface $auth,
-        \Damoony\Security\Csrf $csrf,
+        \Damoony\Core\Security\Csrf $csrf,
         View $view,
         private readonly Paths $paths,
         private readonly Config $siteConfig,

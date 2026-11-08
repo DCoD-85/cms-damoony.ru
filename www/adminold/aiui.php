@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use Damoony\Session\NativeSession;
-use Damoony\Ui\Builder;
+use Damoony\Core\Session\NativeSession;
+use Damoony\UI\Builder;
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 

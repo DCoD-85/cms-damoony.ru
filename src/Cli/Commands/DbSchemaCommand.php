@@ -8,7 +8,7 @@ use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
 use Damoony\Core\Config;
-use Damoony\Db\Connection;
+use Damoony\Data\Db\Connection;
 
 final class DbSchemaCommand implements CommandInterface
 {

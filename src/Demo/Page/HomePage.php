@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Damoony\Demo\Page;
 
-use Damoony\Algoritm\Page;
-use Damoony\Files\Paths;
-use Damoony\Http\Response;
-use Damoony\Scheme\SchemeLoader;
-use Damoony\Scheme\SchemeRenderer;
-use Damoony\Ui\Node;
+use Damoony\Core\Files\Paths;
+use Damoony\Core\Http\Response;
+use Damoony\UI\Algoritm\Page;
+use Damoony\UI\Node;
+use Damoony\UI\Scheme\SchemeLoader;
+use Damoony\UI\Scheme\SchemeRenderer;
 
 class HomePage extends Page
 {

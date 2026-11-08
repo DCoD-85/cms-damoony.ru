@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Damoony\Diagnostics;
 
 use Damoony\Core\Config;
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Paths;
 
 final class StructureChecker
 {

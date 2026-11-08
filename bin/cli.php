@@ -61,8 +61,8 @@ use Damoony\Cli\Commands\UserNewCommand;
 use Damoony\Cli\HelpCommand;
 use Damoony\Cli\Renderer;
 use Damoony\Core\Config;
-use Damoony\Db\Connection;
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Paths;
+use Damoony\Data\Db\Connection;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -141,7 +141,7 @@ $registry->add(new DbDescribeCommand($paths));
 $registry->add(new DbCallCommand($paths, $siteConfig, $db));
 $registry->add(new DbMutateCommand($paths, $siteConfig, $db));
 $registry->add(new DataproviderAddMethodCommand($paths));
-$registry->add(new AiEditPageCommand($paths, new \Damoony\Domain\ConfigDomainResolver($siteConfig)));
+$registry->add(new AiEditPageCommand($paths, new \Damoony\Core\Domain\ConfigDomainResolver($siteConfig)));
 
 $app = new Application($registry, new ArgvParser(), new Renderer());
 exit($app->run($_SERVER['argv']));

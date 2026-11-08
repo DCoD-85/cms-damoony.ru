@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace damoony_ru;
 
-use Damoony\Region\RegionContext;
-use Damoony\Region\RegionInterface;
-use Damoony\Ui\Builder;
-use Damoony\Ui\Node;
+use Damoony\UI\Region\RegionContext;
+use Damoony\UI\Region\RegionInterface;
+use Damoony\UI\Builder;
+use Damoony\UI\Node;
 
 final class alliasglobal_bottom implements RegionInterface
 {

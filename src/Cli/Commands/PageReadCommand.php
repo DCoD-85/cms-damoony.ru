@@ -7,8 +7,8 @@ namespace Damoony\Cli\Commands;
 use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
-use Damoony\Files\Paths;
-use Damoony\Page\PagePath;
+use Damoony\Core\Files\Paths;
+use Damoony\UI\Page\PagePath;
 
 final class PageReadCommand implements CommandInterface
 {

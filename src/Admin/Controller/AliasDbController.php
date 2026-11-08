@@ -6,18 +6,18 @@ namespace Damoony\Admin\Controller;
 
 use Damoony\Admin\View;
 use Damoony\Core\Config;
-use Damoony\Db\Connection;
-use Damoony\Http\Request;
-use Damoony\Http\Response;
-use Damoony\Ui\Builder;
-use Damoony\Ui\Message;
-use Damoony\Ui\Text;
+use Damoony\Core\Http\Request;
+use Damoony\Core\Http\Response;
+use Damoony\Data\Db\Connection;
+use Damoony\UI\Builder;
+use Damoony\UI\Message;
+use Damoony\UI\Text;
 
 final class AliasDbController extends BaseController
 {
     public function __construct(
         \Damoony\Admin\AuthInterface $auth,
-        \Damoony\Security\Csrf $csrf,
+        \Damoony\Core\Security\Csrf $csrf,
         View $view,
         private readonly Config $engineConfig,
         private readonly Connection $db,

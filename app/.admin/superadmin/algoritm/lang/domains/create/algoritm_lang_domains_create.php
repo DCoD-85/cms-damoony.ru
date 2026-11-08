@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace Damoony\Admin\Pages\superadmin;
 
-use Damoony\Algoritm\Page;
-use Damoony\Http\Response;
-use Damoony\Ui\Node;
-use Damoony\Ui\Builder;
-use Damoony\Ui\Components\Card;
-use Damoony\Ui\Components\Form;
-use Damoony\Ui\Components\Input;
-use Damoony\Ui\Components\Button;
-use Damoony\Ui\Components\Label;
-use Damoony\Files\Paths;
-use Damoony\Scheme\SchemeLoader;
-use Damoony\Scheme\SchemeRenderer;
+use Damoony\UI\Algoritm\Page;
+use Damoony\Core\Http\Response;
+use Damoony\UI\Node;
+use Damoony\UI\Builder;
+use Damoony\UI\Components\Card;
+use Damoony\UI\Components\Form;
+use Damoony\UI\Components\Input;
+use Damoony\UI\Components\Button;
+use Damoony\UI\Components\Label;
+use Damoony\Core\Files\Paths;
+use Damoony\UI\Scheme\SchemeLoader;
+use Damoony\UI\Scheme\SchemeRenderer;
 
 final class algoritm_lang_domains_create extends Page
 {
@@ -65,7 +65,7 @@ final class algoritm_lang_domains_create extends Page
 
         $content->add($form);
 
-        $backBtn = new \Damoony\Ui\Components\Link("/admin/{$lang}/domains", $t->t('admin.domain.create.back'));
+        $backBtn = new \Damoony\UI\Components\Link("/admin/{$lang}/domains", $t->t('admin.domain.create.back'));
         $backBtn->attrs()->classAdd('ui-btn')->classAdd('ui-btn-outline');
         $content->add($backBtn);
 

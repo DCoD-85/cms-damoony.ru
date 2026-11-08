@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace damoony_ru\doc;
 
-use Damoony\Algoritm\Page;
-use Damoony\Auth\AuthInterface;
-use Damoony\Http\Response;
-use Damoony\Ui\Node;
+use Damoony\UI\Algoritm\Page;
+use Damoony\Data\Auth\AuthInterface;
+use Damoony\Core\Http\Response;
+use Damoony\UI\Node;
 
 class algoritm_logout extends Page
 {

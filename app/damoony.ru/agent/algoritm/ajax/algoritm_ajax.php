@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace damoony_ru\agent;
 
-use Damoony\Algoritm\Page;
-use Damoony\Ui\Node;
-use Damoony\Http\Response;
+use Damoony\UI\Algoritm\Page;
+use Damoony\UI\Node;
+use Damoony\Core\Http\Response;
 
 final class algoritm_ajax extends Page
 {

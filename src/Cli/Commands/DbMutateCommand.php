@@ -8,11 +8,11 @@ use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
 use Damoony\Core\Config;
-use Damoony\Db\Connection;
-use Damoony\Db\DataProvider\AuditProvider;
-use Damoony\Db\DataProvider\ProviderInterface;
-use Damoony\Db\DataProvider\ProviderResolver;
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Paths;
+use Damoony\Data\Db\Connection;
+use Damoony\Data\Db\DataProvider\AuditProvider;
+use Damoony\Data\Db\DataProvider\ProviderInterface;
+use Damoony\Data\Db\DataProvider\ProviderResolver;
 
 final class DbMutateCommand implements CommandInterface
 {

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Damoony\Admin;
 
 use Damoony\Core\Config;
-use Damoony\Files\Fs;
-use Damoony\Session\SessionInterface;
+use Damoony\Core\Files\Fs;
+use Damoony\Core\Session\SessionInterface;
 
 final class Auth implements AuthInterface
 {

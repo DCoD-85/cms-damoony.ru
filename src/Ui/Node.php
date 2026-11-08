@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Damoony\Ui;
+namespace Damoony\UI;
 
 interface Node
 {

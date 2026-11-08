@@ -7,10 +7,10 @@ namespace Damoony\Cli\Commands;
 use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
-use Damoony\Files\Fs;
-use Damoony\Files\Paths;
-use Damoony\Page\PagePath;
-use Damoony\Page\PageRules;
+use Damoony\Core\Files\Fs;
+use Damoony\Core\Files\Paths;
+use Damoony\UI\Page\PagePath;
+use Damoony\UI\Page\PageRules;
 
 final class PageToggleCommand implements CommandInterface
 {

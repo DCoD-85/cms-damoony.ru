@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Damoony\Ui\Components;
+namespace Damoony\UI\Components;
 
-use Damoony\Ui\Element;
+use Damoony\UI\Element;
 
 class Input extends Element
 {

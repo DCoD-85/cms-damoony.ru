@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Damoony\Ai\Orchestrator\Agent;
 
-use Damoony\Ai\Aicli\AicliClient;
-use Damoony\Ai\Aicli\Handler\AgentChatHandler;
+use Damoony\Cli\Ai\AicliClient;
+use Damoony\Cli\Ai\Handler\AgentChatHandler;
 
 final class ArchitectAgent implements AgentInterface, ArchitectAgentInterface
 {

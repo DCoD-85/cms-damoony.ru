@@ -119,7 +119,7 @@ final class Cache
 
         $count = 0;
         foreach (glob($this->dir . '/*', GLOB_ONLYDIR) ?: [] as $path) {
-            \Damoony\Files\Fs::rmrf($path);
+            \Damoony\Core\Files\Fs::rmrf($path);
             $count++;
         }
         clearstatcache();

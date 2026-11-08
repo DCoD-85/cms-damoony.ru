@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace damoony_ru\doc;
 
-use Damoony\Algoritm\Page;
-use Damoony\Http\Response;
-use Damoony\Region\RegionContext;
-use Damoony\Region\RegionInterface;
-use Damoony\Support\Markdown;
-use Damoony\Ui\Builder;
-use Damoony\Ui\Node;
-use Damoony\Ui\Text;
+use Damoony\UI\Algoritm\Page;
+use Damoony\Core\Http\Response;
+use Damoony\UI\Region\RegionContext;
+use Damoony\UI\Region\RegionInterface;
+use Damoony\Core\Support\Markdown;
+use Damoony\UI\Builder;
+use Damoony\UI\Node;
+use Damoony\UI\Text;
 
 class algoritm_doc extends Page
 {
@@ -69,14 +69,14 @@ class algoritm_doc extends Page
 
         // 3. Загружаем схему и рендерим
         $paths = $this->context->service('paths');
-        if (!$paths instanceof \Damoony\Files\Paths) {
-            $paths = new \Damoony\Files\Paths(dirname(__DIR__, 6));
+        if (!$paths instanceof \Damoony\Core\Files\Paths) {
+            $paths = new \Damoony\Core\Files\Paths(dirname(__DIR__, 6));
         }
 
-        $schemeLoader = new \Damoony\Scheme\SchemeLoader($paths);
+        $schemeLoader = new \Damoony\UI\Scheme\SchemeLoader($paths);
         $manifest = $schemeLoader->load($this->context->domain, $this->context->domain->scheme);
 
-        $renderer = new \Damoony\Scheme\SchemeRenderer();
+        $renderer = new \Damoony\UI\Scheme\SchemeRenderer();
 
         return $renderer->render($manifest, $this->regions(), $this->context);
     }

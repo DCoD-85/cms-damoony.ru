@@ -8,10 +8,10 @@ use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
 use Damoony\Core\Config;
-use Damoony\Files\Fs;
-use Damoony\Files\Paths;
-use Damoony\Page\PageCompiler;
-use Damoony\Page\PageNamespace;
+use Damoony\Core\Files\Fs;
+use Damoony\Core\Files\Paths;
+use Damoony\UI\Page\PageCompiler;
+use Damoony\UI\Page\PageNamespace;
 
 final class AlliasNewCommand implements CommandInterface
 {

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace damoony_ru\www\provider;
 
-use Damoony\Db\DataProvider\NewsProvider as BaseProvider;
+use Damoony\Data\Db\DataProvider\NewsProvider as BaseProvider;
 
 final class NewsProvider extends BaseProvider
 {

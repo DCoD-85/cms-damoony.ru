@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace damoony_ru\protonews;
 
-use Damoony\Db\DataProvider\BasicCrudProvider;
+use Damoony\Data\Db\DataProvider\BasicCrudProvider;
 
 final class ArticlesProvider extends BasicCrudProvider
 {

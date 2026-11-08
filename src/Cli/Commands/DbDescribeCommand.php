@@ -7,8 +7,8 @@ namespace Damoony\Cli\Commands;
 use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
-use Damoony\Db\DataProvider\ProviderResolver;
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Paths;
+use Damoony\Data\Db\DataProvider\ProviderResolver;
 
 final class DbDescribeCommand implements CommandInterface
 {

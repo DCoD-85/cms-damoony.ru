@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Ai\Orchestrator;
 
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Paths;
 
 final class ContextManager
 {
