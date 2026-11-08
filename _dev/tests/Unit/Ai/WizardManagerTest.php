@@ -6,7 +6,7 @@ namespace Damoony\Tests\Unit\Ai;
 
 use Damoony\Ai\WizardManager;
 use Damoony\Ai\WizardSession;
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Paths;
 use PHPUnit\Framework\TestCase;
 
 final class WizardManagerTest extends TestCase

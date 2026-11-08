@@ -6,7 +6,7 @@ namespace Damoony\Tests\Unit\Cli;
 
 use Damoony\Cli\Commands\StructureRepairCommand;
 use Damoony\Cli\Context;
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Paths;
 use PHPUnit\Framework\TestCase;
 
 final class StructureRepairCommandTest extends TestCase

@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Scenarios;
 
-use Damoony\App\FrontController;
-use Damoony\App\PageHandler;
-use Damoony\Auth\AuthInterface;
+use Damoony\Core\App\FrontController;
+use Damoony\Core\App\PageHandler;
 use Damoony\Core\Config;
 use Damoony\Core\Container;
-use Damoony\Domain\ConfigDomainResolver;
-use Damoony\Domain\DomainResolverInterface;
-use Damoony\Files\Paths;
-use Damoony\Http\Request;
-use Damoony\Routing\FileRouter;
-use Damoony\Routing\RouterInterface;
-use Damoony\Routing\RulesMatcher;
-use Damoony\Security\Csrf;
-use Damoony\Session\SessionInterface;
+use Damoony\Core\Domain\ConfigDomainResolver;
+use Damoony\Core\Domain\DomainResolverInterface;
+use Damoony\Core\Files\Paths;
+use Damoony\Core\Http\Request;
+use Damoony\Core\Routing\FileRouter;
+use Damoony\Core\Routing\RouterInterface;
+use Damoony\Core\Routing\RulesMatcher;
+use Damoony\Core\Security\Csrf;
+use Damoony\Core\Session\SessionInterface;
+use Damoony\Data\Auth\AuthInterface;
 use PHPUnit\Framework\TestCase;
 
 final class AjaxScenarioTest extends TestCase

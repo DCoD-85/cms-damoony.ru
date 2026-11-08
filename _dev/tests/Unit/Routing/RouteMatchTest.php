@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Routing;
 
-use Damoony\Routing\RouteMatch;
+use Damoony\Core\Routing\RouteMatch;
 use PHPUnit\Framework\TestCase;
 
 final class RouteMatchTest extends TestCase

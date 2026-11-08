@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Response;
 
-use Damoony\Response\AjaxStruct;
-use Damoony\Response\MinStruct;
-use Damoony\Ui\Builder;
+use Damoony\UI\Builder;
+use Damoony\UI\Response\AjaxStruct;
+use Damoony\UI\Response\MinStruct;
 use PHPUnit\Framework\TestCase;
 
 final class AjaxMinStructTest extends TestCase

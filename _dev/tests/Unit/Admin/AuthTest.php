@@ -6,7 +6,7 @@ namespace Damoony\Tests\Unit\Admin;
 
 use Damoony\Admin\Auth;
 use Damoony\Core\Config;
-use Damoony\Session\SessionInterface;
+use Damoony\Core\Session\SessionInterface;
 use PHPUnit\Framework\TestCase;
 
 final class AuthTest extends TestCase

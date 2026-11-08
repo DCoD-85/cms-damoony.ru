@@ -8,7 +8,7 @@ use Damoony\Cli\Commands\BlockListCommand;
 use Damoony\Cli\Commands\FillerListCommand;
 use Damoony\Cli\Commands\SchemeListCommand;
 use Damoony\Cli\Context;
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Paths;
 use PHPUnit\Framework\TestCase;
 
 final class ListCommandsTest extends TestCase

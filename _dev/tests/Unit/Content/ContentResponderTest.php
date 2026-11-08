@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Content;
 
-use Damoony\Auth\AuthInterface;
-use Damoony\Content\ContentResponder;
-use Damoony\Files\Paths;
+use Damoony\Core\Content\ContentResponder;
+use Damoony\Core\Files\Paths;
+use Damoony\Data\Auth\AuthInterface;
 use PHPUnit\Framework\TestCase;
 
 final class ContentResponderTest extends TestCase

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Files;
 
-use Damoony\Files\Fs;
+use Damoony\Core\Files\Fs;
 use PHPUnit\Framework\TestCase;
 
 final class FsTest extends TestCase

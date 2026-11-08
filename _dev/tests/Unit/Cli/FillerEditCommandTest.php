@@ -8,7 +8,7 @@ use Damoony\Cli\Commands\FillerEditCommand;
 use Damoony\Cli\Commands\FillerNewCommand;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Paths;
 use PHPUnit\Framework\TestCase;
 
 final class FillerEditCommandTest extends TestCase

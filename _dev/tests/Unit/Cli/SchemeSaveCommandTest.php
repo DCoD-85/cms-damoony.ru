@@ -8,7 +8,7 @@ use Damoony\Cli\Commands\SchemeNewCommand;
 use Damoony\Cli\Commands\SchemeSaveCommand;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Paths;
 use PHPUnit\Framework\TestCase;
 
 final class SchemeSaveCommandTest extends TestCase

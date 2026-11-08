@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Http;
 
-use Damoony\Http\Request;
+use Damoony\Core\Http\Request;
 use PHPUnit\Framework\TestCase;
 
 final class RequestTest extends TestCase

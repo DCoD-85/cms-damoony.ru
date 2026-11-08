@@ -8,7 +8,7 @@ use Damoony\Cli\Commands\BlockEditCommand;
 use Damoony\Cli\Commands\BlockNewCommand;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Paths;
 use PHPUnit\Framework\TestCase;
 
 final class BlockEditCommandTest extends TestCase

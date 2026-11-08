@@ -7,8 +7,8 @@ namespace Damoony\Tests\Scenarios;
 use Damoony\Cli\Commands\DbMigrateCommand;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
-use Damoony\Db\Connection;
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Paths;
+use Damoony\Data\Db\Connection;
 use PDO;
 use PHPUnit\Framework\TestCase;
 

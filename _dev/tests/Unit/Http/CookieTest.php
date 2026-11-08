@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Http;
 
-use Damoony\Http\Cookie;
+use Damoony\Core\Http\Cookie;
 use PHPUnit\Framework\TestCase;
 
 final class CookieTest extends TestCase

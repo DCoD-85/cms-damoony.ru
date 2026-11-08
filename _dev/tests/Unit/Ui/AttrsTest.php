@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Ui;
 
-use Damoony\Ui\Attrs;
+use Damoony\UI\Attrs;
 use PHPUnit\Framework\TestCase;
 
 final class AttrsTest extends TestCase

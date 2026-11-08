@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Region;
 
-use Damoony\Domain\DomainContext;
-use Damoony\Http\Request;
-use Damoony\Region\RegionContext;
-use Damoony\Region\RegionInterface;
-use Damoony\Region\RegionRegistry;
-use Damoony\Ui\Element;
-use Damoony\Ui\Node;
+use Damoony\Core\Domain\DomainContext;
+use Damoony\Core\Http\Request;
+use Damoony\UI\Element;
+use Damoony\UI\Node;
+use Damoony\UI\Region\RegionContext;
+use Damoony\UI\Region\RegionInterface;
+use Damoony\UI\Region\RegionRegistry;
 use PHPUnit\Framework\TestCase;
 
 final class RegionRegistryTest extends TestCase

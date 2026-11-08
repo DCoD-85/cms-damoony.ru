@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\App;
 
-use Damoony\App\PageHandler;
-use Damoony\Domain\DomainContext;
-use Damoony\Domain\DomainResolverInterface;
-use Damoony\Http\Request;
-use Damoony\Region\RegionContext;
-use Damoony\Routing\RouteMatch;
+use Damoony\Core\App\PageHandler;
+use Damoony\Core\Domain\DomainContext;
+use Damoony\Core\Domain\DomainResolverInterface;
+use Damoony\Core\Http\Request;
+use Damoony\Core\Routing\RouteMatch;
+use Damoony\UI\Region\RegionContext;
 use PHPUnit\Framework\TestCase;
 
 final class PageHandlerTest extends TestCase
@@ -69,7 +69,7 @@ final class PageHandlerTest extends TestCase
 
     private function ctx(): RegionContext
     {
-        $paths = new \Damoony\Files\Paths(sys_get_temp_dir());
+        $paths = new \Damoony\Core\Files\Paths(sys_get_temp_dir());
 
         return new RegionContext(
             new Request('GET', '/'),
@@ -94,10 +94,10 @@ final class PageHandlerTest extends TestCase
         $this->writePage('ph_about', 'algoritm_ph_about', <<<'PHP'
             <?php
             namespace example\www;
-            use Damoony\Algoritm\Page;
-            use Damoony\Http\Response;
-            use Damoony\Ui\Builder;
-            use Damoony\Ui\Node;
+            use Damoony\UI\Algoritm\Page;
+            use Damoony\Core\Http\Response;
+            use Damoony\UI\Builder;
+            use Damoony\UI\Node;
             final class algoritm_ph_about extends Page {
                 public function default(): Node|Response|null {
                     return Builder::div('page')->content('about');
@@ -117,9 +117,9 @@ final class PageHandlerTest extends TestCase
         $this->writePage('ph_api', 'algoritm_ph_api', <<<'PHP'
             <?php
             namespace example\www;
-            use Damoony\Algoritm\Page;
-            use Damoony\Http\Response;
-            use Damoony\Ui\Node;
+            use Damoony\UI\Algoritm\Page;
+            use Damoony\Core\Http\Response;
+            use Damoony\UI\Node;
             final class algoritm_ph_api extends Page {
                 public function default(): Node|Response|null {
                     return Response::json(['ok' => true]);
@@ -146,7 +146,7 @@ final class PageHandlerTest extends TestCase
         $this->writePage('ph_nul', 'algoritm_ph_nul', <<<'PHP'
             <?php
             namespace example\www;
-            use Damoony\Algoritm\Page;
+            use Damoony\UI\Algoritm\Page;
             final class algoritm_ph_nul extends Page {
             }
             PHP);
@@ -162,9 +162,9 @@ final class PageHandlerTest extends TestCase
             <?php
             declare(strict_types=1);
             namespace example\www;
-            use Damoony\Algoritm\Page;
-            use Damoony\Ui\Node;
-            use Damoony\Http\Response;
+            use Damoony\UI\Algoritm\Page;
+            use Damoony\UI\Node;
+            use Damoony\Core\Http\Response;
             final class algoritm_test extends Page {
                 public function default(): Node|Response|null {
                     throw new \RuntimeException('SUPER_SECRET_ERROR_MESSAGE');

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Ui;
 
-use Damoony\Ui\Element;
-use Damoony\Ui\Fragment;
-use Damoony\Ui\Text;
+use Damoony\UI\Element;
+use Damoony\UI\Fragment;
+use Damoony\UI\Text;
 use PHPUnit\Framework\TestCase;
 
 final class TextFragmentGroupTest extends TestCase

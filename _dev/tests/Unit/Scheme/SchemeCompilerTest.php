@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Scheme;
 
-use Damoony\Scheme\SchemeCompiler;
+use Damoony\UI\Scheme\SchemeCompiler;
 use PHPUnit\Framework\TestCase;
 
 final class SchemeCompilerTest extends TestCase

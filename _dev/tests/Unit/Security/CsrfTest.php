@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Security;
 
-use Damoony\Security\Csrf;
-use Damoony\Session\SessionInterface;
+use Damoony\Core\Security\Csrf;
+use Damoony\Core\Session\SessionInterface;
 use PHPUnit\Framework\TestCase;
 
 final class CsrfTest extends TestCase

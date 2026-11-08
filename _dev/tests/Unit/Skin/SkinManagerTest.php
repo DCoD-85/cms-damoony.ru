@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Skin;
 
-use Damoony\Skin\SkinManager;
+use Damoony\UI\Skin\SkinManager;
 use PHPUnit\Framework\TestCase;
 
 final class SkinManagerTest extends TestCase

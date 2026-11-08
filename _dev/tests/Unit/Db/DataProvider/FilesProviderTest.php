@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Damoony\Tests\Unit\Db\DataProvider;
 
 use Damoony\Core\Config;
-use Damoony\Db\Connection;
-use Damoony\Db\DataProvider\FilesProvider;
+use Damoony\Data\Db\Connection;
+use Damoony\Data\Db\DataProvider\FilesProvider;
 use PHPUnit\Framework\TestCase;
 
 final class FilesProviderTest extends TestCase

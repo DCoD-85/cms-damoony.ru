@@ -6,10 +6,10 @@ namespace Damoony\Tests\Unit\Admin;
 
 use Damoony\Admin\Controller\PageController;
 use Damoony\Admin\View;
-use Damoony\Files\Paths;
-use Damoony\Http\Request;
-use Damoony\Security\Csrf;
-use Damoony\Session\SessionInterface;
+use Damoony\Core\Files\Paths;
+use Damoony\Core\Http\Request;
+use Damoony\Core\Security\Csrf;
+use Damoony\Core\Session\SessionInterface;
 use PHPUnit\Framework\TestCase;
 
 final class PageControllerTest extends TestCase

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Region;
 
-use Damoony\Domain\DomainContext;
-use Damoony\Http\Request;
-use Damoony\Region\ContentRegion;
-use Damoony\Region\RegionContext;
-use Damoony\Ui\Builder;
+use Damoony\Core\Domain\DomainContext;
+use Damoony\Core\Http\Request;
+use Damoony\UI\Builder;
+use Damoony\UI\Region\ContentRegion;
+use Damoony\UI\Region\RegionContext;
 use PHPUnit\Framework\TestCase;
 
 final class ContentRegionTest extends TestCase

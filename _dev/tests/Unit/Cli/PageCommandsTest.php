@@ -10,7 +10,7 @@ use Damoony\Cli\Commands\PageToggleCommand;
 use Damoony\Cli\Commands\PageWriteCommand;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Paths;
 use PHPUnit\Framework\TestCase;
 
 final class PageCommandsTest extends TestCase

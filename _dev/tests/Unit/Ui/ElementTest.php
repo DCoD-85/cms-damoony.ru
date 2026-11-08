@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Ui;
 
-use Damoony\Ui\Element;
+use Damoony\UI\Element;
 use PHPUnit\Framework\TestCase;
 
 final class ElementTest extends TestCase

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Damoony\Tests\Unit\Domain;
 
 use Damoony\Core\Config;
-use Damoony\Domain\ConfigDomainResolver;
+use Damoony\Core\Domain\ConfigDomainResolver;
 use PHPUnit\Framework\TestCase;
 
 final class ConfigDomainResolverTest extends TestCase

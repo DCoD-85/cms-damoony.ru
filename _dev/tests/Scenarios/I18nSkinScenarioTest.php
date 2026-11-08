@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Scenarios;
 
-use Damoony\Domain\DomainContext;
-use Damoony\Http\Middleware\LanguageCookieMiddleware;
-use Damoony\Http\Middleware\LanguagePathMiddleware;
-use Damoony\Http\Middleware\SkinCookieMiddleware;
-use Damoony\Http\Request;
-use Damoony\Http\Response;
-use Damoony\I18n\LanguageNegotiator;
-use Damoony\Session\SessionInterface;
+use Damoony\Core\Domain\DomainContext;
+use Damoony\Core\Http\Middleware\LanguageCookieMiddleware;
+use Damoony\Core\Http\Middleware\LanguagePathMiddleware;
+use Damoony\Core\Http\Middleware\SkinCookieMiddleware;
+use Damoony\Core\Http\Request;
+use Damoony\Core\Http\Response;
+use Damoony\Core\I18n\LanguageNegotiator;
+use Damoony\Core\Session\SessionInterface;
 use PHPUnit\Framework\TestCase;
 
 final class I18nSkinScenarioTest extends TestCase

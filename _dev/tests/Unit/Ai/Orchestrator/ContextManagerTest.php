@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Damoony\Tests\Unit\Ai\Orchestrator;
 
 use Damoony\Ai\Orchestrator\ContextManager;
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Paths;
 use PHPUnit\Framework\TestCase;
 
 final class ContextManagerTest extends TestCase

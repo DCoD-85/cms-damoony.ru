@@ -7,8 +7,8 @@ namespace Damoony\Tests\Unit\Cli;
 use Damoony\Cli\Commands\DbCallCommand;
 use Damoony\Cli\Context;
 use Damoony\Core\Config;
-use Damoony\Db\Connection;
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Paths;
+use Damoony\Data\Db\Connection;
 use PHPUnit\Framework\TestCase;
 
 final class DbCallCommandTest extends TestCase

@@ -10,7 +10,7 @@ use Damoony\Ai\Orchestrator\Agent\InterviewerAgentInterface;
 use Damoony\Ai\Orchestrator\ContextManager;
 use Damoony\Ai\Orchestrator\Orchestrator;
 use Damoony\Ai\Orchestrator\ToolsCollectorInterface;
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Paths;
 use PHPUnit\Framework\TestCase;
 
 final class OrchestratorTest extends TestCase
@@ -67,7 +67,7 @@ final class OrchestratorTest extends TestCase
                 return ['blocks' => []];
             }
         };
-        $fakeAicli = new \Damoony\Ai\Aicli\AicliClient($this->root);
+        $fakeAicli = new \Damoony\Cli\Ai\AicliClient($this->root);
         $orchestrator = new Orchestrator($cm, $fake, $fakeInterviewer, $fakeArchitect, $fakeCoder, $fakeAicli);
 
         $ctx = $orchestrator->run('a1b2c3d4', 'damoony.ru', 'www', 'Test prompt', 'center');
@@ -117,7 +117,7 @@ final class OrchestratorTest extends TestCase
                 return ['blocks' => []];
             }
         };
-        $fakeAicli = new \Damoony\Ai\Aicli\AicliClient($this->root);
+        $fakeAicli = new \Damoony\Cli\Ai\AicliClient($this->root);
         $orchestrator = new Orchestrator($cm, $fake, $fakeInterviewer, $fakeArchitect, $fakeCoder, $fakeAicli);
 
         $ctx = $orchestrator->run('a1b2c3d4', 'damoony.ru', 'www', 'Test', 'all');
@@ -169,7 +169,7 @@ final class OrchestratorTest extends TestCase
                 return ['blocks' => []];
             }
         };
-        $fakeAicli = new \Damoony\Ai\Aicli\AicliClient($this->root);
+        $fakeAicli = new \Damoony\Cli\Ai\AicliClient($this->root);
         $orchestrator = new Orchestrator($cm, $fake, $fakeInterviewer, $fakeArchitect, $fakeCoder, $fakeAicli);
 
         $orchestrator->run('a1b2c3d4', 'damoony.ru', 'www', 'Test');

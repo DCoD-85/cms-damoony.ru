@@ -8,10 +8,10 @@ use Damoony\Admin\AdminRouter;
 use Damoony\Admin\AuthInterface;
 use Damoony\Admin\Controller\BaseController;
 use Damoony\Admin\View;
-use Damoony\Http\Request;
-use Damoony\Http\Response;
-use Damoony\Security\Csrf;
-use Damoony\Session\SessionInterface;
+use Damoony\Core\Http\Request;
+use Damoony\Core\Http\Response;
+use Damoony\Core\Security\Csrf;
+use Damoony\Core\Session\SessionInterface;
 use PHPUnit\Framework\TestCase;
 
 final class AdminRouterTest extends TestCase

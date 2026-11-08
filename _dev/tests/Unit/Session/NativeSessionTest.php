@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Session;
 
-use Damoony\Session\NativeSession;
+use Damoony\Core\Session\NativeSession;
 use PHPUnit\Framework\TestCase;
 
 final class NativeSessionTest extends TestCase

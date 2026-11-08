@@ -7,7 +7,7 @@ namespace Damoony\Tests\Unit\Cli;
 use Damoony\Cli\Commands\DbSchemaCommand;
 use Damoony\Cli\Context;
 use Damoony\Core\Config;
-use Damoony\Db\Connection;
+use Damoony\Data\Db\Connection;
 use PHPUnit\Framework\TestCase;
 
 final class DbSchemaCommandTest extends TestCase

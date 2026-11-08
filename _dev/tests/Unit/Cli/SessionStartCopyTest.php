@@ -6,7 +6,7 @@ namespace Damoony\Tests\Unit\Cli;
 
 use Damoony\Cli\Commands\SessionStartCommand;
 use Damoony\Cli\Context;
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Paths;
 use PHPUnit\Framework\TestCase;
 
 final class SessionStartCopyTest extends TestCase

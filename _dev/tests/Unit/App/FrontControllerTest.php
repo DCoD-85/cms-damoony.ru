@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\App;
 
-use Damoony\App\FrontController;
-use Damoony\App\PageHandler;
-use Damoony\Auth\AuthInterface;
+use Damoony\Core\App\FrontController;
+use Damoony\Core\App\PageHandler;
 use Damoony\Core\Config;
 use Damoony\Core\Container;
-use Damoony\Domain\ConfigDomainResolver;
-use Damoony\Domain\DomainResolverInterface;
-use Damoony\Files\Paths;
-use Damoony\Http\Request;
-use Damoony\Routing\FileRouter;
-use Damoony\Routing\RouterInterface;
-use Damoony\Routing\RulesMatcher;
-use Damoony\Security\Csrf;
-use Damoony\Session\SessionInterface;
+use Damoony\Core\Domain\ConfigDomainResolver;
+use Damoony\Core\Domain\DomainResolverInterface;
+use Damoony\Core\Files\Paths;
+use Damoony\Core\Http\Request;
+use Damoony\Core\Routing\FileRouter;
+use Damoony\Core\Routing\RouterInterface;
+use Damoony\Core\Routing\RulesMatcher;
+use Damoony\Core\Security\Csrf;
+use Damoony\Core\Session\SessionInterface;
+use Damoony\Data\Auth\AuthInterface;
 use PHPUnit\Framework\TestCase;
 
 final class FrontControllerTest extends TestCase
@@ -147,10 +147,10 @@ final class FrontControllerTest extends TestCase
         file_put_contents($base . '/fc_home/algoritm_fc_home.php', <<<'PHP'
             <?php
             namespace example\www;
-            use Damoony\Algoritm\Page;
-            use Damoony\Http\Response;
-            use Damoony\Ui\Builder;
-            use Damoony\Ui\Node;
+            use Damoony\UI\Algoritm\Page;
+            use Damoony\Core\Http\Response;
+            use Damoony\UI\Builder;
+            use Damoony\UI\Node;
             final class algoritm_fc_home extends Page {
                 public function default(): Node|Response|null {
                     return Builder::div('page')->content('home');

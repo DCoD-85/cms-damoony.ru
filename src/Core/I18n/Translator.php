@@ -14,7 +14,7 @@ final class Translator
         private readonly string $fallback = 'ru',
         private readonly ?string $langDir = null,
     ) {
-        $dir = $this->langDir ?? dirname(__DIR__, 2) . '/lang';
+        $dir = $this->langDir ?? dirname(__DIR__, 3) . '/lang';
         $this->dict = self::load($dir, $this->current) + self::load($dir, $this->fallback);
     }
 

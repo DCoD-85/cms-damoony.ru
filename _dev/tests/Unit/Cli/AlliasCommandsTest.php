@@ -8,7 +8,7 @@ use Damoony\Cli\Commands\AlliasNewCommand;
 use Damoony\Cli\Commands\AlliasRemoveCommand;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Paths;
 use PHPUnit\Framework\TestCase;
 
 final class AlliasCommandsTest extends TestCase

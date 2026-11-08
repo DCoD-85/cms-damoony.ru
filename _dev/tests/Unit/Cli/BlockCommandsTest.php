@@ -8,7 +8,7 @@ use Damoony\Cli\Commands\BlockNewCommand;
 use Damoony\Cli\Commands\BlockRemoveCommand;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Paths;
 use PHPUnit\Framework\TestCase;
 
 final class BlockCommandsTest extends TestCase

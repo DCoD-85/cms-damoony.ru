@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Scheme;
 
-use Damoony\Domain\DomainContext;
-use Damoony\Files\Paths;
-use Damoony\Scheme\SchemeLoader;
+use Damoony\Core\Domain\DomainContext;
+use Damoony\Core\Files\Paths;
+use Damoony\UI\Scheme\SchemeLoader;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 

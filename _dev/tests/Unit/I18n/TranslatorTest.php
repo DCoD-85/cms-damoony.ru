@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\I18n;
 
-use Damoony\I18n\Translator;
+use Damoony\Core\I18n\Translator;
 use PHPUnit\Framework\TestCase;
 
 final class TranslatorTest extends TestCase

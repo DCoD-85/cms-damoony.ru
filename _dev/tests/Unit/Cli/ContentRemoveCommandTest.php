@@ -8,7 +8,7 @@ use Damoony\Cli\Commands\ContentRemoveCommand;
 use Damoony\Cli\Commands\ContentStoreCommand;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Paths;
 use PHPUnit\Framework\TestCase;
 
 final class ContentRemoveCommandTest extends TestCase

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Damoony\Tests\Unit\Db\DataProvider;
 
 use Damoony\Core\Config;
-use Damoony\Db\Connection;
-use Damoony\Db\DataProvider\AuditProvider;
+use Damoony\Data\Db\Connection;
+use Damoony\Data\Db\DataProvider\AuditProvider;
 use PHPUnit\Framework\TestCase;
 
 final class AuditProviderTest extends TestCase

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Routing;
 
-use Damoony\Domain\DomainContext;
-use Damoony\Routing\FileRouter;
-use Damoony\Routing\RulesMatcher;
+use Damoony\Core\Domain\DomainContext;
+use Damoony\Core\Routing\FileRouter;
+use Damoony\Core\Routing\RulesMatcher;
 use PHPUnit\Framework\TestCase;
 
 final class FileRouterTest extends TestCase

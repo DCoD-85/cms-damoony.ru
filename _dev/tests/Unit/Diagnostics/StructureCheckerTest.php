@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Damoony\Tests\Unit\Diagnostics;
 
 use Damoony\Core\Config;
+use Damoony\Core\Files\Paths;
 use Damoony\Diagnostics\StructureChecker;
-use Damoony\Files\Paths;
 use PHPUnit\Framework\TestCase;
 
 final class StructureCheckerTest extends TestCase

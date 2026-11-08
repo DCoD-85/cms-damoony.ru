@@ -6,7 +6,7 @@ namespace Damoony\Tests\Unit\Cli;
 
 use Damoony\Cli\Commands\UserNewCommand;
 use Damoony\Cli\Context;
-use Damoony\Db\Connection;
+use Damoony\Data\Db\Connection;
 use PHPUnit\Framework\TestCase;
 
 final class UserNewCommandTest extends TestCase

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Error;
 
-use Damoony\Error\ErrorPage;
+use Damoony\Core\Error\ErrorPage;
 use PHPUnit\Framework\TestCase;
 
 final class ErrorPageTest extends TestCase

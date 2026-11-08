@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Region;
 
-use Damoony\Region\BlockCompiler;
+use Damoony\UI\Region\BlockCompiler;
 use PHPUnit\Framework\TestCase;
 
 final class BlockCompilerTest extends TestCase

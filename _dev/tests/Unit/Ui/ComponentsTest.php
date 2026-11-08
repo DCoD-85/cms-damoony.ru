@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Ui;
 
-use Damoony\Ui\Button;
-use Damoony\Ui\Message;
-use Damoony\Ui\Table;
+use Damoony\UI\Button;
+use Damoony\UI\Message;
+use Damoony\UI\Table;
 use PHPUnit\Framework\TestCase;
 
 final class ComponentsTest extends TestCase

@@ -7,7 +7,7 @@ namespace Damoony\Tests\Unit\Cli;
 use Damoony\Cli\Commands\ContentGcCommand;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
-use Damoony\Files\Paths;
+use Damoony\Core\Files\Paths;
 use PHPUnit\Framework\TestCase;
 
 final class ContentGcCommandTest extends TestCase
@@ -78,7 +78,7 @@ final class ContentGcCommandTest extends TestCase
 
     private function makePage(string $domain, string $allias, string $pageKey): void
     {
-        $page = \Damoony\Page\PagePath::resolve(new Paths($this->root), $domain, $allias, $pageKey, '');
+        $page = \Damoony\UI\Page\PagePath::resolve(new Paths($this->root), $domain, $allias, $pageKey, '');
         if (!is_dir($page->pageDir)) {
             mkdir($page->pageDir, 0o777, true);
         }

@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Damoony\Tests\Unit\Http;
 
 use Damoony\Core\Container;
-use Damoony\Http\MiddlewareInterface;
-use Damoony\Http\MiddlewareStack;
-use Damoony\Http\Request;
-use Damoony\Http\Response;
+use Damoony\Core\Http\MiddlewareInterface;
+use Damoony\Core\Http\MiddlewareStack;
+use Damoony\Core\Http\Request;
+use Damoony\Core\Http\Response;
 use PHPUnit\Framework\TestCase;
 
 final class MiddlewareStackTest extends TestCase
@@ -88,7 +88,7 @@ final class MiddlewareStackTest extends TestCase
 
     public function testJsonContentTypeMiddleware(): void
     {
-        $mw = new \Damoony\Http\Middleware\JsonContentTypeMiddleware();
+        $mw = new \Damoony\Core\Http\Middleware\JsonContentTypeMiddleware();
         $req = new Request('GET', '/', headers: ['x-requested-with' => 'XMLHttpRequest']);
 
         $r1 = $mw->process($req, fn (): Response => Response::text('x'));

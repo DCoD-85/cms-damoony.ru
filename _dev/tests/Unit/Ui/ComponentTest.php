@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Ui;
 
-use Damoony\Ui\Field;
-use Damoony\Ui\Form;
+use Damoony\UI\Field;
+use Damoony\UI\Form;
 use PHPUnit\Framework\TestCase;
 
 final class ComponentTest extends TestCase

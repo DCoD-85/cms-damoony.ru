@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Http;
 
-use Damoony\Http\Response;
+use Damoony\Core\Http\Response;
 use PHPUnit\Framework\TestCase;
 
 final class ResponseTest extends TestCase

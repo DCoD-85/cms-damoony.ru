@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Page;
 
-use Damoony\Page\PageCompiler;
+use Damoony\UI\Page\PageCompiler;
 use PHPUnit\Framework\TestCase;
 
 final class PageCompilerTest extends TestCase

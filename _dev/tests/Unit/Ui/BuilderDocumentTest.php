@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Ui;
 
-use Damoony\Ui\Builder;
-use Damoony\Ui\Document;
+use Damoony\UI\Builder;
+use Damoony\UI\Document;
 use PHPUnit\Framework\TestCase;
 
 final class BuilderDocumentTest extends TestCase
@@ -93,7 +93,7 @@ final class BuilderDocumentTest extends TestCase
 
     public function testReleaseIsIdempotent(): void
     {
-        $meta = new \Damoony\Ui\Meta();
+        $meta = new \Damoony\UI\Meta();
         $meta->setTitle('Test');
         $doc = new Document($meta);
         $doc->body()->append(Builder::div()->content('Body'));
