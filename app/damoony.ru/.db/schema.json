@@ -1,0 +1,28 @@
+{
+    "tables": {
+        "products": {
+            "columns": {
+                "id": {
+                    "type": "int",
+                    "primary": true,
+                    "auto_increment": true
+                },
+                "created_at": {
+                    "type": "timestamp",
+                    "default": "CURRENT_TIMESTAMP"
+                },
+                "title": {
+                    "type": "varchar",
+                    "length": 255
+                },
+                "price": {
+                    "type": "decimal"
+                },
+                "description": {
+                    "type": "text",
+                    "null": true
+                }
+            }
+        }
+    }
+}

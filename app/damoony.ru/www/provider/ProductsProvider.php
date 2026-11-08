@@ -20,6 +20,8 @@ final class ProductsProvider extends BasicCrudProvider
 
     protected function writable(): array
     {
-        return ['title', 'price', 'description', 'status', 'slug'];
+        return [
+            'title', 'price', 'description'
+        ];
     }
 }

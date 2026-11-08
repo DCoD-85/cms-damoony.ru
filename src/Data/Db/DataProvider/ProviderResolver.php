@@ -13,6 +13,21 @@ final class ProviderResolver
      */
     public static function resolveClass(string $provider, string $domain, string $alias, Paths $paths): ?string
     {
+        // 1. Сначала проверяем КАСТОМНЫЙ провайдер
+        // Путь: app/{domain}/{alias}/provider/{Name}Provider.php
+        $customFile = $paths->appRoot() . '/' . $domain . '/' . $alias . '/provider/' . ucfirst($provider) . 'Provider.php';
+
+        if (is_file($customFile)) {
+            require_once $customFile;
+            $namespace = str_replace(['.', '-'], '_', $domain) . '\\' . $alias;
+            $customClass = $namespace . '\\' . ucfirst($provider) . 'Provider';
+            
+            if (class_exists($customClass, false)) {
+                return $customClass;
+            }
+        }
+
+        // 2. Если кастомного нет — проверяем ЯДРО
         $map = [
             'user' => UserProvider::class,
             'news' => NewsProvider::class,
@@ -20,23 +35,7 @@ final class ProviderResolver
             'audit' => AuditProvider::class,
             'form_submission' => FormSubmissionProvider::class,
         ];
-        $coreClass = $map[$provider] ?? null;
-        if ($coreClass === null) {
-            return null;
-        }
 
-        // Кастомные провайдеры: app/{domain}/{alias}/provider/{Name}Provider.php
-        $customFile = $paths->appRoot() . '/' . $domain . '/' . $alias . '/provider/' . ucfirst($provider) . 'Provider.php';
-
-        if (is_file($customFile)) {
-            require_once $customFile;
-            $namespace = str_replace(['.', '-'], '_', $domain) . '\\' . $alias . '\\provider';
-            $customClass = $namespace . '\\' . ucfirst($provider) . 'Provider';
-            if (class_exists($customClass)) {
-                return $customClass;
-            }
-        }
-
-        return $coreClass;
+        return $map[$provider] ?? null;
     }
 }
