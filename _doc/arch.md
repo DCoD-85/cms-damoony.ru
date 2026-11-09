@@ -78,7 +78,7 @@
 
 - **DomainResolver:** `resolve(host): DomainContext`. Не бросает исключений. Возвращает `available=false`, если домен/алиас выключен. `real` — источник истины для путей в `app/`.
 - **Router:** `match(path, context): RouteMatch`. Не рендерит ошибки, не выполняет контроллер. Возвращает `found=false` при промахе.
-- **PageInterface:** `default(): Node|Response|null`. Базовый класс `Page` даёт `isAuthenticated()`, `user()`, `regions()`.
+- **PageInterface:** `default(): Node|Response|null`. Базовый класс `Page` даёт `isAuthenticated()`, `user()`, `regions()`. Класс `PageWithScheme` автоматически подключает схему.
 - **RegionInterface:** `render(RegionContext): Node`. Регион не знает о других регионах и о схеме.
 - **ContentResponder:** `parse()`, `hostAllowed()`, `requiresAuth()`. Отдаёт только GET/HEAD. 404 при host-mismatch. 302 на логин при `page_refs` (auth).
 - **Компиляторы (`PageCompiler`, `BlockCompiler`):** Принимают JSON-массив блоков (включая тип `nav` для меню) и генерируют безопасный PHP-код. Используют `Text::raw()` для вывода разрешенных тегов `<a>` и `<strong>` (защита от XSS остальных тегов).
@@ -123,7 +123,7 @@
 1. **AI-Транзакции:** нет `build:rollback`; failed-страницы остаются в `build_progress`.
 2. **RegionContext::service():** возвращает `mixed`; нужен `@template` PHPDoc.
 3. **assert():** в prod исчезает; заменить на явные `if (!instanceof) throw`.
-4. **Builder неполон:** нет `section/form/table/select/textarea/label/nav`; компиляторы обходят через `Builder::el($tag)`.
+4. ~~**Builder неполон:**~~ Решено: добавлены методы `form`, `table`, `select`, `textarea`, `label`, `nav`.
 5. **domains_real[$domain] в save():** работает только при self-mapping.
 6. **PageHandler::applySkin:** читает `$_COOKIE` напрямую, не через сервис.
 7. **Namespace `Damoony\UI\Algoritm`:** унаследован; P2 — переименовать в `Damoony\UI\Page`.

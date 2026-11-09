@@ -18,6 +18,7 @@
 ## 1. Диагностика и миграции
 
 - `help` — список всех команд.
+- `api:reflect` — генерирует стабы для IDE (автодополнение `Builder`, `Element`, `Attrs`) в `_dev/api.stub.php`.
 - `structure:check` — проверка целостности (наличие 3 файлов, стыковка филлеров). Severity-aware: `error` (exit 1) и `warning` (exit 0).
 - `structure:repair --domain=[d]` — восстанавливает отсутствующие `.php`, `.rules.json`, `.editor.json`.
 - `migrate:page-rules [--domain=...] [--dry]` — идемпотентная миграция старых `.rules.json` на новую модель. `--dry` — предпросмотр.
@@ -35,7 +36,7 @@
 
 ## 3. Страницы (Page)
 
-- `page:new --domain=[d] --allias=[a] --name=[n] [--parent=...] [--session=tab]` — создаёт 3 файла (`algoritm_[name].php`, `.rules.json`, `.editor.json`). Родитель должен существовать. При `--session=tab` пишет в `app/.sess_{tab}.{domain}/`.
+- `page:new [--domain=[d]] [--allias=[a]] [--name=[n]] [--parent=...] [--session=tab]` — создаёт 3 файла. **Если флаги не переданы, CLI переходит в интерактивный режим** и запрашивает домен, алиас и имя. Родитель должен существовать. При `--session=tab` пишет в `app/.sess_{tab}.{domain}/`.
 - `page:write --domain=[d] --allias=[a] --name=[n] --json='[...]' [--parent=...] [--session=tab] [--json_file=...] [--json_b64=...] [--with_schema=1]` — безопасная запись JSON. Три источника: `--json` (приоритет), `--json_file` (путь), `--json_b64` (base64). При `--with_schema=1` — оборачивает в схему. Для главной: `--name=__root__`. При `--session=tab` пишет в `app/.sess_{tab}.{domain}/` и сохраняет `.editor.json`.
 - `page:read --domain=[d] --allias=[a] --name=[n] [--parent=...]` — вывод сгенерированного PHP-кода.
 - `page:toggle --domain=[d] --allias=[a] --name=[n] --key=auth|search|default --value=1|0 [--parent=...]` — переключение флага в `.rules.json`.

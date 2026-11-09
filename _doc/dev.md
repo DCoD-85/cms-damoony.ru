@@ -31,7 +31,7 @@
 
 ### Вариант A: страница со схемой (рекомендуется)
 
-Схема даёт шапку, подвал, сайдбары. Страница наполняет слот `center`:
+Используйте базовый класс `PageWithScheme`. Он автоматически загружает схему (шапку/подвал) и помещает ваш контент в слот `center`.
 
 ```php
 <?php
@@ -40,34 +40,19 @@ declare(strict_types=1);
 
 namespace example_ru\www;
 
-use Damoony\UI\Algoritm\Page;
-use Damoony\Http\Response;
-use Damoony\Files\Paths;
-use Damoony\Scheme\SchemeLoader;
-use Damoony\Scheme\SchemeRenderer;
+use Damoony\UI\Algoritm\PageWithScheme;
 use Damoony\UI\Builder;
 use Damoony\UI\Node;
-use Damoony\UI\Text;
 
-final class algoritm extends Page
+final class algoritm extends PageWithScheme
 {
-    public function default(): Node|Response|null
+    protected function content(): Node
     {
         $content = Builder::div('page-content');
-        $content->append(Builder::h(1)->append(Text::raw('Заголовок')));
-        $content->append(Builder::p()->append(Text::raw('Параграф')));
-
-        $this->setContent('center', $content);
-
-        $paths = $this->context->service('paths');
-        if (!$paths instanceof Paths) {
-            return Response::internalError('Paths service missing');
-        }
-
-        $loader = new SchemeLoader($paths);
-        $manifest = $loader->load($this->context->domain, $this->context->domain->scheme);
-
-        return (new SchemeRenderer())->render($manifest, $this->regions(), $this->context);
+        $content->append(Builder::h(1)->content('Заголовок'));
+        $content->append(Builder::p()->content('Параграф'));
+        
+        return $content;
     }
 }
 ```
@@ -140,7 +125,7 @@ AI **не пишет PHP**. Передаёт JSON-массив блоков че
 - Текстовые узлы (`h*`, `p`, `link`, `button`, `li`): `Text::raw(strip_tags($content, '<a><strong>'))` — выживают только `<a>` и `<strong>`, остальное режется.
 - URL: `UrlSanitizer::forSrc()` для `img`, `UrlSanitizer::forHref()` для `link`.
 
-**Builder (`src/UI/Builder.php`)** — 12 методов: `el`, `elA`, `div`, `span`, `p`, `h`, `a`, `img`, `input`, `ul`, `li`, `button`. Нет `form`/`table`/`select`/`textarea`/`label`/`nav` — обход через `Builder::el($tag)` (P2, `arch.md` §6 п.4).
+**Builder (`src/UI/Builder.php`)** — 24 метода: `el`, `elA`, `div`, `span`, `p`, `h`, `a`, `img`, `input`, `ul`, `li`, `button`, а также `nav`, `form`, `table`, `thead`, `tbody`, `tr`, `th`, `td`, `select`, `option`, `textarea`, `label`. Нет `form`/`table`/`select`/`textarea`/`label`/`nav` — обход через `Builder::el($tag)` (P2, `arch.md` §6 п.4).
 
 **RCE:** `BlockCompiler` не поддерживает типы `custom`/`if`/`endif`. Сырой PHP в блоки через `block:write`/`filler:write` не попадает. `allow_php_blocks=false` по умолчанию.
 
