@@ -249,13 +249,17 @@ AI не видит файловую систему напрямую. Никог�
 - **Фаза A** (изоляция FS): `--session` для `page:new`/`page:write`, `SchemeLoader` session-aware, `SessionStartCommand` копирует `www/media/` + `.alliasscheme/` + пишет `permissions` в `.session.json`. См. коммиты `1916b46`, `23d1f9e`.
 - **Фаза B** (Multi-Agent Orchestrator): Blackboard (`context.json`), Interviewer -> Architect -> Coder, `ModelRouter` (`config/models.config`), AIUI (`/admin/aiui.php`, 4 action). См. `_doc/orchestrator.md`, `_doc/aiui.md`, коммиты `441e060`, `b7500ef`.
 
+**Закрытые фазы:**
+
+- **Фаза E** (DB CLI): Инструмент `bin/dbcli.php` — декларативное управление БД через JSON-схемы. Генерация SQL-миграций и PHP-провайдеров. См. `_doc/dbcli.md`.
+- **Фаза F** (Visual DB Admin): Визуальный конструктор таблиц в админке (`/admin/{lang}/domains/{domain}/db`). Создание таблиц и колонок через UI, которое вызывает `dbcli` под капотом.
+
 **Текущая работа:**
 
-- **Фаза E** (DB CLI): Инструмент `bin/dbcli.php` — декларативное управление БД через JSON-схемы (`schema.json`). Генерация SQL-миграций и PHP-провайдеров без ручного кода. См. `_doc/dbcli.md`.
+- **Фаза G** (CRUD Records): Добавление кнопок «Создать запись», «Редактировать», «Удалить» для записей в таблицах через UI админки.
 
 **Следующие фазы:**
 
-- **Фаза F** (E-commerce Admin): UI для управления таблицами БД в админке, CRUD для товаров, новостей и заказов. См. план в `_doc/dev.md` §10.
 - **Фаза C** (Tools-First IDE): `api:reflect` (reflection Builder/Element/Attrs/Text/RegionContext -> `api.json`), CodeMirror hint, snippets, детерминированный Linter. **Не AI.** См. план в `_doc/dev.md` §10.
 
 **Открытые P2:** `_doc/arch.md` §6 (15 пунктов).
