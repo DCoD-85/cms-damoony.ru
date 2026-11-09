@@ -26,10 +26,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup PHP 8.4
+      - name: Setup PHP 8.5
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: '8.5'
           extensions: mbstring, dom, json, libxml, tokenizer, xml, xmlwriter, fileinfo, openssl, pdo_mysql, pdo_sqlite, curl, gd
           tools: composer:v2
           ini-values: memory_limit=512M
@@ -95,6 +95,4 @@ jobs:
         run: php vendor/bin/phpstan analyse -c _dev/phpstan.neon --memory-limit=1G --no-progress
 
       - name: PHP-CS-Fixer (dry-run)
-        env:
-          PHP_CS_FIXER_IGNORE_ENV: '1'
         run: php vendor/bin/php-cs-fixer fix --config=_dev/.php-cs-fixer.php --dry-run --diff
