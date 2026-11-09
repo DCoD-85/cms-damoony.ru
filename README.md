@@ -1,6 +1,6 @@
 # Damoony Engine
 
-Лёгкий PHP 8.4 движок для мультидоменных сайтов с архитектурой CLI-First и нативной интеграцией AI-агентов.
+Лёгкий PHP 8.5 движок для мультидоменных сайтов с архитектурой CLI-First и нативной интеграцией AI-агентов.
 
 **Статус:** v3.1-dev (Multi-Agent Orchestrator + AIUI). Полное состояние — [`_doc/arch.md`](_doc/arch.md). Дорожная карта — [`_doc/dataprovider-design.md`](_doc/dataprovider-design.md).
 
@@ -16,8 +16,9 @@ Damoony Engine — это AI-Native CMS. Она сочетает скорост�
 2. **Безопасный Low-Code:** Визуальный Drag&Drop оставлен ТОЛЬКО для Схем. Страницы, Блоки и Меню редактируются через CodeMirror или AI (через безопасный JSON). Это полностью исключает RCE-уязвимости.
 3. **AI-Интеграция (E2E):** Встроенный слой `bin/aicli.php` (9 ролей + Navigator) и Python-оркестратор (`ai_agent/brain.py`), который автономно генерирует сайты по текстовому брифу. Архитектура построена на паттерне Map-Reduce (Архитектор → Копирайтеры → Дизайнер).
 4. **Безопасный интернет (AINET):** Библиотека `src/Ainet/` (SSRF-защита, whitelist, только GET, кэш 7 дней) позволяет AI скачивать картинки, не имея доступа к локальной сети.
-5. **Строгая архитектура:** Правило 3 файлов (`.php`, `.rules.json`, `.editor.json`) для всех сущностей. Карантин на 6 уровней для удаления файлов. Скин алиаса (`www/media/[domain]/[allias]/skin/`, CSS/JS). Wizard-генерация (`brain.py`) пишет два файла: `main.css` (base + layout + center) и `top.css` (меню). См. `arch.md` §3.4.
-6. **AIUI (AI User Interface):** два независимых AI-сценария для пользователя:
+5. **Визуальный конструктор БД (dbcli):** Создание таблиц и миграций прямо из админки. Под капотом — JSON-схемы, из которых генерируются SQL и PHP-провайдеры. Никакого сырого SQL.
+6. **Строгая архитектура:** Правило 3 файлов (`.php`, `.rules.json`, `.editor.json`) для всех сущностей. Карантин на 6 уровней для удаления файлов. Скин алиаса (`www/media/[domain]/[allias]/skin/`, CSS/JS). Wizard-генерация (`brain.py`) пишет два файла: `main.css` (base + layout + center) и `top.css` (меню). См. `arch.md` §3.4.
+7. **AIUI (AI User Interface):** два независимых AI-сценария для пользователя:
    - **AIUI** (`/admin/aiui.php`) — встроенный AI-редактор страниц (split-screen: превью + чат). Интервьюер собирает бриф, кнопка «🚀 Создать» запускает `Orchestrator` (Interviewer → Architect → Coder), изменения пишутся в изолированную сессию `.sess_*`. См. [`_doc/aiui.md`](_doc/aiui.md) и [`_doc/orchestrator.md`](_doc/orchestrator.md).
    - **Wizard** (`ai_agent/brain.py`) — фоновый мультиагент (Python) для генерации сайта «с нуля» по брифу. См. [`_doc/ai.md`](_doc/ai.md) §7.
    
@@ -27,11 +28,11 @@ Damoony Engine — это AI-Native CMS. Она сочетает скорост�
 
 ## Стек
 
-- **Язык:** PHP >= 8.4 (Composer, PSR-4/3/11).
+- **Язык:** PHP >= 8.5 (Composer, PSR-4/3/11).
 - **БД:** MariaDB 11+ / MySQL 8+ (через PDO). SQLite (для тестов).
 - **Веб-сервер:** Nginx + PHP-FPM или Apache 2.4.
 - **AI-Оркестратор:** Python 3.10+ (`ai_agent/brain.py`), Ollama (Gemma 4, Qwen 2.5).
-- **Качество:** PHPUnit 10, PHPStan (level 8), PHP-CS-Fixer.
+- **Качество:** PHPUnit 11, PHPStan (level 8), PHP-CS-Fixer.
 
 ---
 
@@ -78,6 +79,7 @@ python -m ai_agent.brain damoony3test.ru coffee "Сделай лендинг IT-
 | [`ai.md`](_doc/ai.md) | aicli (HATEOAS, роли, Navigator), AINET (SSRF), мультиагент, AI Wizard (Web UI) |
 | [`admin.md`](_doc/admin.md) | UI админки + делегирование CLI |
 | [`install.md`](_doc/install.md) | Установка с нуля, конфиги, веб-сервер |
-| [`roadmap.md`](_doc/roadmap.md) | Планы на v3.0.0 (AI-Fullstack Factory) |
+| [`dbcli.md`](_doc/dbcli.md) | Декларативная работа с БД (JSON-схемы) |
+| [`orchestrator.md`](_doc/orchestrator.md) | Внутренний AI-конвейер (Blackboard) |
 
 **Правило:** один факт — одно место. Метрики, перечень команд, требования — не дублируются, только ссылки.

@@ -1,6 +1,6 @@
 # Установка и развёртывание
 
-Документ описывает установку Damoony Engine с нуля. Для написания кода после установки читайте `DEV.md`, для управления — `CLI.md`.
+Документ описывает установку Damoony Engine с нуля. Для написания кода после установки читайте `_doc/dev.md`, для управления — `_doc/cli.md`.
 
 ---
 
@@ -9,7 +9,7 @@
 - **PHP >= 8.5** (расширения: `mbstring`, `json`, `pdo_mysql`, `openssl`, `fileinfo`, `tokenizer`, `xml`, `curl`, `gd`).
 - **Composer**.
 - **MariaDB 11+** (или MySQL 8+). SQLite — только для тестов.
-- **Apache 2.4** + `mod_rewrite` или **Nginx** + PHP-FPM.
+- **Nginx** + PHP-FPM (рекомендуется).
 - **Python 3.10+** (для запуска мультиагентной системы `ai_agent/brain.py`).
 - **Ollama** (опционально, для AI-агента, рекомендуется Gemma 4 или Qwen 2.5).
 - `curl` + `openssl` (обязательны для AINET).
