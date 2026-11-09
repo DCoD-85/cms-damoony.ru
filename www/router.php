@@ -3,7 +3,7 @@
 // Этот файл используется ТОЛЬКО для встроенного PHP-сервера в тестах CI
 // (php -S 127.0.0.1:8080 -t www/ www/router.php)
 
-$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$uri = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
 
 // 1. Админка
 if (str_starts_with($uri, '/admin')) {
