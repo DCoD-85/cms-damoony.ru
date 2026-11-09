@@ -104,6 +104,9 @@ class Element implements Node
         if (!empty($data['class'])) {
             $el->attrs()->classAdd((string) $data['class']);
         }
+        if (isset($data['id']) && is_string($data['id']) && $data['id'] !== '') {
+            $el->attrs()->add('id', $data['id']);
+        }
         if (!empty($data['attrs']) && is_array($data['attrs'])) {
             foreach ($data['attrs'] as $k => $v) {
                 if (is_string($k) && is_string($v)) {
