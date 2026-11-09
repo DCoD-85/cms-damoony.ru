@@ -85,7 +85,7 @@ jobs:
 
       - name: Start PHP Dev Server
         run: |
-          php -S 127.0.0.1:8080 -t www/ > /tmp/server.log 2>&1 &
+          php -S 127.0.0.1:8080 -t www/ www/router.php > /tmp/server.log 2>&1 &
           sleep 2
 
       - name: PHPUnit

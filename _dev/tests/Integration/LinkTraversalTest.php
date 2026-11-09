@@ -39,7 +39,7 @@ final class LinkTraversalTest extends TestCase
     public function testAdminLinkTraversal(): void
     {
         // 1. Получаем CSRF-токен со страницы логина
-        $loginPage = $this->request('/admin/?p=login');
+        $loginPage = $this->request('/admin/login');
         $csrfToken = $this->extractCsrf($loginPage);
 
         // 2. Авторизуемся
@@ -48,10 +48,10 @@ final class LinkTraversalTest extends TestCase
             'password' => 'secret',
             '_csrf' => $csrfToken,
         ]);
-        $this->request('/admin/?p=login', 'POST', $postData);
+        $this->request('/admin/login', 'POST', $postData);
 
         // 3. Начинаем краулинг
-        $queue = ['/admin/?p=dashboard', '/admin/?p=domain'];
+        $queue = ['/admin/ru/dashboard', '/admin/ru/domains', '/admin/ru/domains/create'];
         $crawled = [];
 
         while (count($queue) > 0 && count($crawled) < 30) {
