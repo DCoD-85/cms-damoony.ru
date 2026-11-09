@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // Этот файл используется ТОЛЬКО для встроенного PHP-сервера в тестах CI
 // (php -S 127.0.0.1:8080 -t www/ www/router.php)
 
