@@ -23,10 +23,21 @@ final class algoritm_engine extends PageWithScheme
         $content->append(Builder::h(2)->content('1. Тест всплывающих плашек (Toasts)'));
         $btns = Builder::div('test-buttons');
         
-        $btns->append(Builder::button('button', 'ui-btn btn-success', 'btn-toast-success')->content('Успех'));
-        $btns->append(Builder::button('button', 'ui-btn btn-error', 'btn-toast-error')->content('Ошибка'));
-        $btns->append(Builder::button('button', 'ui-btn btn-warning', 'btn-toast-warning')->content('Внимание'));
-        $btns->append(Builder::button('button', 'ui-btn btn-info', 'btn-toast-info')->content('Инфо'));
+        $btn1 = Builder::button('button', 'ui-btn btn-success')->content('Успех');
+        $btn1->attrs()->add('id', 'btn-toast-success');
+        $btns->append($btn1);
+
+        $btn2 = Builder::button('button', 'ui-btn btn-error')->content('Ошибка');
+        $btn2->attrs()->add('id', 'btn-toast-error');
+        $btns->append($btn2);
+
+        $btn3 = Builder::button('button', 'ui-btn btn-warning')->content('Внимание');
+        $btn3->attrs()->add('id', 'btn-toast-warning');
+        $btns->append($btn3);
+
+        $btn4 = Builder::button('button', 'ui-btn btn-info')->content('Инфо');
+        $btn4->attrs()->add('id', 'btn-toast-info');
+        $btns->append($btn4);
         
         $content->append($btns);
 
@@ -34,8 +45,13 @@ final class algoritm_engine extends PageWithScheme
         $content->append(Builder::h(2)->content('2. Тест API запросов'));
         $api_btns = Builder::div('test-buttons');
         
-        $api_btns->append(Builder::button('button', 'ui-btn', 'btn-fetch-get')->content('Запрос GET (успешный)'));
-        $api_btns->append(Builder::button('button', 'ui-btn', 'btn-fetch-post')->content('Запрос POST (ошибка 422)'));
+        $btnGet = Builder::button('button', 'ui-btn')->content('Запрос GET (успешный)');
+        $btnGet->attrs()->add('id', 'btn-fetch-get');
+        $api_btns->append($btnGet);
+
+        $btnPost = Builder::button('button', 'ui-btn')->content('Запрос POST (ошибка 422)');
+        $btnPost->attrs()->add('id', 'btn-fetch-post');
+        $api_btns->append($btnPost);
         
         $content->append($api_btns);
 
