@@ -233,3 +233,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.addEventListener('popstate', () => loadPage(window.location.href, false));
 });
+
+// === TOAST NOTIFICATIONS ===
+window.showToast = function(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = 'toast toast-' + type;
+    toast.textContent = message;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.remove();
+    }, 3500);
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.flashMessages && Array.isArray(window.flashMessages)) {
+        window.flashMessages.forEach(msg => {
+            window.showToast(msg.message, msg.type);
+        });
+    }
+});

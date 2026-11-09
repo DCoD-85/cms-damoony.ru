@@ -1,5 +1,9 @@
 <?php
 
+// Извлекаем flash-сообщения из сессии и очищаем их
+$flash = $_SESSION['flash'] ?? [];
+unset($_SESSION['flash']);
+
 return [
     'tag' => 'div',
     'class' => 'admin-wrapper',
@@ -55,6 +59,10 @@ return [
                 ],
                 ['tag' => 'button', 'class' => 'ai-toggle', 'id' => 'ai-toggle', 'content' => '🤖']
             ]
+        ],
+        [
+            'tag' => 'script',
+            'content' => 'window.flashMessages = ' . json_encode($flash) . ';'
         ]
     ],
     'meta' => [

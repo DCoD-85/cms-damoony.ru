@@ -59,6 +59,7 @@ final class algoritm_lang_domains_db extends Page
                     
                     if ($ret1 === 0) {
                         $this->runGenSqlAndProvider($phpBin, $root, $domainName, $newTable);
+                        $_SESSION['flash'][] = ['type' => 'success', 'message' => 'Таблица создана: ' . $newTable];
                         return Response::redirect("/admin/{$lang}/domains/{$domainName}/db/{$newTable}");
                     }
                 }
@@ -78,6 +79,7 @@ final class algoritm_lang_domains_db extends Page
                     
                     if ($ret2 === 0) {
                         $this->runGenSqlAndProvider($phpBin, $root, $domainName, $tableName);
+                        $_SESSION['flash'][] = ['type' => 'success', 'message' => 'Колонка добавлена: ' . $colName];
                         return Response::redirect("/admin/{$lang}/domains/{$domainName}/db/{$tableName}");
                     }
                 }
