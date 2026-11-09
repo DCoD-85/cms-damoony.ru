@@ -38,6 +38,22 @@ final class PageNewCommand implements CommandInterface
         $domain = $args['domain'] ?? '';
         $allias = $args['allias'] ?? '';
         $name = $args['name'] ?? '';
+
+        if (function_exists('stream_isatty') && @stream_isatty(STDIN)) {
+            if ($domain === '') {
+                echo 'Введите домен (например, damoony.ru): ';
+                $domain = trim((string) fgets(STDIN));
+            }
+            if ($allias === '') {
+                echo 'Введите алиас (по умолчанию www): ';
+                $input = trim((string) fgets(STDIN));
+                $allias = $input === '' ? 'www' : $input;
+            }
+            if ($name === '') {
+                echo 'Введите имя страницы (например, about): ';
+                $name = trim((string) fgets(STDIN));
+            }
+        }
         $parent = trim((string) ($args['parent'] ?? ''), '/');
         $sessionId = trim((string) ($args['session'] ?? ''));
 
