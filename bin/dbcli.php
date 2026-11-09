@@ -5,13 +5,13 @@ declare(strict_types=1);
 use Damoony\Cli\Application;
 use Damoony\Cli\ArgvParser;
 use Damoony\Cli\CommandRegistry;
-use Damoony\Cli\Renderer;
-use Damoony\Cli\Db\Commands\SchemaInitCommand;
 use Damoony\Cli\Db\Commands\SchemaAddColumnCommand;
-use Damoony\Cli\Db\Commands\SchemaGenerateSqlCommand;
 use Damoony\Cli\Db\Commands\SchemaGenerateProviderCommand;
-use Damoony\Core\Files\Paths;
+use Damoony\Cli\Db\Commands\SchemaGenerateSqlCommand;
+use Damoony\Cli\Db\Commands\SchemaInitCommand;
+use Damoony\Cli\Renderer;
 use Damoony\Core\Config;
+use Damoony\Core\Files\Paths;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 

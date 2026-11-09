@@ -29,7 +29,7 @@ final class SchemaAddColumnCommand implements CommandInterface
     public function run(array $args, Context $context): Result
     {
         $r = new Result();
-        
+
         $domain = (string) ($args['domain'] ?? '');
         $table = (string) ($args['table'] ?? '');
         $colName = (string) ($args['name'] ?? '');
@@ -49,7 +49,7 @@ final class SchemaAddColumnCommand implements CommandInterface
 
         $allowedTypes = ['int', 'varchar', 'text', 'timestamp', 'boolean', 'decimal'];
         if (!in_array($type, $allowedTypes, true)) {
-            $r->error("Invalid --type. Allowed: " . implode(', ', $allowedTypes));
+            $r->error('Invalid --type. Allowed: ' . implode(', ', $allowedTypes));
             return $r;
         }
 
@@ -71,15 +71,21 @@ final class SchemaAddColumnCommand implements CommandInterface
         }
 
         $colDef = ['type' => $type];
-        if ($length > 0) $colDef['length'] = $length;
-        if ($isNull) $colDef['null'] = true;
-        if ($default !== null) $colDef['default'] = $default;
+        if ($length > 0) {
+            $colDef['length'] = $length;
+        }
+        if ($isNull) {
+            $colDef['null'] = true;
+        }
+        if ($default !== null) {
+            $colDef['default'] = $default;
+        }
 
         $schema['tables'][$table]['columns'][$colName] = $colDef;
 
         file_put_contents(
             $schemaFile,
-            json_encode($schema, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n"
+            json_encode($schema, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n",
         );
 
         $r->file('app/' . $domain . '/.db/schema.json');

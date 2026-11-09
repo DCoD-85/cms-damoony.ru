@@ -7,8 +7,8 @@ namespace Damoony\Cli\Db\Commands;
 use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
-use Damoony\Core\Files\Paths;
 use Damoony\Core\Config;
+use Damoony\Core\Files\Paths;
 
 final class SchemaGenerateProviderCommand implements CommandInterface
 {
@@ -31,10 +31,10 @@ final class SchemaGenerateProviderCommand implements CommandInterface
     public function run(array $args, Context $context): Result
     {
         $r = new Result();
-        
+
         $domain = (string) ($args['domain'] ?? '');
         $table = (string) ($args['table'] ?? '');
-        
+
         if ($domain === '' || str_contains($domain, '..')) {
             $r->error('Invalid or missing --domain');
             return $r;
@@ -58,8 +58,10 @@ final class SchemaGenerateProviderCommand implements CommandInterface
 
         // Получаем неймспейс домена из конфига
         $ns = $this->site->getByKey(['domains_namespace', $domain], str_replace(['.', '-'], '_', $domain));
-        if (!is_string($ns)) $ns = str_replace(['.', '-'], '_', $domain);
-        
+        if (!is_string($ns)) {
+            $ns = str_replace(['.', '-'], '_', $domain);
+        }
+
         // Алиас по умолчанию
         $alias = (string) ($args['alias'] ?? 'www');
 
@@ -71,50 +73,50 @@ final class SchemaGenerateProviderCommand implements CommandInterface
             }
             $writable[] = $colName;
         }
-        
-        $writableStr = implode(", ", array_map(fn($c) => "'{$c}'", $writable));
+
+        $writableStr = implode(', ', array_map(fn ($c) => "'{$c}'", $writable));
         if ($writableStr === '') {
-            $writableStr = "// empty";
+            $writableStr = '// empty';
         }
 
         $className = ucfirst($table) . 'Provider';
-        
+
         $phpCode = <<<PHP
-<?php
+            <?php
 
-declare(strict_types=1);
+            declare(strict_types=1);
 
-namespace {$ns}\\{$alias};
+            namespace {$ns}\\{$alias};
 
-use Damoony\\Data\\Db\\DataProvider\\BasicCrudProvider;
+            use Damoony\\Data\\Db\\DataProvider\\BasicCrudProvider;
 
-final class {$className} extends BasicCrudProvider
-{
-    public function name(): string
-    {
-        return '{$table}';
-    }
+            final class {$className} extends BasicCrudProvider
+            {
+                public function name(): string
+                {
+                    return '{$table}';
+                }
 
-    public function table(): string
-    {
-        return '{$table}';
-    }
+                public function table(): string
+                {
+                    return '{$table}';
+                }
 
-    protected function writable(): array
-    {
-        return [
-            {$writableStr}
-        ];
-    }
-}
-PHP;
+                protected function writable(): array
+                {
+                    return [
+                        {$writableStr}
+                    ];
+                }
+            }
+            PHP;
 
         // Сохраняем провайдер в app/{domain}/{alias}/provider/
         $providerDir = $this->paths->allias($domain, $alias) . '/provider';
         if (!is_dir($providerDir)) {
             mkdir($providerDir, 0o775, true);
         }
-        
+
         $filepath = $providerDir . '/' . $className . '.php';
         file_put_contents($filepath, $phpCode . "\n");
 

@@ -29,13 +29,13 @@ final class SchemaInitCommand implements CommandInterface
     public function run(array $args, Context $context): Result
     {
         $r = new Result();
-        
+
         $domain = (string) ($args['domain'] ?? '');
         if ($domain === '' || str_contains($domain, '..')) {
             $r->error('Invalid or missing --domain');
             return $r;
         }
-        
+
         $table = (string) ($args['table'] ?? '');
         if (!preg_match('/^[a-z][a-z0-9_]*$/', $table)) {
             $r->error('Invalid or missing --table (use lowercase a-z, 0-9, _)');
@@ -70,13 +70,13 @@ final class SchemaInitCommand implements CommandInterface
         $schema['tables'][$table] = [
             'columns' => [
                 'id' => ['type' => 'int', 'primary' => true, 'auto_increment' => true],
-                'created_at' => ['type' => 'timestamp', 'default' => 'CURRENT_TIMESTAMP']
-            ]
+                'created_at' => ['type' => 'timestamp', 'default' => 'CURRENT_TIMESTAMP'],
+            ],
         ];
 
         file_put_contents(
             $schemaFile,
-            json_encode($schema, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n"
+            json_encode($schema, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n",
         );
 
         $r->file('app/' . $domain . '/.db/schema.json');

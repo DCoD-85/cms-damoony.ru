@@ -21,7 +21,7 @@ final class ProviderResolver
             require_once $customFile;
             $namespace = str_replace(['.', '-'], '_', $domain) . '\\' . $alias;
             $customClass = $namespace . '\\' . ucfirst($provider) . 'Provider';
-            
+
             if (class_exists($customClass, false)) {
                 return $customClass;
             }
