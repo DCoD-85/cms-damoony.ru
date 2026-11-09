@@ -112,7 +112,7 @@
 
 ### 10.3. Генерация методов (templates only)
 
-- `dataprovider:add-method --domain=[d] [--alias=www] --provider=[p] --template=[t] [--args='{}' | --args_b64=...]` — генерирует метод из шаблона. Реализованы `select_where`, `insert` (`src/Db/DataProvider/Template/`). AI не пишет PHP — генерируется шаблон с PDO named params.
+- `dataprovider:add-method --domain=[d] [--alias=www] --provider=[p] --template=[t] [--args='{}' | --args_b64=...]` — генерирует метод из шаблона. Реализованы `select_where`, `insert` (`src/Data/Db/DataProvider/Template/`). AI не пишет PHP — генерируется шаблон с PDO named params.
 
 ### 10.4. Роли (в `bin/aicli.php`, см. `ai.md` §2)
 

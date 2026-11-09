@@ -143,7 +143,7 @@ python -m ai_agent.brain <domain> <allias> "<brief|@file>" <model> [--session=ID
 
 ## 7. AI Wizard Web UI (алиас `agent`)
 
-Web UI — `app/[domain]/agent/algoritm/ajax/algoritm_ajax.php` (наследник `Damoony\Algoritm\Page`). 4 action:
+Web UI — `app/[domain]/agent/algoritm/ajax/algoritm_ajax.php` (наследник `Damoony\UI\Algoritm\Page`). 4 action:
 
 ### `action=chat`
 ```

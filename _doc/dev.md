@@ -23,7 +23,7 @@
 
 ## 2. Написание страниц (Page)
 
-Базовый класс — `Damoony\Algoritm\Page`. Даёт:
+Базовый класс — `Damoony\UI\Algoritm\Page`. Даёт:
 - `$this->context` — `Meta`, `Domain`, `Request`, `service($name)`.
 - `$this->regions()` — `RegionRegistry` (слоты схемы).
 - `$this->setContent(string $slot, Node $node)` — наполнить слот.
@@ -40,14 +40,14 @@ declare(strict_types=1);
 
 namespace example_ru\www;
 
-use Damoony\Algoritm\Page;
+use Damoony\UI\Algoritm\Page;
 use Damoony\Http\Response;
 use Damoony\Files\Paths;
 use Damoony\Scheme\SchemeLoader;
 use Damoony\Scheme\SchemeRenderer;
-use Damoony\Ui\Builder;
-use Damoony\Ui\Node;
-use Damoony\Ui\Text;
+use Damoony\UI\Builder;
+use Damoony\UI\Node;
+use Damoony\UI\Text;
 
 final class algoritm extends Page
 {
@@ -101,10 +101,10 @@ declare(strict_types=1);
 
 namespace example_ru;
 
-use Damoony\Region\RegionContext;
-use Damoony\Region\RegionInterface;
-use Damoony\Ui\Builder;
-use Damoony\Ui\Node;
+use Damoony\UI\Region\RegionContext;
+use Damoony\UI\Region\RegionInterface;
+use Damoony\UI\Builder;
+use Damoony\UI\Node;
 
 final class alliasglobal_header implements RegionInterface
 {
@@ -130,7 +130,7 @@ final class alliasglobal_header implements RegionInterface
 
 ## 4. Безопасная компиляция (AI & JSON)
 
-AI **не пишет PHP**. Передаёт JSON-массив блоков через `page:write` / `block:write` / `filler:write`. Компилятор — `Damoony\Ui\BlockCodegen::render()` — генерирует безопасный PHP.
+AI **не пишет PHP**. Передаёт JSON-массив блоков через `page:write` / `block:write` / `filler:write`. Компилятор — `Damoony\UI\BlockCodegen::render()` — генерирует безопасный PHP.
 
 **Типы блоков:** `h1`–`h6`, `text`/`p`, `img`, `link`, `button`, `ul`, `nav`. Phase 4.2 добавила `section`, `div`. Точный список — `src/UI/BlockCodegen.php`.
 
@@ -182,7 +182,7 @@ $this->context->meta->addJs('/media/example.ru/www/skin/default/js/main.js');
 $this->context->meta->setTitle('Моя страница');
 
 $db = $this->context->service('db');
-if (!$db instanceof \Damoony\Db\Connection) {
+if (!$db instanceof \Damoony\Data\Db\Connection) {
     return Response::internalError('DB service missing');
 }
 $stmt = $db->pdo()->query('SELECT * FROM news ORDER BY created_at DESC');

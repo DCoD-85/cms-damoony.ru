@@ -5,7 +5,7 @@
 ## 1. Цель и границы
 
 **Входит:**
-- `src/Db/DataProvider/` — Repository pattern (ядро, owner-only).
+- `src/Data/Db/DataProvider/` — Repository pattern (ядро, owner-only).
 - `app/[domain]/[alias]/provider/` — кастомные провайдеры (AI генерирует из шаблонов, dev пишет сложное).
 - Introspection: `db:schema`, `db:methods`, `db:describe` (read-only).
 - Safe invocation: `db:call`, `db:mutate` (через DataProvider).
@@ -49,7 +49,7 @@
 
 ### 3.1. Структура
 
-    src/Db/DataProvider/                    ← ЯДРО (owner-only, git)
+    src/Data/Db/DataProvider/                    ← ЯДРО (owner-only, git)
     ├── AbstractProvider.php                 — query(), physicalTable()
     ├── ProviderInterface.php                 — table(), physicalTable()
     ├── ProviderRegistry.php                 — резолвит (domain, alias, provider): core → custom
@@ -59,10 +59,10 @@
         └── SelectWhereTemplate.php, InsertTemplate.php
 
     app/[domain]/[alias]/provider/          ← ПЕРИФЕРИЯ (AI генерирует, dev пишет, git)
-    ├── NewsProvider.php                     — extends Damoony\Db\DataProvider\NewsProvider
+    ├── NewsProvider.php                     — extends Damoony\Data\Db\DataProvider\NewsProvider
     └── CustomLogicProvider.php              — уникальная бизнес-логика
 
-`ProviderRegistry` резолвит: сначала `app/.../provider/`, если нет — `src/Db/DataProvider/`. Кастомный провайдер **расширяет** базовый (наследование), не заменяет.
+`ProviderRegistry` резолвит: сначала `app/.../provider/`, если нет — `src/Data/Db/DataProvider/`. Кастомный провайдер **расширяет** базовый (наследование), не заменяет.
 
 ### 3.2. Контракт
 
@@ -76,7 +76,7 @@
 |---|---|---|
 | Базовые CRUD (шаблоны) | AI (`dataprovider:add-method`) или dev | `app/.../provider/` |
 | Сложная логика | только dev, руками PHP | `app/.../provider/` |
-| 6 базовых провайдеров | только owner | `src/Db/DataProvider/` |
+| 6 базовых провайдеров | только owner | `src/Data/Db/DataProvider/` |
 
 AI не пишет PHP: вызывает готовые методы (`db:call`, `db:mutate`), генерирует новые из шаблонов (`dataprovider:add-method`).
 

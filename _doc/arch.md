@@ -126,7 +126,7 @@
 4. **Builder неполон:** нет `section/form/table/select/textarea/label/nav`; компиляторы обходят через `Builder::el($tag)`.
 5. **domains_real[$domain] в save():** работает только при self-mapping.
 6. **PageHandler::applySkin:** читает `$_COOKIE` напрямую, не через сервис.
-7. **Namespace `Damoony\Algoritm`:** унаследован; P2 — переименовать в `Damoony\Page`.
+7. **Namespace `Damoony\UI\Algoritm`:** унаследован; P2 — переименовать в `Damoony\UI\Page`.
 8. **AINET:** только GET; нет парсинга HTML.
 9. **ArchitectAgent нестабилен:** разные имена страниц в разных запусках; P2 — whitelist slug-ов.
 10. **Coder wrap в `section`:** `build_progress.blocks` считает только верхний уровень.
