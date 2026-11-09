@@ -118,4 +118,131 @@ final class Builder
         }
         return $el;
     }
+
+    public static function nav(string $class = ''): Element
+    {
+        $el = new Element('nav');
+        if ($class !== '') {
+            $el->attrs()->classAdd($class);
+        }
+        return $el;
+    }
+
+    public static function form(string $action = '', string $method = 'post', string $class = ''): Element
+    {
+        $el = new Element('form');
+        if ($action !== '') {
+            $el->attrs()->add('action', $action, true);
+        }
+        $el->attrs()->add('method', $method);
+        if ($class !== '') {
+            $el->attrs()->classAdd($class);
+        }
+        return $el;
+    }
+
+    public static function table(string $class = ''): Element
+    {
+        $el = new Element('table');
+        if ($class !== '') {
+            $el->attrs()->classAdd($class);
+        }
+        return $el;
+    }
+
+    public static function thead(string $class = ''): Element
+    {
+        $el = new Element('thead');
+        if ($class !== '') {
+            $el->attrs()->classAdd($class);
+        }
+        return $el;
+    }
+
+    public static function tbody(string $class = ''): Element
+    {
+        $el = new Element('tbody');
+        if ($class !== '') {
+            $el->attrs()->classAdd($class);
+        }
+        return $el;
+    }
+
+    public static function tr(string $class = ''): Element
+    {
+        $el = new Element('tr');
+        if ($class !== '') {
+            $el->attrs()->classAdd($class);
+        }
+        return $el;
+    }
+
+    public static function th(string $class = ''): Element
+    {
+        $el = new Element('th');
+        if ($class !== '') {
+            $el->attrs()->classAdd($class);
+        }
+        return $el;
+    }
+
+    public static function td(string $class = ''): Element
+    {
+        $el = new Element('td');
+        if ($class !== '') {
+            $el->attrs()->classAdd($class);
+        }
+        return $el;
+    }
+
+    public static function select(string $name = '', string $class = ''): Element
+    {
+        $el = new Element('select');
+        if ($name !== '') {
+            $el->attrs()->add('name', $name);
+        }
+        if ($class !== '') {
+            $el->attrs()->classAdd($class);
+        }
+        return $el;
+    }
+
+    public static function option(string $value = '', bool $selected = false): Element
+    {
+        $el = new Element('option');
+        if ($value !== '') {
+            $el->attrs()->add('value', $value, true);
+        }
+        if ($selected) {
+            $el->attrs()->add('selected', 'selected');
+        }
+        return $el;
+    }
+
+    public static function textarea(string $name = '', string $value = '', string $class = ''): Element
+    {
+        $el = new Element('textarea');
+        if ($name !== '') {
+            $el->attrs()->add('name', $name);
+        }
+        if ($class !== '') {
+            $el->attrs()->classAdd($class);
+        }
+        if ($value !== '') {
+            $el->content($value);
+        }
+        return $el;
+    }
+
+    public static function label(string $for = '', string $class = ''): Element
+    {
+        $el = new Element('label');
+        if ($for !== '') {
+            $el->attrs()->add('for', $for);
+        }
+        if ($class !== '') {
+            $el->attrs()->classAdd($class);
+        }
+        return $el;
+    }
 }
