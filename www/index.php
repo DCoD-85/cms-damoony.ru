@@ -22,6 +22,11 @@ require_once __DIR__ . '/../vendor/autoload.php';
 $root = dirname(__DIR__);
 if (is_file($root . '/_dev/.dev')) {
     putenv('APP_ENV=dev');
+    ini_set('display_errors', '1');
+    error_reporting(E_ALL);
+} else {
+    ini_set('display_errors', '0');
+    ini_set('log_errors', '1');
 }
 $app = AppFactory::create($root);
 $container = $app->container();

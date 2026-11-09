@@ -11,6 +11,9 @@ use RuntimeException;
 
 final class SchemeLoader
 {
+    /** @var array<string, array<string, mixed>> */
+    private array $cache = [];
+
     public function __construct(
         private readonly Paths $paths,
         private readonly ?string $sessionId = null,
@@ -58,11 +61,15 @@ final class SchemeLoader
             ];
         }
 
+        if (isset($this->cache[$file])) {
+            return $this->cache[$file];
+        }
+
         $data = require $file;
         if (!is_array($data)) {
             throw new RuntimeException('Invalid scheme format: ' . $file);
         }
 
-        return $data;
+        return $this->cache[$file] = $data;
     }
 }
