@@ -2,7 +2,8 @@
     "available": {
         "ui_kit": "^ui_kit$",
         "contact": "^contact$",
-        "ajax_test": "^ajax_test$"
+        "ajax_test": "^ajax_test$",
+        "": "^$"
     },
     "auth": false
 }

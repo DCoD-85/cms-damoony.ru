@@ -4,8 +4,12 @@
         "content": "UI Kit"
     },
     {
+        "type": "p",
+        "content": "Демонстрация базовых компонентов Damoony Engine."
+    },
+    {
         "type": "button",
-        "content": "Primary",
+        "content": "Главная кнопка",
         "class": "ui-btn ui-btn-primary"
     }
 ]
