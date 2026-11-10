@@ -83,7 +83,9 @@ final class AppFactory
             PageHandlerInterface::class,
             function (Container $c) use ($root): PageHandlerInterface {
                 $resolver = $c->get(DomainResolverInterface::class);
-                assert($resolver instanceof DomainResolverInterface);
+                if (!$resolver instanceof DomainResolverInterface) {
+                    throw new \RuntimeException('DomainResolverInterface expected');
+                }
                 return new PageHandler($root, $resolver);
             },
         );
@@ -94,7 +96,9 @@ final class AppFactory
         );
 
         $app = $container->get(Application::class);
-        assert($app instanceof Application);
+        if (!$app instanceof Application) {
+            throw new \RuntimeException('Application expected');
+        }
         $app->boot();
 
         return $app;

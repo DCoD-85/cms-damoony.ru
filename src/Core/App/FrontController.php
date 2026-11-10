@@ -36,7 +36,9 @@ final class FrontController
         ?object $authOverride = null,
     ): Response {
         $resolver = $this->container->get(DomainResolverInterface::class);
-        assert($resolver instanceof DomainResolverInterface);
+        if (!$resolver instanceof DomainResolverInterface) {
+            throw new \RuntimeException('DomainResolverInterface expected');
+        }
 
         $host = '';
         if ($adminDomainContext !== null) {
@@ -71,7 +73,9 @@ final class FrontController
         }
 
         $router = $this->container->get(RouterInterface::class);
-        assert($router instanceof RouterInterface);
+        if (!$router instanceof RouterInterface) {
+            throw new \RuntimeException('RouterInterface expected');
+        }
 
         $match = $router->match($request->path, $domain, $sessionId, $adminRole);
         if (!$match->found) {
@@ -100,13 +104,19 @@ final class FrontController
         }
 
         $csrf = $this->container->get(Csrf::class);
-        assert($csrf instanceof Csrf);
+        if (!$csrf instanceof Csrf) {
+            throw new \RuntimeException('Csrf expected');
+        }
 
         $paths = $this->container->get(Paths::class);
-        assert($paths instanceof Paths);
+        if (!$paths instanceof Paths) {
+            throw new \RuntimeException('Paths expected');
+        }
 
         $site = $this->container->get('site');
-        assert($site instanceof Config);
+        if (!$site instanceof Config) {
+            throw new \RuntimeException('Config expected');
+        }
 
         // O11: Определяем язык (URL -> Cookie -> Конфиг)
         $lang = 'ru';

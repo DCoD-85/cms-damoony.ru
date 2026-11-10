@@ -189,7 +189,8 @@ final class RolesTest extends TestCase
         self::assertContains('wizard:skin', $star);
         self::assertContains('wizard:finish', $star);
         self::assertContains('wizard:commit', $star);
-        self::assertContains('wizard:abort', $star);
+        // wizard:abort removed from Roles (WizardManager has no case for it)
+        self::assertNotContains('wizard:abort', $star);
     }
 
     public function testCorrectorRoleKeepsStructureRepair(): void
