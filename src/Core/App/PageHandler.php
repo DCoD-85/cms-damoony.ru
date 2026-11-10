@@ -82,7 +82,7 @@ final class PageHandler implements PageHandlerInterface
             $page = new $class($context, $regions, $match->args);
             $result = $page->default();
 
-            return $this->toResponse($result, $domain, $context, $regions, $adminRole);
+            return $this->toResponse($result, $domain, $context, $regions, $adminRole, $page->ajaxBlocks());
         } catch (\Throwable $e) {
             return ErrorPage::serverError($domain->language, $this->debugDetail($e->getMessage()));
         }
@@ -107,7 +107,7 @@ final class PageHandler implements PageHandlerInterface
             . '/' . $classChain . '.php';
     }
 
-    private function toResponse(Node|Response|null $result, DomainContext $domain, RegionContext $context, RegionRegistry $regions, ?string $adminRole = null): Response
+    private function toResponse(Node|Response|null $result, DomainContext $domain, RegionContext $context, RegionRegistry $regions, ?string $adminRole = null, array $ajaxBlocks = ['center']): Response
     {
         if ($result instanceof Response) {
             return $result;
@@ -116,9 +116,19 @@ final class PageHandler implements PageHandlerInterface
         if ($result instanceof Node) {
             // AJAX: отдаём блоки как JSON (без skin/document)
             if ($context->request->isAjax()) {
+                $regions->add(new ContentRegion('center', $result));
+                $blocks = [];
+
+                foreach ($ajaxBlocks as $blockName) {
+                    $region = $regions->get($blockName);
+                    if ($region !== null && $region->enabled()) {
+                        $blocks[$blockName] = $region->render($context)->release();
+                    }
+                }
+
                 return Response::json([
                     'ok' => true,
-                    'blocks' => ['center' => $result->release()],
+                    'blocks' => $blocks,
                     'url' => $context->request->path,
                 ]);
             }

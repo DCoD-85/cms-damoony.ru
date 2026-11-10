@@ -11,6 +11,9 @@ use Damoony\UI\Region\RegionRegistry;
 
 class Page implements PageInterface
 {
+    /** @var list<string> */
+    protected array $ajaxBlocks = ['center'];
+
     /** @param array<string, string> $args */
     public function __construct(
         protected readonly RegionContext $context,
@@ -23,6 +26,12 @@ class Page implements PageInterface
     public function regions(): RegionRegistry
     {
         return $this->regions;
+    }
+
+    /** @return list<string> */
+    public function ajaxBlocks(): array
+    {
+        return $this->ajaxBlocks;
     }
 
     public function setContent(string $slotName, Node $content): self
