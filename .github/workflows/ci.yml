@@ -79,6 +79,9 @@ jobs:
           if [ -f config/ainet.config.example ]; then cp config/ainet.config.example config/ainet.config; fi
           php bin/cli.php db:migrate
 
+      - name: Structure check
+        run: php bin/cli.php structure:check
+
       - name: Create Test Admin
         run: |
           php bin/cli.php admin:passwd --name=admin --password=secret123
