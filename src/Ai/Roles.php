@@ -35,7 +35,7 @@ final class Roles
             'structure:check',
         ],
         self::ARCHITECT => [
-            'wizard:start', 'wizard:domain', 'wizard:allias', 'wizard:plan', 'wizard:abort',
+            'wizard:start', 'wizard:domain', 'wizard:allias', 'wizard:plan',
             'dataprovider:add-method',
             'domain:new', 'allias:new',
             'block:new', 'scheme:new', 'filler:new',
@@ -86,7 +86,7 @@ final class Roles
             }
             return array_values(array_unique(array_merge($all, [
                 'wizard:start', 'wizard:domain', 'wizard:allias', 'wizard:plan', 'wizard:content', 'wizard:skin',
-            'wizard:finish', 'wizard:commit', 'wizard:abort',
+            'wizard:finish', 'wizard:commit',
                 'agent:chat',
                 'ai:start', 'done', 'engine_status',
                 'net:status', 'image:search', 'image:download', 'fetch',
