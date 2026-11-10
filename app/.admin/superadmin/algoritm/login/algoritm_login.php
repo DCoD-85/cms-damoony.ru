@@ -16,7 +16,7 @@ use Damoony\UI\Components\Label;
 
 final class algoritm_login extends Page
 {
-    public function default(): Node|Response|null
+    protected function content(): Node|Response|null
     {
         $this->context->meta->addCss('/media/.admin/superadmin/skin/default/css/main.css', 'admin');
 

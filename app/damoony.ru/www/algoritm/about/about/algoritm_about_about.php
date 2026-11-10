@@ -11,7 +11,7 @@ use Damoony\UI\Node;
 
 final class algoritm_about_about extends Page
 {
-    public function default(): Node|Response|null
+    protected function content(): Node|Response|null
     {
         return Builder::div('page about')->content('about');
     }

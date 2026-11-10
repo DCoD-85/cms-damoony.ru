@@ -31,9 +31,14 @@ class Page implements PageInterface
         return $this;
     }
 
-    public function default(): Node|Response|null
+    protected function content(): Node|Response|null
     {
         return null;
+    }
+
+    public function default(): Node|Response|null
+    {
+        return $this->content();
     }
 
     public function isAjax(): bool

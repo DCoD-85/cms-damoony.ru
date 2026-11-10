@@ -17,7 +17,7 @@ use Damoony\Core\Config;
 
 final class algoritm extends Page
 {
-    public function default(): Node|Response|null
+    protected function content(): Node|Response|null
     {
         $db = $this->context->service('db');
         $site = $this->context->service('site');

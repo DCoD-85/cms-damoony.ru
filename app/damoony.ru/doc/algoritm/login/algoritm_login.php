@@ -16,7 +16,7 @@ use Damoony\UI\Node;
 
 class algoritm_login extends Page
 {
-    public function default(): Node|Response|null
+    protected function content(): Node|Response|null
     {
         $auth = $this->context->service('auth');
         assert($auth instanceof AuthInterface);

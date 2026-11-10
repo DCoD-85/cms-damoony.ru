@@ -10,7 +10,7 @@ use Damoony\Core\Http\Response;
 
 final class algoritm_ajax extends Page
 {
-    public function default(): Node|Response|null
+    protected function content(): Node|Response|null
     {
         $action = $_POST['action'] ?? '';
 

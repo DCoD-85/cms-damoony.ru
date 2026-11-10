@@ -26,7 +26,7 @@ use Damoony\UI\Scheme\SchemeRenderer;
 
 final class algoritm_lang_profile extends Page
 {
-    public function default(): Node|Response|null
+    protected function content(): Node|Response|null
     {
         $lang = $this->args['lang'] ?? 'ru';
         $role = $this->context->service('admin_role') ?? 'superadmin';

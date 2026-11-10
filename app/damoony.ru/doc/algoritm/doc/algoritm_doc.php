@@ -15,7 +15,7 @@ use Damoony\UI\Text;
 
 class algoritm_doc extends Page
 {
-    public function default(): Node|Response|null
+    protected function content(): Node|Response|null
     {
         $root = dirname((string) ($_SERVER['DOCUMENT_ROOT'] ?? __DIR__));
         $docDir = $root . '/_doc';

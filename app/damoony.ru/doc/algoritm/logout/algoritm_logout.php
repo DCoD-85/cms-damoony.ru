@@ -11,7 +11,7 @@ use Damoony\UI\Node;
 
 class algoritm_logout extends Page
 {
-    public function default(): Node|Response|null
+    protected function content(): Node|Response|null
     {
         $auth = $this->context->service('auth');
         assert($auth instanceof AuthInterface);

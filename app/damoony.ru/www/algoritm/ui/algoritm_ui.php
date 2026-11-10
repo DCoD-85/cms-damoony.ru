@@ -20,7 +20,7 @@ use Damoony\UI\Components\Button;
 
 final class algoritm_ui extends Page
 {
-    public function default(): Node|Response|null
+    protected function content(): Node|Response|null
     {
         // 1. Создаем форму (обертка div.form_box + form.form_form)
         $form = (new Form())->action('/submit')->method('POST');

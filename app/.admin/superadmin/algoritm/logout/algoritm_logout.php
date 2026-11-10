@@ -10,7 +10,7 @@ use Damoony\UI\Node;
 
 final class algoritm_logout extends Page
 {
-    public function default(): Node|Response|null
+    protected function content(): Node|Response|null
     {
         $auth = $this->context->service('auth');
         if ($auth instanceof \Damoony\Admin\AuthInterface) {

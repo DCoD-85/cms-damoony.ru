@@ -17,15 +17,14 @@ use Damoony\UI\Scheme\SchemeRenderer;
  */
 abstract class PageWithScheme extends Page
 {
-    /**
-     * Возвращает контент, который будет помещен в слот 'center'.
-     */
-    abstract protected function content(): Node;
-
     final public function default(): Node|Response
     {
         // 1. Получаем контент от разработчика
         $node = $this->content();
+
+        if (!$node instanceof Node) {
+            return Response::internalError('PageWithScheme::content() must return Node');
+        }
 
         // 2. Кладем его в слот 'center' по умолчанию
         $this->setContent('center', $node);

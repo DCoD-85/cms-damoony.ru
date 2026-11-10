@@ -14,7 +14,7 @@ use Damoony\UI\Scheme\SchemeRenderer;
 
 final class algoritm_about extends Page
 {
-    public function default(): Node|Response|null
+    protected function content(): Node|Response|null
     {
         $this->regions()->useGlobal('top');
         $this->regions()->useGlobal('test_v');

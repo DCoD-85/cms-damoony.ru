@@ -29,7 +29,7 @@ final class PageCompiler
         }
 
         $code .= "\nfinal class {$classChain} extends Page\n{\n";
-        $code .= "    public function default(): Node|Response|null\n    {\n";
+        $code .= "    protected function content(): Node|Response|null\n    {\n";
         $code .= "        \$content = Builder::div('page-content');\n\n";
 
         $code .= BlockCodegen::render($blocks, '$content', '$this->context', 8);

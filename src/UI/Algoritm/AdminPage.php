@@ -18,11 +18,6 @@ use Damoony\UI\Node;
  */
 abstract class AdminPage extends Page
 {
-    /**
-     * @return Node|Response|null null = 204 No Content
-     */
-    abstract protected function content(): Node|Response|null;
-
     final public function default(): Node|Response
     {
         if (!$this->isAdminAuthenticated()) {

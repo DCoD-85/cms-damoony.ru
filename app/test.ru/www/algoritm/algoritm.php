@@ -13,7 +13,7 @@ use Damoony\Core\Http\Response;
 
 final class algoritm extends Page
 {
-    public function default(): Node|Response|null
+    protected function content(): Node|Response|null
     {
         $content = Builder::div('page-content');
 
