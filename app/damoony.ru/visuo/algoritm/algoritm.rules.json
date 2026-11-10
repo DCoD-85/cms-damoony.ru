@@ -1,6 +1,7 @@
 {
     "available": [
-        "^(?P<lang>ru|en|zh)?$",
+        "",
+        "^(ru|en|zh)$|lang",
         "ui_kit",
         "contact"
     ],
