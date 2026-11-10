@@ -66,7 +66,7 @@ return [
         ]
     ],
     'meta' => [
-        'css' => ['/media/.admin/superadmin/skin/default/css/main.css'],
+        'css' => ['/media/.admin/superadmin/skin/default/css/main.css', '/media/.admin/superadmin/skin/default/css/components.css'],
         'js' => ['/media/.admin/superadmin/skin/default/js/main.js'],
     ]
 ];

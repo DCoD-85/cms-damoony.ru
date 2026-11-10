@@ -46,5 +46,10 @@ return array (
   ),
   'meta' => 
   array (
+    'css' => 
+    array (
+      0 => '/media/damoony.ru/skin/default/css/main.css',
+      1 => '/media/damoony.ru/skin/default/css/components.css',
+    ),
   ),
 );
