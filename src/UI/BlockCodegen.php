@@ -123,6 +123,9 @@ final class BlockCodegen
                     $itemTitle = var_export((string) $item['title'], true);
                     $linkVar = '$el' . (++$counter);
                     $code .= $pad . $linkVar . " = new Link({$itemUrl}, {$itemTitle});\n";
+                    $code .= $pad . "if (\$context->request->path === {$itemUrl} || (substr({$itemUrl}, -1) !== '/' && str_starts_with(\$context->request->path, {$itemUrl}))) {\n";
+                    $code .= $pad . "    {$linkVar}->attrs()->classAdd('active');\n";
+                    $code .= $pad . "}\n";
                     $code .= $pad . $var . "->append(Builder::li()->append({$linkVar}));\n";
                 }
             }

@@ -19,40 +19,42 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 4000);
     }
 
-    const flashScript = document.getElementById('flash-data');
-    if (flashScript) {
-        try {
-            const msgs = JSON.parse(flashScript.textContent);
-            msgs.forEach(m => showToast(m));
-        } catch (e) {}
-    }
-
-    document.body.addEventListener('click', async (e) => {
-        const link = e.target.closest('a');
-        if (!link || link.host !== window.location.host || link.getAttribute('href').startsWith('#') || link.target === '_blank' || link.hasAttribute('data-no-ajax')) return;
-        
-        e.preventDefault();
-        const url = link.href;
-        
+    async function loadPage(url, pushState = true) {
         try {
             const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
             const data = await res.json();
             
             if (data.ok && data.blocks) {
                 for (const [name, html] of Object.entries(data.blocks)) {
-                    // Ищем элемент по data-block, а не по классу
                     const container = document.querySelector('[data-block="' + name + '"]');
-                    if (container) {
-                        container.innerHTML = html;
-                    }
+                    if (container) container.innerHTML = html;
                 }
-                window.history.pushState({}, '', url);
+                if (pushState) {
+                    window.history.pushState({}, '', url);
+                }
             } else {
                 window.location.href = url;
             }
         } catch (err) {
             window.location.href = url;
         }
+    }
+
+    const flashScript = document.getElementById('flash-data');
+    if (flashScript) {
+        try { JSON.parse(flashScript.textContent).forEach(m => showToast(m)); } catch (e) {}
+    }
+
+    document.body.addEventListener('click', (e) => {
+        const link = e.target.closest('a');
+        if (!link || link.host !== window.location.host || link.getAttribute('href').startsWith('#') || link.target === '_blank' || link.hasAttribute('data-no-ajax')) return;
+        
+        e.preventDefault();
+        loadPage(link.href, true);
+    });
+
+    window.addEventListener('popstate', () => {
+        loadPage(window.location.href, false);
     });
 
     document.body.addEventListener('submit', async (e) => {
@@ -75,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showToast(data.messages || 'Успешно');
                 if (data.form && data.form.reset) form.reset();
                 if (data.form && data.form.redirect) {
-                    setTimeout(() => { window.location.href = data.form.redirect; }, data.form.redirect_time || 1000);
+                    setTimeout(() => { loadPage(data.form.redirect, true); }, data.form.redirect_time || 1000);
                 }
                 if (data.reload) {
                     setTimeout(() => window.location.reload(), 500);

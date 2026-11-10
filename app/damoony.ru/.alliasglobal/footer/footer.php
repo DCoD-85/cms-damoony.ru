@@ -45,7 +45,7 @@ final class alliasglobal_footer implements RegionInterface
 
         $content = Builder::div('dt_' . 'footer');
 
-        $el1 = Builder::p()->append(Text::raw(strip_tags('Footer', '<a><strong>')));
+        $el1 = Builder::p()->append(Text::raw(strip_tags('© 2026 Damoony Engine.', '<a><strong>')));
         $content->append($el1);
 
         return $content;
