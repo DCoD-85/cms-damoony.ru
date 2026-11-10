@@ -85,7 +85,7 @@ final class DomainRemoveCommand implements CommandInterface
             }
 
             if (count($mappedDomains) > 0) {
-                $r->error("Нельзя удалить реальный домен '{$domain}', так как к нему привязаны: " . implode(', ', $mappedDomains) . ". Сначала удалите привязки.");
+                $r->error("Нельзя удалить реальный домен '{$domain}', так как к нему привязаны: " . implode(', ', $mappedDomains) . '. Сначала удалите привязки.');
                 return $r;
             }
 
@@ -114,7 +114,7 @@ final class DomainRemoveCommand implements CommandInterface
         if (is_dir($mediaDomainDir)) {
             $mediaTrashDir = $this->paths->mediaRoot() . '/.trash/' . $domain . '_trash_' . time();
             if (!is_dir(dirname($mediaTrashDir))) {
-                @mkdir(dirname($mediaTrashDir), 0775, true);
+                @mkdir(dirname($mediaTrashDir), 0o775, true);
             }
             if (@rename($mediaDomainDir, $mediaTrashDir)) {
                 $context->step('Media домена перемещено в карантин', true, Fs::rel($mediaTrashDir, $this->paths->root()));
