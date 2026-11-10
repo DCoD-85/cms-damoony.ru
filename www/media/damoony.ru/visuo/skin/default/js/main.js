@@ -5,12 +5,17 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.appendChild(tc);
     }
 
-    function showToast(html) {
+    function showToast(html, type = 'info') {
         if (!html) return;
         const tc = document.getElementById('toast-container');
         const toast = document.createElement('div');
-        toast.className = 'dt_toast';
-        toast.innerHTML = html;
+        toast.className = 'dt_toast ' + type;
+        
+        // Если сообщение обернуто в div, извлекаем текст, чтобы не было двойных рамок
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        toast.appendChild(tempDiv.firstElementChild || tempDiv);
+        
         tc.appendChild(toast);
         setTimeout(() => { toast.classList.add('show'); }, 10);
         setTimeout(() => {
@@ -55,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Инициализация при загрузке
     const flashScript = document.getElementById('flash-data');
     if (flashScript) {
-        try { JSON.parse(flashScript.textContent).forEach(m => showToast(m)); } catch (e) {}
+        try { JSON.parse(flashScript.textContent).forEach(m => showToast(m, 'info')); } catch (e) {}
     }
     highlightMenu();
 
@@ -86,9 +91,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
 
             if (data.error) {
-                showToast(data.messages || 'Ошибка');
+                showToast(data.messages || 'Ошибка', 'error');
             } else {
-                showToast(data.messages || 'Успешно');
+                showToast(data.messages || 'Успешно', 'success');
                 if (data.form && data.form.reset) form.reset();
                 if (data.form && data.form.redirect) {
                     setTimeout(() => { loadPage(data.form.redirect, true); }, data.form.redirect_time || 1000);
