@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Admin\Pages\superadmin;
 
-use Damoony\UI\Algoritm\Page;
+use Damoony\UI\Algoritm\AdminPage;
 use Damoony\Core\Http\Response;
 use Damoony\UI\Node;
 use Damoony\UI\Builder;
@@ -24,9 +24,9 @@ use Damoony\Core\Files\Paths;
 use Damoony\UI\Scheme\SchemeLoader;
 use Damoony\UI\Scheme\SchemeRenderer;
 
-final class algoritm_lang_dashboard extends Page
+final class algoritm_lang_dashboard extends AdminPage
 {
-    public function default(): Node|Response|null
+    protected function content(): Node|Response|null
     {
         $lang = $this->args['lang'] ?? 'ru';
         $this->regions()->disable('left'); // Отключаем сайдбар на дашборде

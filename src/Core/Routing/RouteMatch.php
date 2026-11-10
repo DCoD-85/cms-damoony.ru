@@ -15,14 +15,13 @@ final class RouteMatch
         public readonly ?string $pathRel = null,
         public readonly array $args = [],
         public readonly int $code = 404,
-        public readonly bool $auth = false,
     ) {
     }
 
     /** @param array<string, string> $args */
-    public static function found(string $classChain, string $pathRel, array $args = [], bool $auth = false): self
+    public static function found(string $classChain, string $pathRel, array $args = []): self
     {
-        return new self(true, $classChain, $pathRel, $args, 200, $auth);
+        return new self(true, $classChain, $pathRel, $args, 200);
     }
 
     public static function notFound(int $code = 404): self

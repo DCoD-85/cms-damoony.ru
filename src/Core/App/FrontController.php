@@ -89,20 +89,6 @@ final class FrontController
         } else {
             $auth = $this->container->get(AuthInterface::class);
         }
-        $isAuth = false;
-        if ($adminRole !== null && $auth instanceof \Damoony\Admin\AuthInterface) {
-            $isAuth = $auth->isLoggedIn();
-        } elseif ($auth instanceof AuthInterface) {
-            $isAuth = $auth->isAuthenticated();
-        }
-
-        if ($match->auth && !$isAuth) {
-            if ($adminRole !== null) {
-                return Response::redirect('/admin/login', 302);
-            }
-            return Response::redirect('/login?return=' . urlencode($request->path), 302);
-        }
-
         $csrf = $this->container->get(Csrf::class);
         if (!$csrf instanceof Csrf) {
             throw new \RuntimeException('Csrf expected');

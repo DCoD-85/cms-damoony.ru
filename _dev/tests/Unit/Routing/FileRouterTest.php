@@ -143,46 +143,6 @@ final class FileRouterTest extends TestCase
         self::assertSame(['page' => 'intro'], $m->args);
     }
 
-    public function testAuthFromLeafRules(): void
-    {
-        $this->writePage('example.ru', 'www', '', ['available' => ['admin'], 'auth' => false]);
-        $this->writePage('example.ru', 'www', 'admin', ['available' => [''], 'auth' => true]);
-        $m = $this->router()->match('/admin', $this->ctx());
-        self::assertTrue($m->found);
-        self::assertTrue($m->auth);
-    }
-
-    public function testAuthInheritedFromRoot(): void
-    {
-        // Новый контракт: auth на предке накапливается в потомке
-        $this->writePage('example.ru', 'www', '', ['available' => ['about'], 'auth' => true]);
-        $this->writePage('example.ru', 'www', 'about', ['available' => ['']]);
-        $m = $this->router()->match('/about', $this->ctx());
-        self::assertTrue($m->found);
-        self::assertTrue($m->auth);
-    }
-
-    public function testAuthInheritedMultiLevel(): void
-    {
-        // auth: true на глубоком предке — наследуется через все уровни
-        $this->writePage('example.ru', 'www', '', ['available' => ['admin'], 'auth' => false]);
-        $this->writePage('example.ru', 'www', 'admin', ['available' => ['users'], 'auth' => true]);
-        $this->writePage('example.ru', 'www', 'admin/users', ['available' => ['']]);
-        $m = $this->router()->match('/admin/users', $this->ctx());
-        self::assertTrue($m->found);
-        self::assertTrue($m->auth);
-    }
-
-    public function testAuthOpenBranch(): void
-    {
-        // Вся цепочка без auth → auth=false
-        $this->writePage('example.ru', 'www', '', ['available' => ['public'], 'auth' => false]);
-        $this->writePage('example.ru', 'www', 'public', ['available' => ['']]);
-        $m = $this->router()->match('/public', $this->ctx());
-        self::assertTrue($m->found);
-        self::assertFalse($m->auth);
-    }
-
     public function testMissingChildPhpReturnsNotFound(): void
     {
         // available говорит про about, но .php отсутствует

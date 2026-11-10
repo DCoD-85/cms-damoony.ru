@@ -41,7 +41,6 @@ final class FileRouter implements RouterInterface
         $classChain = 'algoritm';
         $pathRel = '';
         $args = [];
-        $authRequired = false;
 
         // Пустой путь (/) → синтетический сегмент '', чтобы сработал '' в available
         $segments = $segments === [] ? [''] : $segments;
@@ -54,8 +53,6 @@ final class FileRouter implements RouterInterface
             if ($rules === null) {
                 return RouteMatch::notFound();
             }
-
-            $authRequired = $authRequired || $this->matcher->requiresAuth($rules);
 
             $matched = $this->matcher->matchSegment($segment, $rules);
             if ($matched === null) {
@@ -88,17 +85,13 @@ final class FileRouter implements RouterInterface
             $candidatePhp = $base . '/' . $pathRel . '/' . $classChain . '.php';
             if (!is_file($candidatePhp)) {
                 if ($adminRole !== null) {
-                    return RouteMatch::found($classChain, $pathRel, $args, $authRequired);
+                    return RouteMatch::found($classChain, $pathRel, $args);
                 }
                 return RouteMatch::notFound();
             }
         }
 
-        $leafRulesFile = $base . ($pathRel === '' ? '' : '/' . $pathRel) . '/' . $classChain . '.rules.json';
-        $leafRules = $this->loadRules($leafRulesFile) ?? [];
-        $authRequired = $authRequired || $this->matcher->requiresAuth($leafRules);
-
-        return RouteMatch::found($classChain, $pathRel, $args, $authRequired);
+        return RouteMatch::found($classChain, $pathRel, $args);
     }
 
     /** @return list<string> */

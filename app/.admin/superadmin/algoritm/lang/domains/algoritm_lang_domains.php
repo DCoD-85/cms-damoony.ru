@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Admin\Pages\superadmin;
 
-use Damoony\UI\Algoritm\Page;
+use Damoony\UI\Algoritm\AdminPage;
 use Damoony\Core\Http\Response;
 use Damoony\UI\Node;
 use Damoony\UI\Builder;
@@ -22,9 +22,9 @@ use Damoony\Core\Config;
 use Damoony\UI\Scheme\SchemeLoader;
 use Damoony\UI\Scheme\SchemeRenderer;
 
-final class algoritm_lang_domains extends Page
+final class algoritm_lang_domains extends AdminPage
 {
-    public function default(): Node|Response|null
+    protected function content(): Node|Response|null
     {
         $lang = $this->args['lang'] ?? 'ru';
         $domainName = $this->args['domain'] ?? ''; // Сюда попадет переменная домена

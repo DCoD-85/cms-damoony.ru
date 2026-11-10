@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Damoony\Admin\Pages\superadmin;
 
-use Damoony\UI\Algoritm\Page;
+use Damoony\UI\Algoritm\AdminPage;
 use Damoony\Core\Http\Response;
 use Damoony\UI\Node;
 use Damoony\Core\Config;
 use Damoony\Core\Files\Fs;
 use Damoony\Core\Files\Paths;
 
-final class algoritm_lang_domains_toggle extends Page
+final class algoritm_lang_domains_toggle extends AdminPage
 {
-    public function default(): Node|Response|null
+    protected function content(): Node|Response|null
     {
         // Эндпоинт принимает только POST
         if (!$this->context->request->isPost()) {
