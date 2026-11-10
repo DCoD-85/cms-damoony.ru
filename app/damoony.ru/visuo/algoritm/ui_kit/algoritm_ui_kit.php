@@ -32,6 +32,23 @@ final class algoritm_ui_kit extends Page
     {
         $content = Builder::div('page-content');
 
+        $el1 = Builder::h(1)->append(Text::raw(strip_tags('UI Kit (RU)', '<a><strong>')));
+        $content->append($el1);
+
+        $el2 = Builder::p()->append(Text::raw(strip_tags('Демонстрация базовых Атомов и Компонентов движка Damoony.', '<a><strong>')));
+        $content->append($el2);
+
+        $el3 = Builder::h(2)->append(Text::raw(strip_tags('Кнопки', '<a><strong>')));
+        $content->append($el3);
+
+        $el4 = new Button('Главная кнопка', 'submit');
+        $el4->attrs()->classAdd('ui-btn ui-btn-primary');
+        $content->append($el4);
+
+        $el5 = new Button('Обычная кнопка', 'submit');
+        $el5->attrs()->classAdd('ui-btn');
+        $content->append($el5);
+
         return $content;
     }
 }

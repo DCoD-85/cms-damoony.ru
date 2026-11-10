@@ -1,1 +1,32 @@
-[]
+[
+    {
+        "type": "h1",
+        "content": "Контакты (RU)"
+    },
+    {
+        "type": "p",
+        "content": "Свяжитесь с нами через форму ниже."
+    },
+    {
+        "type": "form",
+        "action": "/",
+        "method": "POST",
+        "children": [
+            {
+                "type": "label",
+                "content": "Ваше имя"
+            },
+            {
+                "type": "input",
+                "input_type": "text",
+                "name": "name",
+                "placeholder": "Иван"
+            },
+            {
+                "type": "button",
+                "content": "Отправить",
+                "class": "ui-btn ui-btn-primary"
+            }
+        ]
+    }
+]

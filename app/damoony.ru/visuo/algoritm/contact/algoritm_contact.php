@@ -32,6 +32,32 @@ final class algoritm_contact extends Page
     {
         $content = Builder::div('page-content');
 
+        $el1 = Builder::h(1)->append(Text::raw(strip_tags('Контакты (RU)', '<a><strong>')));
+        $content->append($el1);
+
+        $el2 = Builder::p()->append(Text::raw(strip_tags('Свяжитесь с нами через форму ниже.', '<a><strong>')));
+        $content->append($el2);
+
+        $el3 = new Form();
+        $el3->action('/');
+        $el3->method('POST');
+        $el4 = new Input('hidden', '_csrf', '');
+        $el4->attrs()->add('value', $this->context->service('csrf')->token());
+        $el3->append($el4);
+        $el5 = new Label();
+        $el5->content(strip_tags('Ваше имя', '<a><strong>'));
+        $el3->append($el5);
+
+        $el6 = new Input('text', 'name', '');
+        $el6->attrs()->add('placeholder', 'Иван');
+        $el3->append($el6);
+
+        $el7 = new Button('Отправить', 'submit');
+        $el7->attrs()->classAdd('ui-btn ui-btn-primary');
+        $el3->append($el7);
+
+        $content->append($el3);
+
         return $content;
     }
 }
