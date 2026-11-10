@@ -8,6 +8,23 @@ use Damoony\UI\Region\RegionContext;
 use Damoony\UI\Region\RegionInterface;
 use Damoony\UI\Builder;
 use Damoony\UI\Node;
+use Damoony\UI\Components\Button;
+use Damoony\UI\Components\Img;
+use Damoony\UI\Components\Link;
+use Damoony\UI\Components\Input;
+use Damoony\UI\Components\Textarea;
+use Damoony\UI\Components\Select;
+use Damoony\UI\Components\Option;
+use Damoony\UI\Components\Label;
+use Damoony\UI\Components\Form;
+use Damoony\UI\Components\Table;
+use Damoony\UI\Components\Thead;
+use Damoony\UI\Components\Tbody;
+use Damoony\UI\Components\Tr;
+use Damoony\UI\Components\Th;
+use Damoony\UI\Components\Td;
+use Damoony\UI\Text;
+use Damoony\UI\UrlSanitizer;
 
 final class alliasglobal_bottom implements RegionInterface
 {
@@ -23,12 +40,14 @@ final class alliasglobal_bottom implements RegionInterface
 
     public function render(RegionContext $context): Node
     {
-        $wrap = Builder::div('bottom-wrap');
-        if ($context->isAuthenticated()) {
-            $wrap->append(Builder::p()->content('Вы авторизованы'));
-        } else {
-            $wrap->append(Builder::p()->content('Гость'));
-        }
-        return $wrap;
+        $cssUrl = '/media/' . $context->domain->real . '/' . $context->domain->allias . '/skin/default/css/bottom.css';
+        $context->meta->addCss($cssUrl);
+
+        $content = Builder::div('bottom');
+
+        $el1 = Builder::p()->append(Text::raw(strip_tags('This is the bottom region.', '<a><strong>')));
+        $content->append($el1);
+
+        return $content;
     }
 }

@@ -8,6 +8,23 @@ use Damoony\UI\Region\RegionContext;
 use Damoony\UI\Region\RegionInterface;
 use Damoony\UI\Builder;
 use Damoony\UI\Node;
+use Damoony\UI\Components\Button;
+use Damoony\UI\Components\Img;
+use Damoony\UI\Components\Link;
+use Damoony\UI\Components\Input;
+use Damoony\UI\Components\Textarea;
+use Damoony\UI\Components\Select;
+use Damoony\UI\Components\Option;
+use Damoony\UI\Components\Label;
+use Damoony\UI\Components\Form;
+use Damoony\UI\Components\Table;
+use Damoony\UI\Components\Thead;
+use Damoony\UI\Components\Tbody;
+use Damoony\UI\Components\Tr;
+use Damoony\UI\Components\Th;
+use Damoony\UI\Components\Td;
+use Damoony\UI\Text;
+use Damoony\UI\UrlSanitizer;
 
 final class alliasglobal_left implements RegionInterface
 {
@@ -23,8 +40,20 @@ final class alliasglobal_left implements RegionInterface
 
     public function render(RegionContext $context): Node
     {
-        $wrap = Builder::div('left');
-        $wrap->append(Builder::p()->content('Блок left'));
-        return $wrap;
+        $cssUrl = '/media/' . $context->domain->real . '/' . $context->domain->allias . '/skin/default/css/left.css';
+        $context->meta->addCss($cssUrl);
+
+        $content = Builder::div('left');
+
+        $el1 = Builder::h(3)->append(Text::raw(strip_tags('Navigation', '<a><strong>')));
+        $content->append($el1);
+
+        $el2 = Builder::ul();
+        $el2->append(Builder::li()->append(Text::raw(strip_tags('Overview', '<a><strong>'))));
+        $el2->append(Builder::li()->append(Text::raw(strip_tags('Components', '<a><strong>'))));
+        $el2->append(Builder::li()->append(Text::raw(strip_tags('Routing', '<a><strong>'))));
+        $content->append($el2);
+
+        return $content;
     }
 }

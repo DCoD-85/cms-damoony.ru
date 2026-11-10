@@ -4,7 +4,16 @@ return [
     'class' => 'layout',
     'children' => [
         ['tag' => 'header', 'class' => 'header', 'slot' => 'top'],
-        ['tag' => 'main', 'class' => 'main-content', 'slot' => 'center'],
+        [
+            'tag' => 'div',
+            'class' => 'middle-wrapper',
+            'children' => [
+                ['tag' => 'aside', 'class' => 'sidebar-left', 'slot' => 'left'],
+                ['tag' => 'main', 'class' => 'main-content', 'slot' => 'center'],
+                ['tag' => 'aside', 'class' => 'sidebar-right', 'slot' => 'right'],
+            ]
+        ],
+        ['tag' => 'div', 'class' => 'bottom-section', 'slot' => 'bottom'],
         ['tag' => 'footer', 'class' => 'footer', 'slot' => 'footer'],
     ],
     'meta' => [
