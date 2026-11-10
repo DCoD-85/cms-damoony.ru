@@ -125,7 +125,7 @@
 3. **assert():** в prod исчезает; заменить на явные `if (!instanceof) throw`.
 4. ~~**Builder неполон:**~~ Решено: добавлены методы `form`, `table`, `select`, `textarea`, `label`, `nav`.
 5. **domains_real[$domain] в save():** работает только при self-mapping.
-6. **PageHandler::applySkin:** читает `$_COOKIE` напрямую, не через сервис.
+6. **PageHandler::applySkin:** читает `$_COOKIE` напрямую. План: удалить, SkinCookieMiddleware — единственный источник. См. dev.md §12 (шаг D).
 7. **Namespace `Damoony\UI\Algoritm`:** унаследован; P2 — переименовать в `Damoony\UI\Page`.
 8. **AINET:** только GET; нет парсинга HTML.
 9. **ArchitectAgent нестабилен:** разные имена страниц в разных запусках; P2 — whitelist slug-ов.
@@ -134,7 +134,7 @@
 12. **Designer (CSS) в AIUI отсутствует:** только `brain.py`. AIUI использует skin по умолчанию.
 13. **Markdown в Coder:** `stripMarkdown()` покрывает не всё (списки, цитаты, таблицы).
 14. **skin:bundle:** не реализован.
-15. **Скрытые дефолты:** `Slot::release()` возвращает пустую строку (слот без региона молча исчезает).
+15. **Скрытые дефолты:** `Slot::release()` возвращает пустую строку. План: маркер в dev, пусто в prod. См. dev.md §12 (шаг E).
 
 ## 7. Безопасность (архитектурные решения)
 

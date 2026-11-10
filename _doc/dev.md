@@ -288,6 +288,45 @@ php bin/dbcli.php db:schema:generate-provider --domain=example.ru --table=produc
 
 После этого провайдер `ProductsProvider` будет доступен в `db:call` и `db:mutate`. Подробнее — `_doc/dbcli.md`.
 
+## 12. Roadmap: реструктуризация Page/Scheme (TODO)
+
+**Цель:** один источник истины для сборки страниц. Сейчас — дублирование `Page::default()` и `PageWithScheme::default()`, `applySkin()` дублирует `SkinCookieMiddleware`, `Slot::release()` тихо возвращает пустую строку.
+
+### Инварианты (после реструктуризации)
+
+1. **Схема обязательна.** Страница без схемы не работает. `Page::content(): Node` — абстрактный.
+2. **Регион в слоте обязателен.** Если в схеме слот `header`, но региона `header` нет — это ошибка (severity=error в `structure:check`). `Slot::release()` в dev возвращает маркер, в prod — пустоту.
+3. **`PageHandler` — единственная точка сборки.** `Page` не рендерит. `SchemeRenderer` вызывается только из `PageHandler::toResponse()`.
+4. **`Page::default()` final.** Контракт: `content()` возвращает `Node`, движок сам решает SSR/AJAX.
+5. **Middleware для кросс-фич.** Скин/язык/auth — Middleware, не `PageHandler`.
+6. **`null` = нет данных для отдачи.** Ответ 204 No Content (не «собери схему»).
+
+### Миграция (поэтапно, каждый шаг — зелёные тесты)
+
+| Шаг | Что | Файлы | Риск |
+|---|---|---|---|
+| A | `Page::content(): ?Node` + `Page::default()` final (SSR+AJAX) | `Page.php` | средний |
+| B | `PageWithScheme` -> пустой наследник `Page` (BC) | `PageWithScheme.php` | низкий |
+| C | `SchemeLoader` + `SchemeRenderer` -> в `PageHandler::toResponse()` | `PageHandler.php` | средний |
+| D | Удалить `PageHandler::applySkin()` (уже есть `SkinCookieMiddleware`) | `PageHandler.php` | низкий |
+| E | `Slot::release()` -> маркер в dev, пусто в prod + тест | `Slot.php` | средний |
+| F | Миграция 10+ админских страниц с `default()` на `content()` | `app/.admin/**` | средний |
+
+### Правила для разработчика (после шагов A-C)
+
+Разработчик пишет только:
+
+    final class algoritm_about extends Page
+    {
+        protected function content(): Node
+        {
+            return Builder::div('page-content')->content('About');
+        }
+    }
+
+**Больше ничего.** Никаких `SchemeLoader`, `SchemeRenderer`, `isAjax()`. Всё — в движке.
+
+
 ## См. также
 
 - `cli.md` — команды `bin/cli.php`.
