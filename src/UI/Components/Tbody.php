@@ -12,6 +12,7 @@ class Tbody extends Element
     public function __construct()
     {
         parent::__construct('tbody');
+        $this->attrs()->classAdd('ui-tbody');
     }
     public function add(Node $child): self
     {

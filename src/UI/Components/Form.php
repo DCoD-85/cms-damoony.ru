@@ -15,12 +15,14 @@ class Form extends Element
     public function __construct(string $class = '')
     {
         parent::__construct('div');
+        $this->attrs()->classAdd('ui-form-wrapper');
         $this->attrs()->classAdd('form_box');
         if ($class !== '') {
             $this->attrs()->classAdd($class);
         }
 
         $this->formNode = Builder::el('form');
+        $this->formNode->attrs()->classAdd('ui-form');
         $this->formNode->attrs()->classAdd('form_form');
         parent::append($this->formNode);
     }

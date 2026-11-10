@@ -12,6 +12,7 @@ class Tr extends Element
     public function __construct()
     {
         parent::__construct('tr');
+        $this->attrs()->classAdd('ui-tr');
     }
     public function add(Node $child): self
     {

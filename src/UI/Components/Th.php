@@ -11,6 +11,7 @@ class Th extends Element
     public function __construct(string $text = '')
     {
         parent::__construct('th');
+        $this->attrs()->classAdd('ui-th');
         if ($text !== '') {
             $this->content($text);
         }
