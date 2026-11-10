@@ -43,13 +43,10 @@ final class alliasglobal_right implements RegionInterface
         $cssUrl = '/media/' . $context->domain->real . '/' . $context->domain->allias . '/skin/default/css/right.css';
         $context->meta->addCss($cssUrl);
 
-        $content = Builder::div('right');
+        $content = Builder::div('dt_' . 'right');
 
-        $el1 = Builder::h(3)->append(Text::raw(strip_tags('Ads', '<a><strong>')));
+        $el1 = Builder::p()->append(Text::raw(strip_tags('Right sidebar', '<a><strong>')));
         $content->append($el1);
-
-        $el2 = Builder::p()->append(Text::raw(strip_tags('Place your ad here.', '<a><strong>')));
-        $content->append($el2);
 
         return $content;
     }

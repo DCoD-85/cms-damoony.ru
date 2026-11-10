@@ -43,7 +43,7 @@ final class BlockCompiler
         $code .= "    public function render(RegionContext \$context): Node\n    {\n";
         $code .= "        \$cssUrl = '/media/' . \$context->domain->real . '/' . \$context->domain->allias . '/skin/default/css/{$blockName}.css';\n";
         $code .= "        \$context->meta->addCss(\$cssUrl);\n\n";
-        $code .= "        \$content = Builder::div('{$blockName}');\n\n";
+        $code .= "        \$content = Builder::div('dt_' . '{$blockName}');\n\n";
 
         $code .= BlockCodegen::render($blocks, '$content', '$context', 8);
 

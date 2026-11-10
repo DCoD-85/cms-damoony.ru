@@ -1,25 +1,26 @@
 <?php
 return [
     'tag' => 'div',
-    'class' => 'layout',
+    'class' => 'dt',
     'children' => [
-        ['tag' => 'header', 'class' => 'header', 'slot' => 'top'],
+        ['tag' => 'header', 'class' => 'dt_header', 'slot' => 'top'],
         [
             'tag' => 'div',
-            'class' => 'middle-wrapper',
+            'class' => 'dt_middle',
             'children' => [
-                ['tag' => 'aside', 'class' => 'sidebar-left', 'slot' => 'left'],
-                ['tag' => 'main', 'class' => 'main-content', 'slot' => 'center'],
-                ['tag' => 'aside', 'class' => 'sidebar-right', 'slot' => 'right'],
+                ['tag' => 'aside', 'class' => 'dt_sidebar_left', 'slot' => 'left'],
+                ['tag' => 'main', 'class' => 'dt_main', 'slot' => 'center'],
+                ['tag' => 'aside', 'class' => 'dt_sidebar_right', 'slot' => 'right'],
             ]
         ],
-        ['tag' => 'div', 'class' => 'bottom-section', 'slot' => 'bottom'],
-        ['tag' => 'footer', 'class' => 'footer', 'slot' => 'footer'],
+        ['tag' => 'div', 'class' => 'dt_bottom_section', 'slot' => 'bottom'],
+        ['tag' => 'footer', 'class' => 'dt_footer', 'slot' => 'footer'],
     ],
     'meta' => [
         'css' => [
-            '/media/damoony.ru/skin/default/css/main.css',
-            '/media/damoony.ru/skin/default/css/components.css'
+            '/media/damoony.ru/visuo/skin/default/css/main.css',
+            '/media/damoony.ru/visuo/skin/default/css/dt.css',
+            '/media/damoony.ru/visuo/skin/default/css/components.css'
         ]
     ]
 ];

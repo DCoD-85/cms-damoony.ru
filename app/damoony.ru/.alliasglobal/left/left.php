@@ -43,16 +43,10 @@ final class alliasglobal_left implements RegionInterface
         $cssUrl = '/media/' . $context->domain->real . '/' . $context->domain->allias . '/skin/default/css/left.css';
         $context->meta->addCss($cssUrl);
 
-        $content = Builder::div('left');
+        $content = Builder::div('dt_' . 'left');
 
-        $el1 = Builder::h(3)->append(Text::raw(strip_tags('Navigation', '<a><strong>')));
+        $el1 = Builder::p()->append(Text::raw(strip_tags('Left sidebar', '<a><strong>')));
         $content->append($el1);
-
-        $el2 = Builder::ul();
-        $el2->append(Builder::li()->append(Text::raw(strip_tags('Overview', '<a><strong>'))));
-        $el2->append(Builder::li()->append(Text::raw(strip_tags('Components', '<a><strong>'))));
-        $el2->append(Builder::li()->append(Text::raw(strip_tags('Routing', '<a><strong>'))));
-        $content->append($el2);
 
         return $content;
     }

@@ -43,9 +43,9 @@ final class alliasglobal_footer implements RegionInterface
         $cssUrl = '/media/' . $context->domain->real . '/' . $context->domain->allias . '/skin/default/css/footer.css';
         $context->meta->addCss($cssUrl);
 
-        $content = Builder::div('footer');
+        $content = Builder::div('dt_' . 'footer');
 
-        $el1 = Builder::p()->append(Text::raw(strip_tags('© 2026 Damoony Engine.', '<a><strong>')));
+        $el1 = Builder::p()->append(Text::raw(strip_tags('Footer', '<a><strong>')));
         $content->append($el1);
 
         return $content;

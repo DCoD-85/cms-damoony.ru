@@ -43,9 +43,9 @@ final class alliasglobal_bottom implements RegionInterface
         $cssUrl = '/media/' . $context->domain->real . '/' . $context->domain->allias . '/skin/default/css/bottom.css';
         $context->meta->addCss($cssUrl);
 
-        $content = Builder::div('bottom');
+        $content = Builder::div('dt_' . 'bottom');
 
-        $el1 = Builder::p()->append(Text::raw(strip_tags('This is the bottom region.', '<a><strong>')));
+        $el1 = Builder::p()->append(Text::raw(strip_tags('Bottom section', '<a><strong>')));
         $content->append($el1);
 
         return $content;

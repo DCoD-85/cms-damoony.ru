@@ -43,15 +43,11 @@ final class alliasglobal_top implements RegionInterface
         $cssUrl = '/media/' . $context->domain->real . '/' . $context->domain->allias . '/skin/default/css/top.css';
         $context->meta->addCss($cssUrl);
 
-        $content = Builder::div('top');
+        $content = Builder::div('dt_' . 'top');
 
         $el1 = Builder::ul('menu');
         $el2 = new Link('/ru/', 'Home');
         $el1->append(Builder::li()->append($el2));
-        $el3 = new Link('/ru/ui_kit', 'UI Kit');
-        $el1->append(Builder::li()->append($el3));
-        $el4 = new Link('/ru/contact', 'Contact');
-        $el1->append(Builder::li()->append($el4));
         $content->append($el1);
 
         return $content;
