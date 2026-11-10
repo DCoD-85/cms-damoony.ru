@@ -1,0 +1,11 @@
+[
+    {
+        "type": "h1",
+        "content": "UI Kit"
+    },
+    {
+        "type": "button",
+        "content": "Primary",
+        "class": "ui-btn ui-btn-primary"
+    }
+]

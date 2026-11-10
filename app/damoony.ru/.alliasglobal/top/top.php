@@ -46,11 +46,11 @@ final class alliasglobal_top implements RegionInterface
         $content = Builder::div('top');
 
         $el1 = Builder::ul('menu');
-        $el2 = new Link('/ru/', 'Главная');
+        $el2 = new Link('/ru/', 'Home');
         $el1->append(Builder::li()->append($el2));
         $el3 = new Link('/ru/ui_kit', 'UI Kit');
         $el1->append(Builder::li()->append($el3));
-        $el4 = new Link('/ru/contact', 'Контакты');
+        $el4 = new Link('/ru/contact', 'Contact');
         $el1->append(Builder::li()->append($el4));
         $content->append($el1);
 

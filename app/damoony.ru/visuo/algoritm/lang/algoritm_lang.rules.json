@@ -1,0 +1,7 @@
+{
+    "available": {
+        "ui_kit": "^ui_kit$",
+        "contact": "^contact$"
+    },
+    "auth": false
+}
