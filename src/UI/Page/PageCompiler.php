@@ -23,9 +23,6 @@ final class PageCompiler
         $code .= "use Damoony\\Core\\Http\\Response;\n";
 
         if ($withSchema) {
-            $code .= "use Damoony\\Core\\Files\\Paths;\n";
-            $code .= "use Damoony\\UI\\Scheme\\SchemeLoader;\n";
-            $code .= "use Damoony\\UI\\Scheme\\SchemeRenderer;\n";
         }
 
         $code .= "\nfinal class {$classChain} extends Page\n{\n";
@@ -34,20 +31,7 @@ final class PageCompiler
 
         $code .= BlockCodegen::render($blocks, '$content', '$this->context', 8);
 
-        if ($withSchema) {
-            $code .= "        \$this->setContent('center', \$content);\n\n";
-            $code .= "        \$paths = \$this->context->service('paths');\n";
-            $code .= "        if (!\$paths instanceof Paths) {\n";
-            $code .= "            return Response::internalError('Paths service missing');\n";
-            $code .= "        }\n\n";
-            $code .= "        \$sid = \$this->context->service('session_id');\n";
-            $code .= "        \$loader = new SchemeLoader(\$paths, is_string(\$sid) ? \$sid : null);\n";
-            $code .= "        \$manifest = \$loader->load(\$this->context->domain, \$this->context->domain->scheme);\n";
-            $code .= "        \$renderer = new SchemeRenderer();\n\n";
-            $code .= "        return \$renderer->render(\$manifest, \$this->regions(), \$this->context);\n";
-        } else {
-            $code .= "        return \$content;\n";
-        }
+        $code .= "        return \$content;\n";
 
         $code .= "    }\n}\n";
 

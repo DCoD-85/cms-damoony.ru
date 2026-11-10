@@ -24,8 +24,6 @@ use Damoony\UI\Components\Select;
 use Damoony\UI\Components\Option;
 use Damoony\Core\Files\Paths;
 use Damoony\Data\Db\Connection;
-use Damoony\UI\Scheme\SchemeLoader;
-use Damoony\UI\Scheme\SchemeRenderer;
 
 final class algoritm_lang_domains_db extends AdminPage
 {
@@ -173,10 +171,7 @@ final class algoritm_lang_domains_db extends AdminPage
 
         $this->setContent('center', $content);
 
-        $loader = new SchemeLoader($paths, null, $role);
-        $manifest = $loader->load($this->context->domain, 'admin');
-
-        return (new SchemeRenderer())->render($manifest, $this->regions(), $this->context);
+        return $content;
     }
 
     private function runGenSqlAndProvider(string $phpBin, string $root, string $domain, string $table): void

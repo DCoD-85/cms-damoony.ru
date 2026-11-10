@@ -73,11 +73,6 @@ class algoritm_doc extends Page
             $paths = new \Damoony\Core\Files\Paths(dirname(__DIR__, 6));
         }
 
-        $schemeLoader = new \Damoony\UI\Scheme\SchemeLoader($paths);
-        $manifest = $schemeLoader->load($this->context->domain, $this->context->domain->scheme);
-
-        $renderer = new \Damoony\UI\Scheme\SchemeRenderer();
-
-        return $renderer->render($manifest, $this->regions(), $this->context);
+        return $content;
     }
 }

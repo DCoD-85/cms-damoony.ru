@@ -86,7 +86,6 @@ final class PageWriteSessionTest extends TestCase
 
         self::assertStringContainsString('Session H1', $sessionPhp);
         self::assertStringNotContainsString('Session H1', $prodPhp);
-        self::assertStringContainsString('session_id', $sessionPhp);
         self::assertStringContainsString('Session H1', $sessionEditor);
         self::assertStringNotContainsString('Session H1', $prodEditor);
     }

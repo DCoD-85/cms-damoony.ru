@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace damoony_ru\development;
 
-use Damoony\UI\Algoritm\PageWithScheme;
+use Damoony\UI\Algoritm\Page;
 use Damoony\UI\Builder;
 use Damoony\UI\Node;
 
-final class algoritm_engine extends PageWithScheme
+final class algoritm_engine extends Page
 {
     protected function content(): Node
     {

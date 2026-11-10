@@ -4,27 +4,14 @@ declare(strict_types=1);
 
 namespace Damoony\Demo\Page;
 
-use Damoony\Core\Files\Paths;
-use Damoony\Core\Http\Response;
 use Damoony\UI\Algoritm\Page;
+use Damoony\UI\Builder;
 use Damoony\UI\Node;
-use Damoony\UI\Scheme\SchemeLoader;
-use Damoony\UI\Scheme\SchemeRenderer;
 
 class HomePage extends Page
 {
-    public function default(): Node|Response|null
+    protected function content(): Node|null
     {
-        $paths = $this->context->service('paths');
-        if (!$paths instanceof Paths) {
-            $paths = new Paths(dirname(__DIR__, 3));
-        }
-
-        $schemeLoader = new SchemeLoader($paths);
-        $manifest = $schemeLoader->load($this->context->domain, $this->context->domain->scheme);
-
-        $renderer = new SchemeRenderer();
-
-        return $renderer->render($manifest, $this->regions(), $this->context);
+        return Builder::div('demo-home')->content('Demo Home Page');
     }
 }

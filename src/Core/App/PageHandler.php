@@ -15,8 +15,12 @@ use Damoony\Core\Routing\RouteMatch;
 use Damoony\UI\Algoritm\PageInterface;
 use Damoony\UI\Document;
 use Damoony\UI\Node;
+use Damoony\UI\Region\ContentRegion;
 use Damoony\UI\Region\RegionContext;
 use Damoony\UI\Region\RegionLoader;
+use Damoony\UI\Region\RegionRegistry;
+use Damoony\UI\Scheme\SchemeLoader;
+use Damoony\UI\Scheme\SchemeRenderer;
 
 final class PageHandler implements PageHandlerInterface
 {
@@ -78,7 +82,7 @@ final class PageHandler implements PageHandlerInterface
             $page = new $class($context, $regions, $match->args);
             $result = $page->default();
 
-            return $this->toResponse($result, $domain, $context);
+            return $this->toResponse($result, $domain, $context, $regions, $adminRole);
         } catch (\Throwable $e) {
             return ErrorPage::serverError($domain->language, $this->debugDetail($e->getMessage()));
         }
@@ -103,7 +107,7 @@ final class PageHandler implements PageHandlerInterface
             . '/' . $classChain . '.php';
     }
 
-    private function toResponse(Node|Response|null $result, DomainContext $domain, RegionContext $context): Response
+    private function toResponse(Node|Response|null $result, DomainContext $domain, RegionContext $context, RegionRegistry $regions, ?string $adminRole = null): Response
     {
         if ($result instanceof Response) {
             return $result;
@@ -117,6 +121,24 @@ final class PageHandler implements PageHandlerInterface
                     'blocks' => ['center' => $result->release()],
                     'url' => $context->request->path,
                 ]);
+            }
+
+            // Загружаем схему (если есть) и оборачиваем в неё контент
+            $paths = $context->service('paths');
+            if ($paths instanceof Paths) {
+                $sid = $context->service('session_id');
+                $loader = new SchemeLoader($paths, is_string($sid) ? $sid : null, $adminRole);
+                $schemeName = $adminRole !== null ? 'admin' : $domain->scheme;
+
+                try {
+                    $manifest = $loader->load($domain, $schemeName);
+                    $regions->add(new ContentRegion('center', $result));
+                    $renderer = new SchemeRenderer();
+                    $result = $renderer->render($manifest, $regions, $context);
+                } catch (\RuntimeException $e) {
+                    // В dev SchemeLoader бросит исключение, если схемы нет.
+                    // В prod вернёт fallback (без исключения).
+                }
             }
 
             $this->applySkin($domain, $context);

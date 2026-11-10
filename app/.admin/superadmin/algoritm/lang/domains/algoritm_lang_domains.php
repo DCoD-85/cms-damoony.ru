@@ -19,8 +19,6 @@ use Damoony\UI\Components\Link;
 use Damoony\UI\Components\Toggle;
 use Damoony\Core\Files\Paths;
 use Damoony\Core\Config;
-use Damoony\UI\Scheme\SchemeLoader;
-use Damoony\UI\Scheme\SchemeRenderer;
 
 final class algoritm_lang_domains extends AdminPage
 {
@@ -150,9 +148,6 @@ final class algoritm_lang_domains extends AdminPage
 
         $this->setContent('center', $content);
 
-        $loader = new SchemeLoader($paths, null, $role);
-        $manifest = $loader->load($this->context->domain, 'admin');
-
-        return (new SchemeRenderer())->render($manifest, $this->regions(), $this->context);
+        return $content;
     }
 }

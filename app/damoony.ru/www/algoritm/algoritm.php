@@ -33,10 +33,6 @@ final class algoritm extends Page
             return Response::internalError('Paths service missing');
         }
 
-        $loader = new SchemeLoader($paths);
-        $manifest = $loader->load($this->context->domain, $this->context->domain->scheme);
-        $renderer = new SchemeRenderer();
-
-        return $renderer->render($manifest, $this->regions(), $this->context);
+        return $content;
     }
 }

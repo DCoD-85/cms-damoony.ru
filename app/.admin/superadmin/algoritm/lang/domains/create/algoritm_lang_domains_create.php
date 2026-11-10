@@ -14,8 +14,6 @@ use Damoony\UI\Components\Input;
 use Damoony\UI\Components\Button;
 use Damoony\UI\Components\Label;
 use Damoony\Core\Files\Paths;
-use Damoony\UI\Scheme\SchemeLoader;
-use Damoony\UI\Scheme\SchemeRenderer;
 
 final class algoritm_lang_domains_create extends AdminPage
 {
@@ -71,9 +69,6 @@ final class algoritm_lang_domains_create extends AdminPage
 
         $this->setContent('center', $content);
 
-        $loader = new SchemeLoader($paths, null, $role);
-        $manifest = $loader->load($this->context->domain, 'admin');
-
-        return (new SchemeRenderer())->render($manifest, $this->regions(), $this->context);
+        return $content;
     }
 }
