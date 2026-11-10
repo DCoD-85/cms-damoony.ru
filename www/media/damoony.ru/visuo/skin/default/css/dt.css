@@ -1,7 +1,6 @@
 .dt { display: flex; flex-direction: column; min-height: 100vh; }
 .dt_middle { display: flex; flex: 1; max-width: 1200px; margin: 0 auto; width: 100%; }
-.dt_sidebar_left, .dt_sidebar_right { width: 250px; flex-shrink: 0; padding: 20px; background: #f9f9f9; }
-.dt_sidebar_left { border-right: 1px solid #eee; }
-.dt_sidebar_right { border-left: 1px solid #eee; }
-.dt_main { flex: 1; padding: 20px; }
-.dt_bottom_section { max-width: 1200px; margin: 0 auto; padding: 20px; width: 100%; border-top: 1px solid #eee; }
+.dt_sidebar { width: 250px; flex-shrink: 0; padding: 20px; background: #f9f9f9; }
+.dt_middle > aside:first-child { border-right: 1px solid #eee; }
+.dt_middle > aside:last-child { border-left: 1px solid #eee; }
+.dt_middle > main { flex: 1; padding: 20px; }
