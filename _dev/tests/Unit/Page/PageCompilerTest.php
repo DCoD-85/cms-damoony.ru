@@ -18,7 +18,7 @@ final class PageCompilerTest extends TestCase
         ]);
 
         token_get_all($php, TOKEN_PARSE);
-        self::assertStringContainsString("Builder::a('#')", $php);
+        self::assertStringContainsString("new Link('#', 'Click')", $php);
         self::assertStringNotContainsString('javascript:', $php);
     }
 
@@ -29,7 +29,7 @@ final class PageCompilerTest extends TestCase
         ]);
 
         token_get_all($php, TOKEN_PARSE);
-        self::assertStringContainsString("Builder::button('submit')", $php);
+        self::assertStringContainsString("new Button('Click', 'submit')", $php);
         self::assertStringNotContainsString('javascript:', $php);
     }
 
@@ -39,7 +39,7 @@ final class PageCompilerTest extends TestCase
             ['type' => 'link', 'url' => 'https://example.com/x', 'content' => 'Go'],
         ]);
 
-        self::assertStringContainsString("Builder::a('https://example.com/x')", $php);
+        self::assertStringContainsString("new Link('https://example.com/x', 'Go')", $php);
     }
 
     public function testProtocolRelativeUrlIsNeutralized(): void
@@ -49,7 +49,7 @@ final class PageCompilerTest extends TestCase
         ]);
 
         token_get_all($php, TOKEN_PARSE);
-        self::assertStringContainsString("Builder::a('#')", $php);
+        self::assertStringContainsString("new Link('#', 'Evil')", $php);
         self::assertStringNotContainsString('evil.example', $php);
     }
 
@@ -62,7 +62,7 @@ final class PageCompilerTest extends TestCase
         ]);
 
         token_get_all($php, TOKEN_PARSE);
-        self::assertStringContainsString("Builder::img('', 'X')", $php);
+        self::assertStringContainsString("new Img('', 'X')", $php);
         self::assertStringNotContainsString('javascript:', $php);
     }
 
@@ -90,7 +90,7 @@ final class PageCompilerTest extends TestCase
         ]);
 
         token_get_all($php, TOKEN_PARSE);
-        self::assertStringContainsString("Builder::a('#')", $php);
+        self::assertStringContainsString("new Link('#', 'Evil')", $php);
         self::assertStringNotContainsString('javascript:', $php);
     }
 
@@ -107,7 +107,7 @@ final class PageCompilerTest extends TestCase
         self::assertStringContainsString('Builder::h(1)', $php);
         self::assertStringContainsString('Builder::p()', $php);
         self::assertStringContainsString('/content/example.ru/www/general/abc123def4567890.png', $php);
-        self::assertStringContainsString("Builder::a('/about')", $php);
+        self::assertStringContainsString("new Link('/about', 'About')", $php);
     }
 
     // === withSchema path (smoke) ===

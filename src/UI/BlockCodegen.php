@@ -79,14 +79,14 @@ final class BlockCodegen
         }
 
         if ($type === 'img') {
-            $code .= $pad . $var . ' = Builder::img(' . var_export(UrlSanitizer::forSrc($content), true) . ', ' . var_export($alt, true) . ");\n";
+            $code .= $pad . $var . ' = new Img(' . var_export(UrlSanitizer::forSrc($content), true) . ', ' . var_export($alt, true) . ");\n";
             $code .= $attrs;
             $code .= $pad . $parentVar . '->append(' . $var . ");\n\n";
             return $code;
         }
 
         if ($type === 'link') {
-            $code .= $pad . $var . ' = Builder::a(' . var_export(UrlSanitizer::forHref($url), true) . ')->append(Text::raw(strip_tags(' . var_export($content, true) . ", '<a><strong>')));\n";
+            $code .= $pad . $var . ' = new Link(' . var_export(UrlSanitizer::forHref($url), true) . ', ' . var_export(strip_tags($content, '<a><strong>'), true) . ");\n";
             $code .= $attrs;
             $code .= $pad . $parentVar . '->append(Builder::p()->append(' . $var . "));\n\n";
             return $code;
@@ -97,9 +97,8 @@ final class BlockCodegen
             if (!in_array($buttonType, ['submit', 'button', 'reset'], true)) {
                 $buttonType = 'submit';
             }
-            $code .= $pad . $var . ' = Builder::button(' . var_export($buttonType, true) . ");\n";
+            $code .= $pad . $var . ' = new Button(' . var_export(strip_tags($content, '<a><strong>'), true) . ', ' . var_export($buttonType, true) . ");\n";
             $code .= $attrs;
-            $code .= $pad . $var . '->append(Text::raw(strip_tags(' . var_export($content, true) . ", '<a><strong>')));\n";
             $code .= $pad . $parentVar . '->append(' . $var . ");\n\n";
             return $code;
         }
@@ -122,7 +121,9 @@ final class BlockCodegen
                 if (is_array($item) && isset($item['url'], $item['title'])) {
                     $itemUrl = var_export(UrlSanitizer::forHref((string) $item['url']), true);
                     $itemTitle = var_export((string) $item['title'], true);
-                    $code .= $pad . $var . "->append(Builder::li()->append(Builder::a({$itemUrl})->append(Text::raw(strip_tags({$itemTitle}, '<a><strong>')))));\n";
+                    $linkVar = '$el' . (++$counter);
+                    $code .= $pad . $linkVar . " = new Link({$itemUrl}, {$itemTitle});\n";
+                    $code .= $pad . $var . "->append(Builder::li()->append({$linkVar}));\n";
                 }
             }
             $code .= $attrs;
@@ -151,19 +152,19 @@ final class BlockCodegen
             $headers = $block['headers'] ?? [];
             $rows = $block['rows'] ?? [];
 
-            $code .= $pad . $var . " = Builder::el('table');\n";
+            $code .= $pad . $var . " = new Table();\n";
             $code .= $attrs;
 
             if (is_array($headers) && $headers !== []) {
                 $thead = '$el' . (++$counter);
-                $code .= $pad . $thead . " = Builder::el('thead');\n";
+                $code .= $pad . $thead . " = new Thead();\n";
 
                 $trHead = '$el' . (++$counter);
-                $code .= $pad . $trHead . " = Builder::el('tr');\n";
+                $code .= $pad . $trHead . " = new Tr();\n";
 
                 foreach ($headers as $h) {
                     $th = '$el' . (++$counter);
-                    $code .= $pad . $th . ' = Builder::el(\'th\')->append(Text::raw(strip_tags(' . var_export((string) $h, true) . ", '<a><strong>')));\n";
+                    $code .= $pad . $th . ' = new Th(' . var_export((string) $h, true) . ");\n";
                     $code .= $pad . $trHead . '->append(' . $th . ");\n";
                 }
 
@@ -173,15 +174,16 @@ final class BlockCodegen
 
             if (is_array($rows) && $rows !== []) {
                 $tbody = '$el' . (++$counter);
-                $code .= $pad . $tbody . " = Builder::el('tbody');\n";
+                $code .= $pad . $tbody . " = new Tbody();\n";
 
                 foreach ($rows as $row) {
                     $tr = '$el' . (++$counter);
-                    $code .= $pad . $tr . " = Builder::el('tr');\n";
+                    $code .= $pad . $tr . " = new Tr();\n";
 
                     foreach ((array) $row as $cell) {
                         $td = '$el' . (++$counter);
-                        $code .= $pad . $td . ' = Builder::el(\'td\')->append(Text::raw(strip_tags(' . var_export((string) $cell, true) . ", '<a><strong>')));\n";
+                        $code .= $pad . $td . " = new Td();\n";
+                        $code .= $pad . $td . '->append(Text::raw(strip_tags(' . var_export((string) $cell, true) . ", '<a><strong>')));\n";
                         $code .= $pad . $tr . '->append(' . $td . ");\n";
                     }
 
@@ -201,14 +203,14 @@ final class BlockCodegen
             $action = $block['action'] ?? '#';
             $method = strtoupper((string)($block['method'] ?? 'POST'));
 
-            $code .= $pad . $var . " = Builder::el('form');\n";
-            $code .= $pad . $var . '->attrs()->add(\'action\', ' . var_export(UrlSanitizer::forHref($action), true) . ");\n";
-            $code .= $pad . $var . '->attrs()->add(\'method\', ' . var_export($method, true) . ");\n";
+            $code .= $pad . $var . " = new Form();\n";
+            $code .= $pad . $var . '->action(' . var_export(UrlSanitizer::forHref($action), true) . ");\n";
+            $code .= $pad . $var . '->method(' . var_export($method, true) . ");\n";
             $code .= $attrs;
 
             if ($method === 'POST') {
                 $csrfVar = '$el' . (++$counter);
-                $code .= $pad . $csrfVar . " = Builder::input('hidden', '_csrf', '');\n";
+                $code .= $pad . $csrfVar . " = new Input('hidden', '_csrf', '');\n";
                 $code .= $pad . $csrfVar . "->attrs()->add('value', " . $contextVar . "->service('csrf')->token());\n";
                 $code .= $pad . $var . '->append(' . $csrfVar . ");\n";
             }
@@ -223,12 +225,12 @@ final class BlockCodegen
 
         if ($type === 'label') {
             $for = $block['for'] ?? '';
-            $code .= $pad . $var . " = Builder::el('label');\n";
+            $code .= $pad . $var . " = new Label();\n";
             if ($for !== '') {
                 $code .= $pad . $var . '->attrs()->add(\'for\', ' . var_export($for, true) . ");\n";
             }
             $code .= $attrs;
-            $code .= $pad . $var . '->append(Text::raw(strip_tags(' . var_export($content, true) . ", '<a><strong>')));\n";
+            $code .= $pad . $var . '->content(strip_tags(' . var_export($content, true) . ", '<a><strong>'));\n";
             $code .= $pad . $parentVar . '->append(' . $var . ");\n\n";
             return $code;
         }
@@ -240,7 +242,7 @@ final class BlockCodegen
             $placeholder = $block['placeholder'] ?? '';
             $required = $block['required'] ?? false;
 
-            $code .= $pad . $var . ' = Builder::input(' . var_export($inputType, true) . ', ' . var_export($name, true) . ', ' . var_export($value, true) . ");\n";
+            $code .= $pad . $var . ' = new Input(' . var_export($inputType, true) . ', ' . var_export($name, true) . ', ' . var_export($value, true) . ");\n";
             if ($placeholder !== '') {
                 $code .= $pad . $var . '->attrs()->add(\'placeholder\', ' . var_export($placeholder, true) . ");\n";
             }
@@ -258,7 +260,7 @@ final class BlockCodegen
             $placeholder = $block['placeholder'] ?? '';
             $required = $block['required'] ?? false;
 
-            $code .= $pad . $var . " = Builder::el('textarea');\n";
+            $code .= $pad . $var . " = new Textarea();\n";
             if ($name !== '') {
                 $code .= $pad . $var . '->attrs()->add(\'name\', ' . var_export($name, true) . ");\n";
             }
@@ -270,7 +272,7 @@ final class BlockCodegen
                 $code .= $pad . $var . "->attrs()->add('required', 'required');\n";
             }
             $code .= $attrs;
-            $code .= $pad . $var . '->append(Text::raw(strip_tags(' . var_export($content, true) . ", '<a><strong>')));\n";
+            $code .= $pad . $var . '->content(strip_tags(' . var_export($content, true) . ", '<a><strong>'));\n";
             $code .= $pad . $parentVar . '->append(' . $var . ");\n\n";
             return $code;
         }
@@ -280,7 +282,7 @@ final class BlockCodegen
             $options = $block['options'] ?? [];
             $required = $block['required'] ?? false;
 
-            $code .= $pad . $var . " = Builder::el('select');\n";
+            $code .= $pad . $var . " = new Select();\n";
             if ($name !== '') {
                 $code .= $pad . $var . '->attrs()->add(\'name\', ' . var_export($name, true) . ");\n";
             }
@@ -292,7 +294,7 @@ final class BlockCodegen
             foreach ((array) $options as $opt) {
                 if (is_array($opt) && isset($opt['value'], $opt['label'])) {
                     $optVar = '$el' . (++$counter);
-                    $code .= $pad . $optVar . " = Builder::el('option');\n";
+                    $code .= $pad . $optVar . " = new Option();\n";
                     $code .= $pad . $optVar . '->attrs()->add(\'value\', ' . var_export((string) $opt['value'], true) . ");\n";
                     $code .= $pad . $optVar . '->append(Text::raw(strip_tags(' . var_export((string) $opt['label'], true) . ", '<a><strong>')));\n";
                     $code .= $pad . $var . '->append(' . $optVar . ");\n";

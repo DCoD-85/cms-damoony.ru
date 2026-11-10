@@ -18,7 +18,7 @@ final class BlockCompilerTest extends TestCase
         ]);
 
         token_get_all($php, TOKEN_PARSE);
-        self::assertStringContainsString("Builder::a('#')", $php);
+        self::assertStringContainsString("new Link('#', 'Click')", $php);
         self::assertStringNotContainsString('javascript:', $php);
     }
 
@@ -29,7 +29,7 @@ final class BlockCompilerTest extends TestCase
         ]);
 
         token_get_all($php, TOKEN_PARSE);
-        self::assertStringContainsString("Builder::button('submit')", $php);
+        self::assertStringContainsString("new Button('Click', 'submit')", $php);
         self::assertStringNotContainsString('javascript:', $php);
     }
 
@@ -39,7 +39,7 @@ final class BlockCompilerTest extends TestCase
             ['type' => 'link', 'url' => 'https://example.com/x', 'content' => 'Go'],
         ]);
 
-        self::assertStringContainsString("Builder::a('https://example.com/x')", $php);
+        self::assertStringContainsString("new Link('https://example.com/x', 'Go')", $php);
     }
 
     public function testValidRelativePathPasses(): void
@@ -48,7 +48,7 @@ final class BlockCompilerTest extends TestCase
             ['type' => 'link', 'url' => '/about', 'content' => 'About'],
         ]);
 
-        self::assertStringContainsString("Builder::a('/about')", $php);
+        self::assertStringContainsString("new Link('/about', 'About')", $php);
     }
 
     public function testAnchorPasses(): void
@@ -57,7 +57,7 @@ final class BlockCompilerTest extends TestCase
             ['type' => 'link', 'url' => '#section', 'content' => 'Jump'],
         ]);
 
-        self::assertStringContainsString("Builder::a('#section')", $php);
+        self::assertStringContainsString("new Link('#section', 'Jump')", $php);
     }
 
     public function testProtocolRelativeUrlIsNeutralized(): void
@@ -67,7 +67,7 @@ final class BlockCompilerTest extends TestCase
         ]);
 
         token_get_all($php, TOKEN_PARSE);
-        self::assertStringContainsString("Builder::a('#')", $php);
+        self::assertStringContainsString("new Link('#', 'Evil')", $php);
         self::assertStringNotContainsString('evil.example', $php);
     }
 
@@ -80,7 +80,7 @@ final class BlockCompilerTest extends TestCase
         ]);
 
         token_get_all($php, TOKEN_PARSE);
-        self::assertStringContainsString("Builder::img('', 'X')", $php);
+        self::assertStringContainsString("new Img('', 'X')", $php);
         self::assertStringNotContainsString('javascript:', $php);
     }
 
@@ -90,7 +90,7 @@ final class BlockCompilerTest extends TestCase
             ['type' => 'img', 'content' => 'https://cdn.example/x.png', 'alt' => 'Pic'],
         ]);
 
-        self::assertStringContainsString("Builder::img('https://cdn.example/x.png', 'Pic')", $php);
+        self::assertStringContainsString("new Img('https://cdn.example/x.png', 'Pic')", $php);
     }
 
     public function testImgWithDataImageIsAllowed(): void
@@ -112,7 +112,7 @@ final class BlockCompilerTest extends TestCase
         ]);
 
         token_get_all($php, TOKEN_PARSE);
-        self::assertStringContainsString("Builder::a('#')", $php);
+        self::assertStringContainsString("new Link('#', 'X')", $php);
         self::assertStringNotContainsString('data:image', $php);
     }
 
@@ -131,8 +131,8 @@ final class BlockCompilerTest extends TestCase
         ]);
 
         token_get_all($php, TOKEN_PARSE);
-        self::assertStringContainsString("Builder::a('/')", $php);
-        self::assertStringContainsString("Builder::a('#')", $php);
+        self::assertStringContainsString("new Link('/', 'Home')", $php);
+        self::assertStringContainsString("new Link('#', 'Evil')", $php);
         self::assertStringNotContainsString('javascript:', $php);
     }
 
@@ -149,7 +149,7 @@ final class BlockCompilerTest extends TestCase
             ],
         ]);
 
-        self::assertStringContainsString("Builder::a('/about')", $php);
-        self::assertStringContainsString("Builder::a('https://example.com/x')", $php);
+        self::assertStringContainsString("new Link('/about', 'About')", $php);
+        self::assertStringContainsString("new Link('https://example.com/x', 'Ext')", $php);
     }
 }
