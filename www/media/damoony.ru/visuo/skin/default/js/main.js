@@ -40,7 +40,8 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (data.ok && data.blocks) {
                 for (const [name, html] of Object.entries(data.blocks)) {
-                    const container = document.querySelector('.dt_' + name);
+                    // Ищем элемент по data-block, а не по классу
+                    const container = document.querySelector('[data-block="' + name + '"]');
                     if (container) {
                         container.innerHTML = html;
                     }

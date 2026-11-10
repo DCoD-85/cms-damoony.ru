@@ -28,6 +28,8 @@ use Damoony\Core\Http\Response;
 
 final class algoritm_lang_ui_kit extends Page
 {
+    protected array $ajaxBlocks = ['top', 'center'];
+
     protected function content(): Node|Response|null
     {
         $content = Builder::div('page-content');
@@ -35,12 +37,8 @@ final class algoritm_lang_ui_kit extends Page
         $el1 = Builder::h(1)->append(Text::raw(strip_tags('UI Kit', '<a><strong>')));
         $content->append($el1);
 
-        $el2 = Builder::p()->append(Text::raw(strip_tags('Демонстрация базовых компонентов Damoony Engine.', '<a><strong>')));
+        $el2 = Builder::p()->append(Text::raw(strip_tags('Демонстрация компонентов.', '<a><strong>')));
         $content->append($el2);
-
-        $el3 = new Button('Главная кнопка', 'submit');
-        $el3->attrs()->classAdd('ui-btn ui-btn-primary');
-        $content->append($el3);
 
         return $content;
     }

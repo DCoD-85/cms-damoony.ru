@@ -41,6 +41,7 @@ final class PageCompiler
         }
 
         $code .= "\nfinal class {$classChain} extends Page\n{\n";
+        $code .= "    protected array \$ajaxBlocks = ['top', 'center'];\n\n";
         $code .= "    protected function content(): Node|Response|null\n    {\n";
         $code .= "        \$content = Builder::div('page-content');\n\n";
 

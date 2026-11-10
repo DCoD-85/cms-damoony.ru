@@ -5,11 +5,6 @@
     },
     {
         "type": "p",
-        "content": "Демонстрация базовых компонентов Damoony Engine."
-    },
-    {
-        "type": "button",
-        "content": "Главная кнопка",
-        "class": "ui-btn ui-btn-primary"
+        "content": "Демонстрация компонентов."
     }
 ]
