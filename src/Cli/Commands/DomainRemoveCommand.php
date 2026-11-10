@@ -70,39 +70,43 @@ final class DomainRemoveCommand implements CommandInterface
         }
         $site = Config::fromFile($siteFile)->all();
 
-        // Reject non-self-mapped: paths->domain() resolves via realDomain,
-        // config cleanup uses $domain directly. Removing 'alias.ru' when it
-        // maps to 'real.ru' would orphan app/real.ru and partially clean config.
         $realDomain = (string) ($site['domains_real'][$domain] ?? '');
-        if ($realDomain !== '' && $realDomain !== $domain) {
-            $r->error(
-                "Домен '{$domain}' мапится на '{$realDomain}'. "
-                . 'Удаление non-self-mapped домена запрещено. '
-                . "Укажите --domain={$realDomain} или отредактируйте site.config вручную.",
-            );
-            return $r;
-        }
-
-        $domainDir = $this->paths->domain($domain);
+        $isMapped = ($realDomain !== '' && $realDomain !== $domain);
         $domainInConfig = isset($site['domains_real'][$domain]);
 
-        if (!is_dir($domainDir) && !$domainInConfig) {
-            $r->warn("Домен не найден ни на диске, ни в конфиге: {$domain}");
-            $context->step('Нечего удалять', true);
-            return $r;
-        }
+        if ($isMapped) {
+            $context->step("Домен {$domain} является привязкой к {$realDomain}. Удаляем только конфиг.", true);
+        } else {
+            $mappedDomains = [];
+            foreach ($site['domains_real'] ?? [] as $d => $real) {
+                if ($d !== $domain && $real === $domain) {
+                    $mappedDomains[] = $d;
+                }
+            }
 
-        // 1. Карантин (только если папка есть)
-        if (is_dir($domainDir)) {
-            $trashDir = $domainDir . '_trash_' . time();
-            if (!@rename($domainDir, $trashDir)) {
-                $r->error('Не удалось переместить папку домена в карантин');
+            if (count($mappedDomains) > 0) {
+                $r->error("Нельзя удалить реальный домен '{$domain}', так как к нему привязаны: " . implode(', ', $mappedDomains) . ". Сначала удалите привязки.");
                 return $r;
             }
-            $context->step('Папка домена перемещена в карантин', true, basename($trashDir));
-            $r->warn('Очистка карантина: php bin/cli.php trash:clear --force --older=7d');
-        } else {
-            $r->warn('Папка домена не найдена — чистим только конфиг');
+
+            $domainDir = $this->paths->domain($domain);
+            if (!is_dir($domainDir) && !$domainInConfig) {
+                $r->warn("Домен не найден ни на диске, ни в конфиге: {$domain}");
+                $context->step('Нечего удалять', true);
+                return $r;
+            }
+
+            if (is_dir($domainDir)) {
+                $trashDir = $domainDir . '_trash_' . time();
+                if (!@rename($domainDir, $trashDir)) {
+                    $r->error('Не удалось переместить папку домена в карантин');
+                    return $r;
+                }
+                $context->step('Папка реального домена перемещена в карантин', true, basename($trashDir));
+                $r->warn('Очистка карантина: php bin/cli.php trash:clear --force --older=7d');
+            } else {
+                $r->warn('Папка реального домена не найдена — чистим только конфиг');
+            }
         }
 
         // 2. Карантин для media домена
