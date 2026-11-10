@@ -1,0 +1,10 @@
+{
+    "scheme": {
+        "children": [
+            {
+                "type": "slot",
+                "name": "center"
+            }
+        ]
+    }
+}
