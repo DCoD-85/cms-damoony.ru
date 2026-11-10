@@ -1,8 +1,6 @@
 {
-    "available": [
-        ""
-    ],
-    "auth": false,
-    "search": true,
-    "default": false
+    "available": {
+        "": "^$"
+    },
+    "auth": false
 }

@@ -1,4 +1,5 @@
 {
     "enabled": true,
-    "type": "mixed"
+    "type": "mixed",
+    "available": {}
 }

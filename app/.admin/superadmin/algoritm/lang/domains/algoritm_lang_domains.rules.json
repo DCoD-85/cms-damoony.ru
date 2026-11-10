@@ -1,10 +1,10 @@
 {
     "auth": true,
-    "available": [
-        "create",
-        "toggle",
-        "db",
-        "(.+)|domain",
-        ""
-    ]
+    "available": {
+        "create": "^create$",
+        "toggle": "^toggle$",
+        "db": "^db$",
+        "domain": "^(.+)$",
+        "": "^$"
+    }
 }

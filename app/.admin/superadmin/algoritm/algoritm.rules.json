@@ -1,9 +1,9 @@
 {
     "auth": true,
-    "available": [
-        "([a-z]{2})|lang",
-        "login",
-        "logout",
-        ""
-    ]
+    "available": {
+        "lang": "^([a-z]{2})$",
+        "login": "^login$",
+        "logout": "^logout$",
+        "": "^$"
+    }
 }

@@ -1,8 +1,8 @@
 {
-    "available": [
-        "login",
-        "logout",
-        "(.*)|doc"
-    ],
+    "available": {
+        "login": "^login$",
+        "logout": "^logout$",
+        "doc": "^(.*)$"
+    },
     "auth": false
 }

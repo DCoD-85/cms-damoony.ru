@@ -1,8 +1,6 @@
 {
-    "available": [
-        "([a-z]+)|mode"
-    ],
-    "auth": false,
-    "search": true,
-    "default": false
+    "available": {
+        "mode": "^([a-z]+)$"
+    },
+    "auth": false
 }

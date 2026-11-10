@@ -23,35 +23,36 @@ final class RulesMatcher
             return null;
         }
 
-        foreach ($available as $pattern) {
-            if (!is_string($pattern)) {
-                continue;
-            }
-
-            if ($pattern === '') {
-                if ($segment === '') {
-                    return ['', []];
+        // Normalize old list format to assoc array on the fly (backward compatibility)
+        if (array_is_list($available)) {
+            $normalized = [];
+            foreach ($available as $pattern) {
+                if (!is_string($pattern)) {
+                    continue;
                 }
-                continue;
-            }
-
-            if (!str_contains($pattern, '|')) {
-                if ($pattern === $segment) {
-                    return [$pattern, []];
+                if ($pattern === '') {
+                    $normalized[''] = '^$';
+                } elseif (str_contains($pattern, '|')) {
+                    [$regex, $target] = explode('|', $pattern, 2);
+                    $normalized[$target === '' ? 'id' : $target] = '^' . $regex . '$';
+                } else {
+                    $normalized[$pattern] = '^' . preg_quote($pattern, '/') . '$';
                 }
-                continue;
             }
+            $available = $normalized;
+        }
 
-            [$regex, $target] = explode('|', $pattern, 2) + [1 => ''];
-            if ($regex === '') {
+        foreach ($available as $target => $regex) {
+            if (!is_string($regex)) {
                 continue;
             }
 
             $full = '#^' . $regex . '$#u';
-            $matched = @preg_match($full, $segment);
-            if ($matched === 1) {
-                $key = $target === '' ? 'id' : $target;
-                return [$target, [$key => $segment]];
+            if (@preg_match($full, $segment, $matches) === 1) {
+                // If there are no capture groups (count($matches) === 1), it's a literal match.
+                // We shouldn't pass arguments to FileRouter, otherwise it treats it as a dynamic folder.
+                $args = count($matches) > 1 ? [$target => $segment] : [];
+                return [$target, $args];
             }
         }
 

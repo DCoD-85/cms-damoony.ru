@@ -1,11 +1,11 @@
 {
     "auth": true,
-    "available": [
-        "dashboard",
-        "profile",
-        "domains",
-        "logout",
-        "([a-z]{2})|lang",
-        ""
-    ]
+    "available": {
+        "dashboard": "^dashboard$",
+        "profile": "^profile$",
+        "domains": "^domains$",
+        "logout": "^logout$",
+        "lang": "^([a-z]{2})$",
+        "": "^$"
+    }
 }

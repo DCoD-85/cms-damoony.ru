@@ -1,8 +1,6 @@
 {
-    "available": [
-        "(.*)|doc"
-    ],
-    "auth": false,
-    "search": true,
-    "default": false
+    "available": {
+        "doc": "^(.*)$"
+    },
+    "auth": false
 }

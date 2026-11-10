@@ -1,11 +1,6 @@
 {
-    "available": [
-        "",
-        "^(ru|en|zh)$|lang",
-        "ui_kit",
-        "contact"
-    ],
-    "auth": false,
-    "search": true,
-    "default": false
+    "available": {
+        "lang": "^([a-z]{2})$"
+    },
+    "auth": false
 }

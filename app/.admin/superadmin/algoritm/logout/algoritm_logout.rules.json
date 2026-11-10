@@ -1,6 +1,6 @@
 {
     "auth": false,
-    "available": [
-        ""
-    ]
+    "available": {
+        "": "^$"
+    }
 }

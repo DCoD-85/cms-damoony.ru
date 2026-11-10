@@ -8,14 +8,12 @@ use Damoony\Core\Files\Fs;
 
 final class PageRules
 {
-    /** @return array{available: list<string>, auth: bool, search: bool, default: bool} */
+    /** @return array{available: array<string, string>, auth: bool} */
     public static function defaults(): array
     {
         return [
             'available' => [],
             'auth' => false,
-            'search' => true,
-            'default' => false,
         ];
     }
 
@@ -41,19 +39,18 @@ final class PageRules
      *
      * @param array<string, mixed> $current
      *
-     * @return array{available: list<string>, auth: bool, search: bool, default: bool}
+     * @return array{available: array<string, string>, auth: bool}
      */
     public static function withDefaults(array $current): array
     {
-        $available = is_array($current['available'] ?? null)
-            ? array_values(array_filter($current['available'], 'is_string'))
-            : [];
+        $available = $current['available'] ?? [];
+        if (!is_array($available)) {
+            $available = [];
+        }
 
         return [
             'available' => $available,
             'auth' => ($current['auth'] ?? false) === true,
-            'search' => ($current['search'] ?? true) === true,
-            'default' => ($current['default'] ?? false) === true,
         ];
     }
 
@@ -69,11 +66,22 @@ final class PageRules
             $available = [];
         }
 
-        if (!in_array($childName, $available, true)) {
-            $available[] = $childName;
+        // Convert list to assoc if it was an old format
+        if (array_is_list($available)) {
+            $newAvailable = [];
+            foreach ($available as $item) {
+                if (is_string($item)) {
+                    $newAvailable[$item] = '^' . preg_quote($item, '/') . '$';
+                }
+            }
+            $available = $newAvailable;
         }
 
-        $rules['available'] = array_values(array_unique($available));
+        if (!isset($available[$childName])) {
+            $available[$childName] = '^' . preg_quote($childName, '/') . '$';
+        }
+
+        $rules['available'] = $available;
 
         return $rules;
     }

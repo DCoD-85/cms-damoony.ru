@@ -1,8 +1,6 @@
 {
-    "available": [
-        "about"
-    ],
-    "auth": false,
-    "search": false,
-    "default": false
+    "available": {
+        "about": "^about$"
+    },
+    "auth": false
 }

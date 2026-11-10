@@ -42,6 +42,7 @@ final class algoritm extends Page
         $el3->attrs()->classAdd('ui-btn ui-btn-primary');
         $content->append($el3);
 
+		die( 'OK' );
         return $content;
     }
 }
