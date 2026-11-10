@@ -47,24 +47,12 @@ final class alliasglobal_top implements RegionInterface
 
         $el1 = Builder::ul('menu');
         $el2 = new Link('/ru/', 'Главная');
-        if ($context->request->path === '/ru/' || (substr('/ru/', -1) !== '/' && str_starts_with($context->request->path, '/ru/'))) {
-            $el2->attrs()->classAdd('active');
-        }
         $el1->append(Builder::li()->append($el2));
         $el3 = new Link('/ru/ui_kit', 'UI Kit');
-        if ($context->request->path === '/ru/ui_kit' || (substr('/ru/ui_kit', -1) !== '/' && str_starts_with($context->request->path, '/ru/ui_kit'))) {
-            $el3->attrs()->classAdd('active');
-        }
         $el1->append(Builder::li()->append($el3));
         $el4 = new Link('/ru/features', 'Возможности');
-        if ($context->request->path === '/ru/features' || (substr('/ru/features', -1) !== '/' && str_starts_with($context->request->path, '/ru/features'))) {
-            $el4->attrs()->classAdd('active');
-        }
         $el1->append(Builder::li()->append($el4));
         $el5 = new Link('/ru/contact', 'Контакты');
-        if ($context->request->path === '/ru/contact' || (substr('/ru/contact', -1) !== '/' && str_starts_with($context->request->path, '/ru/contact'))) {
-            $el5->attrs()->classAdd('active');
-        }
         $el1->append(Builder::li()->append($el5));
         $content->append($el1);
 

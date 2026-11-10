@@ -3,7 +3,9 @@
         "ui_kit": "^ui_kit$",
         "contact": "^contact$",
         "ajax_test": "^ajax_test$",
-        "": "^$"
+        "": "^$",
+        "about": "^about$",
+        "features": "^features$"
     },
     "auth": false
 }

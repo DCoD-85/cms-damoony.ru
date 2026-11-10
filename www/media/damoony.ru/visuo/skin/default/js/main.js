@@ -19,6 +19,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 4000);
     }
 
+    function highlightMenu() {
+        const path = window.location.pathname;
+        document.querySelectorAll('.dt_top .menu a').forEach(link => {
+            if (link.pathname === path) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+    }
+
     async function loadPage(url, pushState = true) {
         try {
             const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
@@ -32,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (pushState) {
                     window.history.pushState({}, '', url);
                 }
+                highlightMenu();
             } else {
                 window.location.href = url;
             }
@@ -40,10 +52,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Инициализация при загрузке
     const flashScript = document.getElementById('flash-data');
     if (flashScript) {
         try { JSON.parse(flashScript.textContent).forEach(m => showToast(m)); } catch (e) {}
     }
+    highlightMenu();
 
     document.body.addEventListener('click', (e) => {
         const link = e.target.closest('a');
