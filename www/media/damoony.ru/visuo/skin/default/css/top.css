@@ -1,1 +1,4 @@
-.dt_top { background: #333; color: #fff; padding: 15px 20px; } .dt_top a { color: #fff; } .dt_top .menu { list-style: none; display: flex; gap: 15px; margin: 0; padding: 0; }
+.dt_top { max-width: 1200px; margin: 0 auto; padding: 1.2rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+.dt_top .menu { list-style: none; padding: 0; margin: 0; display: flex; gap: 1.5rem; }
+.dt_top .menu a { color: #ccc; text-decoration: none; font-weight: 500; font-size: 1rem; transition: color 0.2s; }
+.dt_top .menu a:hover { color: #fff; }
