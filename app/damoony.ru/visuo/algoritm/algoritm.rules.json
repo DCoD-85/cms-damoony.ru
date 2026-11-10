@@ -1,7 +1,8 @@
 {
     "available": {
         "": "^$",
-        "lang": "^([a-z]{2})$"
+        "lang": "^([a-z]{2})$",
+        "ajax_test": "^ajax_test$"
     },
     "auth": false
 }
