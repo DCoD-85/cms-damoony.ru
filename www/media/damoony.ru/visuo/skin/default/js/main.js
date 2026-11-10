@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const toast = document.createElement('div');
         toast.className = 'dt_toast ' + type;
         
-        // Если сообщение обернуто в div, извлекаем текст, чтобы не было двойных рамок
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
         toast.appendChild(tempDiv.firstElementChild || tempDiv);
@@ -27,11 +26,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function highlightMenu() {
         const path = window.location.pathname;
         document.querySelectorAll('.dt_top .menu a').forEach(link => {
-            if (link.pathname === path) {
-                link.classList.add('active');
-            } else {
-                link.classList.remove('active');
-            }
+            if (link.pathname === path) link.classList.add('active');
+            else link.classList.remove('active');
         });
     }
 
@@ -45,9 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const container = document.querySelector('[data-block="' + name + '"]');
                     if (container) container.innerHTML = html;
                 }
-                if (pushState) {
-                    window.history.pushState({}, '', url);
-                }
+                if (pushState) window.history.pushState({}, '', url);
                 highlightMenu();
             } else {
                 window.location.href = url;
@@ -57,7 +51,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Инициализация при загрузке
     const flashScript = document.getElementById('flash-data');
     if (flashScript) {
         try { JSON.parse(flashScript.textContent).forEach(m => showToast(m, 'info')); } catch (e) {}
@@ -80,6 +73,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const form = e.target.closest('form');
         if (!form || form.hasAttribute('data-no-ajax')) return;
         e.preventDefault();
+
+        const btn = form.querySelector('button[type="submit"]');
+        if (btn && btn.disabled) return; // Защита от двойного клика
+        if (btn) btn.disabled = true;
 
         const formData = new FormData(form);
         try {
@@ -104,6 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (err) {
             form.submit();
+        } finally {
+            if (btn) btn.disabled = false;
         }
     });
 });
