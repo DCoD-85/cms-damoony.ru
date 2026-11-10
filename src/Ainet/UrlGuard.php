@@ -32,7 +32,7 @@ final class UrlGuard
      */
     public function __construct(
         private readonly DomainWhitelist $whitelist,
-        array $allowedSchemes = ['http', 'https'],
+        array $allowedSchemes = ['https'],
         array $allowedPorts = [80, 443],
         private readonly bool $blockPrivateIps = true,
     ) {
