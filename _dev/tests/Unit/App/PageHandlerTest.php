@@ -99,7 +99,7 @@ final class PageHandlerTest extends TestCase
             use Damoony\UI\Builder;
             use Damoony\UI\Node;
             final class algoritm_ph_about extends Page {
-                public function default(): Node|Response|null {
+                protected function content(): Node|Response|null {
                     return Builder::div('page')->content('about');
                 }
             }
@@ -121,7 +121,7 @@ final class PageHandlerTest extends TestCase
             use Damoony\Core\Http\Response;
             use Damoony\UI\Node;
             final class algoritm_ph_api extends Page {
-                public function default(): Node|Response|null {
+                protected function content(): Node|Response|null {
                     return Response::json(['ok' => true]);
                 }
             }
@@ -166,7 +166,7 @@ final class PageHandlerTest extends TestCase
             use Damoony\UI\Node;
             use Damoony\Core\Http\Response;
             final class algoritm_test extends Page {
-                public function default(): Node|Response|null {
+                protected function content(): Node|Response|null {
                     throw new \RuntimeException('SUPER_SECRET_ERROR_MESSAGE');
                 }
             }

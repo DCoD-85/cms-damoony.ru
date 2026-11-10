@@ -152,7 +152,7 @@ final class FrontControllerTest extends TestCase
             use Damoony\UI\Builder;
             use Damoony\UI\Node;
             final class algoritm_fc_home extends Page {
-                public function default(): Node|Response|null {
+                protected function content(): Node|Response|null {
                     return Builder::div('page')->content('home');
                 }
             }

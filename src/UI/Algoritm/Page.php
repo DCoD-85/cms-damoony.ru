@@ -31,14 +31,34 @@ class Page implements PageInterface
         return $this;
     }
 
+    /**
+     * Возвращает контент страницы. Если null — будет 204 No Content.
+     */
     protected function content(): Node|Response|null
     {
         return null;
     }
 
-    public function default(): Node|Response|null
+    /**
+     * Хук для проверки доступа (auth, csrf и т.д.).
+     * Если возвращает Response, выполнение content() прерывается.
+     */
+    protected function guard(): ?Response
     {
-        return $this->content();
+        return null;
+    }
+
+    /**
+     * Финальная точка входа. Движок сам решает, как рендерить результат.
+     */
+    final public function default(): Node|Response
+    {
+        $guard = $this->guard();
+        if ($guard !== null) {
+            return $guard;
+        }
+
+        return $this->content() ?? Response::text('', 204);
     }
 
     public function isAjax(): bool

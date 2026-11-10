@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Damoony\UI\Algoritm;
 
 use Damoony\Core\Http\Response;
-use Damoony\UI\Node;
 
 /**
  * Base class for admin panel pages.
@@ -18,13 +17,13 @@ use Damoony\UI\Node;
  */
 abstract class AdminPage extends Page
 {
-    final public function default(): Node|Response
+    protected function guard(): ?Response
     {
         if (!$this->isAdminAuthenticated()) {
             return Response::redirect('/admin/login', 302);
         }
 
-        return $this->content() ?? Response::text('', 204);
+        return null;
     }
 
     protected function isAdminAuthenticated(): bool

@@ -13,7 +13,7 @@ use Damoony\UI\Response\MinStruct;
 
 class AjaxPage extends Page
 {
-    public function default(): Node|Response|null
+    protected function content(): Node|Response|null
     {
         if ($this->isAjax()) {
             return $this->jsonResponse();
