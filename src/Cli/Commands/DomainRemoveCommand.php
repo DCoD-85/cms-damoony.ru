@@ -105,7 +105,21 @@ final class DomainRemoveCommand implements CommandInterface
             $r->warn('Папка домена не найдена — чистим только конфиг');
         }
 
-        // 2. Полная очистка конфига (все ключи по домену)
+        // 2. Карантин для media домена
+        $mediaDomainDir = $this->paths->mediaRoot() . '/' . $domain;
+        if (is_dir($mediaDomainDir)) {
+            $mediaTrashDir = $this->paths->mediaRoot() . '/.trash/' . $domain . '_trash_' . time();
+            if (!is_dir(dirname($mediaTrashDir))) {
+                @mkdir(dirname($mediaTrashDir), 0775, true);
+            }
+            if (@rename($mediaDomainDir, $mediaTrashDir)) {
+                $context->step('Media домена перемещено в карантин', true, Fs::rel($mediaTrashDir, $this->paths->root()));
+            } else {
+                $r->warn('Не удалось переместить media домена в карантин');
+            }
+        }
+
+        // 3. Полная очистка конфига (все ключи по домену)
         $removed = 0;
         foreach (self::DOMAIN_KEYS as $key) {
             if (isset($site[$key][$domain])) {

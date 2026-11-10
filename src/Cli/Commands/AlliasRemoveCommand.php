@@ -52,7 +52,7 @@ final class AlliasRemoveCommand implements CommandInterface
             $r->error('Некорректный домен');
             return $r;
         }
-        if (!preg_match('/^[a-z][a-z0-9_]*$/', $name)) {
+        if (!preg_match('/^[a-z0-9_]+$/', $name)) {
             $r->error('Некорректный алиас');
             return $r;
         }
@@ -107,7 +107,21 @@ final class AlliasRemoveCommand implements CommandInterface
             $r->warn('Папка алиаса не найдена — чистим только конфиг');
         }
 
-        // 3. Полная очистка конфига (все ключи по домену+алиасу)
+        // 3. Карантин для media
+        $mediaDir = $this->paths->media($domain, $name);
+        if (is_dir($mediaDir)) {
+            $mediaTrashDir = $this->paths->mediaRoot() . '/.trash/' . $domain . '_' . $name . '_trash_' . time();
+            if (!is_dir(dirname($mediaTrashDir))) {
+                @mkdir(dirname($mediaTrashDir), 0775, true);
+            }
+            if (@rename($mediaDir, $mediaTrashDir)) {
+                $context->step('Media перемещено в карантин', true, Fs::rel($mediaTrashDir, $this->paths->root()));
+            } else {
+                $r->warn('Не удалось переместить media в карантин (возможно, папка занята)');
+            }
+        }
+
+        // 4. Полная очистка конфига (все ключи по домену+алиасу)
         $removed = 0;
         foreach (self::ALLIAS_KEYS as $key) {
             if (isset($site[$key][$domain][$name])) {
