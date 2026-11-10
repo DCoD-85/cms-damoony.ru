@@ -114,6 +114,12 @@ final class Request
         return is_string($value) ? $value : $default;
     }
 
+    public function cookie(string $name, ?string $default = null): ?string
+    {
+        $value = $this->cookies[$name] ?? null;
+        return is_string($value) ? $value : $default;
+    }
+
     public function post(string $key, mixed $default = null): mixed
     {
         return $this->post[$key] ?? $default;

@@ -306,7 +306,7 @@ php bin/dbcli.php db:schema:generate-provider --domain=example.ru --table=produc
 
 ## 12. Roadmap: реструктуризация Page/Scheme (TODO)
 
-**Цель:** один источник истины для сборки страниц. Сейчас — дублирование `Page::default()` и `PageWithScheme::default()`, `applySkin()` дублирует `SkinCookieMiddleware`, `Slot::release()` тихо возвращает пустую строку.
+**Цель:** один источник истины для сборки страниц. Сейчас — дублирование `Page::default()` и `PageWithScheme::default()`, `applySkin()` читает cookie напрямую из `$_COOKIE` (а `SkinCookieMiddleware` только ставит cookie — CSS/JS вешает `applySkin`), `Slot::release()` тихо возвращает пустую строку.
 
 ### Инварианты (после реструктуризации)
 
@@ -324,7 +324,7 @@ php bin/dbcli.php db:schema:generate-provider --domain=example.ru --table=produc
 | A | `Page::content(): ?Node` + `Page::default()` final (SSR+AJAX) | `Page.php` | средний |
 | B | `PageWithScheme` -> пустой наследник `Page` (BC) | `PageWithScheme.php` | низкий |
 | C | `SchemeLoader` + `SchemeRenderer` -> в `PageHandler::toResponse()` | `PageHandler.php` | средний |
-| D | Удалить `PageHandler::applySkin()` (уже есть `SkinCookieMiddleware`) | `PageHandler.php` | низкий |
+| D | `PageHandler::applySkin()`: читать cookie через `$context->request->cookie('skin')`, не `$_COOKIE` напрямую (`SkinCookieMiddleware` только ставит cookie, CSS/JS вешает `applySkin`) | `PageHandler.php`, `Request.php` | низкий |
 | E | `Slot::release()` -> маркер в dev, пусто в prod + тест | `Slot.php` | средний |
 | F | Миграция 10+ админских страниц с `default()` на `content()` | `app/.admin/**` | средний |
 

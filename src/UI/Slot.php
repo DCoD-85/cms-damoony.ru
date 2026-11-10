@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Damoony\UI;
 
+use Damoony\Core\Env;
+
 final class Slot implements Node
 {
     public function __construct(private readonly string $name)
@@ -48,6 +50,12 @@ final class Slot implements Node
 
     public function release(): string
     {
-        return ''; // Слоты не рендерятся в HTML напрямую, они заменяются регионами
+        // В dev — видимый маркер (баг схемы: слот не заменён регионом).
+        // В prod — пусто (пользователь не должен видеть служебные комментарии).
+        if (Env::fromServer()->isDev()) {
+            return '<!-- UNRESOLVED SLOT: ' . htmlspecialchars($this->name, ENT_QUOTES) . ' -->';
+        }
+
+        return '';
     }
 }

@@ -70,4 +70,24 @@ final class RequestTest extends TestCase
         self::assertSame('v', $r->post('k'));
         self::assertSame('d', $r->post('missing', 'd'));
     }
+
+    public function testCookieReturnsValue(): void
+    {
+        $r = new \Damoony\Core\Http\Request(
+            method: 'GET',
+            path: '/',
+            cookies: ['skin' => 'dark'],
+        );
+
+        self::assertSame('dark', $r->cookie('skin'));
+    }
+
+    public function testCookieReturnsDefaultWhenMissing(): void
+    {
+        $r = new \Damoony\Core\Http\Request(method: 'GET', path: '/');
+
+        self::assertNull($r->cookie('skin'));
+        self::assertSame('default', $r->cookie('skin', 'default'));
+    }
+
 }
