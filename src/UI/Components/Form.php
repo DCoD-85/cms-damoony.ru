@@ -42,12 +42,4 @@ class Form extends Element
         $this->formNode->attrs()->add('method', strtoupper($method));
         return $this;
     }
-
-    public function ajax(bool $enabled = true): self
-    {
-        if ($enabled) {
-            $this->formNode->attrs()->classAdd('ajax-form');
-        }
-        return $this;
-    }
 }

@@ -38,13 +38,13 @@ final class FileRouter implements RouterInterface
             return RouteMatch::notFound();
         }
 
-        if ($segments === []) {
-            return RouteMatch::found('algoritm', '', [], $this->matcher->requiresAuth($rootRules));
-        }
-
         $classChain = 'algoritm';
         $pathRel = '';
         $args = [];
+        $authRequired = false;
+
+        // Пустой путь (/) → синтетический сегмент '', чтобы сработал '' в available
+        $segments = $segments === [] ? [''] : $segments;
 
         foreach ($segments as $i => $segment) {
             $rules = $i === 0
@@ -55,6 +55,8 @@ final class FileRouter implements RouterInterface
                 return RouteMatch::notFound();
             }
 
+            $authRequired = $authRequired || $this->matcher->requiresAuth($rules);
+
             $matched = $this->matcher->matchSegment($segment, $rules);
             if ($matched === null) {
                 return RouteMatch::notFound();
@@ -62,9 +64,9 @@ final class FileRouter implements RouterInterface
 
             [$target, $segArgs] = $matched;
 
-            // Если пустая строка (слеш на конце) - просто пропускаем
+            // Пустой сегмент ('') в available = стоп, вызываем default() текущего узла
             if ($target === '') {
-                continue;
+                break;
             }
 
             // Если сработала регулярка (переменная)
@@ -85,14 +87,18 @@ final class FileRouter implements RouterInterface
 
             $candidatePhp = $base . '/' . $pathRel . '/' . $classChain . '.php';
             if (!is_file($candidatePhp)) {
+                if ($adminRole !== null) {
+                    return RouteMatch::found($classChain, $pathRel, $args, $authRequired);
+                }
                 return RouteMatch::notFound();
             }
         }
 
-        $leafRules = $this->loadRules($base . '/' . $pathRel . '/' . $classChain . '.rules.json') ?? [];
-        $auth = $this->matcher->requiresAuth($leafRules);
+        $leafRulesFile = $base . ($pathRel === '' ? '' : '/' . $pathRel) . '/' . $classChain . '.rules.json';
+        $leafRules = $this->loadRules($leafRulesFile) ?? [];
+        $authRequired = $authRequired || $this->matcher->requiresAuth($leafRules);
 
-        return RouteMatch::found($classChain, $pathRel, $args, $auth);
+        return RouteMatch::found($classChain, $pathRel, $args, $authRequired);
     }
 
     /** @return list<string> */
