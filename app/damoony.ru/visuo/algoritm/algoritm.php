@@ -32,6 +32,16 @@ final class algoritm extends Page
     {
         $content = Builder::div('page-content');
 
+        $el1 = Builder::h(1)->append(Text::raw(strip_tags('Damoony Engine', '<a><strong>')));
+        $content->append($el1);
+
+        $el2 = Builder::p()->append(Text::raw(strip_tags('Максимально компактный, быстрый и удобный конструктор сайтов.', '<a><strong>')));
+        $content->append($el2);
+
+        $el3 = new Button('Перейти в UI Kit', 'submit');
+        $el3->attrs()->classAdd('ui-btn ui-btn-primary');
+        $content->append($el3);
+
         return $content;
     }
 }

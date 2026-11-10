@@ -30,13 +30,14 @@ final class alliasglobal_top implements RegionInterface
 
         $content = Builder::div('top');
 
-        $el = Builder::ul('menu');
-        $el->append(Builder::li()->append(Builder::a('/')->append(Text::raw(strip_tags('Главная', '<a><strong>')))));
-        $el->append(Builder::li()->append(Builder::a('/features')->append(Text::raw(strip_tags('Возможности', '<a><strong>')))));
-        $el->append(Builder::li()->append(Builder::a('/pricing')->append(Text::raw(strip_tags('Тарифы', '<a><strong>')))));
-        $el->append(Builder::li()->append(Builder::a('/docs')->append(Text::raw(strip_tags('Документация', '<a><strong>')))));
-        $el->attrs()->classAdd('main-navigation');
-        $content->append($el);
+        $el1 = Builder::ul('menu');
+        $el2 = new Link('/', 'Главная');
+        $el1->append(Builder::li()->append($el2));
+        $el3 = new Link('/ui_kit', 'UI Kit');
+        $el1->append(Builder::li()->append($el3));
+        $el4 = new Link('/contact', 'Контакты');
+        $el1->append(Builder::li()->append($el4));
+        $content->append($el1);
 
         return $content;
     }

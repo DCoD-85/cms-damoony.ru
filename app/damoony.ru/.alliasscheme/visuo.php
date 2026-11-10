@@ -1,14 +1,16 @@
 <?php
-
-return array (
-  'tag' => 'div',
-  'class' => 'layout',
-  'children' => 
-  array (
-    0 => 
-    array (
-      'tag' => 'main',
-      'slot' => 'center',
-    ),
-  ),
-);
+return [
+    'tag' => 'div',
+    'class' => 'layout',
+    'children' => [
+        ['tag' => 'header', 'class' => 'header', 'slot' => 'top'],
+        ['tag' => 'main', 'class' => 'main-content', 'slot' => 'center'],
+        ['tag' => 'footer', 'class' => 'footer', 'slot' => 'footer'],
+    ],
+    'meta' => [
+        'css' => [
+            '/media/damoony.ru/skin/default/css/main.css',
+            '/media/damoony.ru/skin/default/css/components.css'
+        ]
+    ]
+];

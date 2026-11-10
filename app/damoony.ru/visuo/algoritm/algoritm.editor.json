@@ -1,1 +1,15 @@
-[]
+[
+    {
+        "type": "h1",
+        "content": "Damoony Engine"
+    },
+    {
+        "type": "p",
+        "content": "Максимально компактный, быстрый и удобный конструктор сайтов."
+    },
+    {
+        "type": "button",
+        "content": "Перейти в UI Kit",
+        "class": "ui-btn ui-btn-primary"
+    }
+]
