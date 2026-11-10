@@ -19,6 +19,21 @@ final class BlockCompiler
         $code .= "use Damoony\\UI\\Region\\RegionInterface;\n";
         $code .= "use Damoony\\UI\\Builder;\n";
         $code .= "use Damoony\\UI\\Node;\n";
+        $code .= "use Damoony\\UI\\Components\\Button;\n";
+        $code .= "use Damoony\\UI\\Components\\Img;\n";
+        $code .= "use Damoony\\UI\\Components\\Link;\n";
+        $code .= "use Damoony\\UI\\Components\\Input;\n";
+        $code .= "use Damoony\\UI\\Components\\Textarea;\n";
+        $code .= "use Damoony\\UI\\Components\\Select;\n";
+        $code .= "use Damoony\\UI\\Components\\Option;\n";
+        $code .= "use Damoony\\UI\\Components\\Label;\n";
+        $code .= "use Damoony\\UI\\Components\\Form;\n";
+        $code .= "use Damoony\\UI\\Components\\Table;\n";
+        $code .= "use Damoony\\UI\\Components\\Thead;\n";
+        $code .= "use Damoony\\UI\\Components\\Tbody;\n";
+        $code .= "use Damoony\\UI\\Components\\Tr;\n";
+        $code .= "use Damoony\\UI\\Components\\Th;\n";
+        $code .= "use Damoony\\UI\\Components\\Td;\n";
         $code .= "use Damoony\\UI\\Text;\n";
         $code .= "use Damoony\\UI\\UrlSanitizer;\n\n";
 
