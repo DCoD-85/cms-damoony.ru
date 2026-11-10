@@ -41,7 +41,7 @@ final class AlliasNewCommand implements CommandInterface
             $r->error('Некорректный домен');
             return $r;
         }
-        if (!preg_match('/^[a-z][a-z0-9_]*$/', $name)) {
+        if (!preg_match('/^[a-z0-9_]+$/', $name)) {
             $r->error('Некорректный алиас');
             return $r;
         }

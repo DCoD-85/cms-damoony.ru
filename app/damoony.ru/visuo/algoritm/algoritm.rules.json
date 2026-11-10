@@ -1,5 +1,9 @@
 {
-    "available": [ "" ],
+    "available": [
+        "^(?P<lang>ru|en|zh)?$",
+        "ui_kit",
+        "contact"
+    ],
     "auth": false,
     "search": true,
     "default": false

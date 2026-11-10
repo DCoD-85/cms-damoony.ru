@@ -62,11 +62,11 @@ final class PageNewCommand implements CommandInterface
             $r->error('Некорректный домен');
             return $r;
         }
-        if (!preg_match('/^[a-z][a-z0-9_]*$/', $allias)) {
+        if (!preg_match('/^[a-z0-9_]+$/', $allias)) {
             $r->error('Некорректный алиас');
             return $r;
         }
-        if (!preg_match('/^[a-z][a-z0-9_]*$/', $name)) {
+        if (!preg_match('/^[a-z0-9_]+$/', $name)) {
             $r->error('Некорректное имя страницы (только латиница, цифры, подчеркивания)');
             return $r;
         }

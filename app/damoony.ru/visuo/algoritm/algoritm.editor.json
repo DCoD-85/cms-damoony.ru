@@ -1,15 +1,1 @@
-[
-    {
-        "type": "h1",
-        "content": "Добро пожаловать в Visuo"
-    },
-    {
-        "type": "text",
-        "content": "Это стартовая страница нового проекта. Мы используем Damoony Engine."
-    },
-    {
-        "type": "button",
-        "content": "Узнать больше",
-        "class": "ui-btn ui-btn-primary"
-    }
-]
+[]
