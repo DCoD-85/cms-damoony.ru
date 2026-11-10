@@ -9,7 +9,7 @@
 1. **Домен и Алиас.** Домен (`app/[domain]/`) — инфраструктура. Алиас (`app/[domain]/[allias]/`) — контент. Строгое разделение.
 2. **UI — это дерево.** Представление — типизированные узлы (`Node`, `Element`, `Attrs`), а не строки. XSS-экранирование на уровне дерева.
 3. **Правило 3 файлов.** Любая сущность (Страница, Блок, Схема, Скин) состоит из `.php`, `.rules.json`, `.editor.json`.
-4. **Файловый роутинг.** URL соответствует файловой иерархии `algoritm/`. Конфигурация — в `.rules.json`, не в `routes.php`.
+4. **Файловый роутинг.** URL соответствует файловой иерархии `algoritm/`. Конфигурация — в `.rules.json`, не в `routes.php`. Auth — не часть роутинга: `.rules.json:auth` — метаданные, enforcement — в коде страницы (см. §5).
 5. **Low-Code только для Схем.** Визуальный Drag&Drop оставлен только для каркасов (Схем). Страницы и блоки пишутся кодом (CodeMirror) или AI (безопасный JSON).
 6. **Explicit over implicit.** Без `$GLOBALS`, магии `__get`, скрытых дефолтов. Всё передаётся явно через конструктор.
 7. **Contract-first.** Публичный API — интерфейсы (`RegionInterface`, `PageInterface`, `ProviderInterface`), а не конкретные классы.
@@ -78,7 +78,7 @@
 
 - **DomainResolver:** `resolve(host): DomainContext`. Не бросает исключений. Возвращает `available=false`, если домен/алиас выключен. `real` — источник истины для путей в `app/`.
 - **Router:** `match(path, context): RouteMatch`. Не рендерит ошибки, не выполняет контроллер. Возвращает `found=false` при промахе.
-- **PageInterface:** `default(): Node|Response|null`. Базовый класс `Page` даёт `isAuthenticated()`, `user()`, `regions()`. Класс `PageWithScheme` автоматически подключает схему.
+- **PageInterface:** `default(): Node|Response|null`. Базовый класс `Page` даёт `isAuthenticated()`, `user()`, `regions()`. `PageWithScheme` автоматически подключает схему. `AdminPage` проверяет `Admin\AuthInterface::isLoggedIn()` в `default()` (при `false` → 302 на `/admin/login`).
 - **RegionInterface:** `render(RegionContext): Node`. Регион не знает о других регионах и о схеме.
 - **ContentResponder:** `parse()`, `hostAllowed()`, `requiresAuth()`. Отдаёт только GET/HEAD. 404 при host-mismatch. 302 на логин при `page_refs` (auth).
 - **Компиляторы (`PageCompiler`, `BlockCompiler`):** Принимают JSON-массив блоков (включая тип `nav` для меню) и генерируют безопасный PHP-код. Используют `Text::raw()` для вывода разрешенных тегов `<a>` и `<strong>` (защита от XSS остальных тегов).
@@ -100,6 +100,7 @@
 - Домен ≠ Алиас.
 - Ядро знает только `RegionInterface`.
 - Все POST защищены CSRF. Destructive — только POST+CSRF (UI) или `--force` (CLI).
+- **Auth — ответственность страницы, не маршрута.** Движок не проверяет `.rules.json:auth` (метаданные для UI). Public: `$this->isAuthenticated()` (`Damoony\Data\Auth\AuthInterface`). Admin: `extends Damoony\UI\Algoritm\AdminPage` (`Damoony\Admin\AuthInterface::isLoggedIn()`).
 - Пароли — `password_hash`. Минимум 8 символов.
 - `Document::release()` идемпотентен. `default(): null` возвращает 204 (не 500).
 - Path traversal guard: все CLI-команды с `--domain`/`--name` проверяют `..` и regex.
@@ -122,8 +123,8 @@
 
 1. **AI-Транзакции:** нет `build:rollback`; failed-страницы остаются в `build_progress`.
 2. **RegionContext::service():** возвращает `mixed`; нужен `@template` PHPDoc.
-3. **assert():** в prod исчезает; заменить на явные `if (!instanceof) throw`.
-4. ~~**Builder неполон:**~~ Решено: добавлены методы `form`, `table`, `select`, `textarea`, `label`, `nav`.
+3. ~~**assert():** в prod исчезает; заменить на явные `if (!instanceof) throw`.~~ Решено: заменено на `if (!instanceof) throw new \RuntimeException(...)` в `AppFactory.php` и `FrontController.php` (7 мест).
+4. ~~**Builder неполон:**~~ **Реверт:** методы `form`/`table`/`nav`/`select`/`textarea`/`label` добавлены в `74edf81`, но удалены в `0935c61`. Текущий `Builder` — 12 Element-фабрик (`el`, `elA`, `div`, `span`, `p`, `h`, `a`, `img`, `input`, `ul`, `li`, `button`). Композиты — в `src/UI/Components/*`.
 5. **domains_real[$domain] в save():** работает только при self-mapping.
 6. **PageHandler::applySkin:** читает `$_COOKIE` напрямую. План: удалить, SkinCookieMiddleware — единственный источник. См. dev.md §12 (шаг D).
 7. **Namespace `Damoony\UI\Algoritm`:** унаследован; P2 — переименовать в `Damoony\UI\Page`.

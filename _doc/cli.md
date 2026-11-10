@@ -85,7 +85,7 @@
 ## 8. Пользователи и Безопасность
 
 - `admin:passwd [--name=admin] [--password=...]` — установка логина/пароля админки. `--name` default `admin`. Валидация: login 3–32 `[a-zA-Z0-9_.-]`, pass ≥ 8.
-- `user:new --login=[login] --email=[email] --password=[pass]` — создание пользователя сайта (для страниц с `auth`). Уникальность login и email, pass ≥ 8.
+- `user:new --login=[login] --email=[email] --password=[pass]` — создание пользователя сайта (для страниц, которые вызывают `$this->isAuthenticated()`). Уникальность login и email, pass ≥ 8.
 
 ## 9. AIUI Сессии (Session-based workflow)
 

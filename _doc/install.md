@@ -218,7 +218,7 @@ php bin/cli.php admin:passwd --name=admin --password=[strong]
 php bin/cli.php user:new --login=admin --email=admin@example.com --password=[strong]
 ```
 *`admin:passwd` — администратор админки (`/admin/`).*
-*`user:new` — пользователь сайта (для страниц с `"auth": true`).*
+*`user:new` — пользователь сайта (для страниц, которые вызывают `$this->isAuthenticated()`).*
 
 Откройте `http://[domain]/` и `http://[domain]/admin/`.
 

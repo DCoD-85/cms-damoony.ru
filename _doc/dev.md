@@ -186,7 +186,7 @@ return $ul;
 
 ## 7. Защита страниц (Auth)
 
-⚠️ **`auth` накапливается по цепочке маршрутов.** Если любой предок требует auth, потомок тоже требует — даже при `auth: false` в своём `.rules.json`. Это защита от обхода: нельзя открыть `/admin/ru/login`, если `/admin` помечен как `auth: true`. Явный `auth: false` работает только если **вся** цепочка до него — без auth.
+⚠️ **Движок не форсит auth.** `.rules.json:auth` — метаданные (для admin-UI 🔒 и `structure:check`). Решение «пускать или нет» принимает сама страница.
 
 Флаг включается через CLI:
 
@@ -194,13 +194,29 @@ return $ul;
 php bin/cli.php page:toggle --domain=[d] --allias=[a] --name=[n] --key=auth --value=1
 ```
 
-В коде проверка:
-
+**Public-страница:**
 ```php
-if ($this->isAuthenticated()) {
-    $user = $this->user();
+if (!$this->isAuthenticated()) {
+    return Response::redirect('/login?return=' . urlencode($this->context->request->path), 302);
 }
 ```
+`isAuthenticated()` / `user()` — через `Damoony\Data\Auth\AuthInterface` (БД, `user:new`).
+
+**Admin-страница:** наследуйте `AdminPage`:
+```php
+use Damoony\UI\Algoritm\AdminPage;
+
+final class algoritm_about extends AdminPage
+{
+    protected function content(): Node|Response|null
+    {
+        // сюда попадём только если isLoggedIn() == true
+    }
+}
+```
+`AdminPage::default()` проверяет `Damoony\Admin\AuthInterface::isLoggedIn()`, при `false` → 302 на `/admin/login`.
+
+⚠️ **Login-страница не должна наследовать `AdminPage`** (redirect loop).
 
 Пользователи сайта создаются через `user:new` (см. `cli.md` §8).
 
