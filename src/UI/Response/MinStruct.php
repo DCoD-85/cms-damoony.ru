@@ -25,6 +25,8 @@ final class MinStruct
 
     private bool $refererSet = false;
 
+    private bool $reload = false;
+
     public function error(bool $value = false): self
     {
         $this->error = $value;
@@ -48,6 +50,12 @@ final class MinStruct
         $this->formReset = $reset;
         $this->formRedirect = $redirect;
         $this->formRedirectTime = $redirectTime;
+        return $this;
+    }
+
+    public function reload(bool $value = true): self
+    {
+        $this->reload = $value;
         return $this;
     }
 
@@ -78,6 +86,7 @@ final class MinStruct
                 'redirect_time' => $this->formRedirectTime,
             ],
             'referer' => $referer,
+            'reload' => $this->reload,
         ];
     }
 

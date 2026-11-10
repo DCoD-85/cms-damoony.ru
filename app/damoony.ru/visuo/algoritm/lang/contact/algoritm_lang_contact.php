@@ -7,34 +7,59 @@ namespace damoony_ru\visuo;
 use Damoony\UI\Algoritm\Page;
 use Damoony\UI\Builder;
 use Damoony\UI\Node;
-use Damoony\UI\Components\Button;
-use Damoony\UI\Components\Img;
-use Damoony\UI\Components\Link;
-use Damoony\UI\Components\Input;
-use Damoony\UI\Components\Textarea;
-use Damoony\UI\Components\Select;
-use Damoony\UI\Components\Option;
-use Damoony\UI\Components\Label;
-use Damoony\UI\Components\Form;
-use Damoony\UI\Components\Table;
-use Damoony\UI\Components\Thead;
-use Damoony\UI\Components\Tbody;
-use Damoony\UI\Components\Tr;
-use Damoony\UI\Components\Th;
-use Damoony\UI\Components\Td;
-use Damoony\UI\Text;
-use Damoony\UI\UrlSanitizer;
 use Damoony\Core\Http\Response;
+use Damoony\UI\Response\MinStruct;
+use Damoony\UI\Components\Form;
+use Damoony\UI\Components\Input;
+use Damoony\UI\Components\Label;
+use Damoony\UI\Components\Button;
+use Damoony\Core\Security\Csrf;
 
 final class algoritm_lang_contact extends Page
 {
+    protected array $ajaxBlocks = ['top', 'center'];
+
     protected function content(): Node|Response|null
     {
-        $content = Builder::div('page-content');
+        $csrf = $this->context->service('csrf');
+        
+        if ($this->isPost()) {
+            $name = (string) $this->context->request->post('name', '');
+            $email = (string) $this->context->request->post('email', '');
+            
+            $min = new MinStruct();
+            if ($name === '' || $email === '') {
+                $min->error(true)->messages('<div class="error">Заполните все поля</div>');
+            } else {
+                // Тут была бы запись в БД
+                $min->error(false)
+                    ->messages('<div class="success">Спасибо, ' . htmlspecialchars($name) . '! Мы свяжемся с вами.</div>')
+                    ->form(true)
+                    ->reload(true);
+            }
+            return $min->toResponse();
+        }
 
-        $el1 = Builder::h(1)->append(Text::raw(strip_tags('Contact Us', '<a><strong>')));
-        $content->append($el1);
+        $form = new Form();
+        $form->action('/ru/contact')->method('POST');
+        
+        if ($csrf instanceof Csrf) {
+            $token = new Input('hidden', '_csrf');
+            $token->attrs()->add('value', $csrf->token());
+            $form->add($token);
+        }
 
-        return $content;
+        $form->add(new Label('Ваше имя'));
+        $form->add(new Input('text', 'name'));
+        $form->add(new Label('Email'));
+        $form->add(new Input('email', 'email'));
+        $form->add(new Button('Отправить'));
+
+        $wrapper = Builder::div('page-content');
+        $wrapper->append(Builder::h(1)->content('Связаться с нами'));
+        $wrapper->append(Builder::p()->content('Заполните форму, и мы ответим вам в ближайшее время.'));
+        $wrapper->append($form);
+
+        return $wrapper;
     }
 }

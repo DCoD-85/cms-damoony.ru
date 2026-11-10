@@ -28,6 +28,8 @@ use Damoony\Core\Http\Response;
 
 final class algoritm extends Page
 {
+    protected array $ajaxBlocks = ['top', 'center'];
+
     protected function content(): Node|Response|null
     {
         $content = Builder::div('page-content');
