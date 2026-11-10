@@ -95,7 +95,7 @@ $contentType = (string) ($response->headers['content-type'] ?? '');
 
 if (str_contains($contentType, 'text/html') && ($app->env()->isDev() || isset($_GET['debug']))) {
     $badge = sprintf(
-        '<div style="position:fixed; bottom:12px; right:12px; background:rgba(29,29,31,0.85); color:#fff; padding:6px 12px; border-radius:6px; font-family:monospace; font-size:12px; z-index:99999; box-shadow:0 2px 10px rgba(0,0,0,0.2); pointer-events:none; backdrop-filter: blur(4px);">⚡ %s ms</div>',
+        '<div class="dt_benchmark">⚡ %s ms</div>',
         $time,
     );
 
