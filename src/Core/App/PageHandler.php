@@ -110,6 +110,15 @@ final class PageHandler implements PageHandlerInterface
         }
 
         if ($result instanceof Node) {
+            // AJAX: отдаём блоки как JSON (без skin/document)
+            if ($context->request->isAjax()) {
+                return Response::json([
+                    'ok' => true,
+                    'blocks' => ['center' => $result->release()],
+                    'url' => $context->request->path,
+                ]);
+            }
+
             $this->applySkin($domain, $context);
 
             $doc = new Document($context->meta);
