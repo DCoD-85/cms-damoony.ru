@@ -304,44 +304,35 @@ php bin/dbcli.php db:schema:generate-provider --domain=example.ru --table=produc
 
 После этого провайдер `ProductsProvider` будет доступен в `db:call` и `db:mutate`. Подробнее — `_doc/dbcli.md`.
 
-## 12. Roadmap: реструктуризация Page/Scheme (TODO)
+## 12. Контракт Page/Scheme (Реализовано)
 
-**Цель:** один источник истины для сборки страниц. Сейчас — дублирование `Page::default()` и `PageWithScheme::default()`, `applySkin()` читает cookie напрямую из `$_COOKIE` (а `SkinCookieMiddleware` только ставит cookie — CSS/JS вешает `applySkin`), `Slot::release()` тихо возвращает пустую строку.
+Реструктуризация завершена (Шаги A–D). Разработчик пишет только метод `content()`.
+Весь рендеринг (схемы, SSR, AJAX, 204) инкапсулирован в `PageHandler` и `Page`.
 
-### Инварианты (после реструктуризации)
+### Правила для разработчика
 
-1. **Схема обязательна.** Страница без схемы не работает. `Page::content(): Node` — абстрактный.
-2. **Регион в слоте обязателен.** Если в схеме слот `header`, но региона `header` нет — это ошибка (severity=error в `structure:check`). `Slot::release()` в dev возвращает маркер, в prod — пустоту.
-3. **`PageHandler` — единственная точка сборки.** `Page` не рендерит. `SchemeRenderer` вызывается только из `PageHandler::toResponse()`.
-4. **`Page::default()` final.** Контракт: `content()` возвращает `Node`, движок сам решает SSR/AJAX.
-5. **Middleware для кросс-фич.** Скин/язык/auth — Middleware, не `PageHandler`.
-6. **`null` = нет данных для отдачи.** Ответ 204 No Content (не «собери схему»).
+Любая страница (public или admin) теперь выглядит так:
 
-### Миграция (поэтапно, каждый шаг — зелёные тесты)
-
-| Шаг | Что | Файлы | Риск |
-|---|---|---|---|
-| A | `Page::content(): ?Node` + `Page::default()` final (SSR+AJAX) | `Page.php` | средний |
-| B | `PageWithScheme` -> пустой наследник `Page` (BC) | `PageWithScheme.php` | низкий |
-| C | `SchemeLoader` + `SchemeRenderer` -> в `PageHandler::toResponse()` | `PageHandler.php` | средний |
-| D | `PageHandler::applySkin()`: читать cookie через `$context->request->cookie('skin')`, не `$_COOKIE` напрямую (`SkinCookieMiddleware` только ставит cookie, CSS/JS вешает `applySkin`) | `PageHandler.php`, `Request.php` | низкий |
-| E | `Slot::release()` -> маркер в dev, пусто в prod + тест | `Slot.php` | средний |
-| F | Миграция 10+ админских страниц с `default()` на `content()` | `app/.admin/**` | средний |
-
-### Правила для разработчика (после шагов A-C)
-
-Разработчик пишет только:
-
-    final class algoritm_about extends Page
+    final class algoritm_about extends Page // или AdminPage
     {
-        protected function content(): Node
+        protected function content(): Node|Response|null
         {
+            // Вернуть Node — движок сам обернёт в схему и skin.
+            // Вернуть Response — отдать как есть (редирект, JSON).
+            // Вернуть null — движок отдаст 204 No Content.
             return Builder::div('page-content')->content('About');
         }
     }
 
 **Больше ничего.** Никаких `SchemeLoader`, `SchemeRenderer`, `isAjax()`. Всё — в движке.
 
+### Инварианты (актуальные)
+
+1. **Схема обязательна.** `PageHandler` всегда пытается загрузить схему (с учетом `adminRole` и `sessionId`).
+2. **`Page::default()` final.** Переопределять нельзя. Если нужна проверка доступа — используйте `guard(): ?Response`.
+3. **`PageHandler` — единственная точка сборки.** `Page` не рендерит HTML.
+4. **`null` = нет данных для отдачи.** Ответ 204 No Content.
+5. **Middleware для кросс-фич.** Скин/язык/auth — Middleware или хуки, не `PageHandler`.
 
 ## См. также
 
