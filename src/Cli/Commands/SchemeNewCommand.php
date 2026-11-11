@@ -88,7 +88,7 @@ final class SchemeNewCommand implements CommandInterface
                 'scripts' => [],
                 'meta' => [
                     'css' => ['/media/shared/css/main.css'],
-                    'js' => ['/media/shared/scripts/jquery.min.js'],
+                    'js' => ['/media/shared/scripts/cliajax.js'],
                 ],
             ],
         ];
@@ -102,7 +102,7 @@ final class SchemeNewCommand implements CommandInterface
             . "    'scripts' => [],\n"
             . "    'meta' => [\n"
             . "        'css' => ['/media/shared/css/main.css'],\n"
-            . "        'js' => ['/media/shared/scripts/jquery.min.js'],\n"
+            . "        'js' => ['/media/shared/scripts/cliajax.js'],\n"
             . "    ],\n"
             . "];\n";
         Fs::writeAtomic($phpFile, $data);

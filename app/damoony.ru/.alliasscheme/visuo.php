@@ -22,6 +22,7 @@ return [
             '/media/damoony.ru/visuo/skin/default/css/components.css',
             '/media/damoony.ru/visuo/skin/default/css/toast.css',
             '/media/damoony.ru/visuo/skin/default/css/mobile.css'
-        ]
+        ],
+        'js' => ['/media/shared/scripts/cliajax.js']
     ]
 ];

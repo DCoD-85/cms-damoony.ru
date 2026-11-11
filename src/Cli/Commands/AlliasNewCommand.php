@@ -103,11 +103,19 @@ final class AlliasNewCommand implements CommandInterface
         $schemeRules = $schemesDir . '/' . $schemeName . '.rules.json';
 
         if (!is_file($schemePhp)) {
+            $realDomain = (string) ($site['domains_real'][$domain] ?? $domain);
             $defaultScheme = [
                 'tag' => 'div',
                 'class' => 'layout',
                 'children' => [
                     ['tag' => 'main', 'slot' => 'center'],
+                ],
+                'meta' => [
+                    'css' => ['/media/' . $realDomain . '/' . $name . '/skin/default/css/main.css'],
+                    'js' => [
+                        '/media/' . $realDomain . '/' . $name . '/skin/default/js/main.js',
+                        '/media/shared/scripts/cliajax.js',
+                    ],
                 ],
             ];
             Fs::writeAtomic($schemePhp, "<?php\n\nreturn " . var_export($defaultScheme, true) . ";\n");

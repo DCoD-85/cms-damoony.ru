@@ -1,0 +1,4 @@
+/* Admin skin: components */
+.error-msg { color: #b91c1c; padding: 8px; border: 1px solid #fca5a5; background: #fee2e2; border-radius: 4px; margin-bottom: 8px; }
+.ui-btn { display: inline-block; padding: 6px 12px; border: 1px solid #d1d5db; border-radius: 4px; background: #fff; color: #111827; text-decoration: none; cursor: pointer; }
+.ui-btn:hover { background: #f3f4f6; }

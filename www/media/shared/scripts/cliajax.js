@@ -44,13 +44,13 @@
                     
                     if (contentType && contentType.includes('application/json')) {
                         const data = await res.json();
-                        if (!res.ok) throw new Error(data.message || 'Ошибка сервера');
+                        if (!res.ok) throw new Error(data.message || 'РћС€РёР±РєР° СЃРµСЂРІРµСЂР°');
                         return data;
                     } else {
-                        throw new Error('Сервер вернул HTML вместо JSON. Проверьте AJAX в PHP.');
+                        throw new Error('РЎРµСЂРІРµСЂ РІРµСЂРЅСѓР» HTML РІРјРµСЃС‚Рѕ JSON. РџСЂРѕРІРµСЂСЊС‚Рµ AJAX РІ PHP.');
                     }
                 } catch (err) {
-                    CLIEngine.UI.toast('Ошибка сети: ' + err.message, 'error');
+                    CLIEngine.UI.toast('РћС€РёР±РєР° СЃРµС‚Рё: ' + err.message, 'error');
                     throw err;
                 }
             },
@@ -117,7 +117,7 @@
                             }, 1000);
                         }
                     } else {
-                        CLIEngine.UI.toast(data.message || 'Неизвестная ошибка', 'error');
+                        CLIEngine.UI.toast(data.message || 'РќРµРёР·РІРµСЃС‚РЅР°СЏ РѕС€РёР±РєР°', 'error');
                     }
                 } catch (err) {
                     // Error is already toasted by Core.request

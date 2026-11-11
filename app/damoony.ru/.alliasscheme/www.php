@@ -51,5 +51,9 @@ return array (
       0 => '/media/damoony.ru/skin/default/css/main.css',
       1 => '/media/damoony.ru/skin/default/css/components.css',
     ),
+    'js' => 
+    array (
+      0 => '/media/shared/scripts/cliajax.js',
+    ),
   ),
 );

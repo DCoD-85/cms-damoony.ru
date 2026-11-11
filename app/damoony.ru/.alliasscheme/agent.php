@@ -48,6 +48,7 @@ return array (
     'js' => 
     array (
       0 => '/media/shared/scripts/ajax.js',
+      1 => '/media/shared/scripts/cliajax.js',
     ),
   ),
 );

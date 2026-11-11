@@ -1,0 +1,8 @@
+{
+    "auth": true,
+    "available": {
+        "login": "^login$",
+        "logout": "^logout$",
+        "": "^$"
+    }
+}

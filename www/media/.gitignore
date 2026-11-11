@@ -8,6 +8,10 @@
 !admin/
 !admin/**
 
+# Разрешаем shared (общие скрипты, стили)
+!shared/
+!shared/**
+
 # Разрешаем скины алиасов: <domain>/<allias>/skin/**
 !*/
 !*/*/
