@@ -29,7 +29,10 @@ final class SchemeLoader
         $appRoot = rtrim($this->paths->root(), '/') . '/app';
 
         if ($this->adminRole !== null) {
-            $baseDir = $appRoot . '/.admin/' . $this->adminRole . '/.alliasscheme/';
+            // admin = домен .admin + алиас {role}
+            // приоритет: domain-level .admin/.alliasscheme → role-level .admin/{role}/.alliasscheme
+            $baseDir = $appRoot . '/.admin/.alliasscheme/';
+            $roleDir = $appRoot . '/.admin/' . $this->adminRole . '/.alliasscheme/';
         } else {
             $domainDir = $this->sessionId !== null
                 ? '/.sess_' . $this->sessionId . '.' . $domain->real
@@ -37,12 +40,26 @@ final class SchemeLoader
             $baseDir = $appRoot . $domainDir . '/.alliasscheme/';
         }
 
-        // 1. Приоритет: схема алиаса (например, docs.php)
-        $file = $baseDir . $domain->allias . '.php';
+        if ($this->adminRole !== null) {
+            // admin: ищем в role-level (alias override), затем в domain-level
+            $file = $roleDir . $domain->allias . '.php';
+            if (!is_file($file)) {
+                $file = $roleDir . $schemeName . '.php';
+            }
+            if (!is_file($file)) {
+                $file = $baseDir . $domain->allias . '.php';
+            }
+            if (!is_file($file)) {
+                $file = $baseDir . $schemeName . '.php';
+            }
+        } else {
+            // 1. Приоритет: схема алиаса (например, docs.php)
+            $file = $baseDir . $domain->allias . '.php';
 
-        // 2. Если нет — берем переданную схему (www.php)
-        if (!is_file($file)) {
-            $file = $baseDir . $schemeName . '.php';
+            // 2. Если нет — берем переданную схему (www.php)
+            if (!is_file($file)) {
+                $file = $baseDir . $schemeName . '.php';
+            }
         }
 
         if (!is_file($file)) {

@@ -43,10 +43,11 @@ final class AdminNewCommand implements CommandInterface
             return $r;
         }
 
-        $appDir = $this->paths->root() . '/app/.admin/' . $role;
+        $adminRoot = $this->paths->root() . '/app/.admin';
+        $roleDir = $adminRoot . '/' . $role;
         $mediaDir = $this->paths->root() . '/www/media/.admin/' . $role;
 
-        if ((Fs::isDir($appDir) || Fs::isDir($mediaDir)) && !$force) {
+        if ((Fs::isDir($roleDir) || Fs::isDir($mediaDir)) && !$force) {
             $r->error(sprintf('Админка роли %s уже существует (используйте --force для перезаписи)', $role));
             return $r;
         }
@@ -65,7 +66,7 @@ final class AdminNewCommand implements CommandInterface
         }
 
         // ===== 1. Схема =====
-        $schemeDir = $appDir . '/.alliasscheme';
+        $schemeDir = $adminRoot . '/.alliasscheme';
         Fs::mkdir($schemeDir);
         $schemePhp = $this->schemePhp($role);
         Fs::writeAtomic($schemeDir . '/admin.php', $schemePhp);
@@ -77,7 +78,7 @@ final class AdminNewCommand implements CommandInterface
         $r->file(Fs::rel($schemeDir . '/admin.php', $this->paths->root()));
 
         // ===== 2. Блоки =====
-        $blocksDir = $appDir . '/.alliasglobal';
+        $blocksDir = $adminRoot . '/.alliasglobal';
         Fs::mkdir($blocksDir);
         foreach (self::BLOCKS as $blockName) {
             $dir = $blocksDir . '/' . $blockName;
@@ -89,7 +90,8 @@ final class AdminNewCommand implements CommandInterface
         }
 
         // ===== 3. Страница root =====
-        $algoritmDir = $appDir . '/algoritm';
+        Fs::mkdir($roleDir);
+        $algoritmDir = $roleDir . '/algoritm';
         Fs::mkdir($algoritmDir);
         Fs::writeAtomic($algoritmDir . '/algoritm.php', $this->rootPagePhp($role));
         Fs::writeAtomic($algoritmDir . '/algoritm.rules.json', json_encode([
