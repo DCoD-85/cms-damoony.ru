@@ -105,14 +105,27 @@ final class FrontController
         }
 
         // O11: Определяем язык (URL -> Cookie -> Конфиг)
-        $lang = 'ru';
         if ($adminRole !== null && isset($match->args['lang'])) {
             $lang = $match->args['lang'];
         } else {
             $negotiator = new LanguageNegotiator($domain->supportedLanguages, $domain->language);
             $lang = $negotiator->resolve($request, $domain);
         }
-        $translator = new Translator($lang, 'ru');
+
+        $adminConfig = $this->container->has('admin_config') ? $this->container->get('admin_config') : null;
+        $fallback = $adminConfig instanceof Config ? (string) $adminConfig->getByKey(['default_lang'], '') : '';
+        $fallbackOrNull = $fallback === '' ? null : $fallback;
+
+        $sources = [];
+        if ($adminRole !== null) {
+            $sources[] = $paths->l18nAdmin();
+            $sources[] = $paths->l18nAdminRole($adminRole);
+        } else {
+            $sources[] = $paths->l18nDomain($domain->real);
+            $sources[] = $paths->l18nAllias($domain->real, $domain->allias);
+        }
+
+        $translator = new Translator($lang, $fallbackOrNull, $paths->lang(), $sources);
 
         $meta = new Meta();
         $session = $this->container->has(\Damoony\Core\Session\SessionInterface::class)

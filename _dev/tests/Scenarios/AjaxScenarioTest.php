@@ -26,6 +26,11 @@ final class AjaxScenarioTest extends TestCase
 
     public static function setUpBeforeClass(): void
     {
+        \Damoony\Core\Error\ErrorPage::bootstrap(
+            fallback: 'ru',
+            langDir: dirname(__DIR__, 3) . '/lang',
+        );
+
         self::$root = sys_get_temp_dir() . '/damoony_s14_' . bin2hex(random_bytes(4));
         $dir = self::$root . '/app/damoony.test/www/algoritm';
         mkdir($dir . '/ajax/mode', 0o777, true);

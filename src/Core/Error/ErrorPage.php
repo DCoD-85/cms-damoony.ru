@@ -14,6 +14,20 @@ final class ErrorPage
     /** @var array<string, Translator> */
     private static array $translators = [];
 
+    private static ?string $fallback = null;
+    private static string $langDir = '';
+    /** @var list<string> */
+    private static array $sources = [];
+
+    /** @param list<string> $sources */
+    public static function bootstrap(string $fallback, string $langDir, array $sources = []): void
+    {
+        self::$fallback = $fallback === '' ? null : $fallback;
+        self::$langDir = $langDir;
+        self::$sources = $sources;
+        self::$translators = [];
+    }
+
     public static function notFound(string $lang = 'ru'): Response
     {
         return self::html(404, '', '', $lang);
@@ -67,7 +81,12 @@ final class ErrorPage
 
     private static function translator(string $lang): Translator
     {
-        return self::$translators[$lang] ??= new Translator($lang, 'ru');
+        return self::$translators[$lang] ??= new Translator(
+            $lang,
+            self::$fallback,
+            self::$langDir,
+            self::$sources,
+        );
     }
 
     private static function defaultTitle(int $code, Translator $t): string

@@ -23,6 +23,11 @@ final class IndexRenderScenarioTest extends TestCase
 
     protected function setUp(): void
     {
+        \Damoony\Core\Error\ErrorPage::bootstrap(
+            fallback: 'ru',
+            langDir: dirname(__DIR__, 3) . '/lang',
+        );
+
         $this->root = sys_get_temp_dir() . '/damoony_s11_' . bin2hex(random_bytes(4));
         $dir = $this->root . '/app/damoony.test/www/algoritm';
         mkdir($dir, 0o777, true);

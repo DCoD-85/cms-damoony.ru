@@ -10,6 +10,7 @@ use Damoony\Core\Container;
 use Damoony\Core\Domain\ConfigDomainResolver;
 use Damoony\Core\Domain\DomainResolverInterface;
 use Damoony\Core\Env;
+use Damoony\Core\Error\ErrorPage;
 use Damoony\Core\ErrorHandler;
 use Damoony\Core\Files\Paths;
 use Damoony\Core\Logger;
@@ -40,6 +41,15 @@ final class AppFactory
         $container->setInstance(Env::class, $env);
         $container->setInstance(Config::class, $config);
         $container->setInstance('site', $site);
+
+        $adminConfigFile = $root . '/config/admin.config';
+        $adminConfig = is_file($adminConfigFile) ? Config::fromFile($adminConfigFile) : Config::fromArray([]);
+        $container->setInstance('admin_config', $adminConfig);
+
+        ErrorPage::bootstrap(
+            fallback: (string) $adminConfig->getByKey(['default_lang'], ''),
+            langDir: $root . '/lang',
+        );
         $container->setInstance('logger', $logger);
         $container->setInstance('errorHandler', $errorHandler);
         $container->setInstance(Paths::class, new Paths($root));

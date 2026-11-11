@@ -9,13 +9,24 @@ final class Translator
     /** @var array<string, string> */
     private readonly array $dict;
 
+    /**
+     * @param list<string> $sources директории с {lang}.json, порядок: generic -> specific
+     */
     public function __construct(
-        private readonly string $current = 'ru',
-        private readonly string $fallback = 'ru',
-        private readonly ?string $langDir = null,
+        private readonly string $current,
+        private readonly ?string $fallback,
+        private readonly string $langDir,
+        private readonly array $sources = [],
     ) {
-        $dir = $this->langDir ?? dirname(__DIR__, 3) . '/lang';
-        $this->dict = self::load($dir, $this->current) + self::load($dir, $this->fallback);
+        $dict = [];
+        foreach ($this->sources as $source) {
+            $dict = self::loadJson($source, $this->current) + $dict;
+        }
+        $dict += self::loadPhp($this->langDir, $this->current);
+        if ($this->fallback !== null) {
+            $dict += self::loadPhp($this->langDir, $this->fallback);
+        }
+        $this->dict = $dict;
     }
 
     public function current(): string
@@ -35,9 +46,24 @@ final class Translator
     }
 
     /** @return array<string, string> */
-    private static function load(string $dir, string $lang): array
+    private static function loadJson(string $dir, string $lang): array
     {
-        if (!preg_match('/^[a-z]{2}$/', $lang)) {
+        if ($dir === '' || !preg_match('/^[a-z]{2}$/', $lang)) {
+            return [];
+        }
+        $file = rtrim($dir, '/') . '/' . $lang . '.json';
+        if (!is_file($file)) {
+            return [];
+        }
+        $data = json_decode((string) file_get_contents($file), true);
+
+        return is_array($data) ? $data : [];
+    }
+
+    /** @return array<string, string> */
+    private static function loadPhp(string $dir, string $lang): array
+    {
+        if ($dir === '' || !preg_match('/^[a-z]{2}$/', $lang)) {
             return [];
         }
         $file = rtrim($dir, '/') . '/' . $lang . '.php';

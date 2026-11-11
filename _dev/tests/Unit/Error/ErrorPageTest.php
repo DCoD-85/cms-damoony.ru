@@ -9,6 +9,14 @@ use PHPUnit\Framework\TestCase;
 
 final class ErrorPageTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        ErrorPage::bootstrap(
+            fallback: 'ru',
+            langDir: dirname(__DIR__, 4) . '/lang',
+        );
+    }
+
     public function testNotFoundRendersLocalizedRu(): void
     {
         $r = ErrorPage::notFound('ru');

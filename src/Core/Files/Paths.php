@@ -30,6 +30,31 @@ final class Paths
         return $this->root . '/app';
     }
 
+    public function lang(): string
+    {
+        return $this->root . '/lang';
+    }
+
+    public function l18nDomain(string $real): string
+    {
+        return $this->domain($real) . '/.l18n';
+    }
+
+    public function l18nAllias(string $real, string $allias): string
+    {
+        return $this->allias($real, $allias) . '/.l18n';
+    }
+
+    public function l18nAdmin(): string
+    {
+        return $this->appRoot() . '/.admin/.l18n';
+    }
+
+    public function l18nAdminRole(string $role): string
+    {
+        return $this->appRoot() . '/.admin/.' . $role . '/.l18n';
+    }
+
     public function sessionDir(string $tabId, string $real): string
     {
         return $this->appRoot() . '/.sess_' . $tabId . '.' . $real;

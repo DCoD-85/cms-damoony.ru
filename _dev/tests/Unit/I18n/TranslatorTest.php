@@ -78,8 +78,22 @@ final class TranslatorTest extends TestCase
 
     public function testRealLangFiles(): void
     {
-        $t = new Translator('en', 'ru');
+        $realLangDir = dirname(__DIR__, 4) . '/lang';
+        $t = new Translator('en', 'ru', $realLangDir);
         self::assertSame('Domains', $t->t('admin.nav.domains'));
-        self::assertSame('Домены', new Translator('ru', 'ru')->t('admin.nav.domains'));
+        self::assertSame('Домены', new Translator('ru', 'ru', $realLangDir)->t('admin.nav.domains'));
+    }
+
+    public function testSourceJsonOverride(): void
+    {
+        $sourceDir = sys_get_temp_dir() . '/src_' . uniqid('', true);
+        mkdir($sourceDir, 0o775, true);
+        file_put_contents($sourceDir . '/en.json', json_encode(['test.key' => 'Overridden']));
+
+        $t = new Translator('en', 'ru', $this->langDir, [$sourceDir]);
+        self::assertSame('Overridden', $t->t('test.key'));
+
+        @unlink($sourceDir . '/en.json');
+        @rmdir($sourceDir);
     }
 }

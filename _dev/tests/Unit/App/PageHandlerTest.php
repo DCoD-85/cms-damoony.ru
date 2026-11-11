@@ -7,6 +7,7 @@ namespace Damoony\Tests\Unit\App;
 use Damoony\Core\App\PageHandler;
 use Damoony\Core\Domain\DomainContext;
 use Damoony\Core\Domain\DomainResolverInterface;
+use Damoony\Core\Error\ErrorPage;
 use Damoony\Core\Http\Request;
 use Damoony\Core\Routing\RouteMatch;
 use Damoony\UI\Region\RegionContext;
@@ -18,6 +19,11 @@ final class PageHandlerTest extends TestCase
 
     protected function setUp(): void
     {
+        ErrorPage::bootstrap(
+            fallback: 'ru',
+            langDir: dirname(__DIR__, 4) . '/lang',
+        );
+
         $this->root = sys_get_temp_dir() . '/damoony_ph_' . bin2hex(random_bytes(4));
         mkdir($this->root, 0o777, true);
     }
