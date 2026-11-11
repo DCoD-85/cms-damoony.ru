@@ -39,14 +39,13 @@ if ($defaultRole === '') {
     exit;
 }
 $ctxRole = (string) ($_SESSION['admin_context']['role'] ?? $defaultRole);
-$ctxDomain = $_SESSION['admin_context']['domain'] ?? 'damoony.ru';
-$ctxAlias = $_SESSION['admin_context']['alias'] ?? 'www';
-
-$resolver = $container->get(DomainResolverInterface::class);
-$domainContext = $resolver->resolve($ctxDomain);
-if ($ctxAlias !== $domainContext->allias) {
-    $domainContext = $domainContext->withAllias($ctxAlias);
+if (!preg_match('/^[a-z][a-z0-9_]*$/', $ctxRole)) {
+    http_response_code(400);
+    echo 'invalid role';
+    exit;
 }
+$resolver = $container->get(DomainResolverInterface::class);
+$domainContext = $resolver->resolve('.admin')->withAllias($ctxRole);
 
 $path = $req->path;
 if (str_starts_with($path, '/admin')) {
