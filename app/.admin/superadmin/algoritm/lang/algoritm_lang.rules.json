@@ -3,6 +3,7 @@
     "available": {
         "login": "^login$",
         "logout": "^logout$",
+        "domains": "^domains$",
         "": "^$"
     }
 }

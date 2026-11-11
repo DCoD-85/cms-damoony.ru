@@ -18,17 +18,6 @@ final class algoritm_lang_login extends Page
 {
     protected function content(): Node|Response|null
     {
-        $role = $this->context->service('admin_role');
-        if (!is_string($role) || $role === '') {
-            $adminConfig = $this->context->service('admin_config');
-            $role = $adminConfig instanceof \Damoony\Core\Config
-                ? (string) $adminConfig->getByKey(['default_role'], '')
-                : '';
-        }
-        if ($role !== '') {
-            $this->context->meta->addCss('/media/.admin/' . $role . '/skin/default/css/main.css');
-        }
-
         $auth = $this->context->service('auth');
         $csrf = $this->context->service('csrf');
         $lang = (string) ($this->args['lang'] ?? '');
