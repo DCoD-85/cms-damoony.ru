@@ -64,7 +64,7 @@ final class DataproviderAddMethodCommand implements CommandInterface
 
         $namespace = str_replace(['.', '-'], '_', $domain) . '\\' . $alias . '\\provider';
         $className = ucfirst($provider) . 'Provider';
-        $filePath = $this->paths->appRoot() . '/' . $domain . '/' . $alias . '/provider/' . $className . '.php';
+        $filePath = $this->paths->appRoot() . '/' . $domain . '/' . $alias . '/.dataprovider/' . $className . '.php';
 
         if (!is_file($filePath)) {
             $dir = dirname($filePath);

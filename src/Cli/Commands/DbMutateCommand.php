@@ -68,7 +68,7 @@ final class DbMutateCommand implements CommandInterface
         $provider = $args['provider'] ?? '';
         $class = ProviderResolver::resolveClass($provider, $domain, $alias, $this->paths);
         if ($class === null) {
-            $r->error('Unknown provider: "' . $provider . '". Allowed: ' . implode(', ', ['user', 'news', 'files', 'audit']));
+            $r->error('Unknown provider: "' . $provider . '". Allowed: check app/{domain}/{alias}/.dataprovider/ or core.');
 
             return $r;
         }
