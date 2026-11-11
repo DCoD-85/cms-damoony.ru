@@ -49,6 +49,7 @@ cp config/ainet.config.example config/ainet.config
 # Инициализация БД и администратора
 php bin/cli.php db:migrate
 php bin/cli.php admin:passwd --name=admin --password=[strong_password]
+php bin/cli.php admin:new --role=superadmin
 
 # Создание первого сайта (вручную)
 php bin/cli.php domain:new --domain=example.ru --namespace=example
@@ -81,5 +82,9 @@ python -m ai_agent.brain damoony3test.ru coffee "Сделай лендинг IT-
 | [`install.md`](_doc/install.md) | Установка с нуля, конфиги, веб-сервер |
 | [`dbcli.md`](_doc/dbcli.md) | Декларативная работа с БД (JSON-схемы) |
 | [`orchestrator.md`](_doc/orchestrator.md) | Внутренний AI-конвейер (Blackboard) |
+| [`pages_and_rules.md`](_doc/pages_and_rules.md) | FileRouter, `.rules.json`, available/auth |
+| [`progressive_enhancement.md`](_doc/progressive_enhancement.md) | AJAX, Toasts, MinStruct |
+| [`visuo_showcase.md`](_doc/visuo_showcase.md) | Эталонный мультиязычный алиас |
+| [`dataprovider-design.md`](_doc/dataprovider-design.md) | DataProvider, ProviderResolver |
 
 **Правило:** один факт — одно место. Метрики, перечень команд, требования — не дублируются, только ссылки.
