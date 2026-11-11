@@ -32,6 +32,7 @@ final class PageHandler implements PageHandlerInterface
 
     public function handle(RouteMatch $match, RegionContext $context, ?string $adminRole = null): Response
     {
+        $startTime = microtime(true);
         $sessionIdRaw = $context->service('session_id');
         $sessionId = is_string($sessionIdRaw) && $sessionIdRaw !== '' ? $sessionIdRaw : null;
         if ($match->classChain === null || $match->pathRel === null) {
@@ -81,8 +82,9 @@ final class PageHandler implements PageHandlerInterface
             /** @var PageInterface $page */
             $page = new $class($context, $regions, $match->args);
             $result = $page->default();
+            $debugTime = round((microtime(true) - $startTime) * 1000, 2);
 
-            return $this->toResponse($result, $domain, $context, $regions, $adminRole, $page->ajaxBlocks());
+            return $this->toResponse($result, $domain, $context, $regions, $adminRole, $page->ajaxBlocks(), $debugTime);
         } catch (\Throwable $e) {
             return ErrorPage::serverError($domain->language, $this->debugDetail($e->getMessage()));
         }
@@ -107,7 +109,7 @@ final class PageHandler implements PageHandlerInterface
             . '/' . $classChain . '.php';
     }
 
-    private function toResponse(Node|Response|null $result, DomainContext $domain, RegionContext $context, RegionRegistry $regions, ?string $adminRole = null, array $ajaxBlocks = ['center']): Response
+    private function toResponse(Node|Response|null $result, DomainContext $domain, RegionContext $context, RegionRegistry $regions, ?string $adminRole = null, array $ajaxBlocks = ['center'], float $debugTime = 0.0): Response
     {
         if ($result instanceof Response) {
             return $result;
@@ -130,6 +132,7 @@ final class PageHandler implements PageHandlerInterface
                     'ok' => true,
                     'blocks' => $blocks,
                     'url' => $context->request->path,
+                    'debug_time' => $debugTime,
                 ]);
             }
 

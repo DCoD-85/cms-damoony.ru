@@ -1,4 +1,16 @@
 document.addEventListener('DOMContentLoaded', () => {
+    let totalTime = 0;
+    const benchmarkEl = document.getElementById('dt_benchmark');
+    if (benchmarkEl) {
+        totalTime = parseFloat(benchmarkEl.textContent.replace(/[^0-9.]/g, '')) || 0;
+    }
+
+    function updateBenchmark(ajaxTime) {
+        if (!benchmarkEl) return;
+        totalTime += ajaxTime;
+        benchmarkEl.innerHTML = '⚡ ' + ajaxTime + ' ms <span style="opacity:0.6; margin-left:8px;">(Total: ' + totalTime.toFixed(1) + ' ms)</span>';
+    }
+
     if (!document.getElementById('toast-container')) {
         const tc = document.createElement('div');
         tc.id = 'toast-container';
@@ -43,6 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 if (pushState) window.history.pushState({}, '', url);
                 highlightMenu();
+                if (data.debug_time) updateBenchmark(data.debug_time);
             } else {
                 window.location.href = url;
             }
