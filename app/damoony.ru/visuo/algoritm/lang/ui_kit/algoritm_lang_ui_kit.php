@@ -34,11 +34,15 @@ final class algoritm_lang_ui_kit extends Page
     {
         $content = Builder::div('page-content');
 
-        $el1 = Builder::h(1)->append(Text::raw(strip_tags('UI Kit', '<a><strong>')));
+        $el1 = Builder::h(1)->append(Text::raw(strip_tags('Наши лакомства', '<a><strong>')));
         $content->append($el1);
 
-        $el2 = Builder::p()->append(Text::raw(strip_tags('Демонстрация компонентов.', '<a><strong>')));
+        $el2 = Builder::p()->append(Text::raw(strip_tags('Мы делаем полезные снеки из натурального мяса и овощей. Без химии и консервантов.', '<a><strong>')));
         $content->append($el2);
+
+        $el3 = new Button('Заказать', 'submit');
+        $el3->attrs()->classAdd('ui-btn');
+        $content->append($el3);
 
         return $content;
     }

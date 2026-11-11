@@ -1,6 +1,7 @@
-.ui-btn { display: inline-block; padding: 8px 16px; border: 1px solid #ccc; border-radius: 4px; background: #f8f9fa; cursor: pointer; text-decoration: none; color: #333; }
-.ui-btn-primary { background: #007bff; color: #fff; border-color: #0056b3; }
-.ui-input { display: block; width: 100%; padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-.ui-table { width: 100%; border-collapse: collapse; }
-.ui-th, .ui-td { padding: 8px; border: 1px solid #ddd; }
-.ui-link { color: #007bff; text-decoration: none; }
+.ui-btn { display: inline-block; padding: 12px 24px; border: none; border-radius: 30px; background: #8d6e63; color: #fff; cursor: pointer; text-decoration: none; font-weight: 700; font-size: 1rem; transition: background 0.3s; }
+.ui-btn:hover { background: #6d4c41; }
+.ui-btn-primary { background: #4fc3f7; color: #fff; } /* Голубая кнопка (вода) */
+.ui-btn-primary:hover { background: #03a9f4; }
+.ui-input { display: block; width: 100%; padding: 12px; border: 2px solid #e0d5c1; border-radius: 8px; box-sizing: border-box; font-family: 'Nunito', sans-serif; margin-bottom: 1rem; }
+.ui-input:focus { outline: none; border-color: #4fc3f7; }
+.ui-label { display: block; font-weight: 700; margin-bottom: 0.5rem; }

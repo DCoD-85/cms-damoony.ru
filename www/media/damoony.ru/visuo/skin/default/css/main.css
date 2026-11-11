@@ -1,7 +1,21 @@
-/* Skin: default base */
-h1 { font-size: 2.5rem; margin-top: 0; color: #111; font-weight: 600; }
-h2 { font-size: 1.8rem; margin-top: 2rem; color: #222; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }
-h3 { font-size: 1.4rem; margin-top: 1.5rem; color: #333; }
-p { line-height: 1.6; margin-bottom: 1rem; color: #444; }
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap');
+
+body { 
+    margin: 0; 
+    font-family: 'Nunito', sans-serif; 
+    background: #e8f4f8; /* Нежно-голубой фон (вода) */
+    color: #4e342e; /* Темно-коричневый текст */
+    line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 { 
+    margin-top: 0; 
+    color: #3e2723; 
+    font-weight: 800;
+}
+h1 { font-size: 2.8rem; text-align: center; }
+h2 { font-size: 1.8rem; margin-top: 2rem; }
+p { margin-bottom: 1em; font-size: 1.1rem; }
+
 /* Benchmark Debug Bar */
-.dt_benchmark { position: fixed; bottom: 12px; right: 12px; background: rgba(29,29,31,0.85); color: #fff; padding: 6px 12px; border-radius: 6px; font-family: monospace; font-size: 12px; z-index: 99999; box-shadow: 0 2px 10px rgba(0,0,0,0.2); pointer-events: none; backdrop-filter: blur(4px); }
+.dt_benchmark { position: fixed; bottom: 12px; right: 12px; background: rgba(78,52,46,0.85); color: #fff; padding: 6px 12px; border-radius: 6px; font-family: monospace; font-size: 12px; z-index: 99999; box-shadow: 0 2px 10px rgba(0,0,0,0.2); pointer-events: none; backdrop-filter: blur(4px); }

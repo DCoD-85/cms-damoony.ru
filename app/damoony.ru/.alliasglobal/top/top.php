@@ -45,16 +45,20 @@ final class alliasglobal_top implements RegionInterface
 
         $content = Builder::div('dt_' . 'top');
 
-        $el1 = Builder::ul('menu');
-        $el2 = new Link('/ru/', 'Главная');
-        $el1->append(Builder::li()->append($el2));
-        $el3 = new Link('/ru/ui_kit', 'UI Kit');
-        $el1->append(Builder::li()->append($el3));
-        $el4 = new Link('/ru/features', 'Возможности');
-        $el1->append(Builder::li()->append($el4));
-        $el5 = new Link('/ru/contact', 'Контакты');
-        $el1->append(Builder::li()->append($el5));
+        $el1 = new Img('/media/damoony.ru/visuo/skin/default/img/logo.png', 'Iskra Dog');
+        $el1->attrs()->classAdd('logo-img');
         $content->append($el1);
+
+        $el2 = Builder::ul('menu');
+        $el3 = new Link('/ru/', 'Главная');
+        $el2->append(Builder::li()->append($el3));
+        $el4 = new Link('/ru/about', 'О нас');
+        $el2->append(Builder::li()->append($el4));
+        $el5 = new Link('/ru/ui_kit', 'Лакомства');
+        $el2->append(Builder::li()->append($el5));
+        $el6 = new Link('/ru/contact', 'Контакты');
+        $el2->append(Builder::li()->append($el6));
+        $content->append($el2);
 
         return $content;
     }

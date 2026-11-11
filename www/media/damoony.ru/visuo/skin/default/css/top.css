@@ -1,5 +1,19 @@
-.dt_top { max-width: 1200px; margin: 0 auto; padding: 1.2rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
-.dt_top .menu { list-style: none; padding: 0; margin: 0; display: flex; gap: 1.5rem; }
-.dt_top .menu a { color: #ccc; text-decoration: none; font-weight: 500; font-size: 1rem; transition: color 0.2s; }
-.dt_top .menu a:hover { color: #fff; }
-.dt_top .menu a.active { color: #fff; border-bottom: 2px solid #fff; }
+.dt_top { 
+    max-width: 1200px; 
+    margin: 0 auto; 
+    padding: 1.5rem; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    background: transparent;
+}
+.dt_top .logo-img { max-height: 80px; border-radius: 8px; }
+.dt_top .menu { list-style: none; padding: 0; margin: 0; display: flex; gap: 2rem; }
+.dt_top .menu a { 
+    color: #4e342e; 
+    text-decoration: none; 
+    font-weight: 700; 
+    font-size: 1.1rem; 
+    transition: color 0.2s; 
+}
+.dt_top .menu a:hover, .dt_top .menu a.active { color: #1976d2; border-bottom: 2px solid #1976d2; }
