@@ -25,7 +25,7 @@ final class BlockEditCommandTest extends TestCase
             'domains_namespace' => ['example.ru' => 'example'],
             'alliases_real' => ['example.ru' => ['www' => 'www']],
         ]));
-        mkdir($this->root . '/app/example.ru/.alliasglobal', 0o777, true);
+        mkdir($this->root . '/app/example.ru/.blocksglobal', 0o777, true);
     }
 
     protected function tearDown(): void
@@ -84,7 +84,7 @@ final class BlockEditCommandTest extends TestCase
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
         $rules = json_decode((string) file_get_contents(
-            $this->root . '/app/example.ru/.alliasglobal/top/top.rules.json',
+            $this->root . '/app/example.ru/.blocksglobal/top/top.rules.json',
         ), true);
         self::assertSame('visual', $rules['type']);
     }
@@ -102,7 +102,7 @@ final class BlockEditCommandTest extends TestCase
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
         $rules = json_decode((string) file_get_contents(
-            $this->root . '/app/example.ru/.alliasglobal/top/top.rules.json',
+            $this->root . '/app/example.ru/.blocksglobal/top/top.rules.json',
         ), true);
         self::assertSame('script', $rules['type']);
     }
@@ -193,7 +193,7 @@ final class BlockEditCommandTest extends TestCase
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
         $editor = json_decode((string) file_get_contents(
-            $this->root . '/app/example.ru/.alliasglobal/top/top.editor.json',
+            $this->root . '/app/example.ru/.blocksglobal/top/top.editor.json',
         ), true);
         self::assertSame('text', $editor[0]['type']);
     }
@@ -260,7 +260,7 @@ final class BlockEditCommandTest extends TestCase
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
         $code = (string) file_get_contents(
-            $this->root . '/app/example.ru/.alliasglobal/top/top.php',
+            $this->root . '/app/example.ru/.blocksglobal/top/top.php',
         );
         self::assertStringContainsString('custom', $code);
     }

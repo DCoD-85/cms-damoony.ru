@@ -111,14 +111,14 @@ final class StructureRepairCommandTest extends TestCase
             'domains_namespace' => ['example.ru' => 'example_ru'],
             'alliases_real' => ['example.ru' => ['www' => 'www']],
         ]);
-        mkdir($this->tmpDir . '/app/example.ru/.alliasscheme', 0o777, true);
-        file_put_contents($this->tmpDir . '/app/example.ru/.alliasscheme/test.php', '<?php');
+        mkdir($this->tmpDir . '/app/example.ru/.schemesglobal', 0o777, true);
+        file_put_contents($this->tmpDir . '/app/example.ru/.schemesglobal/test.php', '<?php');
 
         $cmd = new StructureRepairCommand($this->paths);
         $res = $cmd->run(['domain' => 'example.ru'], new Context(static fn () => null));
 
         $this->assertTrue($res->ok, implode('; ', $res->errors));
-        $this->assertFileExists($this->tmpDir . '/app/example.ru/.alliasscheme/test.rules.json');
+        $this->assertFileExists($this->tmpDir . '/app/example.ru/.schemesglobal/test.rules.json');
     }
 
     public function testRestoresMissingBlockRecord(): void
@@ -128,14 +128,14 @@ final class StructureRepairCommandTest extends TestCase
             'domains_namespace' => ['example.ru' => 'example_ru'],
             'alliases_real' => ['example.ru' => ['www' => 'www']],
         ]);
-        mkdir($this->tmpDir . '/app/example.ru/.alliasglobal/top', 0o777, true);
+        mkdir($this->tmpDir . '/app/example.ru/.blocksglobal/top', 0o777, true);
 
         $cmd = new StructureRepairCommand($this->paths);
         $res = $cmd->run(['domain' => 'example.ru'], new Context(static fn () => null));
 
         $this->assertTrue($res->ok, implode('; ', $res->errors));
-        $this->assertFileExists($this->tmpDir . '/app/example.ru/.alliasglobal/top/top.rules.json');
-        $this->assertFileExists($this->tmpDir . '/app/example.ru/.alliasglobal/top/top.editor.json');
+        $this->assertFileExists($this->tmpDir . '/app/example.ru/.blocksglobal/top/top.rules.json');
+        $this->assertFileExists($this->tmpDir . '/app/example.ru/.blocksglobal/top/top.editor.json');
     }
 
     public function testStructureOk(): void
@@ -160,7 +160,7 @@ final class StructureRepairCommandTest extends TestCase
 
         $this->assertTrue($res->ok);
         // Лишних файлов не создано
-        $this->assertFileDoesNotExist($this->tmpDir . '/app/example.ru/.alliasscheme/schemes.json');
+        $this->assertFileDoesNotExist($this->tmpDir . '/app/example.ru/.schemesglobal/schemes.json');
         $this->assertFileDoesNotExist($dir . '/.rules.json');
     }
 

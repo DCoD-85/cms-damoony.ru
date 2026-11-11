@@ -85,8 +85,8 @@ final class StructureCheckCommandTest extends TestCase
     {
         $domain = $this->root . '/app/example.ru';
         mkdir($domain . '/' . $alias . '/algoritm', 0o777, true);
-        mkdir($domain . '/.alliasglobal', 0o777, true);
-        mkdir($domain . '/.alliasscheme', 0o777, true);
+        mkdir($domain . '/.blocksglobal', 0o777, true);
+        mkdir($domain . '/.schemesglobal', 0o777, true);
 
         file_put_contents($domain . '/' . $alias . '/algoritm/algoritm.rules.json', (string) json_encode([
             'available' => [],
@@ -96,11 +96,11 @@ final class StructureCheckCommandTest extends TestCase
         ]));
         file_put_contents($domain . '/' . $alias . '/algoritm/algoritm.php', "<?php\n");
         file_put_contents(
-            $domain . '/.alliasscheme/www.php',
+            $domain . '/.schemesglobal/www.php',
             "<?php\nreturn ['tag' => 'div', 'children' => []];\n",
         );
         file_put_contents(
-            $domain . '/.alliasscheme/www.rules.json',
+            $domain . '/.schemesglobal/www.rules.json',
             (string) json_encode(['enabled' => true]),
         );
     }

@@ -53,7 +53,7 @@ final class SchemeNewCommand implements CommandInterface
             return $r;
         }
 
-        $schemesDir = $this->paths->domain($domain) . '/.alliasscheme';
+        $schemesDir = $this->paths->domain($domain) . '/.schemesglobal';
         $editorFile = $schemesDir . '/' . $name . '.editor.json';
         $phpFile = $schemesDir . '/' . $name . '.php';
         $rulesFile = $schemesDir . '/' . $name . '.rules.json';
@@ -66,7 +66,7 @@ final class SchemeNewCommand implements CommandInterface
         Fs::mkdir($schemesDir);
 
         // Сканируем доступные блоки
-        $blocksDir = $this->paths->domain($domain) . '/.alliasglobal';
+        $blocksDir = $this->paths->domain($domain) . '/.blocksglobal';
         $fields = [];
 
         if (is_dir($blocksDir)) {

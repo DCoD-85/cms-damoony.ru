@@ -28,8 +28,8 @@ final class StructureCheckerTest extends TestCase
     {
         $domain = $this->root . '/app/example.ru';
         mkdir($domain . '/www/algoritm', 0o777, true);
-        mkdir($domain . '/.alliasglobal', 0o777, true);
-        mkdir($domain . '/.alliasscheme', 0o777, true);
+        mkdir($domain . '/.blocksglobal', 0o777, true);
+        mkdir($domain . '/.schemesglobal', 0o777, true);
 
         // Новая модель: algoritm/algoritm.rules.json
         file_put_contents(
@@ -37,8 +37,8 @@ final class StructureCheckerTest extends TestCase
             json_encode(['available' => [], 'auth' => false, 'search' => true, 'default' => false]),
         );
         file_put_contents($domain . '/www/algoritm/algoritm.php', "<?php\n");
-        file_put_contents($domain . '/.alliasscheme/www.php', "<?php\nreturn ['tag' => 'div', 'children' => []];\n");
-        file_put_contents($domain . '/.alliasscheme/www.rules.json', json_encode(['enabled' => true]));
+        file_put_contents($domain . '/.schemesglobal/www.php', "<?php\nreturn ['tag' => 'div', 'children' => []];\n");
+        file_put_contents($domain . '/.schemesglobal/www.rules.json', json_encode(['enabled' => true]));
     }
 
     private function checker(): StructureChecker
@@ -60,8 +60,8 @@ final class StructureCheckerTest extends TestCase
 
     public function testFlagsMissingRulesJson(): void
     {
-        mkdir($this->root . '/app/example.ru/.alliasglobal/top', 0o777, true);
-        file_put_contents($this->root . '/app/example.ru/.alliasglobal/top/top.php', "<?php\n");
+        mkdir($this->root . '/app/example.ru/.blocksglobal/top', 0o777, true);
+        file_put_contents($this->root . '/app/example.ru/.blocksglobal/top/top.php', "<?php\n");
 
         $issues = $this->checker()->checkAllias('example.ru', 'www');
         $match = array_values(array_filter($issues, fn ($i) => str_contains($i['message'], 'Отсутствует top.rules.json')));
@@ -72,9 +72,9 @@ final class StructureCheckerTest extends TestCase
 
     public function testFlagsMissingEditorJson(): void
     {
-        mkdir($this->root . '/app/example.ru/.alliasglobal/top', 0o777, true);
-        file_put_contents($this->root . '/app/example.ru/.alliasglobal/top/top.php', "<?php\n");
-        file_put_contents($this->root . '/app/example.ru/.alliasglobal/top/top.rules.json', '{"enabled":true,"type":"mixed"}');
+        mkdir($this->root . '/app/example.ru/.blocksglobal/top', 0o777, true);
+        file_put_contents($this->root . '/app/example.ru/.blocksglobal/top/top.php', "<?php\n");
+        file_put_contents($this->root . '/app/example.ru/.blocksglobal/top/top.rules.json', '{"enabled":true,"type":"mixed"}');
 
         $issues = $this->checker()->checkAllias('example.ru', 'www');
         $match = array_values(array_filter($issues, fn ($i) => str_contains($i['message'], 'Отсутствует top.editor.json')));
@@ -178,7 +178,7 @@ final class StructureCheckerTest extends TestCase
 
     private function writeBlockFiles(string $name): void
     {
-        $dir = $this->root . '/app/example.ru/.alliasglobal/' . $name;
+        $dir = $this->root . '/app/example.ru/.blocksglobal/' . $name;
         mkdir($dir, 0o777, true);
         file_put_contents($dir . '/' . $name . '.php', "<?php\n");
         file_put_contents($dir . '/' . $name . '.rules.json', '{"enabled":true,"type":"mixed"}');

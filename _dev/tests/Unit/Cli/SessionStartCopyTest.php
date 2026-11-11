@@ -17,11 +17,11 @@ final class SessionStartCopyTest extends TestCase
     {
         $this->root = sys_get_temp_dir() . '/ssc_' . bin2hex(random_bytes(4));
         mkdir($this->root . '/app/example.ru/www/algoritm', 0o775, true);
-        mkdir($this->root . '/app/example.ru/.alliasscheme/default', 0o775, true);
+        mkdir($this->root . '/app/example.ru/.schemesglobal/default', 0o775, true);
         mkdir($this->root . '/www/media/example.ru/www/skin/default/css', 0o775, true);
 
         file_put_contents($this->root . '/app/example.ru/www/algoritm/algoritm.editor.json', '[]');
-        file_put_contents($this->root . '/app/example.ru/.alliasscheme/default/default.editor.json', '{"meta":[]}');
+        file_put_contents($this->root . '/app/example.ru/.schemesglobal/default/default.editor.json', '{"meta":[]}');
         file_put_contents($this->root . '/www/media/example.ru/www/skin/default/css/main.css', 'body{}');
     }
 
@@ -39,12 +39,12 @@ final class SessionStartCopyTest extends TestCase
         $r = $cmd->run(['domain' => 'example.ru', 'tab' => 'a1b2c3d4', 'admin-sess' => 'admin'], $ctx);
         self::assertTrue($r->ok, 'SessionStart failed: ' . implode('; ', $r->errors));
 
-        // app/ side (incl. .alliasscheme via copyTree)
+        // app/ side (incl. .schemesglobal via copyTree)
         $sessApp = $this->root . '/app/.sess_a1b2c3d4.example.ru';
         self::assertDirectoryExists($sessApp . '/www/algoritm');
         self::assertFileExists($sessApp . '/www/algoritm/algoritm.editor.json');
-        self::assertDirectoryExists($sessApp . '/.alliasscheme/default');
-        self::assertFileExists($sessApp . '/.alliasscheme/default/default.editor.json');
+        self::assertDirectoryExists($sessApp . '/.schemesglobal/default');
+        self::assertFileExists($sessApp . '/.schemesglobal/default/default.editor.json');
 
         // media side
         $sessMedia = $this->root . '/www/media/.sess_a1b2c3d4.example.ru';

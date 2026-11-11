@@ -21,7 +21,7 @@
   `dt.css` (сетка), `main.css` (типографика), `components.css` (формы/кнопки), `mobile.css` (адаптив).
 
 ## 3. Схема и блоки
-Схема `app/damoony.ru/.alliasscheme/visuo.php` использует атрибуты `data-block="top"` и т.д. 
+Схема `app/damoony.ru/.schemesglobal/visuo.php` использует атрибуты `data-block="top"` и т.д. 
 `app.js` находит эти контейнеры и заменяет их содержимое при AJAX-навигации.
 
 ## 4. Авторизация

@@ -61,7 +61,7 @@ final class SchemeNewCommandTest extends TestCase
             ->run(['domain' => 'example.ru', 'name' => 'visuo'], $this->ctx($r));
 
         self::assertTrue($res->ok);
-        $file = $this->root . '/app/example.ru/.alliasscheme/visuo.php';
+        $file = $this->root . '/app/example.ru/.schemesglobal/visuo.php';
         self::assertFileExists($file);
 
         $data = require $file;
@@ -69,7 +69,7 @@ final class SchemeNewCommandTest extends TestCase
         self::assertSame('layout', $data['class']);
         self::assertCount(0, $data['children']);
 
-        $rulesFile = $this->root . '/app/example.ru/.alliasscheme/visuo.rules.json';
+        $rulesFile = $this->root . '/app/example.ru/.schemesglobal/visuo.rules.json';
         self::assertFileExists($rulesFile);
         $rules = json_decode((string) file_get_contents($rulesFile), true);
         self::assertTrue($rules['enabled']);

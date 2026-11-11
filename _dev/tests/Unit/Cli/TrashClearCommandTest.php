@@ -99,9 +99,9 @@ final class TrashClearCommandTest extends TestCase
 
     public function testCollectsSchemeTrash(): void
     {
-        // app/<domain>/.alliasscheme/<name>_trash_<ts>/  (scheme:remove)
-        mkdir($this->root . '/app/example.ru/.alliasscheme', 0o775, true);
-        $trash = $this->root . '/app/example.ru/.alliasscheme/main_trash_' . (time() - 3600);
+        // app/<domain>/.schemesglobal/<name>_trash_<ts>/  (scheme:remove)
+        mkdir($this->root . '/app/example.ru/.schemesglobal', 0o775, true);
+        $trash = $this->root . '/app/example.ru/.schemesglobal/main_trash_' . (time() - 3600);
         mkdir($trash, 0o775, true);
 
         $cmd = new TrashClearCommand(new Paths($this->root));
@@ -112,9 +112,9 @@ final class TrashClearCommandTest extends TestCase
 
     public function testCollectsBlockTrash(): void
     {
-        // app/<domain>/.alliasglobal/<name>_trash_<ts>/  (block:remove)
-        mkdir($this->root . '/app/example.ru/.alliasglobal', 0o775, true);
-        $trash = $this->root . '/app/example.ru/.alliasglobal/top_trash_' . (time() - 3600);
+        // app/<domain>/.blocksglobal/<name>_trash_<ts>/  (block:remove)
+        mkdir($this->root . '/app/example.ru/.blocksglobal', 0o775, true);
+        $trash = $this->root . '/app/example.ru/.blocksglobal/top_trash_' . (time() - 3600);
         mkdir($trash, 0o775, true);
 
         $cmd = new TrashClearCommand(new Paths($this->root));

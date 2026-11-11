@@ -17,7 +17,7 @@
 - Root: `algoritm/algoritm.{php,rules.json,editor.json}`
 - Вложенная: `algoritm/about/algoritm_about.{php,rules.json,editor.json}`
 
-**Блоки / Схемы:** `[name].{php,rules.json,editor.json}` в `.alliasglobal/` или `.alliasscheme/`.
+**Блоки / Схемы:** `[name].{php,rules.json,editor.json}` в `.blocksglobal/` или `.schemesglobal/`.
 
 ---
 

@@ -25,7 +25,7 @@ final class BlockCommandsTest extends TestCase
             'domains_namespace' => ['example.ru' => 'example'],
             'alliases_real' => ['example.ru' => ['www' => 'www']],
         ]));
-        mkdir($this->root . '/app/example.ru/.alliasglobal', 0o777, true);
+        mkdir($this->root . '/app/example.ru/.blocksglobal', 0o777, true);
     }
 
     protected function tearDown(): void
@@ -62,7 +62,7 @@ final class BlockCommandsTest extends TestCase
             ->run(['domain' => 'example.ru', 'name' => 'custom'], $this->ctx($r));
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
-        $dir = $this->root . '/app/example.ru/.alliasglobal/custom';
+        $dir = $this->root . '/app/example.ru/.blocksglobal/custom';
         self::assertDirectoryExists($dir);
         self::assertFileExists($dir . '/custom.php');
         self::assertFileExists($dir . '/custom.rules.json');
@@ -105,10 +105,10 @@ final class BlockCommandsTest extends TestCase
             ->run(['domain' => 'example.ru', 'name' => 'custom', 'force' => '1'], $this->ctx(new Result()));
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
-        self::assertDirectoryDoesNotExist($this->root . '/app/example.ru/.alliasglobal/custom');
+        self::assertDirectoryDoesNotExist($this->root . '/app/example.ru/.blocksglobal/custom');
 
         // Карантин есть
-        $trash = glob($this->root . '/app/example.ru/.alliasglobal/custom_trash_*');
+        $trash = glob($this->root . '/app/example.ru/.blocksglobal/custom_trash_*');
         self::assertNotEmpty($trash, 'Карантин должен существовать');
         self::assertFileExists($trash[0] . '/custom.php');
     }
@@ -123,7 +123,7 @@ final class BlockCommandsTest extends TestCase
 
         self::assertFalse($res->ok);
         self::assertStringContainsString('--force', $res->errors[0]);
-        self::assertDirectoryExists($this->root . '/app/example.ru/.alliasglobal/custom');
+        self::assertDirectoryExists($this->root . '/app/example.ru/.blocksglobal/custom');
     }
 
     public function testS05MissingBlock(): void

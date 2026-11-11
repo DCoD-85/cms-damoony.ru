@@ -58,7 +58,7 @@ final class SchemeRemoveCommand implements CommandInterface
             return $r;
         }
 
-        $schemesDir = $this->paths->domain($domain) . '/.alliasscheme';
+        $schemesDir = $this->paths->domain($domain) . '/.schemesglobal';
         $files = [
             $schemesDir . '/' . $name . '.php',
             $schemesDir . '/' . $name . '.rules.json',

@@ -59,7 +59,7 @@
 
 ### 3.2. Правило 3 файлов
 - **Страница:** `algoritm_[name].{php,rules.json,editor.json}` (все три в одной папке). Root: `algoritm/algoritm.{php,rules.json,editor.json}`.
-- **Блок / Схема:** `[name].{php,rules.json,editor.json}` в `.alliasglobal/` или `.alliasscheme/`.
+- **Блок / Схема:** `[name].{php,rules.json,editor.json}` в `.blocksglobal/` или `.schemesglobal/`.
 
 ### 3.3. Content vs Skin (две разные зоны)
 - **Content (`/content/[domain]/[allias]/[category]/`)** — runtime AI-контент. Вне webroot. Формат: `[hash].[ext]` + `[hash].meta.json`. Отдаётся через `www/content.php`. Запись только через CLI (`content:store`).
@@ -145,7 +145,7 @@
 - **RCE:** удалены визуальные редакторы для страниц/блоков. `BlockCompiler` (единственный активный компилятор регионов) не поддерживает типы `custom`/`if`/`endif` — raw PHP в блоки через `block:write`/`filler:write` не попадает. `allow_php_blocks` остаётся только для `block:edit`/`filler:edit` (CLI-путь, отдельный флаг в `engine.config`, защита — см. `BlockEditCommand`/`FillerEditCommand`).
 - **Path Traversal:** `str_contains('..')` + regex во всех CLI-командах.
 - **SSRF:** `UrlGuard` (схема, порт, private IP, whitelist). `CURLOPT_FOLLOWLOCATION=false` + повторная проверка на каждый Location.
-- **Карантин:** 6 уровней (`app/`, `.alliasscheme/`, `.alliasglobal/`, `/content/.trash/`, `www/media/.trash/` и т.д.). Symlink-safe `Fs::rmrf`.
+- **Карантин:** 6 уровней (`app/`, `.schemesglobal/`, `.blocksglobal/`, `/content/.trash/`, `www/media/.trash/` и т.д.). Symlink-safe `Fs::rmrf`.
 - **Content:** MIME whitelist, размер ≤ 10 MB, ≥ 200×200, дедупликация по sha256. Отдача с ETag, 304, SVG-CSP.
 - **AI Whitelist:** два независимых списка — `agent.config` (домены для `app/*`) и `ainet.config` (URL для `net:*`).
 - **Forms (`www/forms.php`):** публичный POST-endpoint для отправки форм с сайта (Phase 4.4). CSRF-токен в форме, rate-limit на IP, валидация полей по `name`. Записи в `form_submissions` (без `user_id`, с `ip`, `created_at`). Nginx: `location = /submit { rewrite ^ /forms.php last; }` (см. `install.md` §5).

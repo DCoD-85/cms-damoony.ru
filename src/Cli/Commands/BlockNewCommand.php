@@ -65,7 +65,7 @@ final class BlockNewCommand implements CommandInterface
         $namespace = (string) ($site['domains_namespace'][$realDomain]
             ?? str_replace(['.', '-'], '_', $realDomain));
 
-        $blocksDir = $this->paths->domain($realDomain) . '/.alliasglobal';
+        $blocksDir = $this->paths->domain($realDomain) . '/.blocksglobal';
         $blockDir = $blocksDir . '/' . $name;
 
         if (Fs::isDir($blockDir)) {

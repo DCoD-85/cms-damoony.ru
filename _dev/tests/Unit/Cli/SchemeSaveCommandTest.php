@@ -75,7 +75,7 @@ final class SchemeSaveCommandTest extends TestCase
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
 
-        $dir = $this->root . '/app/example.ru/.alliasscheme';
+        $dir = $this->root . '/app/example.ru/.schemesglobal';
         $editor = json_decode((string) file_get_contents($dir . '/main.editor.json'), true);
         self::assertIsArray($editor);
         self::assertSame($scheme, $editor['scheme']);
@@ -112,7 +112,7 @@ final class SchemeSaveCommandTest extends TestCase
     public function testRejectsMissingEditor(): void
     {
         // Удаляем editor.json
-        unlink($this->root . '/app/example.ru/.alliasscheme/main.editor.json');
+        unlink($this->root . '/app/example.ru/.schemesglobal/main.editor.json');
 
         $res = new SchemeSaveCommand(new Paths($this->root))
             ->run(
@@ -157,14 +157,14 @@ final class SchemeSaveCommandTest extends TestCase
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
 
-        $php = require $this->root . '/app/example.ru/.alliasscheme/main.php';
+        $php = require $this->root . '/app/example.ru/.schemesglobal/main.php';
         self::assertIsArray($php);
         // Only 'div' survived
         self::assertCount(1, $php['children']);
         self::assertSame('div', $php['children'][0]['tag']);
 
         // Defense-in-depth: no banned tag anywhere in the compiled file
-        $compiled = (string) file_get_contents($this->root . '/app/example.ru/.alliasscheme/main.php');
+        $compiled = (string) file_get_contents($this->root . '/app/example.ru/.schemesglobal/main.php');
         foreach (['script', 'iframe', 'style', 'form'] as $banned) {
             self::assertStringNotContainsString("'" . $banned . "'", $compiled, "{$banned} leak in compiled php");
         }
@@ -190,7 +190,7 @@ final class SchemeSaveCommandTest extends TestCase
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
 
-        $php = require $this->root . '/app/example.ru/.alliasscheme/main.php';
+        $php = require $this->root . '/app/example.ru/.schemesglobal/main.php';
         self::assertIsArray($php);
         self::assertCount(1, $php['children'], 'only valid slot survived');
         self::assertSame('top', $php['children'][0]['slot']);

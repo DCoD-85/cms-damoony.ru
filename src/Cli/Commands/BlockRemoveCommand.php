@@ -59,7 +59,7 @@ final class BlockRemoveCommand implements CommandInterface
         }
         $realDomain = (string) $site['domains_real'][$domain];
 
-        $blockDir = $this->paths->domain($realDomain) . '/.alliasglobal/' . $name;
+        $blockDir = $this->paths->domain($realDomain) . '/.blocksglobal/' . $name;
         if (!is_dir($blockDir)) {
             $r->warn("Блок не найден: {$name}");
             $context->step('Нечего удалять', true);

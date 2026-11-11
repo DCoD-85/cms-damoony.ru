@@ -17,15 +17,15 @@ final class SchemeLoaderSessionTest extends TestCase
     {
         $this->root = sys_get_temp_dir() . '/sl_' . bin2hex(random_bytes(4));
 
-        mkdir($this->root . '/app/example.ru/.alliasscheme', 0o775, true);
+        mkdir($this->root . '/app/example.ru/.schemesglobal', 0o775, true);
         file_put_contents(
-            $this->root . '/app/example.ru/.alliasscheme/www.php',
+            $this->root . '/app/example.ru/.schemesglobal/www.php',
             '<?php return ["tag" => "div", "class" => "prod-scheme"];',
         );
 
-        mkdir($this->root . '/app/.sess_abc.example.ru/.alliasscheme', 0o775, true);
+        mkdir($this->root . '/app/.sess_abc.example.ru/.schemesglobal', 0o775, true);
         file_put_contents(
-            $this->root . '/app/.sess_abc.example.ru/.alliasscheme/www.php',
+            $this->root . '/app/.sess_abc.example.ru/.schemesglobal/www.php',
             '<?php return ["tag" => "div", "class" => "session-scheme"];',
         );
     }

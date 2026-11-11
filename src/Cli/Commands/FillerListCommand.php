@@ -23,7 +23,7 @@ final class FillerListCommand implements CommandInterface
 
     public function description(): string
     {
-        return 'Список филлеров алиаса (<block>_<allias>.php в .alliasglobal/)';
+        return 'Список филлеров алиаса (<block>_<allias>.php в .blocksglobal/)';
     }
 
     public function run(array $args, Context $context): Result
@@ -50,7 +50,7 @@ final class FillerListCommand implements CommandInterface
             return $r;
         }
         $realDomain = (string) $site['domains_real'][$domain];
-        $dir = $this->paths->domain($realDomain) . '/.alliasglobal';
+        $dir = $this->paths->domain($realDomain) . '/.blocksglobal';
         if (!is_dir($dir)) {
             $r->data = ['domain' => $domain, 'allias' => $allias, 'rows' => []];
             $context->step('Филлеров нет', true);

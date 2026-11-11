@@ -131,7 +131,7 @@ final class BlockEditCommand implements CommandInterface
         }
         $realDomain = (string) $site['domains_real'][$domain];
 
-        $blockDir = $this->paths->domain($realDomain) . '/.alliasglobal/' . $name;
+        $blockDir = $this->paths->domain($realDomain) . '/.blocksglobal/' . $name;
         if (!Fs::isDir($blockDir)) {
             $r->error('Блок не найден');
             return $r;

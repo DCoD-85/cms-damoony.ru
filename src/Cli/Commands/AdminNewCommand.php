@@ -66,7 +66,7 @@ final class AdminNewCommand implements CommandInterface
         }
 
         // ===== 1. Схема =====
-        $schemeDir = $adminRoot . '/.alliasscheme';
+        $schemeDir = $adminRoot . '/.schemesglobal';
         Fs::mkdir($schemeDir);
         $schemePhp = $this->schemePhp($role);
         Fs::writeAtomic($schemeDir . '/admin.php', $schemePhp);
@@ -78,7 +78,7 @@ final class AdminNewCommand implements CommandInterface
         $r->file(Fs::rel($schemeDir . '/admin.php', $this->paths->root()));
 
         // ===== 2. Блоки =====
-        $blocksDir = $adminRoot . '/.alliasglobal';
+        $blocksDir = $adminRoot . '/.blocksglobal';
         Fs::mkdir($blocksDir);
         foreach (self::BLOCKS as $blockName) {
             $dir = $blocksDir . '/' . $blockName;
@@ -152,6 +152,18 @@ final class AdminNewCommand implements CommandInterface
             );
             $context->step('default_role установлен', true, $role);
         }
+
+        // Domain-level заготовки (пустые)
+        Fs::mkdir($adminRoot . '/.dbglobal');
+        Fs::writeAtomic($adminRoot . '/.dbglobal/.gitkeep', '');
+
+        // Role-level заготовки (пустые)
+        Fs::mkdir($roleDir . '/.blockslocal');
+        Fs::writeAtomic($roleDir . '/.blockslocal/.gitkeep', '');
+        Fs::mkdir($roleDir . '/.schemeslocal');
+        Fs::writeAtomic($roleDir . '/.schemeslocal/.gitkeep', '');
+        Fs::mkdir($roleDir . '/.dblocal');
+        Fs::writeAtomic($roleDir . '/.dblocal/.gitkeep', '');
 
         $context->step('Админка создана', true, $role);
 

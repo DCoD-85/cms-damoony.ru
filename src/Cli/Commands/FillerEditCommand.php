@@ -131,7 +131,7 @@ final class FillerEditCommand implements CommandInterface
         }
         $realDomain = (string) $site['domains_real'][$domain];
 
-        $blockDir = $this->paths->domain($realDomain) . '/.alliasglobal/' . $block;
+        $blockDir = $this->paths->domain($realDomain) . '/.blocksglobal/' . $block;
         if (!Fs::isDir($blockDir)) {
             $r->error('Блок не найден');
             return $r;

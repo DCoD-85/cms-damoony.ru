@@ -96,7 +96,7 @@ final class DomainNewCommand implements CommandInterface
         $r->file(Fs::rel($algoritmDir . '/algoritm.editor.json', $this->paths->root()));
 
         // 3. Глобальная схема www
-        $schemesDir = $domainDir . '/.alliasscheme';
+        $schemesDir = $domainDir . '/.schemesglobal';
         Fs::mkdir($schemesDir);
         $cssUrl = '/media/' . $domain . '/www/skin/default/css/main.css';
         $jsUrl = '/media/' . $domain . '/www/skin/default/js/main.js';
@@ -106,7 +106,7 @@ final class DomainNewCommand implements CommandInterface
         $r->file(Fs::rel($schemesDir . '/www.php', $this->paths->root()));
 
         // 4. Глобальный блок center
-        $globalDir = $domainDir . '/.alliasglobal/center';
+        $globalDir = $domainDir . '/.blocksglobal/center';
         Fs::mkdir($globalDir);
 
         $centerPhp = "<?php\n\ndeclare(strict_types=1);\n\nnamespace {$namespace};\n\nuse Damoony\\UI\\Region\\RegionContext;\nuse Damoony\\UI\\Region\\RegionInterface;\nuse Damoony\\UI\\Builder;\nuse Damoony\\UI\\Node;\n\nfinal class alliasglobal_center implements RegionInterface\n{\n    public function name(): string { return 'center'; }\n    public function enabled(): bool { return true; }\n\n    public function render(RegionContext \$context): Node\n    {\n        \$wrap = Builder::div('center');\n        \$wrap->append(Builder::p()->content('Добро пожаловать на сайт!'));\n        return \$wrap;\n    }\n}\n";

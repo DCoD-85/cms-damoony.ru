@@ -39,7 +39,7 @@ final class IndexRenderScenarioTest extends TestCase
             final class algoritm extends HomePage {}
             PHP);
 
-        $globalDir = $this->root . '/app/damoony.test/.alliasglobal';
+        $globalDir = $this->root . '/app/damoony.test/.blocksglobal';
         mkdir($globalDir . '/hello', 0o777, true);
         mkdir($globalDir . '/footer', 0o777, true);
 
@@ -75,7 +75,7 @@ final class IndexRenderScenarioTest extends TestCase
             }
             PHP);
 
-        $schemeDir = $this->root . '/app/damoony.test/.alliasscheme';
+        $schemeDir = $this->root . '/app/damoony.test/.schemesglobal';
         mkdir($schemeDir, 0o777, true);
         file_put_contents($schemeDir . '/www.php', <<<'PHP'
             <?php

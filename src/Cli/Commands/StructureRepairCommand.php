@@ -104,7 +104,7 @@ final class StructureRepairCommand implements CommandInterface
         }
 
         // 2. Восстановление rules.json для схем
-        $schemesDir = $domainDir . '/.alliasscheme';
+        $schemesDir = $domainDir . '/.schemesglobal';
         if (is_dir($schemesDir)) {
             $files = glob($schemesDir . '/*.php') ?: [];
             foreach ($files as $file) {
@@ -119,7 +119,7 @@ final class StructureRepairCommand implements CommandInterface
         }
 
         // 3. Восстановление rules.json и editor.json для блоков
-        $blocksDir = $domainDir . '/.alliasglobal';
+        $blocksDir = $domainDir . '/.blocksglobal';
         if (is_dir($blocksDir)) {
             $dirs = array_filter(
                 scandir($blocksDir) ?: [],

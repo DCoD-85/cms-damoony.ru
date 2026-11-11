@@ -127,11 +127,11 @@
 | Домен | `app/[domain]/` |
 | Страница | `app/[domain]/[allias]/algoritm/algoritm_[name].{php,rules.json,editor.json}` |
 | Root алиаса | `app/[domain]/[allias]/algoritm/algoritm.{php,rules.json,editor.json}` |
-| Блоки | `app/[domain]/.alliasglobal/[name]/` |
-| Схемы | `app/[domain]/.alliasscheme/[name]/` |
+| Блоки | `app/[domain]/.blocksglobal/[name]/` |
+| Схемы | `app/[domain]/.schemesglobal/[name]/` |
 | Content (runtime) | `/content/[domain]/[allias]/[category]/[hash].[ext]` + `[hash].meta.json` |
 | Skin (git) | `www/media/[domain]/[allias]/skin/[name]/{css,js,img,skin.json}` |
-| Карантин (6 уровней) | `app/[d]_trash_[ts]/`, `app/[d]/[a]_trash_[ts]/`, `.alliasscheme/[n]_trash_[ts]/`, `.alliasglobal/[n]_trash_[ts]/`, `/content/.trash/...`, `www/media/.trash/...` |
+| Карантин (6 уровней) | `app/[d]_trash_[ts]/`, `app/[d]/[a]_trash_[ts]/`, `.schemesglobal/[n]_trash_[ts]/`, `.blocksglobal/[n]_trash_[ts]/`, `/content/.trash/...`, `www/media/.trash/...` |
 | Конфиги | `config/*.config` (`engine`, `site`, `admin`, `agent`, `ainet`) |
 | Точки входа | `www/index.php` (сайт), `www/admin/index.php` (админка), `www/content.php` (content), `bin/cli.php` (CLI), `bin/dbcli.php` (работа с БД), `bin/aicli.php` (AI), `bin/ainet.php` (AINET) |
 | AI-Оркестраторы | `ai_agent/brain.py` (рабочий мультиагент) |
@@ -248,7 +248,7 @@ AI не видит файловую систему напрямую. Никог�
 
 **Закрытые фазы:**
 
-- **Фаза A** (изоляция FS): `--session` для `page:new`/`page:write`, `SchemeLoader` session-aware, `SessionStartCommand` копирует `www/media/` + `.alliasscheme/` + пишет `permissions` в `.session.json`. См. коммиты `1916b46`, `23d1f9e`.
+- **Фаза A** (изоляция FS): `--session` для `page:new`/`page:write`, `SchemeLoader` session-aware, `SessionStartCommand` копирует `www/media/` + `.schemesglobal/` + пишет `permissions` в `.session.json`. См. коммиты `1916b46`, `23d1f9e`.
 - **Фаза B** (Multi-Agent Orchestrator): Blackboard (`context.json`), Interviewer -> Architect -> Coder, `ModelRouter` (`config/models.config`), AIUI (`/admin/aiui.php`, 4 action). См. `_doc/orchestrator.md`, `_doc/aiui.md`, коммиты `441e060`, `b7500ef`.
 
 **Закрытые фазы:**

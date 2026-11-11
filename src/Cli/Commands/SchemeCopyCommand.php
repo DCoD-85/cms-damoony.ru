@@ -53,7 +53,7 @@ final class SchemeCopyCommand implements CommandInterface
             return $r;
         }
 
-        $schemesDir = $this->paths->domain($domain) . '/.alliasscheme';
+        $schemesDir = $this->paths->domain($domain) . '/.schemesglobal';
         if (!is_dir($schemesDir)) {
             $r->error('Папка схем не найдена');
             return $r;

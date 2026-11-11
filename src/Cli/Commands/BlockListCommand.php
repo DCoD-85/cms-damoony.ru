@@ -23,7 +23,7 @@ final class BlockListCommand implements CommandInterface
 
     public function description(): string
     {
-        return 'Список глобальных блоков домена (.alliasglobal/)';
+        return 'Список глобальных блоков домена (.blocksglobal/)';
     }
 
     public function run(array $args, Context $context): Result
@@ -45,7 +45,7 @@ final class BlockListCommand implements CommandInterface
             return $r;
         }
         $realDomain = (string) $site['domains_real'][$domain];
-        $dir = $this->paths->domain($realDomain) . '/.alliasglobal';
+        $dir = $this->paths->domain($realDomain) . '/.blocksglobal';
         if (!is_dir($dir)) {
             $r->data = ['domain' => $domain, 'rows' => []];
             $context->step('Блоков нет', true);

@@ -30,14 +30,14 @@ final class SchemeLoader
 
         if ($this->adminRole !== null) {
             // admin = домен .admin + алиас {role}
-            // приоритет: domain-level .admin/.alliasscheme → role-level .admin/{role}/.alliasscheme
-            $baseDir = $appRoot . '/.admin/.alliasscheme/';
-            $roleDir = $appRoot . '/.admin/' . $this->adminRole . '/.alliasscheme/';
+            // приоритет: domain-level .admin/.schemesglobal → role-level .admin/{role}/.schemesglobal
+            $baseDir = $appRoot . '/.admin/.schemesglobal/';
+            $roleDir = $appRoot . '/.admin/' . $this->adminRole . '/.schemesglobal/';
         } else {
             $domainDir = $this->sessionId !== null
                 ? '/.sess_' . $this->sessionId . '.' . $domain->real
                 : '/' . $domain->real;
-            $baseDir = $appRoot . $domainDir . '/.alliasscheme/';
+            $baseDir = $appRoot . $domainDir . '/.schemesglobal/';
         }
 
         if ($this->adminRole !== null) {

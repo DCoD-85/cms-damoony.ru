@@ -23,7 +23,7 @@ final class SchemeListCommand implements CommandInterface
 
     public function description(): string
     {
-        return 'Список схем домена (.alliasscheme/)';
+        return 'Список схем домена (.schemesglobal/)';
     }
 
     public function run(array $args, Context $context): Result
@@ -45,7 +45,7 @@ final class SchemeListCommand implements CommandInterface
             return $r;
         }
         $realDomain = (string) $site['domains_real'][$domain];
-        $dir = $this->paths->domain($realDomain) . '/.alliasscheme';
+        $dir = $this->paths->domain($realDomain) . '/.schemesglobal';
         if (!is_dir($dir)) {
             $r->data = ['domain' => $domain, 'rows' => []];
             $context->step('Схем нет', true);

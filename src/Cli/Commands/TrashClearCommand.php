@@ -16,8 +16,8 @@ final class TrashClearCommand implements CommandInterface
      * Карантин на 6 уровнях:
      *   1. app/<domain>_trash_<ts>/                                         — domain:remove
      *   2. app/<domain>/<allias>_trash_<ts>/                                — allias:remove
-     *   3. app/<domain>/.alliasscheme/<name>_trash_<ts>/                    — scheme:remove
-     *   4. app/<domain>/.alliasglobal/<name>_trash_<ts>/                    — block:remove
+     *   3. app/<domain>/.schemesglobal/<name>_trash_<ts>/                    — scheme:remove
+     *   4. app/<domain>/.blocksglobal/<name>_trash_<ts>/                    — block:remove
      *   5. content/.trash/<domain>_<allias>_<category>_<hash>_trash_<ts>/   — content:remove
      *   6. www/media/.trash/<domain>_<allias>_skin_<name>_trash_<ts>/       — skin:remove
      */
@@ -118,8 +118,8 @@ final class TrashClearCommand implements CommandInterface
                     }
                 }
 
-                // 3–4. .alliasscheme / .alliasglobal
-                foreach (['.alliasscheme', '.alliasglobal'] as $infra) {
+                // 3–4. .schemesglobal / .blocksglobal
+                foreach (['.schemesglobal', '.blocksglobal'] as $infra) {
                     $infraDir = $domDir . '/' . $infra;
                     if (!is_dir($infraDir)) {
                         continue;

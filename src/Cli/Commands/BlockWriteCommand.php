@@ -61,7 +61,7 @@ final class BlockWriteCommand implements CommandInterface
         $realDomain = (string) $site['domains_real'][$domain];
         $namespace = (string) ($site['domains_namespace'][$realDomain] ?? str_replace(['.', '-'], '_', $realDomain));
 
-        $blockDir = $this->paths->domain($realDomain) . '/.alliasglobal/' . $name;
+        $blockDir = $this->paths->domain($realDomain) . '/.blocksglobal/' . $name;
         if (!Fs::isDir($blockDir)) {
             $r->error('Блок не найден');
             return $r;

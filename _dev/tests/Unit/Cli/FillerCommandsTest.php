@@ -26,11 +26,11 @@ final class FillerCommandsTest extends TestCase
             'alliases_real' => ['example.ru' => ['www' => 'www']],
         ]));
         mkdir($this->root . '/app/example.ru/www/algoritm', 0o777, true);
-        mkdir($this->root . '/app/example.ru/.alliasglobal/top', 0o777, true);
+        mkdir($this->root . '/app/example.ru/.blocksglobal/top', 0o777, true);
         // Файлы блока (нужны для filler:toggle, который проверяет блок на диске)
-        file_put_contents($this->root . '/app/example.ru/.alliasglobal/top/top.php', '<?php');
-        file_put_contents($this->root . '/app/example.ru/.alliasglobal/top/top.rules.json', '{"enabled":true,"type":"mixed"}');
-        file_put_contents($this->root . '/app/example.ru/.alliasglobal/top/top.editor.json', '[]');
+        file_put_contents($this->root . '/app/example.ru/.blocksglobal/top/top.php', '<?php');
+        file_put_contents($this->root . '/app/example.ru/.blocksglobal/top/top.rules.json', '{"enabled":true,"type":"mixed"}');
+        file_put_contents($this->root . '/app/example.ru/.blocksglobal/top/top.editor.json', '[]');
     }
 
     protected function tearDown(): void
@@ -67,9 +67,9 @@ final class FillerCommandsTest extends TestCase
             ->run(['domain' => 'example.ru', 'allias' => 'www', 'block' => 'top'], $this->ctx($r));
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
-        self::assertFileExists($this->root . '/app/example.ru/.alliasglobal/top/top_www.php');
-        self::assertFileExists($this->root . '/app/example.ru/.alliasglobal/top/top_www.rules.json');
-        self::assertFileExists($this->root . '/app/example.ru/.alliasglobal/top/top_www.editor.json');
+        self::assertFileExists($this->root . '/app/example.ru/.blocksglobal/top/top_www.php');
+        self::assertFileExists($this->root . '/app/example.ru/.blocksglobal/top/top_www.rules.json');
+        self::assertFileExists($this->root . '/app/example.ru/.blocksglobal/top/top_www.editor.json');
 
         $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
         self::assertTrue($site['fillers']['example.ru']['www']['top']);

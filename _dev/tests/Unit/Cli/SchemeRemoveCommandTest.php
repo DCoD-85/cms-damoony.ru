@@ -63,7 +63,7 @@ final class SchemeRemoveCommandTest extends TestCase
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
 
-        $dir = $this->root . '/app/example.ru/.alliasscheme';
+        $dir = $this->root . '/app/example.ru/.schemesglobal';
         self::assertFileDoesNotExist($dir . '/main.php');
         self::assertFileDoesNotExist($dir . '/main.rules.json');
         self::assertFileDoesNotExist($dir . '/main.editor.json');

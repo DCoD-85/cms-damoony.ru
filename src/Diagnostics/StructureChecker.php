@@ -37,8 +37,8 @@ final class StructureChecker
 
         // 1. Проверка стыковки Схемы и Блоков
         $schemeName = (string) $this->site->getByKey(['domains_scheme', $realDomain], 'www');
-        $localScheme = $this->paths->domain($realDomain) . '/.alliasscheme/' . $allias . '.php';
-        $globalScheme = $this->paths->domain($realDomain) . '/.alliasscheme/' . $schemeName . '.php';
+        $localScheme = $this->paths->domain($realDomain) . '/.schemesglobal/' . $allias . '.php';
+        $globalScheme = $this->paths->domain($realDomain) . '/.schemesglobal/' . $schemeName . '.php';
 
         if (!is_file($localScheme) && !is_file($globalScheme)) {
             $issues[] = ['level' => 'error', 'message' => "Не найдена схема (ни {$allias}.php, ни {$schemeName}.php)"];
@@ -53,7 +53,7 @@ final class StructureChecker
             $this->collectSlots($schemeData, $schemeSlots);
             $schemeSlots = array_unique($schemeSlots);
 
-            $blocksDir = $this->paths->domain($realDomain) . '/.alliasglobal';
+            $blocksDir = $this->paths->domain($realDomain) . '/.blocksglobal';
             $globalBlocks = is_dir($blocksDir) ? glob($blocksDir . '/*', GLOB_ONLYDIR) : [];
             $globalBlocks = array_map('basename', $globalBlocks ?: []);
 
@@ -80,11 +80,11 @@ final class StructureChecker
         $this->checkPagesStructure($algoritmDir, $issues);
 
         // 3. Проверка схем
-        $schemesDir = $this->paths->domain($realDomain) . '/.alliasscheme';
+        $schemesDir = $this->paths->domain($realDomain) . '/.schemesglobal';
         $this->checkSchemesJson($schemesDir, $allias, $issues);
 
         // 4. Проверка блоков
-        $blocksDir = $this->paths->domain($realDomain) . '/.alliasglobal';
+        $blocksDir = $this->paths->domain($realDomain) . '/.blocksglobal';
         $this->checkBlocksRules($blocksDir, $issues);
 
         return $issues;

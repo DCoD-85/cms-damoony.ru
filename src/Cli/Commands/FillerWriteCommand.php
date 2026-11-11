@@ -62,7 +62,7 @@ final class FillerWriteCommand implements CommandInterface
         $realDomain = (string) $site['domains_real'][$domain];
         $namespace = (string) ($site['domains_namespace'][$realDomain] ?? str_replace(['.', '-'], '_', $realDomain));
 
-        $blockDir = $this->paths->domain($realDomain) . '/.alliasglobal/' . $block;
+        $blockDir = $this->paths->domain($realDomain) . '/.blocksglobal/' . $block;
         $target = $blockDir . '/' . $block . '_' . $allias . '.php';
 
         if (!Fs::isFile($target)) {

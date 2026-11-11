@@ -64,7 +64,7 @@ final class SchemeCopyCommandTest extends TestCase
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
 
-        $dir = $this->root . '/app/example.ru/.alliasscheme';
+        $dir = $this->root . '/app/example.ru/.schemesglobal';
         self::assertFileExists($dir . '/main_copy.php');
         self::assertFileExists($dir . '/main_copy.rules.json');
         self::assertFileExists($dir . '/main_copy.editor.json');
@@ -77,7 +77,7 @@ final class SchemeCopyCommandTest extends TestCase
         $cmd->run(['domain' => 'example.ru', 'name' => 'main'], $this->ctx(new Result()));
         $cmd->run(['domain' => 'example.ru', 'name' => 'main'], $this->ctx(new Result()));
 
-        $dir = $this->root . '/app/example.ru/.alliasscheme';
+        $dir = $this->root . '/app/example.ru/.schemesglobal';
         self::assertFileExists($dir . '/main_copy.php');
         self::assertFileExists($dir . '/main_copy_1.php');
         self::assertFileExists($dir . '/main_copy_2.php');

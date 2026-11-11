@@ -84,7 +84,7 @@ final class SchemeSaveCommand implements CommandInterface
             return $r;
         }
 
-        $schemesDir = $this->paths->domain($domain) . '/.alliasscheme';
+        $schemesDir = $this->paths->domain($domain) . '/.schemesglobal';
         $editorFile = $schemesDir . '/' . $name . '.editor.json';
         $phpFile = $schemesDir . '/' . $name . '.php';
 

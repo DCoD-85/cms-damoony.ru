@@ -63,7 +63,7 @@ final class FillerToggleCommand implements CommandInterface
         $realDomain = (string) $site['domains_real'][$domain];
 
         // Проверяем, что блок существует на диске (не пишем мусор в конфиг)
-        $blockDir = $this->paths->domain($realDomain) . '/.alliasglobal/' . $block;
+        $blockDir = $this->paths->domain($realDomain) . '/.blocksglobal/' . $block;
         if (!Fs::isDir($blockDir)) {
             $r->error('Блок не найден: ' . $block);
             return $r;

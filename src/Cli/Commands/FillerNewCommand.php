@@ -74,7 +74,7 @@ final class FillerNewCommand implements CommandInterface
             return $r;
         }
 
-        $blockDir = $this->paths->domain($realDomain) . '/.alliasglobal/' . $block;
+        $blockDir = $this->paths->domain($realDomain) . '/.blocksglobal/' . $block;
         if (!Fs::isDir($blockDir)) {
             $r->error('Блок не найден: ' . $block);
             return $r;

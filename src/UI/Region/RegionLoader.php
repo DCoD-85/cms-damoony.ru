@@ -23,11 +23,11 @@ final class RegionLoader
 
         $roleDir = null;
         if ($this->adminRole !== null) {
-            $baseDir = rtrim($this->paths->root(), '/') . '/app/.admin/.alliasglobal';
-            $roleDir = rtrim($this->paths->root(), '/') . '/app/.admin/' . $this->adminRole . '/.alliasglobal';
+            $baseDir = rtrim($this->paths->root(), '/') . '/app/.admin/.blocksglobal';
+            $roleDir = rtrim($this->paths->root(), '/') . '/app/.admin/' . $this->adminRole . '/.blocksglobal';
             $namespace = 'Damoony\\Admin\\Pages\\' . $this->adminRole;
         } else {
-            $baseDir = $this->paths->domain($domain->real) . '/.alliasglobal';
+            $baseDir = $this->paths->domain($domain->real) . '/.blocksglobal';
             $namespace = $domain->namespace;
         }
 

@@ -26,10 +26,10 @@ final class FillerEditCommandTest extends TestCase
             'alliases_real' => ['example.ru' => ['www' => 'www']],
         ]));
         mkdir($this->root . '/app/example.ru/www/algoritm', 0o777, true);
-        mkdir($this->root . '/app/example.ru/.alliasglobal/top', 0o777, true);
-        file_put_contents($this->root . '/app/example.ru/.alliasglobal/top/top.php', '<?php');
-        file_put_contents($this->root . '/app/example.ru/.alliasglobal/top/top.rules.json', '{"enabled":true,"type":"mixed"}');
-        file_put_contents($this->root . '/app/example.ru/.alliasglobal/top/top.editor.json', '[]');
+        mkdir($this->root . '/app/example.ru/.blocksglobal/top', 0o777, true);
+        file_put_contents($this->root . '/app/example.ru/.blocksglobal/top/top.php', '<?php');
+        file_put_contents($this->root . '/app/example.ru/.blocksglobal/top/top.rules.json', '{"enabled":true,"type":"mixed"}');
+        file_put_contents($this->root . '/app/example.ru/.blocksglobal/top/top.editor.json', '[]');
     }
 
     protected function tearDown(): void
@@ -88,7 +88,7 @@ final class FillerEditCommandTest extends TestCase
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
         $rules = json_decode((string) file_get_contents(
-            $this->root . '/app/example.ru/.alliasglobal/top/top_www.rules.json',
+            $this->root . '/app/example.ru/.blocksglobal/top/top_www.rules.json',
         ), true);
         self::assertFalse($rules['enabled']);
     }
@@ -106,7 +106,7 @@ final class FillerEditCommandTest extends TestCase
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
         $editor = json_decode((string) file_get_contents(
-            $this->root . '/app/example.ru/.alliasglobal/top/top_www.editor.json',
+            $this->root . '/app/example.ru/.blocksglobal/top/top_www.editor.json',
         ), true);
         self::assertSame(1, $editor['x']);
     }
@@ -159,7 +159,7 @@ final class FillerEditCommandTest extends TestCase
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
         $code = (string) file_get_contents(
-            $this->root . '/app/example.ru/.alliasglobal/top/top_www.php',
+            $this->root . '/app/example.ru/.blocksglobal/top/top_www.php',
         );
         self::assertStringContainsString('override', $code);
     }

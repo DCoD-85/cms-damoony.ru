@@ -92,7 +92,7 @@ final class AlliasNewCommand implements CommandInterface
         $r->file(Fs::rel($algoritmDir . '/algoritm.editor.json', $this->paths->root()));
 
         // 2b. Схема по умолчанию для алиаса
-        $schemesDir = $this->paths->domain($domain) . '/.alliasscheme';
+        $schemesDir = $this->paths->domain($domain) . '/.schemesglobal';
         if (!Fs::isDir($schemesDir)) {
             Fs::mkdir($schemesDir);
         }

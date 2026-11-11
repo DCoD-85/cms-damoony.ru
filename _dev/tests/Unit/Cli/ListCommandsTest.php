@@ -58,7 +58,7 @@ final class ListCommandsTest extends TestCase
 
     public function testSchemeListWithSchemes(): void
     {
-        $dir = $this->root . '/app/example.ru/.alliasscheme';
+        $dir = $this->root . '/app/example.ru/.schemesglobal';
         mkdir($dir, 0o777, true);
         file_put_contents($dir . '/www.php', '<?php');
         file_put_contents($dir . '/www.rules.json', json_encode(['enabled' => true]));
@@ -99,7 +99,7 @@ final class ListCommandsTest extends TestCase
 
     public function testBlockListWithBlocks(): void
     {
-        $dir = $this->root . '/app/example.ru/.alliasglobal';
+        $dir = $this->root . '/app/example.ru/.blocksglobal';
         mkdir($dir . '/top', 0o777, true);
         mkdir($dir . '/center', 0o777, true);
         file_put_contents($dir . '/top/top.php', '<?php');
@@ -133,7 +133,7 @@ final class ListCommandsTest extends TestCase
 
     public function testFillerListWithFillers(): void
     {
-        $dir = $this->root . '/app/example.ru/.alliasglobal';
+        $dir = $this->root . '/app/example.ru/.blocksglobal';
         mkdir($dir . '/top', 0o777, true);
         mkdir($dir . '/footer', 0o777, true);
         file_put_contents($dir . '/top/top.php', '<?php');

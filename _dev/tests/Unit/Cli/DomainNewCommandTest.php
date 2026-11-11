@@ -90,13 +90,13 @@ final class DomainNewCommandTest extends TestCase
         self::assertArrayHasKey('default', $rules);
 
         // Схема создана
-        self::assertFileExists($this->root . '/app/example.ru/.alliasscheme/www.php');
-        self::assertFileExists($this->root . '/app/example.ru/.alliasscheme/www.rules.json');
+        self::assertFileExists($this->root . '/app/example.ru/.schemesglobal/www.php');
+        self::assertFileExists($this->root . '/app/example.ru/.schemesglobal/www.rules.json');
 
         // Блок center создан
-        self::assertFileExists($this->root . '/app/example.ru/.alliasglobal/center/center.php');
-        self::assertFileExists($this->root . '/app/example.ru/.alliasglobal/center/center.rules.json');
-        self::assertFileExists($this->root . '/app/example.ru/.alliasglobal/center/center.editor.json');
+        self::assertFileExists($this->root . '/app/example.ru/.blocksglobal/center/center.php');
+        self::assertFileExists($this->root . '/app/example.ru/.blocksglobal/center/center.rules.json');
+        self::assertFileExists($this->root . '/app/example.ru/.blocksglobal/center/center.editor.json');
 
         // Конфиг
         $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);

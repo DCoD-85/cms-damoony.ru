@@ -44,7 +44,7 @@
 
 ## 4. Блоки и Филлеры
 
-**Блоки** (в `.alliasglobal/`):
+**Блоки** (в `.blocksglobal/`):
 
 - `block:new --domain=[d] --name=[n] [--type=script|visual|mixed]` — создаёт 3 файла. `--type` default `mixed`.
 - `block:write --domain=[d] --name=[n] --json='[...]' [--json_b64=...]` — безопасная запись JSON-контента в блок (компилируется через `BlockCompiler`).
@@ -62,7 +62,7 @@
 
 ## 5. Схемы (Scheme)
 
-- `scheme:new --domain=[d] --name=[n]` — создаёт 3 файла в `.alliasscheme/` с базовыми meta (shared CSS/JS).
+- `scheme:new --domain=[d] --name=[n]` — создаёт 3 файла в `.schemesglobal/` с базовыми meta (shared CSS/JS).
 - `scheme:copy --domain=[d] --name=[n]` — копирует в `[n]_copy` (или `[n]_copy_1`).
 - `scheme:save --domain=[d] --name=[n] --scheme_json='...' [--scheme_json_b64=...]` — сохраняет визуальную схему (обновляет `.editor.json`, компилирует `.php`). Принимает массив `children` (слоты) и `meta` (базовые CSS/JS).
 - `scheme:remove --domain=[d] --name=[n] --force` — в карантин.
