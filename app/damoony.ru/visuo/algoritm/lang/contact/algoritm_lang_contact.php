@@ -34,8 +34,7 @@ final class algoritm_lang_contact extends Page
                 // Тут была бы запись в БД
                 $min->error(false)
                     ->messages('<div class="success">Спасибо, ' . htmlspecialchars($name) . '! Мы свяжемся с вами.</div>')
-                    ->form(true)
-                    ->reload(true);
+                    ->form(true);
             }
             return $min->toResponse();
         }
