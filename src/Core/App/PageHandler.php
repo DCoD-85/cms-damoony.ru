@@ -109,6 +109,9 @@ final class PageHandler implements PageHandlerInterface
             . '/' . $classChain . '.php';
     }
 
+    /**
+     * @param list<string> $ajaxBlocks
+     */
     private function toResponse(Node|Response|null $result, DomainContext $domain, RegionContext $context, RegionRegistry $regions, ?string $adminRole = null, array $ajaxBlocks = ['center'], float $debugTime = 0.0): Response
     {
         if ($result instanceof Response) {

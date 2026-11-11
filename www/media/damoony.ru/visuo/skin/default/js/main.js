@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     let totalTime = 0;
+    let totalQueries = 1; // 1 начальная загрузка страницы
     const benchmarkEl = document.getElementById('dt_benchmark');
     if (benchmarkEl) {
         totalTime = parseFloat(benchmarkEl.textContent.replace(/[^0-9.]/g, '')) || 0;
@@ -8,7 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateBenchmark(ajaxTime) {
         if (!benchmarkEl) return;
         totalTime += ajaxTime;
-        benchmarkEl.innerHTML = '⚡ ' + ajaxTime + ' ms <span style="opacity:0.6; margin-left:8px;">(Total: ' + totalTime.toFixed(1) + ' ms)</span>';
+        totalQueries++;
+        benchmarkEl.innerHTML = '⚡ ' + ajaxTime + ' ms (' + totalQueries + ' req) <span style="opacity:0.6; margin-left:8px;">[Total: ' + totalTime.toFixed(1) + ' ms]</span>';
     }
 
     if (!document.getElementById('toast-container')) {
