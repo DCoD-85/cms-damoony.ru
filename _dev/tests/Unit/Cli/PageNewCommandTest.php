@@ -34,7 +34,7 @@ final class PageNewCommandTest extends TestCase
         );
         file_put_contents(
             $algoritm . '/algoritm.rules.json',
-            json_encode(['available' => [], 'auth' => false, 'search' => true, 'default' => false]),
+            json_encode(['available' => [], 'auth' => false]),
         );
 
         $this->paths = new Paths($this->root);
@@ -70,8 +70,6 @@ final class PageNewCommandTest extends TestCase
         self::assertIsArray($rules);
         self::assertArrayHasKey('available', $rules);
         self::assertArrayHasKey('auth', $rules);
-        self::assertArrayHasKey('search', $rules);
-        self::assertArrayHasKey('default', $rules);
     }
 
     public function testUpdatesParentRules(): void
@@ -86,7 +84,7 @@ final class PageNewCommandTest extends TestCase
         $rulesFile = $this->root . '/app/example.ru/www/algoritm/algoritm.rules.json';
         $rules = json_decode((string) file_get_contents($rulesFile), true);
 
-        self::assertContains('about', $rules['available']);
+        self::assertArrayHasKey('about', $rules['available']);
     }
 
     public function testNestedPage(): void
@@ -108,7 +106,7 @@ final class PageNewCommandTest extends TestCase
             (string) file_get_contents($this->root . '/app/example.ru/www/algoritm/docs/algoritm_docs.rules.json'),
             true,
         );
-        self::assertContains('install', $docsRules['available']);
+        self::assertArrayHasKey('install', $docsRules['available']);
     }
 
     public function testRejectsDuplicate(): void

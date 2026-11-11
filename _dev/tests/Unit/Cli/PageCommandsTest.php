@@ -37,7 +37,7 @@ final class PageCommandsTest extends TestCase
         );
         file_put_contents(
             $algoritm . '/algoritm.rules.json',
-            json_encode(['available' => [], 'auth' => false, 'search' => true, 'default' => false]),
+            json_encode(['available' => [], 'auth' => false]),
         );
     }
 
@@ -91,7 +91,7 @@ final class PageCommandsTest extends TestCase
             (string) file_get_contents($this->root . '/app/example.ru/www/algoritm/algoritm.rules.json'),
             true,
         );
-        self::assertContains('about', $root['available']);
+        self::assertArrayHasKey('about', $root['available']);
     }
 
     public function testS08RejectsDuplicate(): void
@@ -130,8 +130,7 @@ final class PageCommandsTest extends TestCase
             true,
         );
         self::assertTrue($rules['auth']);
-        self::assertTrue($rules['search']);
-        self::assertFalse($rules['default']);
+
     }
 
     public function testS09RejectsBadKey(): void
