@@ -6,7 +6,7 @@
 
 **Входит:**
 - `src/Data/Db/DataProvider/` — Repository pattern (ядро, owner-only).
-- `app/[domain]/[alias]/provider/` — кастомные провайдеры (AI генерирует из шаблонов, dev пишет сложное).
+- `app/[domain]/[alias]/.dataprovider/` — кастомные провайдеры (AI генерирует из шаблонов, dev пишет сложное).
 - Introspection: `db:schema`, `db:methods`, `db:describe` (read-only).
 - Safe invocation: `db:call`, `db:mutate` (через DataProvider).
 - Method generation: `dataprovider:add-method` (templates only).
@@ -58,11 +58,15 @@
         ├── TemplateInterface.php
         └── SelectWhereTemplate.php, InsertTemplate.php
 
-    app/[domain]/[alias]/provider/          ← ПЕРИФЕРИЯ (AI генерирует, dev пишет, git)
+    app/[domain]/[alias]/.dataprovider/          ← ПЕРИФЕРИЯ (AI генерирует, dev пишет, git)
     ├── NewsProvider.php                     — extends Damoony\Data\Db\DataProvider\NewsProvider
     └── CustomLogicProvider.php              — уникальная бизнес-логика
 
-`ProviderRegistry` резолвит: сначала `app/.../provider/`, если нет — `src/Data/Db/DataProvider/`. Кастомный провайдер **расширяет** базовый (наследование), не заменяет.
+`ProviderResolver` ищет провайдеров по 3 уровням (Scope):
+1. **Alias Scope:** `app/[domain]/[alias]/.dataprovider/` (уникальная логика раздела).
+2. **Domain Scope:** `app/[domain]/.dataprovider/` (общая логика для всех алиасов домена).
+3. **Core Scope:** `src/Data/Db/DataProvider/` (системные провайдеры).
+Также поддерживается **кросс-алиасный доступ** в формате `--provider=doc.articles`, что позволяет одному алиасу использовать провайдер другого.
 
 ### 3.2. Контракт
 

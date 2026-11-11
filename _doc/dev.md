@@ -28,6 +28,7 @@
 - `$this->regions()` — `RegionRegistry` (слоты схемы).
 - `$this->setContent(string $slot, Node $node)` — наполнить слот.
 - `$this->isAuthenticated()`, `$this->user()`.
+- `protected array $ajaxBlocks = ['center'];` — список блоков, которые обновляются при AJAX-навигации (по умолчанию только центр).
 
 ### Вариант A: страница со схемой (рекомендуется)
 
@@ -180,7 +181,7 @@ foreach ($news as $item) {
 return $ul;
 ```
 
-⚠️ **DataProvider-инвариант** (`arch.md` §5): raw SQL в страницах/регионах — только для чтения через `$db->pdo()`. Запись — через `DataProvider` (`db:mutate`). Если нужна бизнес-логика — пишется в `app/[domain]/[alias]/provider/` (см. `dataprovider-design.md` §3).
+⚠️ **DataProvider-инвариант** (`arch.md` §5): raw SQL в страницах/регионах — только для чтения через `$db->pdo()`. Запись — через `DataProvider` (`db:mutate`). Если нужна бизнес-логика — пишется в `app/[domain]/[alias]/.dataprovider/` (см. `dataprovider-design.md` §3).
 
 ---
 
