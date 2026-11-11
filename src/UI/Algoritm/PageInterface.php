@@ -16,6 +16,9 @@ interface PageInterface
 
     public function default(): Node|Response;
 
+    /** @return list<string> */
+    public function ajaxBlocks(): array;
+
     public function isAjax(): bool;
 
     public function isPost(): bool;
