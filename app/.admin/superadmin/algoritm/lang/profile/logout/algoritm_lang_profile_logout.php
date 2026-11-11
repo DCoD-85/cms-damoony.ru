@@ -8,7 +8,7 @@ use Damoony\UI\Algoritm\Page;
 use Damoony\Core\Http\Response;
 use Damoony\UI\Node;
 
-final class algoritm_lang_logout extends Page
+final class algoritm_lang_profile_logout extends Page
 {
     protected function content(): Node|Response|null
     {

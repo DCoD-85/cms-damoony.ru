@@ -6,6 +6,8 @@ namespace Damoony\Core\App;
 
 use Damoony\Core\Config;
 use Damoony\Core\Domain\DomainResolverInterface;
+use Damoony\UI\Url\AdminUrlBuilder;
+use Damoony\UI\Url\SiteUrlBuilder;
 use Damoony\Core\Error\ErrorPage;
 use Damoony\Core\Files\Paths;
 use Damoony\Core\Http\Request;
@@ -127,6 +129,44 @@ final class FrontController
 
         $translator = new Translator($lang, $fallbackOrNull, $paths->lang(), $sources);
 
+        $host = (string) ($request->header('host') ?? $request->server['SERVER_NAME'] ?? '');
+        $isVirtualAdmin = str_ends_with($host, '.admin') && $adminRole === null;
+        $effectiveAdminRole = $adminRole ?? ($isVirtualAdmin ? explode('.', $host)[0] : null);
+        $isAdminCtx = $effectiveAdminRole !== null;
+        
+        $langStrategy = 'path';
+        if (isset($request->query['lang'])) {
+            $langStrategy = 'query';
+        } elseif ($request->path === '/' || !preg_match('#^/[a-z]{2}(/|$)#', $request->path)) {
+            $langStrategy = 'cookie'; // default if not in path
+        }
+
+        $basePath = '';
+        if ($isAdminCtx) {
+            $basePath = $isVirtualAdmin ? '' : '/admin';
+        }
+
+        $currentPath = $request->path;
+        if ($langStrategy === 'path') {
+            $currentPath = (string) preg_replace('#^/[a-z]{2}(/|$)#', '/', $currentPath);
+        }
+
+        $requestContext = new \Damoony\Core\App\RequestContext(
+            request: $request,
+            domain: $domain,
+            isAdmin: $isAdminCtx,
+            adminRole: $effectiveAdminRole,
+            lang: $lang,
+            langStrategy: $langStrategy,
+            basePath: $basePath,
+            host: $host,
+            currentPath: $currentPath,
+        );
+
+        $urlBuilder = $isAdminCtx 
+            ? new AdminUrlBuilder($requestContext)
+            : new SiteUrlBuilder($requestContext);
+
         $meta = new Meta();
         $session = $this->container->has(\Damoony\Core\Session\SessionInterface::class)
             ? $this->container->get(\Damoony\Core\Session\SessionInterface::class) : null;
@@ -145,6 +185,8 @@ final class FrontController
             'session_id' => $sessionId,
             'admin_role' => $adminRole,
             'admin_config' => $adminConfig,
+            'url' => $urlBuilder,
+            'routing' => $requestContext,
             'flash' => $flash,
             'db' => $db,
         ]);

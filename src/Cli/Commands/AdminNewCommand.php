@@ -83,7 +83,10 @@ final class AdminNewCommand implements CommandInterface
         foreach (self::BLOCKS as $blockName) {
             $dir = $blocksDir . '/' . $blockName;
             Fs::mkdir($dir);
-            Fs::writeAtomic($dir . '/' . $blockName . '.php', $this->blockPhp($role, $blockName));
+            $php = $blockName === 'top'
+                ? $this->topBlockPhp($role)
+                : $this->blockPhp($role, $blockName);
+            Fs::writeAtomic($dir . '/' . $blockName . '.php', $php);
             Fs::writeAtomic($dir . '/' . $blockName . '.rules.json', json_encode(['enabled' => true, 'type' => 'mixed'], JSON_PRETTY_PRINT) . "\n");
             Fs::writeAtomic($dir . '/' . $blockName . '.editor.json', json_encode([], JSON_PRETTY_PRINT) . "\n");
             $r->file(Fs::rel($dir . '/' . $blockName . '.php', $this->paths->root()));
@@ -107,7 +110,7 @@ final class AdminNewCommand implements CommandInterface
         Fs::writeAtomic($langDir . '/algoritm_lang.php', $this->langPagePhp($role));
         Fs::writeAtomic($langDir . '/algoritm_lang.rules.json', json_encode([
             'auth' => true,
-            'available' => ['login' => '^login$', 'logout' => '^logout$', 'domains' => '^domains$', '' => '^$'],
+            'available' => ['login' => '^login$', 'domains' => '^domains$', 'profile' => '^profile$', '' => '^$'],
         ], JSON_PRETTY_PRINT) . "\n");
         Fs::writeAtomic($langDir . '/algoritm_lang.editor.json', "[]\n");
         $r->file(Fs::rel($langDir . '/algoritm_lang.php', $this->paths->root()));
@@ -120,13 +123,24 @@ final class AdminNewCommand implements CommandInterface
         Fs::writeAtomic($loginDir . '/algoritm_lang_login.editor.json', "[]\n");
         $r->file(Fs::rel($loginDir . '/algoritm_lang_login.php', $this->paths->root()));
 
-        // ===== 6. logout =====
-        $logoutDir = $langDir . '/logout';
+        // ===== 6. profile =====
+        $profileDir = $langDir . '/profile';
+        Fs::mkdir($profileDir);
+        Fs::writeAtomic($profileDir . '/algoritm_lang_profile.php', $this->profilePagePhp($role));
+        Fs::writeAtomic($profileDir . '/algoritm_lang_profile.rules.json', json_encode([
+            'auth' => true,
+            'available' => ['logout' => '^logout$', '' => '^$'],
+        ], JSON_PRETTY_PRINT) . "\n");
+        Fs::writeAtomic($profileDir . '/algoritm_lang_profile.editor.json', "[]\n");
+        $r->file(Fs::rel($profileDir . '/algoritm_lang_profile.php', $this->paths->root()));
+
+        // ===== 6a. profile/logout =====
+        $logoutDir = $profileDir . '/logout';
         Fs::mkdir($logoutDir);
-        Fs::writeAtomic($logoutDir . '/algoritm_lang_logout.php', $this->logoutPagePhp($role));
-        Fs::writeAtomic($logoutDir . '/algoritm_lang_logout.rules.json', json_encode(['auth' => false, 'available' => ['' => '^$']], JSON_PRETTY_PRINT) . "\n");
-        Fs::writeAtomic($logoutDir . '/algoritm_lang_logout.editor.json', "[]\n");
-        $r->file(Fs::rel($logoutDir . '/algoritm_lang_logout.php', $this->paths->root()));
+        Fs::writeAtomic($logoutDir . '/algoritm_lang_profile_logout.php', $this->logoutPagePhp($role));
+        Fs::writeAtomic($logoutDir . '/algoritm_lang_profile_logout.rules.json', json_encode(['auth' => false, 'available' => ['' => '^$']], JSON_PRETTY_PRINT) . "\n");
+        Fs::writeAtomic($logoutDir . '/algoritm_lang_profile_logout.editor.json', "[]\n");
+        $r->file(Fs::rel($logoutDir . '/algoritm_lang_profile_logout.php', $this->paths->root()));
 
         // ===== 6a. domains (редирект) =====
         $domainsDir = $langDir . '/domains';
@@ -182,6 +196,8 @@ final class AdminNewCommand implements CommandInterface
         // Domain-level заготовки (пустые)
         Fs::mkdir($adminRoot . '/.dbglobal');
         Fs::writeAtomic($adminRoot . '/.dbglobal/.gitkeep', '');
+        Fs::mkdir($adminRoot . '/.i18nglobal');
+        Fs::writeAtomic($adminRoot . '/.i18nglobal/en.json', "{}\n");
 
         // Role-level заготовки (пустые)
         Fs::mkdir($roleDir . '/.blockslocal');
@@ -190,6 +206,8 @@ final class AdminNewCommand implements CommandInterface
         Fs::writeAtomic($roleDir . '/.schemeslocal/.gitkeep', '');
         Fs::mkdir($roleDir . '/.dblocal');
         Fs::writeAtomic($roleDir . '/.dblocal/.gitkeep', '');
+        Fs::mkdir($roleDir . '/.i18nlocal');
+        Fs::writeAtomic($roleDir . '/.i18nlocal/en.json', "{}\n");
 
         $context->step('Админка создана', true, $role);
 
@@ -231,6 +249,115 @@ final class AdminNewCommand implements CommandInterface
                     'js' => ['{$js}', '/media/shared/scripts/cliajax.js'],
                 ],
             ];
+
+            PHP;
+    }
+
+    private function topBlockPhp(string $role): string
+    {
+        return <<<PHP
+            <?php
+
+            declare(strict_types=1);
+
+            namespace Damoony\\Admin\\Pages\\{$role};
+
+            use Damoony\Admin\AuthInterface;
+            use Damoony\UI\Builder;
+            use Damoony\UI\Components\LangSwitcher;
+            use Damoony\UI\Node;
+            use Damoony\UI\Region\RegionContext;
+            use Damoony\UI\Region\RegionInterface;
+
+            final class blocksglobal_top implements RegionInterface
+            {
+                public function name(): string
+                {
+                    return 'top';
+                }
+
+                public function enabled(): bool
+                {
+                    return true;
+                }
+
+                public function render(RegionContext \$context): Node
+                {
+                    \$lang = (string) (\$context->domain->allias ?: 'ru');
+                    \$auth = \$context->service('auth');
+                    \$isAuth = \$auth instanceof AuthInterface && \$auth->isLoggedIn();
+
+                    \$wrap = Builder::div('admin-top-inner');
+
+                    \$t = \$context->service('i18n');
+                    \$tr = \$t instanceof \Damoony\Core\I18n\Translator ? \$t : null;
+                    \$tx = static fn (string \$k, string \$d): string => \$tr ? \$tr->t(\$k) : \$d;
+
+                    \$url = \$context->service('url');
+                    \$routing = \$context->service('routing');
+
+                    \$menu = Builder::ul('admin-menu');
+                    if (!\$isAuth) {
+                        \$menu->append(Builder::li()->append(
+                            Builder::a(\$url->internal('/login'))->content(\$tx('admin.nav.login', 'Login'))
+                        ));
+                    } else {
+                        \$menu->append(Builder::li()->append(
+                            Builder::a(\$url->internal('/'))->content(\$tx('admin.nav.home', 'Home'))
+                        ));
+                        \$menu->append(Builder::li()->append(
+                            Builder::a(\$url->internal('/domains'))->content(\$tx('admin.nav.domains', 'Domains'))
+                        ));
+                        \$menu->append(Builder::li()->append(
+                            Builder::a(\$url->internal('/profile'))->content(\$tx('admin.nav.profile', 'Profile'))
+                        ));
+                        \$menu->append(Builder::li()->append(
+                            Builder::a(\$url->internal('/profile/logout'))->content(\$tx('admin.nav.logout', 'Logout'))
+                        ));
+                    }
+                    \$wrap->append(\$menu);
+
+                    \$label = \$tx('admin.dash.lang', 'Language');
+                    \$switcher = Builder::div('lang-switcher');
+                    \$switcher->append(Builder::span('lang-label')->content(\$label));
+                    foreach (\$routing->domain->supportedLanguages as \$l) {
+                        \$a = Builder::a(\$url->switchLang(\$l))->content(strtoupper(\$l));
+                        \$a->attrs()->add('data-update', 'all');
+                        if (\$l === \$routing->lang) {
+                            \$a->attrs()->classAdd('active');
+                        }
+                        \$switcher->append(\$a);
+                    }
+                    \$wrap->append(\$switcher);
+
+                    return \$wrap;
+                }
+            }
+
+            PHP;
+    }
+
+    private function profilePagePhp(string $role): string
+    {
+        return <<<PHP
+            <?php
+
+            declare(strict_types=1);
+
+            namespace Damoony\\Admin\\Pages\\{$role};
+
+            use Damoony\Core\Http\Response;
+            use Damoony\UI\Algoritm\AdminPage;
+            use Damoony\UI\Builder;
+            use Damoony\UI\Node;
+
+            final class algoritm_lang_profile extends AdminPage
+            {
+                protected function content(): Node|Response|null
+                {
+                    return Builder::div('admin-profile')->content('Это страница профиля');
+                }
+            }
 
             PHP;
     }
@@ -418,7 +545,7 @@ final class AdminNewCommand implements CommandInterface
             use Damoony\\Core\\Http\\Response;
             use Damoony\\UI\\Node;
 
-            final class algoritm_lang_logout extends Page
+            final class algoritm_lang_profile_logout extends Page
             {
                 protected function content(): Node|Response|null
                 {
