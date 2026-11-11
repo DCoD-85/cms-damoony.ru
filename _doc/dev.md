@@ -65,14 +65,14 @@ final class algoritm extends PageWithScheme
 ```php
 final class algoritm_api extends Page
 {
-    public function default(): Node|Response|null
+    protected function content(): Node|Response|null
     {
         return Builder::div('api-answer')->content('ok');
     }
 }
 ```
 
-**Правило:** `default()` возвращает `Node`, `Response` или `null` (→ 204 No Content).
+**Правило:** `content()` возвращает `Node`, `Response` или `null` (→ 204 No Content).
 
 ---
 
@@ -215,7 +215,7 @@ final class algoritm_about extends AdminPage
     }
 }
 ```
-`AdminPage::default()` проверяет `Damoony\Admin\AuthInterface::isLoggedIn()`, при `false` → 302 на `/admin/login`.
+`AdminPage::guard()` проверяет `Damoony\Admin\AuthInterface::isLoggedIn()`, при `false` → 302 на `/admin/login`.
 
 ⚠️ **Login-страница не должна наследовать `AdminPage`** (redirect loop).
 

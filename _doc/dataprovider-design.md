@@ -78,8 +78,8 @@
 
 | Что | Кто | Где |
 |---|---|---|
-| Базовые CRUD (шаблоны) | AI (`dataprovider:add-method`) или dev | `app/.../provider/` |
-| Сложная логика | только dev, руками PHP | `app/.../provider/` |
+| Базовые CRUD (шаблоны) | AI (`dataprovider:add-method`) или dev | `app/.../.dataprovider/` |
+| Сложная логика | только dev, руками PHP | `app/.../.dataprovider/` |
 | 6 базовых провайдеров | только owner | `src/Data/Db/DataProvider/` |
 
 AI не пишет PHP: вызывает готовые методы (`db:call`, `db:mutate`), генерирует новые из шаблонов (`dataprovider:add-method`).

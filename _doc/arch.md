@@ -30,10 +30,10 @@
    - Если `$aliasOverride !== null` → `$domain = $domain->withAllias($aliasOverride)`.
    - **FileRouter** сопоставляет URL с файлами, читая `algoritm_[name].rules.json` на каждом шаге. При `$sessionId !== null` base-path = `app/.sess_{tab}.{domain}/{alias}/algoritm/`, иначе — `app/{domain}/{alias}/algoritm/`.
    - **`PageHandler`** получает `session_id` через `RegionContext::service('session_id')` и читает PHP из `.sess_*` при наличии сессии.
-4. **PageHandler**: загружает `RegionRegistry`, подключает PHP-файл страницы, вызывает `default()`.
-5. **Response**: если `default()` вернул `null`, отдаётся `204 No Content`. Если `Node` — рендерится в HTML. Ошибки в prod → generic 500.
+4. **PageHandler**: загружает `RegionRegistry`, подключает PHP-файл страницы, вызывает `content()`.
+5. **Response**: если `content()` вернул `null`, отдаётся `204 No Content`. Если `Node` — рендерится в HTML. Ошибки в prod → generic 500.
 
-*Важно:* PageHandler **не** оборачивает страницу в схему автоматически. Разработчик вызывает `SchemeLoader` + `SchemeRenderer` внутри `default()` (Вариант A) или использует `page:write --with_schema=1` (для AI).
+
 
 ---
 
@@ -78,7 +78,7 @@
 
 - **DomainResolver:** `resolve(host): DomainContext`. Не бросает исключений. Возвращает `available=false`, если домен/алиас выключен. `real` — источник истины для путей в `app/`.
 - **Router:** `match(path, context): RouteMatch`. Не рендерит ошибки, не выполняет контроллер. Возвращает `found=false` при промахе.
-- **PageInterface:** `default(): Node|Response|null`. Базовый класс `Page` даёт `isAuthenticated()`, `user()`, `regions()`. `PageWithScheme` автоматически подключает схему. `AdminPage` проверяет `Admin\AuthInterface::isLoggedIn()` в `default()` (при `false` → 302 на `/admin/login`).
+- **PageInterface:** `content(): Node|Response|null`. Базовый класс `Page` даёт `isAuthenticated()`, `user()`, `regions()`. `AdminPage` проверяет `Admin\AuthInterface::isLoggedIn()` в `guard()` (при `false` → 302 на `/admin/login`).
 - **RegionInterface:** `render(RegionContext): Node`. Регион не знает о других регионах и о схеме.
 - **ContentResponder:** `parse()`, `hostAllowed()`, `requiresAuth()`. Отдаёт только GET/HEAD. 404 при host-mismatch. 302 на логин при `page_refs` (auth).
 - **Компиляторы (`PageCompiler`, `BlockCompiler`):** Принимают JSON-массив блоков (включая тип `nav` для меню) и генерируют безопасный PHP-код. Используют `Text::raw()` для вывода разрешенных тегов `<a>` и `<strong>` (защита от XSS остальных тегов).
@@ -102,7 +102,7 @@
 - Все POST защищены CSRF. Destructive — только POST+CSRF (UI) или `--force` (CLI).
 - **Auth — ответственность страницы, не маршрута.** Движок не проверяет `.rules.json:auth` (метаданные для UI). Public: `$this->isAuthenticated()` (`Damoony\Data\Auth\AuthInterface`). Admin: `extends Damoony\UI\Algoritm\AdminPage` (`Damoony\Admin\AuthInterface::isLoggedIn()`).
 - Пароли — `password_hash`. Минимум 8 символов.
-- `Document::release()` идемпотентен. `default(): null` возвращает 204 (не 500).
+- `Document::release()` идемпотентен. `content(): null` возвращает 204 (не 500).
 - Path traversal guard: все CLI-команды с `--domain`/`--name` проверяют `..` и regex.
 - Карантин: destructive CLI-команды не удаляют сразу, а перемещают в `*_trash_[timestamp]/` (6 уровней).
 - AI-Слой — **две независимые точки входа**:

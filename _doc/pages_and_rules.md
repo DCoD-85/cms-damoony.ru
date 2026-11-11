@@ -14,9 +14,7 @@
 
 {
     "available": [""],
-    "auth": false,
-    "search": true,
-    "default": false
+    "auth": false
 }
 
 *   available: Массив разрешенных URL-сегментов (дочерних путей).

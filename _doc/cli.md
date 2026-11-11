@@ -149,7 +149,7 @@
 - `db:schema:init --domain=[d] --table=[t]` — создать JSON-схему таблицы в `app/[d]/.db/schema.json` (базовая структура: `id`, `created_at`).
 - `db:schema:add-column --domain=[d] --table=[t] --name=[n] --type=[varchar|int|text|timestamp|decimal] [--length=255] [--null=1]` — добавить колонку в таблицу JSON-схемы.
 - `db:schema:generate-sql --domain=[d]` — сгенерировать SQL-миграцию из `schema.json` в папку `migrations/`.
-- `db:schema:generate-provider --domain=[d] --table=[t] [--alias=www]` — сгенерировать PHP-класс провайдера (унаследованный от `BasicCrudProvider`) в `app/[d]/[alias]/provider/`.
+- `db:schema:generate-provider --domain=[d] --table=[t] [--alias=www]` — сгенерировать PHP-класс провайдера (унаследованный от `BasicCrudProvider`) в `app/[d]/[alias]/.dataprovider/`.
 
 **Полный цикл:**
 ```bash
