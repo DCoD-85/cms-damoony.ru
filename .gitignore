@@ -66,6 +66,8 @@ env.php
 
 # --- Карантин (runtime, создаётся CLI) ---
 app/*_trash_*
+app/**/*_trash_*
+app/**/.*_trash_*
 
 # --- Python / ai_agent ---
 /venv/
