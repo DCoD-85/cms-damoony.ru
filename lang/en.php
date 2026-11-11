@@ -288,4 +288,5 @@ return array (
   'admin.dash.logged_in' => 'Logged in as: {role}',
   'admin.dash.current_lang' => 'Current language: {lang}',
   'admin.dash.lang' => 'Language: ',
+  'admin.start.placeholder' => 'Start page',
 );

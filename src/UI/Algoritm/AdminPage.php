@@ -20,7 +20,15 @@ abstract class AdminPage extends Page
     protected function guard(): ?Response
     {
         if (!$this->isAdminAuthenticated()) {
-            return Response::redirect('/admin/login', 302);
+            $adminConfig = $this->context->service('admin_config');
+            $defaultLang = $adminConfig instanceof \Damoony\Core\Config
+                ? (string) $adminConfig->getByKey(['default_lang'], '')
+                : '';
+            if ($defaultLang === '') {
+                return Response::internalError('admin.config.default_lang not set');
+            }
+
+            return Response::redirect('/admin/' . $defaultLang . '/login', 302);
         }
 
         return null;

@@ -32,7 +32,13 @@ $auth = new Auth(
 $pages = $container->get(PageHandlerInterface::class);
 $req = Request::fromGlobals();
 
-$ctxRole = $_SESSION['admin_context']['role'] ?? 'superadmin';
+$defaultRole = (string) $adminConfig->getByKey(['default_role'], '');
+if ($defaultRole === '') {
+    http_response_code(500);
+    echo 'admin.config.default_role not set';
+    exit;
+}
+$ctxRole = (string) ($_SESSION['admin_context']['role'] ?? $defaultRole);
 $ctxDomain = $_SESSION['admin_context']['domain'] ?? 'damoony.ru';
 $ctxAlias = $_SESSION['admin_context']['alias'] ?? 'www';
 

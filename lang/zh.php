@@ -288,4 +288,5 @@ return array (
   'admin.dash.logged_in' => '登录身份: {role}',
   'admin.dash.current_lang' => '当前语言: {lang}',
   'admin.dash.lang' => '语言: ',
+  'admin.start.placeholder' => '起始页',
 );

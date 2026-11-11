@@ -144,6 +144,7 @@ final class FrontController
             'i18n' => $translator,
             'session_id' => $sessionId,
             'admin_role' => $adminRole,
+            'admin_config' => $adminConfig,
             'flash' => $flash,
             'db' => $db,
         ]);

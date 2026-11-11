@@ -288,4 +288,5 @@ return array (
   'admin.dash.logged_in' => 'Вы вошли как: {role}',
   'admin.dash.current_lang' => 'Текущий язык: {lang}',
   'admin.dash.lang' => 'Язык: ',
+  'admin.start.placeholder' => 'Стартовая страница',
 );
