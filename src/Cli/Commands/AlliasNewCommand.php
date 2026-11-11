@@ -111,9 +111,9 @@ final class AlliasNewCommand implements CommandInterface
                     ['tag' => 'main', 'slot' => 'center'],
                 ],
                 'meta' => [
-                    'css' => ['/media/' . $realDomain . '/' . $name . '/skin/default/css/main.css'],
+                    'css' => ['/media/' . $realDomain . '/' . $name . '/skin/{skin}/css/main.css'],
                     'js' => [
-                        '/media/' . $realDomain . '/' . $name . '/skin/default/js/main.js',
+                        '/media/' . $realDomain . '/' . $name . '/skin/{skin}/js/main.js',
                         '/media/shared/scripts/cliajax.js',
                     ],
                 ],

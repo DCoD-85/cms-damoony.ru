@@ -43,7 +43,7 @@ return array (
   array (
     'css' => 
     array (
-      0 => '/media/damoony.ru/agent/skin/default/css/main.css',
+      0 => '/media/damoony.ru/agent/skin/{skin}/css/main.css',
     ),
     'js' => 
     array (

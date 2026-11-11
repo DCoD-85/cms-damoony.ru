@@ -22,7 +22,7 @@ return [
     ],
     'scripts' => [],
     'meta' => [
-        'css' => ['/media/.admin/superadmin/skin/default/css/main.css', '/media/.admin/superadmin/skin/default/css/components.css'],
-        'js' => ['/media/.admin/superadmin/skin/default/js/main.js', '/media/shared/scripts/cliajax.js'],
+        'css' => ['/media/.admin/superadmin/skin/{skin}/css/main.css', '/media/.admin/superadmin/skin/{skin}/css/components.css'],
+        'js' => ['/media/.admin/superadmin/skin/{skin}/js/main.js', '/media/shared/scripts/cliajax.js'],
     ],
 ];

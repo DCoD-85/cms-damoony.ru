@@ -18,7 +18,6 @@ final class SkinManagerTest extends TestCase
         mkdir($this->root . '/damoony.ru/www/skin/default/js', 0o775, true);
         mkdir($this->root . '/damoony.ru/www/skin/dark/css', 0o775, true);
         file_put_contents($this->root . '/damoony.ru/www/skin/default/css/main.css', 'body{}');
-        file_put_contents($this->root . '/damoony.ru/www/skin/default/js/main.js', '');
     }
 
     protected function tearDown(): void
@@ -33,27 +32,15 @@ final class SkinManagerTest extends TestCase
         self::assertSame([], $m->list('other.ru', 'www'));
     }
 
-    public function testResolveRequested(): void
+    public function testExists(): void
     {
         $m = new SkinManager($this->root);
-        self::assertSame('dark', $m->resolve('damoony.ru', 'www', 'dark'));
-        self::assertSame('default', $m->resolve('damoony.ru', 'www', 'nope'));
-        self::assertSame('default', $m->resolve('damoony.ru', 'www', ''));
-    }
-
-    public function testResolveAllowed(): void
-    {
-        $m = new SkinManager($this->root);
-        self::assertSame('default', $m->resolve('damoony.ru', 'www', 'dark', ['default']));
-        self::assertSame('dark', $m->resolve('damoony.ru', 'www', 'dark', ['dark']));
-    }
-
-    public function testUrls(): void
-    {
-        $m = new SkinManager($this->root);
-        self::assertSame('/media/damoony.ru/www/skin/default/css/main.css', $m->cssUrl('damoony.ru', 'www', 'default'));
-        self::assertSame('/media/damoony.ru/www/skin/default/js/main.js', $m->jsUrl('damoony.ru', 'www', 'default'));
-        self::assertNull($m->cssUrl('damoony.ru', 'www', 'dark'));
+        self::assertTrue($m->exists('damoony.ru', 'www', 'default'));
+        self::assertTrue($m->exists('damoony.ru', 'www', 'dark'));
+        self::assertFalse($m->exists('damoony.ru', 'www', 'nope'));
+        self::assertFalse($m->exists('damoony.ru', 'www', ''));
+        self::assertFalse($m->exists('damoony.ru', 'www', '../etc'));
+        self::assertFalse($m->exists('other.ru', 'www', 'default'));
     }
 
     private function rmrf(string $d): void

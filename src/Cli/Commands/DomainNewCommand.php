@@ -98,8 +98,8 @@ final class DomainNewCommand implements CommandInterface
         // 3. Глобальная схема www
         $schemesDir = $domainDir . '/.schemesglobal';
         Fs::mkdir($schemesDir);
-        $cssUrl = '/media/' . $domain . '/www/skin/default/css/main.css';
-        $jsUrl = '/media/' . $domain . '/www/skin/default/js/main.js';
+        $cssUrl = '/media/' . $domain . '/www/skin/{skin}/css/main.css';
+        $jsUrl = '/media/' . $domain . '/www/skin/{skin}/js/main.js';
         $schemePhp = "<?php\n\nreturn [\n    'tag' => 'div',\n    'class' => 'layout',\n    'children' => [\n        ['tag' => 'main', 'slot' => 'center'],\n    ],\n    'meta' => [\n        'css' => ['{$cssUrl}'],\n        'js' => ['{$jsUrl}', '/media/shared/scripts/cliajax.js'],\n    ],\n];\n";
         Fs::writeAtomic($schemesDir . '/www.php', $schemePhp);
         Fs::writeAtomic($schemesDir . '/www.rules.json', json_encode(['enabled' => true], JSON_PRETTY_PRINT) . "\n");

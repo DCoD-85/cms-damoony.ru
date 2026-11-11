@@ -172,9 +172,9 @@ final class AdminNewCommand implements CommandInterface
 
     private function schemePhp(string $role): string
     {
-        $css = '/media/.admin/' . $role . '/skin/default/css/main.css';
-        $css2 = '/media/.admin/' . $role . '/skin/default/css/components.css';
-        $js = '/media/.admin/' . $role . '/skin/default/js/main.js';
+        $css = '/media/.admin/' . $role . '/skin/{skin}/css/main.css';
+        $css2 = '/media/.admin/' . $role . '/skin/{skin}/css/components.css';
+        $js = '/media/.admin/' . $role . '/skin/{skin}/js/main.js';
 
         return <<<PHP
             <?php
@@ -330,17 +330,6 @@ final class AdminNewCommand implements CommandInterface
             {
                 protected function content(): Node|Response|null
                 {
-                    \$role = \$this->context->service('admin_role');
-                    if (!is_string(\$role) || \$role === '') {
-                        \$adminConfig = \$this->context->service('admin_config');
-                        \$role = \$adminConfig instanceof \\Damoony\\Core\\Config
-                            ? (string) \$adminConfig->getByKey(['default_role'], '')
-                            : '';
-                    }
-                    if (\$role !== '') {
-                        \$this->context->meta->addCss('/media/.admin/' . \$role . '/skin/default/css/main.css');
-                    }
-
                     \$auth = \$this->context->service('auth');
                     \$csrf = \$this->context->service('csrf');
                     \$lang = (string) (\$this->args['lang'] ?? '');

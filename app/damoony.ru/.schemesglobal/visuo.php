@@ -18,10 +18,10 @@ return [
     ],
     'meta' => [
         'css' => [
-            '/media/damoony.ru/visuo/skin/default/css/dt.css',
-            '/media/damoony.ru/visuo/skin/default/css/components.css',
-            '/media/damoony.ru/visuo/skin/default/css/toast.css',
-            '/media/damoony.ru/visuo/skin/default/css/mobile.css'
+            '/media/damoony.ru/visuo/skin/{skin}/css/dt.css',
+            '/media/damoony.ru/visuo/skin/{skin}/css/components.css',
+            '/media/damoony.ru/visuo/skin/{skin}/css/toast.css',
+            '/media/damoony.ru/visuo/skin/{skin}/css/mobile.css'
         ],
         'js' => ['/media/shared/scripts/cliajax.js']
     ]

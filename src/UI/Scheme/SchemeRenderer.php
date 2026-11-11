@@ -22,14 +22,15 @@ final class SchemeRenderer
             if (isset($meta['title'])) {
                 $context->meta->setTitle((string) $meta['title']);
             }
+            $skin = $this->resolveSkin($context);
             if (isset($meta['css']) && is_array($meta['css'])) {
                 foreach ($meta['css'] as $css) {
-                    $context->meta->addCss((string) $css);
+                    $context->meta->addCss($this->substituteTokens((string) $css, $context, $skin));
                 }
             }
             if (isset($meta['js']) && is_array($meta['js'])) {
                 foreach ($meta['js'] as $js) {
-                    $context->meta->addJs((string) $js);
+                    $context->meta->addJs($this->substituteTokens((string) $js, $context, $skin));
                 }
             }
         }
@@ -62,5 +63,33 @@ final class SchemeRenderer
         foreach ($newChildren as $c) {
             $el->append($c);
         }
+    }
+
+    private function substituteTokens(string $url, RegionContext $context, string $skin): string
+    {
+        return str_replace(
+            ['{skin}', '{real}', '{alias}'],
+            [$skin, $context->domain->real, $context->domain->allias],
+            $url,
+        );
+    }
+
+    private function resolveSkin(RegionContext $context): string
+    {
+        $requested = (string) $context->domain->skin;
+        $paths = $context->service('paths');
+        if (!$paths instanceof \Damoony\Core\Files\Paths) {
+            return $requested !== '' ? $requested : 'default';
+        }
+
+        $manager = new \Damoony\UI\Skin\SkinManager($paths->mediaRoot());
+        if ($manager->exists($context->domain->real, $context->domain->allias, $requested)) {
+            return $requested;
+        }
+        if ($manager->exists($context->domain->real, $context->domain->allias, 'default')) {
+            return 'default';
+        }
+
+        return $requested !== '' ? $requested : 'default';
     }
 }

@@ -48,8 +48,8 @@ return array (
   array (
     'css' => 
     array (
-      0 => '/media/damoony.ru/skin/default/css/main.css',
-      1 => '/media/damoony.ru/skin/default/css/components.css',
+      0 => '/media/damoony.ru/www/skin/{skin}/css/main.css',
+      1 => '/media/damoony.ru/www/skin/{skin}/css/components.css',
     ),
     'js' => 
     array (
