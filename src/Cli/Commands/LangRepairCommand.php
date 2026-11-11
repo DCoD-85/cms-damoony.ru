@@ -24,7 +24,7 @@ final class LangRepairCommand implements CommandInterface
 
     public function description(): string
     {
-        return 'Починить drift между config и .l18n/*.json (без --fix — dry-run)';
+        return 'Починить drift между config и .i18n/*.json (без --fix — dry-run)';
     }
 
     public function run(array $args, Context $context): Result
@@ -59,8 +59,8 @@ final class LangRepairCommand implements CommandInterface
         $real = (string) $site['domains_real'][$domain];
 
         $dir = $allias !== ''
-            ? $this->paths->l18nAllias($real, $allias)
-            : $this->paths->l18nDomain($real);
+            ? $this->paths->i18nAllias($real, $allias)
+            : $this->paths->i18nDomain($real);
 
         // 1. Собрать config-языки (домена или алиаса)
         if ($allias !== '') {

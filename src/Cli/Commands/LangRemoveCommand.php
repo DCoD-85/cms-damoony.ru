@@ -67,7 +67,7 @@ final class LangRemoveCommand implements CommandInterface
         $real = (string) $site['domains_real'][$domain];
 
         if ($allias !== '') {
-            $dir = $this->paths->l18nAllias($real, $allias);
+            $dir = $this->paths->i18nAllias($real, $allias);
             $alliasLangs = $site['alliases_langs'][$real][$allias] ?? [];
             if (!is_array($alliasLangs)) {
                 $alliasLangs = [];
@@ -81,7 +81,7 @@ final class LangRemoveCommand implements CommandInterface
                 static fn ($l): bool => $l !== $lang,
             ));
         } else {
-            $dir = $this->paths->l18nDomain($real);
+            $dir = $this->paths->i18nDomain($real);
             $domainLangs = $site['domains_langs'][$real] ?? [];
             if (!is_array($domainLangs)) {
                 $domainLangs = [];

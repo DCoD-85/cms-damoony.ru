@@ -76,7 +76,7 @@ final class LangSyncCommand implements CommandInterface
 
         $site['alliases_langs'][$real][$allias] = $domainLangs;
 
-        $dir = $this->paths->l18nAllias($real, $allias);
+        $dir = $this->paths->i18nAllias($real, $allias);
         if (!Fs::isDir($dir)) {
             Fs::mkdir($dir);
             $r->file(Fs::rel($dir, $this->paths->root()));

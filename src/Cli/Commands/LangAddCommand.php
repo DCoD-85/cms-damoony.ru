@@ -24,7 +24,7 @@ final class LangAddCommand implements CommandInterface
 
     public function description(): string
     {
-        return 'Добавить язык: .l18n/{lang}.json + регистрация в site.config';
+        return 'Добавить язык: .i18n/{lang}.json + регистрация в site.config';
     }
 
     public function run(array $args, Context $context): Result
@@ -72,7 +72,7 @@ final class LangAddCommand implements CommandInterface
                 return $r;
             }
 
-            $dir = $this->paths->l18nAllias($real, $allias);
+            $dir = $this->paths->i18nAllias($real, $allias);
             $alliasLangs = $site['alliases_langs'][$real][$allias] ?? [];
             if (!is_array($alliasLangs)) {
                 $alliasLangs = [];
@@ -84,7 +84,7 @@ final class LangAddCommand implements CommandInterface
                 $site['alliases_langs'][$real][$allias] = $alliasLangs;
             }
         } else {
-            $dir = $this->paths->l18nDomain($real);
+            $dir = $this->paths->i18nDomain($real);
             if (in_array($lang, $domainLangs, true)) {
                 $r->warn(sprintf('Язык %s уже объявлен для домена %s', $lang, $real));
             } else {

@@ -118,11 +118,11 @@ final class FrontController
 
         $sources = [];
         if ($adminRole !== null) {
-            $sources[] = $paths->l18nAdmin();
-            $sources[] = $paths->l18nAdminRole($adminRole);
+            $sources[] = $paths->i18nAdmin();
+            $sources[] = $paths->i18nAdminRole($adminRole);
         } else {
-            $sources[] = $paths->l18nDomain($domain->real);
-            $sources[] = $paths->l18nAllias($domain->real, $domain->allias);
+            $sources[] = $paths->i18nDomain($domain->real);
+            $sources[] = $paths->i18nAllias($domain->real, $domain->allias);
         }
 
         $translator = new Translator($lang, $fallbackOrNull, $paths->lang(), $sources);

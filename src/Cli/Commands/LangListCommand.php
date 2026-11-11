@@ -24,7 +24,7 @@ final class LangListCommand implements CommandInterface
 
     public function description(): string
     {
-        return 'Список языков: файлы .l18n/{lang}.json + (--with-config) config';
+        return 'Список языков: файлы .i18n/{lang}.json + (--with-config) config';
     }
 
     public function run(array $args, Context $context): Result
@@ -57,8 +57,8 @@ final class LangListCommand implements CommandInterface
         $real = (string) $site['domains_real'][$domain];
 
         $dir = $allias !== ''
-            ? $this->paths->l18nAllias($real, $allias)
-            : $this->paths->l18nDomain($real);
+            ? $this->paths->i18nAllias($real, $allias)
+            : $this->paths->i18nDomain($real);
 
         $fileLangs = [];
         if (Fs::isDir($dir)) {

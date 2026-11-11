@@ -35,24 +35,24 @@ final class Paths
         return $this->root . '/lang';
     }
 
-    public function l18nDomain(string $real): string
+    public function i18nDomain(string $real): string
     {
-        return $this->domain($real) . '/.l18n';
+        return $this->domain($real) . '/.i18n';
     }
 
-    public function l18nAllias(string $real, string $allias): string
+    public function i18nAllias(string $real, string $allias): string
     {
-        return $this->allias($real, $allias) . '/.l18n';
+        return $this->allias($real, $allias) . '/.i18n';
     }
 
-    public function l18nAdmin(): string
+    public function i18nAdmin(): string
     {
-        return $this->appRoot() . '/.admin/.l18n';
+        return $this->appRoot() . '/.admin/.i18n';
     }
 
-    public function l18nAdminRole(string $role): string
+    public function i18nAdminRole(string $role): string
     {
-        return $this->appRoot() . '/.admin/.' . $role . '/.l18n';
+        return $this->appRoot() . '/.admin/.' . $role . '/.i18n';
     }
 
     public function sessionDir(string $tabId, string $real): string
