@@ -5,7 +5,10 @@
         "ajax_test": "^ajax_test$",
         "": "^$",
         "about": "^about$",
-        "features": "^features$"
+        "features": "^features$",
+        "login": "^login$",
+        "logout": "^logout$",
+        "dashboard": "^dashboard$"
     },
     "auth": false
 }
