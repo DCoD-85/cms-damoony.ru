@@ -112,7 +112,7 @@ final class AlliasRemoveCommand implements CommandInterface
         if (is_dir($mediaDir)) {
             $mediaTrashDir = $this->paths->mediaRoot() . '/.trash/' . $domain . '_' . $name . '_trash_' . time();
             if (!is_dir(dirname($mediaTrashDir))) {
-                @mkdir(dirname($mediaTrashDir), 0775, true);
+                @mkdir(dirname($mediaTrashDir), 0o775, true);
             }
             if (@rename($mediaDir, $mediaTrashDir)) {
                 $context->step('Media перемещено в карантин', true, Fs::rel($mediaTrashDir, $this->paths->root()));
