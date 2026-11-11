@@ -39,6 +39,8 @@ use Damoony\Cli\Commands\FillerWriteCommand;
 use Damoony\Cli\Commands\LangAddCommand;
 use Damoony\Cli\Commands\LangListCommand;
 use Damoony\Cli\Commands\LangRemoveCommand;
+use Damoony\Cli\Commands\LangRepairCommand;
+use Damoony\Cli\Commands\LangSyncCommand;
 use Damoony\Cli\Commands\MigratePageRulesCommand;
 use Damoony\Cli\Commands\PageListCommand;
 use Damoony\Cli\Commands\PageNewCommand;
@@ -140,6 +142,8 @@ $registry->add(new FillerWriteCommand($paths));
 $registry->add(new LangListCommand($paths));
 $registry->add(new LangAddCommand($paths));
 $registry->add(new LangRemoveCommand($paths));
+$registry->add(new LangRepairCommand($paths));
+$registry->add(new LangSyncCommand($paths));
 
 $db = new Connection($dbConfig);
 $registry->add(new UserNewCommand($db));
