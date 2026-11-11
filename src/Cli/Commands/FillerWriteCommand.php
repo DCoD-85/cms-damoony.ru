@@ -70,7 +70,7 @@ final class FillerWriteCommand implements CommandInterface
             return $r;
         }
 
-        $className = 'alliasglobal_' . $block . '_' . $allias;
+        $className = 'blockglobal_' . $block . '_' . $allias;
         $compiler = new BlockCompiler();
         $phpCode = $compiler->compile($namespace, $className, $block, array_values($blocks));
 

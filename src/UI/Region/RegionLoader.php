@@ -76,7 +76,7 @@ final class RegionLoader
             }
 
             if ($baseFile !== null) {
-                $baseClass = $namespace . '\\alliasglobal_' . $item;
+                $baseClass = $namespace . '\\blockglobal_' . $item;
                 if (!class_exists($baseClass, false)) {
                     require_once $baseFile;
                 }
@@ -86,7 +86,7 @@ final class RegionLoader
             }
 
             if ($isFillerEnabled && $fillerFile !== null) {
-                $fillerClass = $namespace . '\\alliasglobal_' . $item . '_' . $domain->allias;
+                $fillerClass = $namespace . '\\blockglobal_' . $item . '_' . $domain->allias;
                 if (!class_exists($fillerClass, false)) {
                     require_once $fillerFile;
                 }

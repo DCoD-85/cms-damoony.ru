@@ -9,7 +9,7 @@ use Damoony\UI\Region\RegionInterface;
 use Damoony\UI\Builder;
 use Damoony\UI\Node;
 
-final class alliasglobal_bottom implements RegionInterface
+final class blockglobal_bottom implements RegionInterface
 {
     public function name(): string
     {

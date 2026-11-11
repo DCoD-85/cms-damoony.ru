@@ -26,7 +26,7 @@ use Damoony\UI\Components\Td;
 use Damoony\UI\Text;
 use Damoony\UI\UrlSanitizer;
 
-final class alliasglobal_bottom implements RegionInterface
+final class blockglobal_bottom implements RegionInterface
 {
     public function name(): string
     {

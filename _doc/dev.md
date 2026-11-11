@@ -91,7 +91,7 @@ use Damoony\UI\Region\RegionInterface;
 use Damoony\UI\Builder;
 use Damoony\UI\Node;
 
-final class alliasglobal_header implements RegionInterface
+final class blockglobal_header implements RegionInterface
 {
     public function name(): string { return 'header'; }
     public function enabled(): bool { return true; }

@@ -13,7 +13,7 @@ final class BlockCompilerTest extends TestCase
 
     public function testLinkWithJavascriptSchemeIsNeutralized(): void
     {
-        $php = new BlockCompiler()->compile('example_ru', 'alliasglobal_top', 'top', [
+        $php = new BlockCompiler()->compile('example_ru', 'blockglobal_top', 'top', [
             ['type' => 'link', 'url' => 'javascript:alert(1)', 'content' => 'Click'],
         ]);
 
@@ -24,7 +24,7 @@ final class BlockCompilerTest extends TestCase
 
     public function testButtonIgnoresUrlAndRendersAsButton(): void
     {
-        $php = new BlockCompiler()->compile('example_ru', 'alliasglobal_top', 'top', [
+        $php = new BlockCompiler()->compile('example_ru', 'blockglobal_top', 'top', [
             ['type' => 'button', 'url' => 'javascript:void(0)', 'content' => 'Click'],
         ]);
 
@@ -35,7 +35,7 @@ final class BlockCompilerTest extends TestCase
 
     public function testValidHttpsLinkPasses(): void
     {
-        $php = new BlockCompiler()->compile('example_ru', 'alliasglobal_top', 'top', [
+        $php = new BlockCompiler()->compile('example_ru', 'blockglobal_top', 'top', [
             ['type' => 'link', 'url' => 'https://example.com/x', 'content' => 'Go'],
         ]);
 
@@ -44,7 +44,7 @@ final class BlockCompilerTest extends TestCase
 
     public function testValidRelativePathPasses(): void
     {
-        $php = new BlockCompiler()->compile('example_ru', 'alliasglobal_top', 'top', [
+        $php = new BlockCompiler()->compile('example_ru', 'blockglobal_top', 'top', [
             ['type' => 'link', 'url' => '/about', 'content' => 'About'],
         ]);
 
@@ -53,7 +53,7 @@ final class BlockCompilerTest extends TestCase
 
     public function testAnchorPasses(): void
     {
-        $php = new BlockCompiler()->compile('example_ru', 'alliasglobal_top', 'top', [
+        $php = new BlockCompiler()->compile('example_ru', 'blockglobal_top', 'top', [
             ['type' => 'link', 'url' => '#section', 'content' => 'Jump'],
         ]);
 
@@ -62,7 +62,7 @@ final class BlockCompilerTest extends TestCase
 
     public function testProtocolRelativeUrlIsNeutralized(): void
     {
-        $php = new BlockCompiler()->compile('example_ru', 'alliasglobal_top', 'top', [
+        $php = new BlockCompiler()->compile('example_ru', 'blockglobal_top', 'top', [
             ['type' => 'link', 'url' => '//evil.example/x', 'content' => 'Evil'],
         ]);
 
@@ -75,7 +75,7 @@ final class BlockCompilerTest extends TestCase
 
     public function testImgWithJavascriptSchemeIsNeutralized(): void
     {
-        $php = new BlockCompiler()->compile('example_ru', 'alliasglobal_top', 'top', [
+        $php = new BlockCompiler()->compile('example_ru', 'blockglobal_top', 'top', [
             ['type' => 'img', 'content' => 'javascript:alert(1)', 'alt' => 'X'],
         ]);
 
@@ -86,7 +86,7 @@ final class BlockCompilerTest extends TestCase
 
     public function testImgWithHttpsPasses(): void
     {
-        $php = new BlockCompiler()->compile('example_ru', 'alliasglobal_top', 'top', [
+        $php = new BlockCompiler()->compile('example_ru', 'blockglobal_top', 'top', [
             ['type' => 'img', 'content' => 'https://cdn.example/x.png', 'alt' => 'Pic'],
         ]);
 
@@ -96,7 +96,7 @@ final class BlockCompilerTest extends TestCase
     public function testImgWithDataImageIsAllowed(): void
     {
         $dataUrl = 'data:image/png;base64,iVBORw0KGgo=';
-        $php = new BlockCompiler()->compile('example_ru', 'alliasglobal_top', 'top', [
+        $php = new BlockCompiler()->compile('example_ru', 'blockglobal_top', 'top', [
             ['type' => 'img', 'content' => $dataUrl, 'alt' => 'Inline'],
         ]);
 
@@ -107,7 +107,7 @@ final class BlockCompilerTest extends TestCase
     {
         // data:image/... is allowed only for <img src>, not for <a href>.
         $dataUrl = 'data:image/png;base64,iVBORw0KGgo=';
-        $php = new BlockCompiler()->compile('example_ru', 'alliasglobal_top', 'top', [
+        $php = new BlockCompiler()->compile('example_ru', 'blockglobal_top', 'top', [
             ['type' => 'link', 'url' => $dataUrl, 'content' => 'X'],
         ]);
 
@@ -120,7 +120,7 @@ final class BlockCompilerTest extends TestCase
 
     public function testNavWithJavascriptUrlIsNeutralized(): void
     {
-        $php = new BlockCompiler()->compile('example_ru', 'alliasglobal_top', 'top', [
+        $php = new BlockCompiler()->compile('example_ru', 'blockglobal_top', 'top', [
             [
                 'type' => 'nav',
                 'items' => [
@@ -138,7 +138,7 @@ final class BlockCompilerTest extends TestCase
 
     public function testNavWithValidUrlsPasses(): void
     {
-        $php = new BlockCompiler()->compile('example_ru', 'alliasglobal_top', 'top', [
+        $php = new BlockCompiler()->compile('example_ru', 'blockglobal_top', 'top', [
             [
                 'type' => 'nav',
                 'items' => [
