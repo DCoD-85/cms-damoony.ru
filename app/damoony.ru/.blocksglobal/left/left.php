@@ -26,7 +26,7 @@ use Damoony\UI\Components\Td;
 use Damoony\UI\Text;
 use Damoony\UI\UrlSanitizer;
 
-final class blockglobal_left implements RegionInterface
+final class blocksglobal_left implements RegionInterface
 {
     public function name(): string
     {

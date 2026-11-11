@@ -10,7 +10,7 @@ db:schema:add-column --domain=[d] --table=[t] --name=[n] --type=[varchar|int|tex
 
 db:schema:generate-sql --domain=[d] — сгенерировать SQL-миграцию из app/[d]/.db/schema.json.
 
-db:schema:generate-provider --domain=[d] --table=[t] [--alias=www] — сгенерировать PHP-класс провайдера в app/[d]/[alias]/.dataprovider/.
+db:schema:generate-provider --domain=[d] --table=[t] [--alias=www] — сгенерировать PHP-класс провайдера в app/[d]/[alias]/.dbprovider/.
 
 2. Структура JSON-схемы
 Файл: app/[domain]/.db/schema.json

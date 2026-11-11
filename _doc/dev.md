@@ -91,7 +91,7 @@ use Damoony\UI\Region\RegionInterface;
 use Damoony\UI\Builder;
 use Damoony\UI\Node;
 
-final class blockglobal_header implements RegionInterface
+final class blocksglobal_header implements RegionInterface
 {
     public function name(): string { return 'header'; }
     public function enabled(): bool { return true; }
@@ -180,7 +180,7 @@ foreach ($news as $item) {
 return $ul;
 ```
 
-⚠️ **DataProvider-инвариант** (`arch.md` §5): raw SQL в страницах/регионах — только для чтения через `$db->pdo()`. Запись — через `DataProvider` (`db:mutate`). Если нужна бизнес-логика — пишется в `app/[domain]/[alias]/.dataprovider/` (см. `dataprovider-design.md` §3).
+⚠️ **DataProvider-инвариант** (`arch.md` §5): raw SQL в страницах/регионах — только для чтения через `$db->pdo()`. Запись — через `DataProvider` (`db:mutate`). Если нужна бизнес-логика — пишется в `app/[domain]/[alias]/.dbprovider/` (см. `dataprovider-design.md` §3).
 
 ---
 

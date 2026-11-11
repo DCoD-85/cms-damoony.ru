@@ -2,7 +2,7 @@
 
 Точка входа: `php bin/cli.php [command] [--key=value]`. Возвращает `Result` (код 0 при успехе, 1 при ошибке). Полный список команд — `php bin/cli.php help` (54 команды). 
 
-⚠️ **Смежные CLI:** Для работы с БД используйте `bin/dbcli.php` (см. §13, пути провайдеров изменены на `.dataprovider`), для AI-агентов — `bin/aicli.php`.
+⚠️ **Смежные CLI:** Для работы с БД используйте `bin/dbcli.php` (см. §13, пути провайдеров изменены на `.dbprovider`), для AI-агентов — `bin/aicli.php`.
 
 **Принцип CLI-First:** CLI — единственный источник истины для файловых операций. Админка и AI-агенты (`bin/aicli.php`) делегируют работу ему.
 
@@ -149,7 +149,7 @@
 - `db:schema:init --domain=[d] --table=[t]` — создать JSON-схему таблицы в `app/[d]/.db/schema.json` (базовая структура: `id`, `created_at`).
 - `db:schema:add-column --domain=[d] --table=[t] --name=[n] --type=[varchar|int|text|timestamp|decimal] [--length=255] [--null=1]` — добавить колонку в таблицу JSON-схемы.
 - `db:schema:generate-sql --domain=[d]` — сгенерировать SQL-миграцию из `schema.json` в папку `migrations/`.
-- `db:schema:generate-provider --domain=[d] --table=[t] [--alias=www]` — сгенерировать PHP-класс провайдера (унаследованный от `BasicCrudProvider`) в `app/[d]/[alias]/.dataprovider/`.
+- `db:schema:generate-provider --domain=[d] --table=[t] [--alias=www]` — сгенерировать PHP-класс провайдера (унаследованный от `BasicCrudProvider`) в `app/[d]/[alias]/.dbprovider/`.
 
 **Полный цикл:**
 ```bash

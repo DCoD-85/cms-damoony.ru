@@ -16,7 +16,7 @@ final class ProviderResolver
         // 0. Кросс-алиасный доступ (например, "doc.articles")
         if (str_contains($provider, '.')) {
             [$targetAlias, $actualProvider] = explode('.', $provider, 2);
-            $crossFile = $paths->appRoot() . '/' . $domain . '/' . $targetAlias . '/.dataprovider/' . ucfirst($actualProvider) . 'Provider.php';
+            $crossFile = $paths->appRoot() . '/' . $domain . '/' . $targetAlias . '/.dbprovider/' . ucfirst($actualProvider) . 'Provider.php';
             if (is_file($crossFile)) {
                 require_once $crossFile;
                 $namespace = str_replace(['.', '-'], '_', $domain) . '\\' . $targetAlias;
@@ -28,8 +28,8 @@ final class ProviderResolver
             $provider = $actualProvider; // Ищем базовый в ядре, если кастомного нет
         }
 
-        // 1. Провайдер уровня Алиаса (app/domain/alias/.dataprovider/)
-        $customFile = $paths->appRoot() . '/' . $domain . '/' . $alias . '/.dataprovider/' . ucfirst($provider) . 'Provider.php';
+        // 1. Провайдер уровня Алиаса (app/domain/alias/.dbprovider/)
+        $customFile = $paths->appRoot() . '/' . $domain . '/' . $alias . '/.dbprovider/' . ucfirst($provider) . 'Provider.php';
         if (is_file($customFile)) {
             require_once $customFile;
             $namespace = str_replace(['.', '-'], '_', $domain) . '\\' . $alias;
@@ -39,8 +39,8 @@ final class ProviderResolver
             }
         }
 
-        // 2. Провайдер уровня Домена (app/domain/.dataprovider/)
-        $domainFile = $paths->appRoot() . '/' . $domain . '/.dataprovider/' . ucfirst($provider) . 'Provider.php';
+        // 2. Провайдер уровня Домена (app/domain/.dbprovider/)
+        $domainFile = $paths->appRoot() . '/' . $domain . '/.dbprovider/' . ucfirst($provider) . 'Provider.php';
         if (is_file($domainFile)) {
             require_once $domainFile;
             $domainNamespace = str_replace(['.', '-'], '_', $domain);

@@ -67,7 +67,7 @@ final class BlockWriteCommand implements CommandInterface
             return $r;
         }
 
-        $className = 'blockglobal_' . $name;
+        $className = 'blocksglobal_' . $name;
         $compiler = new BlockCompiler();
         $phpCode = /** @var list<array<string, mixed>> \$blocks */
         $compiler->compile($namespace, $className, $name, array_values($blocks));

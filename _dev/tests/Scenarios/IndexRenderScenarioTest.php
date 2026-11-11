@@ -50,7 +50,7 @@ final class IndexRenderScenarioTest extends TestCase
             use Damoony\UI\Region\RegionInterface;
             use Damoony\UI\Builder;
             use Damoony\UI\Node;
-            final class blockglobal_hello implements RegionInterface {
+            final class blocksglobal_hello implements RegionInterface {
                 public function name(): string { return 'hello'; }
                 public function enabled(): bool { return true; }
                 public function render(RegionContext $context): Node {
@@ -66,7 +66,7 @@ final class IndexRenderScenarioTest extends TestCase
             use Damoony\UI\Region\RegionInterface;
             use Damoony\UI\Builder;
             use Damoony\UI\Node;
-            final class blockglobal_footer implements RegionInterface {
+            final class blocksglobal_footer implements RegionInterface {
                 public function name(): string { return 'footer'; }
                 public function enabled(): bool { return true; }
                 public function render(RegionContext $context): Node {

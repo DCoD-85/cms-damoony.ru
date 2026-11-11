@@ -80,7 +80,7 @@ final class FillerNewCommand implements CommandInterface
             return $r;
         }
 
-        $className = 'blockglobal_' . $block . '_' . $allias;
+        $className = 'blocksglobal_' . $block . '_' . $allias;
         $fillerPhp = $blockDir . '/' . $block . '_' . $allias . '.php';
         $rulesFile = $blockDir . '/' . $block . '_' . $allias . '.rules.json';
         $editorFile = $blockDir . '/' . $block . '_' . $allias . '.editor.json';

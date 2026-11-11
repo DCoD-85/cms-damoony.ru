@@ -9,7 +9,7 @@ use Damoony\UI\Region\RegionInterface;
 use Damoony\UI\Builder;
 use Damoony\UI\Node;
 
-final class blockglobal_top_coffee implements RegionInterface
+final class blocksglobal_top_coffee implements RegionInterface
 {
     public function name(): string
     {

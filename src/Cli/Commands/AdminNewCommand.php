@@ -211,7 +211,7 @@ final class AdminNewCommand implements CommandInterface
 
     private function blockPhp(string $role, string $name): string
     {
-        $class = 'blockglobal_' . $name;
+        $class = 'blocksglobal_' . $name;
 
         return <<<PHP
             <?php

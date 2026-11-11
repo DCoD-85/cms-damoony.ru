@@ -111,8 +111,8 @@ final class SchemaGenerateProviderCommand implements CommandInterface
             }
             PHP;
 
-        // Сохраняем провайдер в app/{domain}/{alias}/.dataprovider/
-        $providerDir = $this->paths->allias($domain, $alias) . '/.dataprovider';
+        // Сохраняем провайдер в app/{domain}/{alias}/.dbprovider/
+        $providerDir = $this->paths->allias($domain, $alias) . '/.dbprovider';
         if (!is_dir($providerDir)) {
             mkdir($providerDir, 0o775, true);
         }
@@ -120,7 +120,7 @@ final class SchemaGenerateProviderCommand implements CommandInterface
         $filepath = $providerDir . '/' . $className . '.php';
         file_put_contents($filepath, $phpCode . "\n");
 
-        $r->file('app/' . $domain . '/' . $alias . '/.dataprovider/' . $className . '.php');
+        $r->file('app/' . $domain . '/' . $alias . '/.dbprovider/' . $className . '.php');
         $context->step("Provider generated: {$className}", true);
 
         return $r;

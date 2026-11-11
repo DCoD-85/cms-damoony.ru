@@ -6,7 +6,7 @@
 
 **Входит:**
 - `src/Data/Db/DataProvider/` — Repository pattern (ядро, owner-only).
-- `app/[domain]/[alias]/.dataprovider/` — кастомные провайдеры (AI генерирует из шаблонов, dev пишет сложное).
+- `app/[domain]/[alias]/.dbprovider/` — кастомные провайдеры (AI генерирует из шаблонов, dev пишет сложное).
 - Introspection: `db:schema`, `db:methods`, `db:describe` (read-only).
 - Safe invocation: `db:call`, `db:mutate` (через DataProvider).
 - Method generation: `dataprovider:add-method` (templates only).
@@ -58,13 +58,13 @@
         ├── TemplateInterface.php
         └── SelectWhereTemplate.php, InsertTemplate.php
 
-    app/[domain]/[alias]/.dataprovider/          ← ПЕРИФЕРИЯ (AI генерирует, dev пишет, git)
+    app/[domain]/[alias]/.dbprovider/          ← ПЕРИФЕРИЯ (AI генерирует, dev пишет, git)
     ├── NewsProvider.php                     — extends Damoony\Data\Db\DataProvider\NewsProvider
     └── CustomLogicProvider.php              — уникальная бизнес-логика
 
 `ProviderResolver` ищет провайдеров по 3 уровням (Scope):
-1. **Alias Scope:** `app/[domain]/[alias]/.dataprovider/` (уникальная логика раздела).
-2. **Domain Scope:** `app/[domain]/.dataprovider/` (общая логика для всех алиасов домена).
+1. **Alias Scope:** `app/[domain]/[alias]/.dbprovider/` (уникальная логика раздела).
+2. **Domain Scope:** `app/[domain]/.dbprovider/` (общая логика для всех алиасов домена).
 3. **Core Scope:** `src/Data/Db/DataProvider/` (системные провайдеры).
 Также поддерживается **кросс-алиасный доступ** в формате `--provider=doc.articles`, что позволяет одному алиасу использовать провайдер другого.
 
@@ -78,8 +78,8 @@
 
 | Что | Кто | Где |
 |---|---|---|
-| Базовые CRUD (шаблоны) | AI (`dataprovider:add-method`) или dev | `app/.../.dataprovider/` |
-| Сложная логика | только dev, руками PHP | `app/.../.dataprovider/` |
+| Базовые CRUD (шаблоны) | AI (`dataprovider:add-method`) или dev | `app/.../.dbprovider/` |
+| Сложная логика | только dev, руками PHP | `app/.../.dbprovider/` |
 | 6 базовых провайдеров | только owner | `src/Data/Db/DataProvider/` |
 
 AI не пишет PHP: вызывает готовые методы (`db:call`, `db:mutate`), генерирует новые из шаблонов (`dataprovider:add-method`).
