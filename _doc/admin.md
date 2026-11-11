@@ -70,14 +70,15 @@
 
 ---
 
-## 5.1. Новая AJAX-админка (Element + dbcli)
+## 5.1. Файловая админка (Element + dbcli + lang)
 
-Старая MVC-админка (`www/admin/index.php`) постепенно заменяется на новую файловую архитектуру (`app/.admin/`). 
-- **UI:** Используются компоненты `Element` (Таблицы, Формы, Тоглы) с AJAX-навигацией (без перезагрузки страниц).
-- **Управление БД:** Интегрирован `bin/dbcli.php`. В разделе домена (`/admin/ru/domains/{domain}/db`) доступен **визуальный конструктор БД**. Вы можете создавать новые таблицы и добавлять колонки прямо в браузере. Под капотом админка вызывает `dbcli` для генерации JSON, SQL и PHP-провайдера. Никакого сырого SQL в PHP-коде админки нет.
-- **Роутинг:** `FileRouter` + `FrontController` обрабатывают пути `/admin/{lang}/{role}/...`.
+Админка построена по архитектуре домена/алиаса: `app/.admin/` — домен, `app/.admin/{role}/` — алиас роли. Точка входа — `www/admin/index.php` (строит `DomainContext` от `.admin`/`{role}` и вызывает `FrontController` с `adminRole`).
+- **UI:** компоненты `Element` (Таблицы, Формы, Тоглы) с AJAX-навигацией.
+- **Управление БД:** `bin/dbcli.php`. В разделе домена (`/admin/ru/domains/{domain}/db`) доступен визуальный конструктор БД. Админка вызывает `dbcli` для генерации JSON, SQL и PHP-провайдера.
+- **Управление языками:** `/admin/{lang}/domains/langs` — список доменов, `/admin/{lang}/domains/langs/{domain}` — языки домена и алиасы, `/admin/{lang}/domains/langs/{domain}/{alias}` — языки алиаса. Все действия — через `lang:list`, `lang:add`, `lang:remove`, `lang:repair`.
+- **Роутинг:** `FileRouter` + `FrontController` обрабатывают пути `/admin/{lang}/{role}/...`. `DomainContext` для admin — `resolve('.admin')->withAllias($role)`. Роль валидируется regex `^[a-z][a-z0-9_]*$`.
 
-**CI/CD:** Проект использует GitHub Actions (`.github/workflows/ci.yml`). CI проверяет код на PHP 8.5, использует `www/router.php` для эмуляции Nginx-роутинга во встроенном PHP-сервере и прогоняет все 784 теста.
+**CI/CD:** `.github/workflows/ci.yml`. PHP 8.5, `www/router.php` для эмуляции Nginx-роутинга, прогон 794 тестов.
 
 ## 6. AIUI (AI-редактор страниц)
 
@@ -92,6 +93,7 @@
 - Очистка карантина (`trash:clear`).
 - Прямая запись контента в `/content/` (`content:store`; делается автоматически из `aicli.php`).
 - Удаление контента (`content:remove`) и скинов (`skin:remove`).
+- Создание админки новых ролей (`admin:new --role=X`).
 - Прямые write-операции через AI-контекст с ролями aicli (`block:write`, `filler:write` для `brain.py`, не для AIUI).
 - Низкоуровневые AI-команды: `bin/aicli.php` (роли, HATEOAS, AINET) — для `brain.py` и админа в терминале.
 - Запуск мультиагента `brain.py` (Wizard) — по-прежнему только из консоли (`python -m ai_agent.brain`). **AIUI — это другой, более простой сценарий, встроенный в админку.**

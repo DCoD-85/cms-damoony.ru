@@ -41,6 +41,7 @@ declare(strict_types=1);
 
 namespace example_ru\www;
 
+use Damoony\UI\Algoritm\Page;
 use Damoony\UI\Builder;
 use Damoony\UI\Node;
 
@@ -125,7 +126,7 @@ AI **не пишет PHP**. Передаёт JSON-массив блоков че
 - Текстовые узлы (`h*`, `p`, `link`, `button`, `li`): `Text::raw(strip_tags($content, '<a><strong>'))` — выживают только `<a>` и `<strong>`, остальное режется.
 - URL: `UrlSanitizer::forSrc()` для `img`, `UrlSanitizer::forHref()` для `link`.
 
-**Builder (`src/UI/Builder.php`)** — 24 метода: `el`, `elA`, `div`, `span`, `p`, `h`, `a`, `img`, `input`, `ul`, `li`, `button`, а также `nav`, `form`, `table`, `thead`, `tbody`, `tr`, `th`, `td`, `select`, `option`, `textarea`, `label`. Нет `form`/`table`/`select`/`textarea`/`label`/`nav` — обход через `Builder::el($tag)` (P2, `arch.md` §6 п.4).
+**Builder (`src/UI/Builder.php`)** — 12 методов: `el`, `elA`, `div`, `span`, `p`, `h`, `a`, `img`, `input`, `ul`, `li`, `button`. Композиты — `src/UI/Components/*` (Table, Thead, Form, Select, Label и т.п.). Для тегов без фабрики — `Builder::el($tag)`.
 
 **RCE:** `BlockCompiler` не поддерживает типы `custom`/`if`/`endif`. Сырой PHP в блоки через `block:write`/`filler:write` не попадает. `allow_php_blocks=false` по умолчанию.
 
@@ -150,7 +151,9 @@ Git-tracked инфраструктура темы (CSS/JS).
 - Управление: `skin:new`, `skin:edit`, `skin:remove`.
 - `skin:edit` разрешает файлы `css/<name>.css` (только `[a-z0-9_]` в имени) и `js/main.js`. Размер ≤ 1 MB. Блокирует `@import` и `javascript:`.
 
-**Подключение в коде (страница или схема):**
+**Подключение из схемы** (`meta.css`/`meta.js`): путь может содержать токены `{skin}`/`{real}`/`{alias}` — `SchemeRenderer` подставляет активный skin и домен/алиас.
+
+**Подключение из логики** (`content()`/`render()`): готовый URL, без токенов.
 
 ```php
 $this->context->meta->addCss('/media/example.ru/www/skin/default/css/main.css');
@@ -214,7 +217,7 @@ final class algoritm_about extends AdminPage
     }
 }
 ```
-`AdminPage::guard()` проверяет `Damoony\Admin\AuthInterface::isLoggedIn()`, при `false` → 302 на `/admin/login`.
+`AdminPage::guard()` проверяет `Damoony\Admin\AuthInterface::isLoggedIn()`, при `false` → 302 на `/admin/{default_lang}/login` (`default_lang` из `admin.config`).
 
 ⚠️ **Login-страница не должна наследовать `AdminPage`** (redirect loop).
 
@@ -332,7 +335,7 @@ php bin/dbcli.php db:schema:generate-provider --domain=example.ru --table=produc
 2. **`Page::default()` final.** Реализован в ядре и не подлежит переопределению. Пишите бизнес-логику в `content()`, а проверки доступа — в `guard(): ?Response`.
 3. **`PageHandler` — единственная точка сборки.** `Page` не рендерит HTML.
 4. **`null` = нет данных для отдачи.** Ответ 204 No Content.
-5. **Middleware для кросс-фич.** Скин/язык/auth — Middleware или хуки, не `PageHandler`.
+5. **Skin — через схему.** Skin CSS/JS подключаются в `meta.css`/`meta.js` схемы через токены `{skin}`/`{real}`/`{alias}`. `PageHandler` skin не подключает (applySkin удалён). Язык/auth — Middleware или хуки, не `PageHandler`.
 
 ## См. также
 

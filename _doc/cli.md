@@ -1,6 +1,6 @@
 # CLI-команды
 
-Точка входа: `php bin/cli.php [command] [--key=value]`. Возвращает `Result` (код 0 при успехе, 1 при ошибке). Полный список команд — `php bin/cli.php help` (54 команды). 
+Точка входа: `php bin/cli.php [command] [--key=value]`. Возвращает `Result` (код 0 при успехе, 1 при ошибке). Полный список команд — `php bin/cli.php help` (61 команда).
 
 ⚠️ **Смежные CLI:** Для работы с БД используйте `bin/dbcli.php` (см. §13, пути провайдеров изменены на `.dbprovider`), для AI-агентов — `bin/aicli.php`.
 
@@ -85,6 +85,7 @@
 ## 8. Пользователи и Безопасность
 
 - `admin:passwd [--name=admin] [--password=...]` — установка логина/пароля админки. `--name` default `admin`. Валидация: login 3–32 `[a-zA-Z0-9_.-]`, pass ≥ 8.
+- `admin:new --role=[r] [--force]` — создать каркас админки роли: `app/.admin/.schemesglobal/admin.{php,rules,editor}`, `app/.admin/.blocksglobal/{top,left,center,right,bottom,policy,toast}/{name}.{php,rules,editor}`, `app/.admin/{role}/algoritm/{algoritm,lang,lang/login,lang/logout,lang/domains,lang/domains/langs}`, `app/.admin/{role}/{.blockslocal,.schemeslocal,.dblocal}/.gitkeep`, `app/.admin/.dbglobal/.gitkeep`, `www/media/.admin/{role}/skin/default/{css,js,img,skin.json}`. `--role` — regex `^[a-z][a-z0-9_]*$`. Без `--force` при существующей папке — ошибка. Требует `admin.config.default_lang`.
 - `user:new --login=[login] --email=[email] --password=[pass]` — создание пользователя сайта (для страниц, которые вызывают `$this->isAuthenticated()`). Уникальность login и email, pass ≥ 8.
 
 ## 9. AIUI Сессии (Session-based workflow)
@@ -161,3 +162,13 @@ php bin/dbcli.php db:schema:generate-provider --domain=mysite.ru --table=product
 ```
 
 После генерации провайдера его можно использовать в `db:call` и `db:mutate` (см. §10). Подробнее — `_doc/dbcli.md`.
+
+## 14. Языки (`bin/cli.php lang:*`)
+
+Управление языками домена и алиаса. Файлы переводов — `app/{real}/.i18n/{lang}.json` (домен) и `app/{real}/{allias}/.i18n/{lang}.json` (алиас). Регистрация — в `site.config` (`domains_langs[real]`, `alliases_langs[real][allias]`).
+
+- `lang:list --domain=[d] [--allias=a] [--with-config=1] [--json=1]` — список языков. Без `--with-config` — только файлы `.i18n/*.json`. С `--with-config=1` — объединение файлов и `site.config`, в `data.rows` поля `lang`, `file`, `has_file`, `in_config`.
+- `lang:add --domain=[d] [--allias=a] --lang=[xx]` — создать `{lang}.json` (`{}`) и зарегистрировать в config. Для алиаса язык должен быть сначала объявлен на уровне домена.
+- `lang:remove --domain=[d] [--allias=a] --lang=[xx] --force` — в карантин (`var/trash/lang_*`), удалить из config. Запрет на удаление последнего языка.
+- `lang:repair --domain=[d] [--allias=a] [--fix=1] [--prune=1] [--promote=1]` — найти drift config↔files. Без `--fix` — dry-run. `--prune` — удалять config-языки без файла; без `--prune` — создать файл `{}`. `--promote` — добавлять alias-языки в `domains_langs`, если их там нет.
+- `lang:sync --domain=[d] --allias=[a]` — `alliases_langs[real][allias] ← domains_langs[real]`, создать отсутствующие файлы.

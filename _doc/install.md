@@ -57,7 +57,6 @@ php -r "var_dump(function_exists('curl_init'), function_exists('imagecreatetruec
 ### 3.2. `config/site.config` — домены и алиасы
 ```json
 {
-  "language": "ru",
   "domains_real": {
     "damoony.ru": "damoony.ru"
   },
@@ -75,9 +74,13 @@ php -r "var_dump(function_exists('curl_init'), function_exists('imagecreatetruec
   },
   "alliases_langs": {
     "damoony.ru": { "www": ["ru"] }
+  },
+  "domains_langs": {
+    "damoony.ru": ["ru", "en", "zh"]
   }
 }
 ```
+⚠️ `domains_langs[real]` — языки домена. `alliases_langs[real][alias]` — override алиаса. Глобальный default — `admin.config.default_lang`.
 ⚠️ **Self-mapping обязателен:** ключ реального домена должен указывать на себя (`"damoony.ru": "damoony.ru"`).
 ⚠️ Если `domains_real["damoony3.ru"] = "damoony.ru"`, то папка создаётся в `app/damoony.ru/` (realDomain). 
 
@@ -87,10 +90,12 @@ php -r "var_dump(function_exists('curl_init'), function_exists('imagecreatetruec
   "login": "admin",
   "password_hash": "",
   "domains_langs": ["ru", "en", "zh"],
-  "default_lang": "ru"
+  "default_lang": "ru",
+  "default_role": "superadmin"
 }
 ```
 ⚠️ Пароль задаётся через CLI: `php bin/cli.php admin:passwd --name=admin --password=[strong]`.
+`default_lang` — язык по умолчанию для `AdminPage::guard()` (redirect на `/admin/{default_lang}/login`). `default_role` — роль админки по умолчанию (папка `app/.admin/{role}/`).
 
 ### 3.4. `config/agent.config` — доступ для AI
 ```json
@@ -215,9 +220,11 @@ server {
 
 ```bash
 php bin/cli.php admin:passwd --name=admin --password=[strong]
+php bin/cli.php admin:new --role=superadmin
 php bin/cli.php user:new --login=admin --email=admin@example.com --password=[strong]
 ```
-*`admin:passwd` — администратор админки (`/admin/`).*
+*`admin:passwd` — логин/пароль админки (`/admin/`).*
+*`admin:new --role=superadmin` — каркас админки: `app/.admin/.schemesglobal/`, `.blocksglobal/`, `.dbglobal/`, `app/.admin/{role}/algoritm/{lang,lang/login,lang/logout,lang/domains,lang/domains/langs}`, `.blockslocal/.schemeslocal/.dblocal`, `www/media/.admin/{role}/skin/default/`. Требует `admin.config.default_lang`.*
 *`user:new` — пользователь сайта (для страниц, которые вызывают `$this->isAuthenticated()`).*
 
 Откройте `http://[domain]/` и `http://[domain]/admin/`.

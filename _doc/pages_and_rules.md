@@ -5,7 +5,7 @@
 
 ## 1. Три файла страницы
 Каждая страница (включая корень) состоит из трех файлов:
-1. algoritm_{name}.php — логика (класс с методом content()).
+1. algoritm_{name}.php — логика (класс с методом content()). Для вложенной страницы имя = `algoritm_{parent}_{name}` (например, `algoritm_lang_about.php` для `lang/about/`, `algoritm_about_about.php` для `about/about/`). Родитель — все сегменты пути через `_`.
 2. algoritm_{name}.rules.json — правила маршрутизации и доступности.
 3. algoritm_{name}.editor.json — данные для UI (визуальный редактор).
 
@@ -37,4 +37,4 @@
 ## 4. Правила для AI
 *   Никогда не пишите default() в PHP — только protected function content(): Node|Response|null.
 *   Для создания корневой страницы используйте CLI: php bin/cli.php page:write --domain=X --allias=Y --name=__root__ --json='[...]'.
-*   CLI автоматически генерирует правильный available: [""] для корня.
+*   CLI генерирует для корня `"": "^$"` в `available` (ассоциативный формат target → regex).

@@ -41,6 +41,7 @@
 | `progressive_enhancement.md` | AJAX-логика app.js, Toasts и MinStruct | Установку, UI-дизайн |
 | `visuo_showcase.md` | Эталонный пример мультиязычного сайта на движке | Архитектуру ядра, установку |
 | `dbcli.md` | Декларативная работа с БД (JSON-схемы, генерация SQL и PHP) | SQL-инъекции, ручное написание миграций |
+| `dataprovider-design.md` | DataProvider: структура, ProviderResolver, шаблоны, роли db:* | SQL-инъекции, ручные миграции |
 | `README.md` (корень) | Обзор, стек, быстрый старт, ссылки | Метрики (ссылка), историю |
 
 **Правило:** один факт — одно место. Метрики, перечень команд, требования — не дублируются, только ссылки.
@@ -128,17 +129,24 @@
 | Страница | `app/[domain]/[allias]/algoritm/algoritm_[name].{php,rules.json,editor.json}` |
 | Root алиаса | `app/[domain]/[allias]/algoritm/algoritm.{php,rules.json,editor.json}` |
 | Блоки | `app/[domain]/.blocksglobal/[name]/` |
-| Схемы | `app/[domain]/.schemesglobal/[name]/` |
+| Схемы | `app/[domain]/.schemesglobal/[name].{php,rules.json,editor.json}` (плоские файлы) |
 | Content (runtime) | `/content/[domain]/[allias]/[category]/[hash].[ext]` + `[hash].meta.json` |
+| DataProvider (alias) | `app/[domain]/[allias]/.dbprovider/[Name]Provider.php` |
+| DataProvider (domain) | `app/[domain]/.dbprovider/[Name]Provider.php` |
+| i18n (домен) | `app/[domain]/.i18n/[lang].json` (создаётся `lang:add`) |
+| i18n (алиас) | `app/[domain]/[allias]/.i18n/[lang].json` (создаётся `lang:add --allias`) |
 | Skin (git) | `www/media/[domain]/[allias]/skin/[name]/{css,js,img,skin.json}` |
 | Карантин (6 уровней) | `app/[d]_trash_[ts]/`, `app/[d]/[a]_trash_[ts]/`, `.schemesglobal/[n]_trash_[ts]/`, `.blocksglobal/[n]_trash_[ts]/`, `/content/.trash/...`, `www/media/.trash/...` |
 | Конфиги | `config/*.config` (`engine`, `site`, `admin`, `agent`, `ainet`) |
 | Точки входа | `www/index.php` (сайт), `www/admin/index.php` (админка), `www/content.php` (content), `bin/cli.php` (CLI), `bin/dbcli.php` (работа с БД), `bin/aicli.php` (AI), `bin/ainet.php` (AINET) |
-| AI-Оркестраторы | `ai_agent/brain.py` (рабочий мультиагент) |
+| AI-Оркестраторы | `src/Ai/Orchestrator/` (PHP, AIUI), `ai_agent/brain.py` (Python, Wizard) |
 | Тесты | `_dev/tests/` |
 | Runtime | `var/` (+ `var/ainet-cache/`, `var/ainet-ratelimit.json`) |
 | **Локальный сервер (Windows)** | `E:/localserver/` (tools: nginx/php/mariadb, domains: проекты) |
 | **Трей-менеджер** | `E:/localserver/server.ps1` + `server.vbs` |
+| **Админка (домен)** | `app/.admin/.blocksglobal/[name]/`, `.schemesglobal/[name].{php,rules,editor}`, `.dbglobal/` |
+| **Админка (роль)** | `app/.admin/{role}/algoritm/`, `.blockslocal/`, `.schemeslocal/`, `.dblocal/` |
+| **Админка (skin)** | `www/media/.admin/{role}/skin/[name]/` |
 | **Session (AIUI)** | `app/.sess_{tab}.{domain}/` (изолированная копия домена) |
 | **Session media** | `www/media/.sess_{tab}.{domain}/` (изолированный скин) |
 
@@ -264,5 +272,5 @@ AI не видит файловую систему напрямую. Никог�
 
 - **Фаза C** (Tools-First IDE): `api:reflect` (reflection Builder/Element/Attrs/Text/RegionContext -> `api.json`), CodeMirror hint, snippets, детерминированный Linter. **Не AI.** См. план в `_doc/dev.md` §10.
 
-**Открытые P2:** `_doc/arch.md` §6 (15 пунктов).
+**Открытые P2:** `_doc/arch.md` §6 (14 пунктов).
 
