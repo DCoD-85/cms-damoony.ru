@@ -109,7 +109,7 @@ final class FrontController
         if ($adminRole !== null && isset($match->args['lang'])) {
             $lang = $match->args['lang'];
         } else {
-            $negotiator = new LanguageNegotiator();
+            $negotiator = new LanguageNegotiator($domain->supportedLanguages, $domain->language);
             $lang = $negotiator->resolve($request, $domain);
         }
         $translator = new Translator($lang, 'ru');

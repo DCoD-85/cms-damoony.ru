@@ -9,10 +9,10 @@ use Damoony\Core\Http\Request;
 
 final class LanguageNegotiator
 {
-    public const SUPPORTED = ['ru', 'en', 'zh'];
-
+    /** @param list<string> $supported */
     public function __construct(
-        private readonly string $default = 'ru',
+        private readonly array $supported,
+        private readonly string $default,
     ) {
     }
 
@@ -24,11 +24,15 @@ final class LanguageNegotiator
         }
 
         $cookie = $request->cookies['lang'] ?? $request->cookies['language'] ?? null;
-        if (is_string($cookie) && in_array($cookie, self::SUPPORTED, true)) {
+        if (is_string($cookie) && in_array($cookie, $this->supported, true)) {
             return $cookie;
         }
 
-        return in_array($domain->language, self::SUPPORTED, true) ? $domain->language : $this->default;
+        if (in_array($domain->language, $this->supported, true)) {
+            return $domain->language;
+        }
+
+        return $this->default;
     }
 
     public function fromPath(string $path): ?string
@@ -40,7 +44,7 @@ final class LanguageNegotiator
         $trimmed = ltrim($path, '/');
         $first = explode('/', $trimmed, 2)[0];
 
-        return in_array($first, self::SUPPORTED, true) ? $first : null;
+        return in_array($first, $this->supported, true) ? $first : null;
     }
 
     public function stripLangPrefix(string $path): string
@@ -51,11 +55,10 @@ final class LanguageNegotiator
 
         $trimmed = ltrim($path, '/');
         $parts = explode('/', $trimmed, 2);
-        if (!in_array($parts[0], self::SUPPORTED, true)) {
+        if (!in_array($parts[0], $this->supported, true)) {
             return $path;
         }
 
-        $rest = $parts[1] ?? '';
-        return '/' . $rest;
+        return '/' . ($parts[1] ?? '');
     }
 }

@@ -16,6 +16,8 @@ use PHPUnit\Framework\TestCase;
 
 final class I18nSkinScenarioTest extends TestCase
 {
+    private const LANGS = ['ru', 'en', 'zh'];
+
     private function session(): SessionInterface
     {
         return new class () implements SessionInterface {
@@ -64,28 +66,28 @@ final class I18nSkinScenarioTest extends TestCase
 
     public function testNegotiatorUrlPriority(): void
     {
-        $n = new LanguageNegotiator();
+        $n = new LanguageNegotiator(self::LANGS, 'ru');
         $req = new Request('GET', '/en/about', cookies: ['lang' => 'zh']);
         self::assertSame('en', $n->resolve($req, $this->domain('ru')));
     }
 
     public function testNegotiatorCookieFallback(): void
     {
-        $n = new LanguageNegotiator();
+        $n = new LanguageNegotiator(self::LANGS, 'ru');
         $req = new Request('GET', '/about', cookies: ['lang' => 'zh']);
         self::assertSame('zh', $n->resolve($req, $this->domain('ru')));
     }
 
     public function testNegotiatorDomainFallback(): void
     {
-        $n = new LanguageNegotiator();
+        $n = new LanguageNegotiator(self::LANGS, 'ru');
         $req = new Request('GET', '/about');
         self::assertSame('en', $n->resolve($req, $this->domain('en')));
     }
 
     public function testStripLangPrefix(): void
     {
-        $n = new LanguageNegotiator();
+        $n = new LanguageNegotiator(self::LANGS, 'ru');
         self::assertSame('/about', $n->stripLangPrefix('/en/about'));
         self::assertSame('/', $n->stripLangPrefix('/ru'));
         self::assertSame('/about', $n->stripLangPrefix('/about'));
@@ -93,7 +95,7 @@ final class I18nSkinScenarioTest extends TestCase
 
     public function testS16LanguagePathMiddlewareStripsPrefix(): void
     {
-        $mw = new LanguagePathMiddleware(new LanguageNegotiator());
+        $mw = new LanguagePathMiddleware();
         $captured = null;
         $next = function (Request $r) use (&$captured): Response {
             $captured = $r->path;

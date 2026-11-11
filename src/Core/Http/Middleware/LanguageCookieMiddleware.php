@@ -7,7 +7,6 @@ namespace Damoony\Core\Http\Middleware;
 use Damoony\Core\Http\MiddlewareInterface;
 use Damoony\Core\Http\Request;
 use Damoony\Core\Http\Response;
-use Damoony\Core\I18n\LanguageNegotiator;
 use Damoony\Core\Session\SessionInterface;
 
 final class LanguageCookieMiddleware implements MiddlewareInterface
@@ -21,7 +20,7 @@ final class LanguageCookieMiddleware implements MiddlewareInterface
     public function process(Request $request, callable $next): Response
     {
         $lang = $request->query('lang');
-        if (!is_string($lang) || !in_array($lang, LanguageNegotiator::SUPPORTED, true)) {
+        if (!is_string($lang) || preg_match('/^[a-z]{2}$/', $lang) !== 1) {
             return $next($request);
         }
 

@@ -16,6 +16,8 @@ final class DomainContext
         public readonly ?string $stub = null,
         public readonly string $namespace = '',
         public readonly string $scheme = 'www',
+        /** @var list<string> */
+        public readonly array $supportedLanguages = ['ru'],
     ) {
     }
 
@@ -31,6 +33,7 @@ final class DomainContext
             stub: $this->stub,
             namespace: $this->namespace,
             scheme: $this->scheme,
+            supportedLanguages: $this->supportedLanguages,
         );
     }
 

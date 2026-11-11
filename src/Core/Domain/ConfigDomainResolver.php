@@ -49,6 +49,7 @@ final class ConfigDomainResolver implements DomainResolverInterface
                 skin: $this->defaultSkin,
                 language: $this->defaultLanguage,
                 available: false,
+                supportedLanguages: [$this->defaultLanguage],
             );
         }
 
@@ -71,7 +72,14 @@ final class ConfigDomainResolver implements DomainResolverInterface
         if (!is_array($langs) || $langs === []) {
             $langs = $this->site->getByKey(['domains_langs', $real], [$this->defaultLanguage]);
         }
-        $lang = is_array($langs) && $langs !== [] ? (string) reset($langs) : $this->defaultLanguage;
+        $langs = is_array($langs) ? array_values(array_filter(
+            $langs,
+            static fn ($l): bool => is_string($l) && preg_match('/^[a-z]{2}$/', $l) === 1,
+        )) : [];
+        if ($langs === []) {
+            $langs = [$this->defaultLanguage];
+        }
+        $lang = $langs[0];
 
         return new DomainContext(
             domain: $host,
@@ -83,6 +91,7 @@ final class ConfigDomainResolver implements DomainResolverInterface
             stub: $stub,
             namespace: (string) $this->site->getByKey(['domains_namespace', $real], str_replace('.', '_', $real)),
             scheme: (string) $this->site->getByKey(['domains_scheme', $real], 'www'),
+            supportedLanguages: $langs,
         );
     }
 
