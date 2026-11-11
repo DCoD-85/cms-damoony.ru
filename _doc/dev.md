@@ -330,7 +330,7 @@ php bin/dbcli.php db:schema:generate-provider --domain=example.ru --table=produc
 ### Инварианты (актуальные)
 
 1. **Схема обязательна.** `PageHandler` всегда пытается загрузить схему (с учетом `adminRole` и `sessionId`).
-2. **`Page::default()` final.** Переопределять нельзя. Если нужна проверка доступа — используйте `guard(): ?Response`.
+2. **`Page::default()` final.** Реализован в ядре и не подлежит переопределению. Пишите бизнес-логику в `content()`, а проверки доступа — в `guard(): ?Response`.
 3. **`PageHandler` — единственная точка сборки.** `Page` не рендерит HTML.
 4. **`null` = нет данных для отдачи.** Ответ 204 No Content.
 5. **Middleware для кросс-фич.** Скин/язык/auth — Middleware или хуки, не `PageHandler`.
