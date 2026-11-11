@@ -21,7 +21,7 @@ final class DomainRemoveCommand implements CommandInterface
         'domains_titles',
         'domains_skins',
         'domains_skins_allowed',
-        'domains_stubs',
+        'domains_stub',
         'domains_scheme',
         'alliases_real',
         'alliases_available',

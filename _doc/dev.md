@@ -30,9 +30,9 @@
 - `$this->isAuthenticated()`, `$this->user()`.
 - `protected array $ajaxBlocks = ['center'];` — список блоков, которые обновляются при AJAX-навигации (по умолчанию только центр).
 
-### Вариант A: страница со схемой (рекомендуется)
+### Вариант A: обычная страница (рекомендуется)
 
-Используйте базовый класс `PageWithScheme`. Он автоматически загружает схему (шапку/подвал) и помещает ваш контент в слот `center`.
+Схема (шапка/подвал) подключается автоматически в `PageHandler::handle()` (`SchemeLoader` → `SchemeRenderer`), контент из `content()` попадает в слот `center`. Отдельного класса `PageWithScheme` в движке **нет** (удалён).
 
 ```php
 <?php
@@ -41,11 +41,10 @@ declare(strict_types=1);
 
 namespace example_ru\www;
 
-use Damoony\UI\Algoritm\PageWithScheme;
 use Damoony\UI\Builder;
 use Damoony\UI\Node;
 
-final class algoritm extends PageWithScheme
+final class algoritm extends Page
 {
     protected function content(): Node
     {
@@ -325,7 +324,7 @@ php bin/dbcli.php db:schema:generate-provider --domain=example.ru --table=produc
         }
     }
 
-**Больше ничего.** Никаких `SchemeLoader`, `SchemeRenderer`, `isAjax()`. Всё — в движке.
+**Больше ничего.** `SchemeLoader` и `SchemeRenderer` вызываются внутри `PageHandler` — в `content()` их не трогаем. `isAjax()` доступен в `Page` и `RegionContext` для legacy-веток, но в новом коде опирайтесь на `$ajaxBlocks`.
 
 ### Инварианты (актуальные)
 

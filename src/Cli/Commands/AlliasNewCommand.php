@@ -133,6 +133,28 @@ final class AlliasNewCommand implements CommandInterface
         );
         $r->file(Fs::rel($siteFile, $this->paths->root()));
 
+        // 4. Скин по умолчанию (css/, js/, img/, skin.json) + регистрация в site.config
+        $skinCmd = new SkinNewCommand($this->paths);
+        $skinResult = $skinCmd->run(
+            ['domain' => $domain, 'allias' => $name, 'name' => 'default'],
+            $context,
+        );
+        foreach ($skinResult->steps as $s) {
+            $r->steps[] = $s;
+        }
+        foreach ($skinResult->created as $f) {
+            $r->file($f);
+        }
+        foreach ($skinResult->warnings as $w) {
+            $r->warn($w);
+        }
+        foreach ($skinResult->errors as $e) {
+            $r->error($e);
+        }
+        if (!$skinResult->ok) {
+            $r->ok = false;
+        }
+
         $context->step('Алиас создан', true, $domain . '/' . $name);
 
         return $r;

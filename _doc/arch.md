@@ -41,7 +41,7 @@
 
 ### 3.1. Модульная структура
 
-`src/` разделён на 6 модулей. Каждый модуль решает только свою задачу.
+`src/` разделён на 9 модулей. Каждый модуль решает только свою задачу.
 
 | Модуль | Путь | Ответственность |
 |---|---|---|
@@ -51,6 +51,9 @@
 | **Cli** | `src/Cli/` | Все консольные команды: `Commands/` (для `bin/cli.php`), `Db/` (для `bin/dbcli.php`), `Ai/` (для `bin/aicli.php`). |
 | **Admin** | `src/Admin/` | Специфика старой админки (MVC). Новая админка использует `UI` и `Cli`. |
 | **Ai** | `src/Ai/` | Мультиагентный Orchestrator, ModelRouter, Roles, Navigator. |
+| **Ainet** | `src/Ainet/` | Выход в интернет: `UrlGuard` (SSRF), `HttpClient`, `AinetFacade`, ImageSearch-провайдеры. |
+| **Diagnostics** | `src/Diagnostics/` | `StructureChecker` — целостность структуры (error/warning). Используется в `structure:check` и админке. |
+| **Demo** | `src/Demo/` | Legacy-примеры страниц/регионов. Используется точечно (`app/damoony.ru/www/algoritm/ajax/`). |
 
 **Правило:** если код нужен и сайту, и админке, и CLI — он живёт в `Core` или `UI`. Если только CLI — в `Cli`.
 

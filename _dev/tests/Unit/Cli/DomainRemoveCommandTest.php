@@ -27,7 +27,7 @@ final class DomainRemoveCommandTest extends TestCase
             'domains_titles' => ['example.ru' => 'Example'],
             'domains_skins' => ['example.ru' => 'default'],
             'domains_skins_allowed' => ['example.ru' => ['default']],
-            'domains_stubs' => ['example.ru' => '503'],
+            'domains_stub' => ['example.ru' => '503'],
             'domains_scheme' => ['example.ru' => 'www'],
             'alliases_real' => ['example.ru' => ['www' => 'www']],
             'alliases_available' => ['example.ru' => ['www' => true]],
@@ -71,7 +71,7 @@ final class DomainRemoveCommandTest extends TestCase
 
         $keys = [
             'domains_real', 'domains_available', 'domains_namespace',
-            'domains_titles', 'domains_skins', 'domains_skins_allowed', 'domains_stubs', 'domains_scheme',
+            'domains_titles', 'domains_skins', 'domains_skins_allowed', 'domains_stub', 'domains_scheme',
             'alliases_real', 'alliases_available', 'alliases_langs', 'alliases_titles',
             'alliases_stubs', 'alliases_skins', 'alliases_skins_allowed', 'fillers',
         ];

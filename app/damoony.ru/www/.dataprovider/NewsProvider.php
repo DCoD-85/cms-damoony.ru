@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace damoony_ru\www\provider;
+namespace damoony_ru\www;
 
 use Damoony\Data\Db\DataProvider\NewsProvider as BaseProvider;
 
