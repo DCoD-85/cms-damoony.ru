@@ -49,7 +49,10 @@ final class SchemeRenderer
             if ($child instanceof Slot) {
                 $region = $regions->get($child->name());
                 if ($region !== null && $region->enabled()) {
-                    $newChildren[] = $region->render($context);
+                    $wrapper = new Element('div');
+                    $wrapper->attrs()->add('data-block', $child->name());
+                    $wrapper->append($region->render($context));
+                    $newChildren[] = $wrapper;
                 }
             } elseif ($child instanceof Element) {
                 $this->replaceSlots($child, $regions, $context);

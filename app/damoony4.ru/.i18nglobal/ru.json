@@ -1,1 +1,13 @@
-{}
+{
+    "site.block.top": "Верхний блок (глобальный)",
+    "site.block.left": "Левый блок (глобальный)",
+    "site.block.center": "Центральный блок (глобальный)",
+    "site.block.right": "Правый блок (глобальный)",
+    "site.block.bottom": "Нижний блок (глобальный)",
+    "site.block.footer": "Подвал (глобальный)",
+    "site.block.policy": "Политика (глобальная)",
+    "site.block.toast": "Уведомление (глобальное)",
+    "site.balance.one": "У вас {{amount}} рубль",
+    "site.balance.few": "У вас {{amount}} рубля",
+    "site.balance.many": "У вас {{amount}} рублей"
+}

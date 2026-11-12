@@ -107,8 +107,8 @@ final class FrontController
         }
 
         // O11: Определяем язык (URL -> Cookie -> Конфиг)
-        if ($adminRole !== null && isset($match->args['lang'])) {
-            $lang = $match->args['lang'];
+        if (isset($match->args['lang'])) {
+            $lang = (string) $match->args['lang'];
         } else {
             $negotiator = new LanguageNegotiator($domain->supportedLanguages, $domain->language);
             $lang = $negotiator->resolve($request, $domain);
@@ -123,8 +123,8 @@ final class FrontController
             $sources[] = $paths->i18nAdmin();
             $sources[] = $paths->i18nAdminRole($adminRole);
         } else {
-            $sources[] = $paths->i18nDomain($domain->real);
-            $sources[] = $paths->i18nAllias($domain->real, $domain->allias);
+            $sources[] = $paths->i18nGlobal($domain->real);
+            $sources[] = $paths->i18nLocal($domain->real, $domain->allias);
         }
 
         $translator = new Translator($lang, $fallbackOrNull, $paths->lang(), $sources);

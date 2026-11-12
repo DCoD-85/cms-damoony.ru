@@ -17,7 +17,7 @@ final class blocksglobal_top implements RegionInterface
     public function render(RegionContext $context): Node
     {
         $wrap = Builder::div('site-top');
-        $wrap->append(Builder::p()->content('это глобальный блок top'));
+        $wrap->append(Builder::p()->content($context->lang('block.top')));
         $site = $context->service('site');
         $langs = ['ru', 'en'];
         if ($site instanceof \Damoony\Core\Config) {

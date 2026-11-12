@@ -167,8 +167,10 @@ final class AlliasNewCommand implements CommandInterface
 
             $i18nLocal = $this->paths->i18nLocal($realDomain, $name);
             Fs::mkdir($i18nLocal);
-            Fs::writeAtomic($i18nLocal . '/ru.json', "{}\n");
-            Fs::writeAtomic($i18nLocal . '/en.json', "{}\n");
+            $tLocalRu = ['site.block.top' => 'Верхний блок (локальный)', 'site.block.left' => 'Левый блок (локальный)', 'site.block.center' => 'Центральный блок (локальный)', 'site.block.right' => 'Правый блок (локальный)', 'site.block.bottom' => 'Нижний блок (локальный)', 'site.block.footer' => 'Подвал (локальный)', 'site.block.policy' => 'Политика (локальная)'];
+            $tLocalEn = ['site.block.top' => 'Top block (local)', 'site.block.left' => 'Left block (local)', 'site.block.center' => 'Center block (local)', 'site.block.right' => 'Right block (local)', 'site.block.bottom' => 'Bottom block (local)', 'site.block.footer' => 'Footer (local)', 'site.block.policy' => 'Policy (local)'];
+            Fs::writeAtomic($i18nLocal . '/ru.json', json_encode($tLocalRu, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
+            Fs::writeAtomic($i18nLocal . '/en.json', json_encode($tLocalEn, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
 
             $schema = [
                 'tables' => [
@@ -207,7 +209,7 @@ final class AlliasNewCommand implements CommandInterface
                         . "        }\n"
                         . "        \$wrap->append(\$switcher);\n";
                 }
-                $php = "<?php\n\ndeclare(strict_types=1);\n\nnamespace {$namespace};\n\nuse Damoony\\UI\\Region\\RegionContext;\nuse Damoony\\UI\\Region\\RegionInterface;\nuse Damoony\\UI\\Builder;\nuse Damoony\\UI\\Node;\n\nfinal class blockslocal_{$name}_{$b} implements RegionInterface\n{\n    public function name(): string { return '{$b}'; }\n    public function enabled(): bool { return true; }\n\n    public function render(RegionContext \$context): Node\n    {\n        \$wrap = Builder::div('site-local-{$b}');\n        \$wrap->append(Builder::p()->content('это локальный блок {$b}'));{$extra}        return \$wrap;\n    }\n}\n";
+                $php = "<?php\n\ndeclare(strict_types=1);\n\nnamespace {$namespace};\n\nuse Damoony\\UI\\Region\\RegionContext;\nuse Damoony\\UI\\Region\\RegionInterface;\nuse Damoony\\UI\\Builder;\nuse Damoony\\UI\\Node;\n\nfinal class blockslocal_{$name}_{$b} implements RegionInterface\n{\n    public function name(): string { return '{$b}'; }\n    public function enabled(): bool { return true; }\n\n    public function render(RegionContext \$context): Node\n    {\n        \$wrap = Builder::div('site-local-{$b}');\n        \$wrap->append(Builder::p()->content(\$context->lang('block.{$b}')));{$extra}        return \$wrap;\n    }\n}\n";
                 Fs::writeAtomic($lDir . '/' . $b . '.php', $php);
                 Fs::writeAtomic($lDir . '/' . $b . '.rules.json', json_encode(['enabled' => true, 'type' => 'mixed'], JSON_PRETTY_PRINT) . "\n");
                 Fs::writeAtomic($lDir . '/' . $b . '.editor.json', json_encode([], JSON_PRETTY_PRINT) . "\n");

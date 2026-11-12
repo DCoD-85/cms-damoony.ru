@@ -17,6 +17,6 @@ final class blockslocal_www_right implements RegionInterface
     public function render(RegionContext $context): Node
     {
         $wrap = Builder::div('site-local-right');
-        $wrap->append(Builder::p()->content('это локальный блок right'));        return $wrap;
+        $wrap->append(Builder::p()->content($context->lang('block.right')));        return $wrap;
     }
 }

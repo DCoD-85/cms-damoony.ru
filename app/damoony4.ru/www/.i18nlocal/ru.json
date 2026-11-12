@@ -1,1 +1,9 @@
-{}
+{
+    "site.block.top": "Верхний блок (локальный)",
+    "site.block.left": "Левый блок (локальный)",
+    "site.block.center": "Центральный блок (локальный)",
+    "site.block.right": "Правый блок (локальный)",
+    "site.block.bottom": "Нижний блок (локальный)",
+    "site.block.footer": "Подвал (локальный)",
+    "site.block.policy": "Политика (локальная)"
+}

@@ -38,6 +38,16 @@ final class RegionContext
         return $key;
     }
 
+    /** @param array<string, string|int> $params */
+    public function langPlural(string $key, int|float $count, array $params = []): string
+    {
+        $t = $this->service('i18n');
+        if ($t instanceof Translator) {
+            return $t->tPlural('site.' . $key, $count, $params);
+        }
+        return $key;
+    }
+
     public function isAuthenticated(): bool
     {
         $auth = $this->service('auth');

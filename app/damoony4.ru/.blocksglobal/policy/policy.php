@@ -17,6 +17,6 @@ final class blocksglobal_policy implements RegionInterface
     public function render(RegionContext $context): Node
     {
         $wrap = Builder::div('site-policy');
-        $wrap->append(Builder::p()->content('это глобальный блок policy'));        return $wrap;
+        $wrap->append(Builder::p()->content($context->lang('block.policy')));        return $wrap;
     }
 }

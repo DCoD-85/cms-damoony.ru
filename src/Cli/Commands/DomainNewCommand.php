@@ -143,7 +143,13 @@ final class DomainNewCommand implements CommandInterface
             Fs::mkdir($schemesDir);
             $cssUrl = '/media/' . $domain . '/www/skin/{skin}/css/main.css';
             $jsUrl = '/media/' . $domain . '/www/skin/{skin}/js/main.js';
-            $schemePhp = "<?php\n\nreturn [\n    'tag' => 'div',\n    'class' => 'layout',\n    'children' => [\n        ['tag' => 'header', 'slot' => 'top'],\n        ['tag' => 'aside', 'slot' => 'left'],\n        ['tag' => 'main', 'slot' => 'center'],\n        ['tag' => 'aside', 'slot' => 'right'],\n        ['tag' => 'footer', 'slot' => 'footer'],\n        ['tag' => 'section', 'slot' => 'bottom'],\n        ['tag' => 'div', 'slot' => 'policy'],\n        ['tag' => 'div', 'slot' => 'toast'],\n    ],\n    'meta' => [\n        'css' => ['{$cssUrl}'],\n        'js' => ['{$jsUrl}', '/media/shared/scripts/cliajax.js'],\n    ],\n];\n";
+            $blockCssList = [];
+            foreach (['top', 'left', 'center', 'right', 'bottom', 'footer', 'policy', 'toast'] as $b) {
+                $blockCssList[] = '/media/' . $domain . '/' . $allias . '/css/' . $b . '.css';
+            }
+            $blockCssExport = var_export($blockCssList, true);
+            $mainCssUrl = '/media/' . $domain . '/' . $allias . '/css/main.css';
+            $schemePhp = "<?php\n\nreturn [\n    'tag' => 'div',\n    'class' => 'layout',\n    'children' => [\n        ['tag' => 'header', 'slot' => 'top'],\n        ['tag' => 'aside', 'slot' => 'left'],\n        ['tag' => 'main', 'slot' => 'center'],\n        ['tag' => 'aside', 'slot' => 'right'],\n        ['tag' => 'footer', 'slot' => 'footer'],\n        ['tag' => 'section', 'slot' => 'bottom'],\n        ['tag' => 'div', 'slot' => 'policy'],\n        ['tag' => 'div', 'slot' => 'toast'],\n    ],\n    'meta' => [\n        'css' => array_merge(['{$mainCssUrl}', '{$cssUrl}'], {$blockCssExport}),\n        'js' => ['{$jsUrl}', '/media/shared/scripts/cliajax.js'],\n    ],\n];\n";
             Fs::writeAtomic($schemesDir . '/www.php', $schemePhp);
             Fs::writeAtomic($schemesDir . '/www.rules.json', json_encode(['enabled' => true], JSON_PRETTY_PRINT) . "\n");
             $r->file(Fs::rel($schemesDir . '/www.php', $this->paths->root()));
@@ -195,20 +201,46 @@ final class DomainNewCommand implements CommandInterface
             Fs::mkdir($mediaAlias . '/css');
             Fs::mkdir($mediaAlias . '/scripts');
             Fs::mkdir($mediaAlias . '/images');
-            Fs::writeAtomic($mediaAlias . '/css/.gitkeep', '');
             Fs::writeAtomic($mediaAlias . '/scripts/.gitkeep', '');
             Fs::writeAtomic($mediaAlias . '/images/.gitkeep', '');
 
+            // 1. Генерируем каркас (Grid) для main.css
+            $mainCss = ".layout { display: grid; grid-template-areas: 'top top top' 'left center right' 'bottom bottom bottom' 'footer footer footer' 'policy policy policy'; grid-template-columns: 200px 1fr 200px; gap: 16px; padding: 16px; min-height: 100vh; box-sizing: border-box; }\n"
+                . "header { grid-area: top; }\n"
+                . "aside[data-block='left'] { grid-area: left; }\n"
+                . "main { grid-area: center; }\n"
+                . "aside[data-block='right'] { grid-area: right; }\n"
+                . "section[data-block='bottom'] { grid-area: bottom; }\n"
+                . "footer { grid-area: footer; }\n"
+                . "div[data-block='policy'] { grid-area: policy; text-align: center; font-size: 0.8em; color: #666; }\n"
+                . "[data-block='toast'] { position: fixed; bottom: 20px; right: 20px; background: #333; color: #fff; padding: 10px; border-radius: 4px; display: none; z-index: 999; }\n"
+                . "body { margin: 0; font-family: system-ui, sans-serif; background: #f9f9f9; }\n";
+            Fs::writeAtomic($mediaAlias . '/css/main.css', $mainCss);
+            $r->file(Fs::rel($mediaAlias . '/css/main.css', $this->paths->root()));
+
+            // 2. Генерируем стили для блоков
+            $blocksCss = "header, aside, main, section, footer { background: #fff; padding: 16px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }\n";
+            foreach (['top', 'left', 'center', 'right', 'bottom', 'footer', 'policy', 'toast'] as $b) {
+                $blockCss = ".site-{$b} { border-left: 4px solid #007bff; }\n.lang-switcher a { margin-right: 10px; text-decoration: none; color: #007bff; font-weight: bold; }\n";
+                Fs::writeAtomic($mediaAlias . '/css/' . $b . '.css', $blockCss);
+                $r->file(Fs::rel($mediaAlias . '/css/' . $b . '.css', $this->paths->root()));
+            }
+
             // i18n
             $i18nGlobal = $this->paths->i18nGlobal($domain);
+            $i18nGlobal = $this->paths->i18nGlobal($domain);
             Fs::mkdir($i18nGlobal);
-            Fs::writeAtomic($i18nGlobal . '/ru.json', "{}\n");
-            Fs::writeAtomic($i18nGlobal . '/en.json', "{}\n");
+            $tGlobalRu = ['site.block.top' => 'Верхний блок (глобальный)', 'site.block.left' => 'Левый блок (глобальный)', 'site.block.center' => 'Центральный блок (глобальный)', 'site.block.right' => 'Правый блок (глобальный)', 'site.block.bottom' => 'Нижний блок (глобальный)', 'site.block.footer' => 'Подвал (глобальный)', 'site.block.policy' => 'Политика (глобальная)', 'site.block.toast' => 'Уведомление (глобальное)', 'site.balance.one' => 'У вас {{amount}} рубль', 'site.balance.few' => 'У вас {{amount}} рубля', 'site.balance.many' => 'У вас {{amount}} рублей'];
+            $tGlobalEn = ['site.block.top' => 'Top block (global)', 'site.block.left' => 'Left block (global)', 'site.block.center' => 'Center block (global)', 'site.block.right' => 'Right block (global)', 'site.block.bottom' => 'Bottom block (global)', 'site.block.footer' => 'Footer (global)', 'site.block.policy' => 'Policy (global)', 'site.block.toast' => 'Toast (global)', 'site.balance.one' => 'You have {{amount}} dollar', 'site.balance.other' => 'You have {{amount}} dollars'];
+            Fs::writeAtomic($i18nGlobal . '/ru.json', json_encode($tGlobalRu, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
+            Fs::writeAtomic($i18nGlobal . '/en.json', json_encode($tGlobalEn, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
 
             $i18nLocal = $this->paths->i18nLocal($domain, $allias);
             Fs::mkdir($i18nLocal);
-            Fs::writeAtomic($i18nLocal . '/ru.json', "{}\n");
-            Fs::writeAtomic($i18nLocal . '/en.json', "{}\n");
+            $tLocalRu = ['site.block.top' => 'Верхний блок (локальный)', 'site.block.left' => 'Левый блок (локальный)', 'site.block.center' => 'Центральный блок (локальный)', 'site.block.right' => 'Правый блок (локальный)', 'site.block.bottom' => 'Нижний блок (локальный)', 'site.block.footer' => 'Подвал (локальный)', 'site.block.policy' => 'Политика (локальная)'];
+            $tLocalEn = ['site.block.top' => 'Top block (local)', 'site.block.left' => 'Left block (local)', 'site.block.center' => 'Center block (local)', 'site.block.right' => 'Right block (local)', 'site.block.bottom' => 'Bottom block (local)', 'site.block.footer' => 'Footer (local)', 'site.block.policy' => 'Policy (local)'];
+            Fs::writeAtomic($i18nLocal . '/ru.json', json_encode($tLocalRu, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
+            Fs::writeAtomic($i18nLocal . '/en.json', json_encode($tLocalEn, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
 
             // DB schemas
             $schema = [
@@ -252,7 +284,7 @@ final class DomainNewCommand implements CommandInterface
                         . "        }\n"
                         . "        \$wrap->append(\$switcher);\n";
                 }
-                $php = "<?php\n\ndeclare(strict_types=1);\n\nnamespace {$namespace};\n\nuse Damoony\\UI\\Region\\RegionContext;\nuse Damoony\\UI\\Region\\RegionInterface;\nuse Damoony\\UI\\Builder;\nuse Damoony\\UI\\Node;\n\nfinal class blocksglobal_{$b} implements RegionInterface\n{\n    public function name(): string { return '{$b}'; }\n    public function enabled(): bool { return true; }\n\n    public function render(RegionContext \$context): Node\n    {\n        \$wrap = Builder::div('site-{$b}');\n        \$wrap->append(Builder::p()->content('это глобальный блок {$b}'));{$extra}        return \$wrap;\n    }\n}\n";
+                $php = "<?php\n\ndeclare(strict_types=1);\n\nnamespace {$namespace};\n\nuse Damoony\\UI\\Region\\RegionContext;\nuse Damoony\\UI\\Region\\RegionInterface;\nuse Damoony\\UI\\Builder;\nuse Damoony\\UI\\Node;\n\nfinal class blocksglobal_{$b} implements RegionInterface\n{\n    public function name(): string { return '{$b}'; }\n    public function enabled(): bool { return true; }\n\n    public function render(RegionContext \$context): Node\n    {\n        \$wrap = Builder::div('site-{$b}');\n        \$wrap->append(Builder::p()->content(\$context->lang('block.{$b}')));{$extra}        return \$wrap;\n    }\n}\n";
                 Fs::writeAtomic($gDir . '/' . $b . '.php', $php);
                 Fs::writeAtomic($gDir . '/' . $b . '.rules.json', json_encode(['enabled' => true, 'type' => 'mixed'], JSON_PRETTY_PRINT) . "\n");
                 Fs::writeAtomic($gDir . '/' . $b . '.editor.json', json_encode([], JSON_PRETTY_PRINT) . "\n");
@@ -280,7 +312,7 @@ final class DomainNewCommand implements CommandInterface
                         . "        }\n"
                         . "        \$wrap->append(\$switcher);\n";
                 }
-                $php = "<?php\n\ndeclare(strict_types=1);\n\nnamespace {$namespace};\n\nuse Damoony\\UI\\Region\\RegionContext;\nuse Damoony\\UI\\Region\\RegionInterface;\nuse Damoony\\UI\\Builder;\nuse Damoony\\UI\\Node;\n\nfinal class blockslocal_{$allias}_{$b} implements RegionInterface\n{\n    public function name(): string { return '{$b}'; }\n    public function enabled(): bool { return true; }\n\n    public function render(RegionContext \$context): Node\n    {\n        \$wrap = Builder::div('site-local-{$b}');\n        \$wrap->append(Builder::p()->content('это локальный блок {$b}'));{$extra}        return \$wrap;\n    }\n}\n";
+                $php = "<?php\n\ndeclare(strict_types=1);\n\nnamespace {$namespace};\n\nuse Damoony\\UI\\Region\\RegionContext;\nuse Damoony\\UI\\Region\\RegionInterface;\nuse Damoony\\UI\\Builder;\nuse Damoony\\UI\\Node;\n\nfinal class blockslocal_{$allias}_{$b} implements RegionInterface\n{\n    public function name(): string { return '{$b}'; }\n    public function enabled(): bool { return true; }\n\n    public function render(RegionContext \$context): Node\n    {\n        \$wrap = Builder::div('site-local-{$b}');\n        \$wrap->append(Builder::p()->content(\$context->lang('block.{$b}')));{$extra}        return \$wrap;\n    }\n}\n";
                 Fs::writeAtomic($lDir . '/' . $b . '.php', $php);
                 Fs::writeAtomic($lDir . '/' . $b . '.rules.json', json_encode(['enabled' => true, 'type' => 'mixed'], JSON_PRETTY_PRINT) . "\n");
                 Fs::writeAtomic($lDir . '/' . $b . '.editor.json', json_encode([], JSON_PRETTY_PRINT) . "\n");

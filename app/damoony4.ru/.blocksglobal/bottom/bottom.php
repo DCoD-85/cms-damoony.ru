@@ -17,6 +17,6 @@ final class blocksglobal_bottom implements RegionInterface
     public function render(RegionContext $context): Node
     {
         $wrap = Builder::div('site-bottom');
-        $wrap->append(Builder::p()->content('это глобальный блок bottom'));        return $wrap;
+        $wrap->append(Builder::p()->content($context->lang('block.bottom')));        return $wrap;
     }
 }

@@ -1,1 +1,9 @@
-{}
+{
+    "site.block.top": "Top block (local)",
+    "site.block.left": "Left block (local)",
+    "site.block.center": "Center block (local)",
+    "site.block.right": "Right block (local)",
+    "site.block.bottom": "Bottom block (local)",
+    "site.block.footer": "Footer (local)",
+    "site.block.policy": "Policy (local)"
+}

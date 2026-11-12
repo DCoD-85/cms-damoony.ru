@@ -1,24 +1,27 @@
 (function() {
     'use strict';
-
-    function isSupported() {
-        return window.fetch && window.history && window.history.pushState;
-    }
-
-    if (!isSupported()) return;
+    if (!window.fetch || !window.history || !window.history.pushState) return;
 
     function applyMinStruct(data) {
-        if (data.release) {
-            var main = document.querySelector('[data-block="center"]') || document.querySelector('main') || document.body;
-            if (main) main.innerHTML = data.release;
+        if (data.blocks) {
+            for (var key in data.blocks) {
+                if (data.blocks.hasOwnProperty(key)) {
+                    var el = document.querySelector('[data-block="' + key + '"]');
+                    if (el) el.innerHTML = data.blocks[key];
+                }
+            }
         }
         if (data.messages) {
-            var toast = document.getElementById('toast-container') || document.querySelector('.site-toast');
+            var toast = document.querySelector('[data-block="toast"]') || document.querySelector('.site-toast');
             if (toast) {
                 toast.innerHTML = data.messages;
                 toast.style.display = 'block';
                 setTimeout(function() { toast.style.display = 'none'; }, 3000);
             }
+        }
+        if (data.form && data.form.redirect) {
+            window.location.href = data.form.redirect;
+            return true;
         }
         if (data.reload) {
             window.location.reload();
@@ -33,9 +36,7 @@
         if (link.host !== window.location.host) return;
 
         e.preventDefault();
-        fetch(link.href, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
+        fetch(link.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
         .then(function(res) {
             var ct = res.headers.get('Content-Type');
             if (!ct || ct.indexOf('application/json') === -1) {
@@ -47,9 +48,7 @@
         .then(function(data) {
             if (!data) return;
             var reloaded = applyMinStruct(data);
-            if (!reloaded) {
-                window.history.pushState({}, '', link.href);
-            }
+            if (!reloaded) window.history.pushState({}, '', link.href);
         })
         .catch(function(err) {
             console.error('cliajax error', err);
@@ -57,7 +56,5 @@
         });
     });
 
-    window.addEventListener('popstate', function() {
-        window.location.reload();
-    });
+    window.addEventListener('popstate', function() { window.location.reload(); });
 })();

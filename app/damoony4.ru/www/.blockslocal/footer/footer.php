@@ -17,6 +17,6 @@ final class blockslocal_www_footer implements RegionInterface
     public function render(RegionContext $context): Node
     {
         $wrap = Builder::div('site-local-footer');
-        $wrap->append(Builder::p()->content('это локальный блок footer'));        return $wrap;
+        $wrap->append(Builder::p()->content($context->lang('block.footer')));        return $wrap;
     }
 }

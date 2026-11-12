@@ -17,7 +17,7 @@ final class blockslocal_www_top implements RegionInterface
     public function render(RegionContext $context): Node
     {
         $wrap = Builder::div('site-local-top');
-        $wrap->append(Builder::p()->content('это локальный блок top'));
+        $wrap->append(Builder::p()->content($context->lang('block.top')));
         $site = $context->service('site');
         $langs = ['ru', 'en'];
         if ($site instanceof \Damoony\Core\Config) {

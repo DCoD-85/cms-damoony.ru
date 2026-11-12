@@ -17,6 +17,6 @@ final class blockslocal_www_center implements RegionInterface
     public function render(RegionContext $context): Node
     {
         $wrap = Builder::div('site-local-center');
-        $wrap->append(Builder::p()->content('это локальный блок center'));        return $wrap;
+        $wrap->append(Builder::p()->content($context->lang('block.center')));        return $wrap;
     }
 }
