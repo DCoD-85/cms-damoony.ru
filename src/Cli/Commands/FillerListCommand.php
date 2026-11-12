@@ -23,7 +23,7 @@ final class FillerListCommand implements CommandInterface
 
     public function description(): string
     {
-        return 'Список филлеров алиаса (<block>_<allias>.php в .blocksglobal/)';
+        return 'Список филлеров алиаса (.blockslocal/{block}/{block}.php + legacy .blocksglobal/{block}/{block}_{alias}.php)';
     }
 
     public function run(array $args, Context $context): Result
@@ -50,30 +50,56 @@ final class FillerListCommand implements CommandInterface
             return $r;
         }
         $realDomain = (string) $site['domains_real'][$domain];
-        $dir = $this->paths->domain($realDomain) . '/.blocksglobal';
-        if (!is_dir($dir)) {
+        $localDir = $this->paths->allias($realDomain, $allias) . '/.blockslocal';
+        $legacyDir = $this->paths->domain($realDomain) . '/.blocksglobal';
+
+        // Сканируем оба варианта: local (new) приоритет, legacy fallback
+        $fillerMap = []; // blockName => path
+
+        if (is_dir($localDir)) {
+            foreach (glob($localDir . '/*', GLOB_ONLYDIR) ?: [] as $blockDir) {
+                $blockName = basename($blockDir);
+                if (str_starts_with($blockName, '.')) {
+                    continue;
+                }
+                $php = $blockDir . '/' . $blockName . '.php';
+                if (is_file($php)) {
+                    $fillerMap[$blockName] = $php;
+                }
+            }
+        }
+
+        if (is_dir($legacyDir)) {
+            foreach (glob($legacyDir . '/*', GLOB_ONLYDIR) ?: [] as $blockDir) {
+                $blockName = basename($blockDir);
+                if (str_starts_with($blockName, '.')) {
+                    continue;
+                }
+                if (isset($fillerMap[$blockName])) {
+                    continue; // local имеет приоритет
+                }
+                $php = $blockDir . '/' . $blockName . '_' . $allias . '.php';
+                if (is_file($php)) {
+                    $fillerMap[$blockName] = $php;
+                }
+            }
+        }
+
+        if ($fillerMap === []) {
             $r->data = ['domain' => $domain, 'allias' => $allias, 'rows' => []];
             $context->step('Филлеров нет', true);
             return $r;
         }
 
-        $enabledMap = $site['fillers'][$domain][$allias] ?? [];
+        // Config key — realDomain (как RegionLoader)
+        $enabledMap = $site['fillers'][$realDomain][$allias] ?? $site['fillers'][$domain][$allias] ?? [];
         if (!is_array($enabledMap)) {
             $enabledMap = [];
         }
 
         $rows = [];
-        $blocks = glob($dir . '/*', GLOB_ONLYDIR) ?: [];
-        sort($blocks);
-        foreach ($blocks as $blockDir) {
-            $blockName = basename($blockDir);
-            if (str_starts_with($blockName, '.')) {
-                continue;
-            }
-            $fillerPhp = $blockDir . '/' . $blockName . '_' . $allias . '.php';
-            if (!is_file($fillerPhp)) {
-                continue;
-            }
+        ksort($fillerMap);
+        foreach ($fillerMap as $blockName => $fillerPhp) {
             $enabled = (bool) ($enabledMap[$blockName] ?? false);
             $rows[] = [
                 'block' => $blockName,

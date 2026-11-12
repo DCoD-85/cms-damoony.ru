@@ -7,6 +7,7 @@ namespace Damoony\Cli\Commands;
 use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
+use Damoony\Core\Config;
 use Damoony\Core\Files\Paths;
 use Damoony\UI\Page\PagePath;
 
@@ -65,8 +66,21 @@ final class PageReadCommand implements CommandInterface
             return $r;
         }
 
-        // 3. Резолвинг
-        $page = PagePath::resolve($this->paths, $domain, $allias, $name, $parent);
+        // 3. realDomain: FS-пути строятся только от него.
+        $siteFile = $this->paths->siteConfig();
+        if (!is_file($siteFile)) {
+            $r->error('site.config не найден');
+            return $r;
+        }
+        $site = Config::fromFile($siteFile)->all();
+        $realDomain = (string) ($site['domains_real'][$domain] ?? '');
+        if ($realDomain === '') {
+            $r->error('Домен не найден в site.config');
+            return $r;
+        }
+
+        // 4. Резолвинг
+        $page = PagePath::resolve($this->paths, $realDomain, $allias, $name, $parent);
 
         if (!is_file($page->phpFile)) {
             $r->error('Страница не найдена: ' . $page->phpFile);

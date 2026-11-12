@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Damoony\Cli\Db\Commands;
 
 use Damoony\Cli\CommandInterface;
+use Damoony\Cli\Commands\Concerns\ResolvesRealDomain;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
 use Damoony\Core\Config;
@@ -12,6 +13,8 @@ use Damoony\Core\Files\Paths;
 
 final class SchemaGenerateProviderCommand implements CommandInterface
 {
+    use ResolvesRealDomain;
+
     public function __construct(
         private readonly Paths $paths,
         private readonly Config $site,
@@ -44,7 +47,14 @@ final class SchemaGenerateProviderCommand implements CommandInterface
             return $r;
         }
 
-        $schemaFile = $this->paths->domain($domain) . '/.db/schema.json';
+        try {
+            $realDomain = $this->resolveRealDomain($this->paths, $domain);
+        } catch (\RuntimeException $e) {
+            $r->error($e->getMessage());
+            return $r;
+        }
+
+        $schemaFile = $this->paths->dbGlobal($realDomain) . '/schema.json';
         if (!is_file($schemaFile)) {
             $r->error('schema.json not found.');
             return $r;
@@ -56,10 +66,10 @@ final class SchemaGenerateProviderCommand implements CommandInterface
             return $r;
         }
 
-        // Получаем неймспейс домена из конфига
-        $ns = $this->site->getByKey(['domains_namespace', $domain], str_replace(['.', '-'], '_', $domain));
+        // Получаем неймспейс домена из конфига (по realDomain)
+        $ns = $this->site->getByKey(['domains_namespace', $realDomain], str_replace(['.', '-'], '_', $realDomain));
         if (!is_string($ns)) {
-            $ns = str_replace(['.', '-'], '_', $domain);
+            $ns = str_replace(['.', '-'], '_', $realDomain);
         }
 
         // Алиас по умолчанию
@@ -111,8 +121,8 @@ final class SchemaGenerateProviderCommand implements CommandInterface
             }
             PHP;
 
-        // Сохраняем провайдер в app/{domain}/{alias}/.dbprovider/
-        $providerDir = $this->paths->allias($domain, $alias) . '/.dbprovider';
+        // Сохраняем провайдер в app/{realDomain}/{alias}/.dbprovider/
+        $providerDir = $this->paths->allias($realDomain, $alias) . '/.dbprovider';
         if (!is_dir($providerDir)) {
             mkdir($providerDir, 0o775, true);
         }
@@ -120,7 +130,7 @@ final class SchemaGenerateProviderCommand implements CommandInterface
         $filepath = $providerDir . '/' . $className . '.php';
         file_put_contents($filepath, $phpCode . "\n");
 
-        $r->file('app/' . $domain . '/' . $alias . '/.dbprovider/' . $className . '.php');
+        $r->file('app/' . $realDomain . '/' . $alias . '/.dbprovider/' . $className . '.php');
         $context->step("Provider generated: {$className}", true);
 
         return $r;

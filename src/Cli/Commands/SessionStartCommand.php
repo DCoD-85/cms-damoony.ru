@@ -6,6 +6,7 @@ namespace Damoony\Cli\Commands;
 
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
+use Damoony\Core\Config;
 
 final class SessionStartCommand extends AbstractSessionCommand
 {
@@ -35,8 +36,21 @@ final class SessionStartCommand extends AbstractSessionCommand
             return $r;
         }
 
-        $releaseDir = $this->paths->domain($domain);
-        $sessionDir = $this->paths->sessionDir($tab, $domain);
+        // Резолвим realDomain: FS-пути строятся только от него.
+        $siteFile = $this->paths->siteConfig();
+        if (!is_file($siteFile)) {
+            $r->error('site.config не найден');
+            return $r;
+        }
+        $site = Config::fromFile($siteFile)->all();
+        $realDomain = (string) ($site['domains_real'][$domain] ?? '');
+        if ($realDomain === '') {
+            $r->error('Домен не найден в site.config');
+            return $r;
+        }
+
+        $releaseDir = $this->paths->domain($realDomain);
+        $sessionDir = $this->paths->sessionDir($tab, $realDomain);
 
         if (!is_dir($releaseDir)) {
             $r->error("Domain dir not found: {$releaseDir}");
@@ -54,8 +68,8 @@ final class SessionStartCommand extends AbstractSessionCommand
             // Копируем медиа-инфраструктуру (skin/css/js/img) в session-зону,
             // чтобы правки skin:edit не затрагивали production.
             $projectRoot = rtrim($this->paths->root(), '/');
-            $mediaSource = $projectRoot . '/www/media/' . $domain;
-            $mediaDest = $projectRoot . '/www/media/.sess_' . $tab . '.' . $domain;
+            $mediaSource = $projectRoot . '/www/media/' . $realDomain;
+            $mediaDest = $projectRoot . '/www/media/.sess_' . $tab . '.' . $realDomain;
             if (is_dir($mediaSource)) {
                 $this->copyTree($mediaSource, $mediaDest);
             }
@@ -67,7 +81,8 @@ final class SessionStartCommand extends AbstractSessionCommand
         $productionHash = $this->hashProduction($releaseDir);
         $meta = [
             'tab_id' => $tab,
-            'domain' => $domain,
+            'domain' => $domain,           // input alias (UI-facing)
+            'real_domain' => $realDomain,  // FS-facing (для apply/discard)
             'admin_session_id' => $adminSess,
             'created_at' => time(),
             'production_hash' => $productionHash,

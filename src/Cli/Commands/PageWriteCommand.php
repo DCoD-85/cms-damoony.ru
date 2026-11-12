@@ -70,12 +70,25 @@ final class PageWriteCommand implements CommandInterface
             return $r;
         }
 
+        // 2b. realDomain: FS-пути строятся только от него.
+        $siteFile = $this->paths->siteConfig();
+        if (!is_file($siteFile)) {
+            $r->error('site.config не найден');
+            return $r;
+        }
+        $site = Config::fromFile($siteFile)->all();
+        $realDomain = (string) ($site['domains_real'][$domain] ?? '');
+        if ($realDomain === '') {
+            $r->error('Домен не найден в site.config');
+            return $r;
+        }
+
         if ($sessionId !== '') {
             if (!preg_match('/^[a-f0-9]{8,32}$/', $sessionId)) {
                 $r->error('Некорректный --session (8-32 hex символов)');
                 return $r;
             }
-            if (!is_dir($this->paths->sessionDir($sessionId, $domain))) {
+            if (!is_dir($this->paths->sessionDir($sessionId, $realDomain))) {
                 $r->error('Сессия не найдена: ' . $sessionId);
                 return $r;
             }
@@ -109,7 +122,7 @@ final class PageWriteCommand implements CommandInterface
         // 4. Резолвинг
         $page = PagePath::resolve(
             $this->paths,
-            $domain,
+            $realDomain,
             $allias,
             $name,
             $parent,
@@ -121,10 +134,8 @@ final class PageWriteCommand implements CommandInterface
             return $r;
         }
 
-        // 5. Namespace из site.config
-        $siteFile = $this->paths->siteConfig();
-        $site = is_file($siteFile) ? Config::fromFile($siteFile)->all() : [];
-        $namespace = PageNamespace::fromSite($site, $domain);
+        // 5. Namespace из уже загруженного site.config
+        $namespace = PageNamespace::fromSite($site, $realDomain);
 
         // 6. Компиляция и запись
         $withSchema = isset($args['with_schema']) && $args['with_schema'] === '1';
@@ -143,7 +154,7 @@ final class PageWriteCommand implements CommandInterface
 
         // 8. Обновить page_refs в meta.json всех /content/... картинок (add new, remove stale)
         $pageKey = $name !== '' ? $name : '__root__';
-        $this->updateContentRefs($domain, $allias, $pageKey, $oldPhp, $php);
+        $this->updateContentRefs($realDomain, $allias, $pageKey, $oldPhp, $php);
 
         $context->step('Контент страницы обновлен', true, $pageKey);
 
@@ -158,27 +169,27 @@ final class PageWriteCommand implements CommandInterface
      * - oldHashes − newHashes: удалить pageKey
      */
     private function updateContentRefs(
-        string $domain,
+        string $realDomain,
         string $allias,
         string $pageKey,
         string $oldPhp,
         string $newPhp,
     ): void {
-        $oldRefs = $this->extractContentHashes($oldPhp, $domain, $allias);
-        $newRefs = $this->extractContentHashes($newPhp, $domain, $allias);
+        $oldRefs = $this->extractContentHashes($oldPhp, $realDomain, $allias);
+        $newRefs = $this->extractContentHashes($newPhp, $realDomain, $allias);
 
         $oldKeys = array_map(static fn (array $r): string => $r['category'] . '/' . $r['hash'], $oldRefs);
         $newKeys = array_map(static fn (array $r): string => $r['category'] . '/' . $r['hash'], $newRefs);
 
         foreach ($newRefs as $i => $ref) {
             if (!in_array($newKeys[$i], $oldKeys, true)) {
-                $this->applyPageRef($domain, $allias, $ref['category'], $ref['hash'], $pageKey, 'add');
+                $this->applyPageRef($realDomain, $allias, $ref['category'], $ref['hash'], $pageKey, 'add');
             }
         }
 
         foreach ($oldRefs as $i => $ref) {
             if (!in_array($oldKeys[$i], $newKeys, true)) {
-                $this->applyPageRef($domain, $allias, $ref['category'], $ref['hash'], $pageKey, 'remove');
+                $this->applyPageRef($realDomain, $allias, $ref['category'], $ref['hash'], $pageKey, 'remove');
             }
         }
     }
@@ -186,10 +197,10 @@ final class PageWriteCommand implements CommandInterface
     /**
      * @return list<array{category: string, hash: string}>
      */
-    private function extractContentHashes(string $php, string $domain, string $allias): array
+    private function extractContentHashes(string $php, string $realDomain, string $allias): array
     {
         $pattern = '#/content/'
-            . preg_quote($domain, '#')
+            . preg_quote($realDomain, '#')
             . '/'
             . preg_quote($allias, '#')
             . '/([a-z0-9_-]{1,32})/([a-f0-9]{16})\.[a-z]+#';
@@ -213,14 +224,14 @@ final class PageWriteCommand implements CommandInterface
     }
 
     private function applyPageRef(
-        string $domain,
+        string $realDomain,
         string $allias,
         string $category,
         string $hash,
         string $pageKey,
         string $mode,
     ): void {
-        $metaFile = $this->paths->content($domain, $allias)
+        $metaFile = $this->paths->content($realDomain, $allias)
             . '/' . $category . '/' . $hash . '.meta.json';
 
         if (!is_file($metaFile)) {

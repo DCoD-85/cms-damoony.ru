@@ -83,9 +83,14 @@ final class StructureChecker
         $schemesDir = $this->paths->domain($realDomain) . '/.schemesglobal';
         $this->checkSchemesJson($schemesDir, $allias, $issues);
 
-        // 4. Проверка блоков
+        // 4. Проверка блоков (global) + локальных (blockslocal)
         $blocksDir = $this->paths->domain($realDomain) . '/.blocksglobal';
         $this->checkBlocksRules($blocksDir, $issues);
+
+        $localBlocksDir = $this->paths->allias($realDomain, $allias) . '/.blockslocal';
+        if (is_dir($localBlocksDir)) {
+            $this->checkBlocksRules($localBlocksDir, $issues);
+        }
 
         return $issues;
     }

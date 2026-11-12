@@ -10,7 +10,6 @@ use Damoony\Cli\Result;
 use Damoony\Core\Config;
 use Damoony\Core\Files\Fs;
 use Damoony\Core\Files\Paths;
-use Damoony\UI\Page\PageCompiler;
 use Damoony\UI\Page\PageNamespace;
 
 final class AlliasNewCommand implements CommandInterface
@@ -35,6 +34,12 @@ final class AlliasNewCommand implements CommandInterface
 
         $domain = (string) ($args['domain'] ?? '');
         $name = (string) ($args['name'] ?? '');
+        $profile = (string) ($args['profile'] ?? 'minimal');
+
+        if (!in_array($profile, ['clean', 'minimal', 'full'], true)) {
+            $r->error('Некорректный профиль (clean, minimal, full)');
+            return $r;
+        }
 
         // 1. Валидация
         if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain) || str_contains($domain, '..')) {
@@ -57,8 +62,9 @@ final class AlliasNewCommand implements CommandInterface
             $r->error('Домен не найден');
             return $r;
         }
+        $realDomain = (string) $site['domains_real'][$domain];
 
-        $alliasDir = $this->paths->allias($domain, $name);
+        $alliasDir = $this->paths->allias($realDomain, $name);
         if (Fs::isDir($alliasDir)) {
             $r->error('Алиас уже существует');
             return $r;
@@ -68,72 +74,149 @@ final class AlliasNewCommand implements CommandInterface
         Fs::mkdir($alliasDir);
         $r->file(Fs::rel($alliasDir, $this->paths->root()));
 
-        $algoritmDir = $this->paths->algoritm($domain, $name);
+        $algoritmDir = $this->paths->algoritm($realDomain, $name);
         Fs::mkdir($algoritmDir);
 
-        // 2a. Root страница через PageCompiler + rules + editor
-        $namespace = PageNamespace::fromSite($site, $domain);
-        $compiler = new PageCompiler();
-        $rootPhp = $compiler->compile($namespace . '\\' . $name, 'algoritm', []);
-
+        // 2a. Root-страница: content() = null (рендеринг через scheme → blocksglobal_*)
+        $namespace = PageNamespace::fromSite($site, $realDomain);
+        $rootPhp = "<?php\n\n"
+            . "declare(strict_types=1);\n\n"
+            . "namespace {$namespace}\\{$name};\n\n"
+            . "use Damoony\\UI\\Algoritm\\Page;\n"
+            . "use Damoony\\UI\\Node;\n\n"
+            . "final class algoritm extends Page\n"
+            . "{\n"
+            . "    protected function content(): Node|null\n"
+            . "    {\n"
+            . "        return null;\n"
+            . "    }\n"
+            . "}\n";
         Fs::writeAtomic($algoritmDir . '/algoritm.php', $rootPhp);
         $r->file(Fs::rel($algoritmDir . '/algoritm.php', $this->paths->root()));
 
+        $rootRules = ['available' => ['' => '^$'], 'auth' => false, 'search' => true, 'default' => false];
+        if ($profile === 'full') {
+            $rootRules['available']['testscheme'] = '^testscheme$';
+        }
         Fs::writeAtomic(
             $algoritmDir . '/algoritm.rules.json',
-            json_encode(
-                ['available' => [], 'auth' => false, 'search' => true, 'default' => false],
-                JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE,
-            ) . "\n",
+            json_encode($rootRules, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n",
         );
         $r->file(Fs::rel($algoritmDir . '/algoritm.rules.json', $this->paths->root()));
 
         Fs::writeAtomic($algoritmDir . '/algoritm.editor.json', "[]\n");
         $r->file(Fs::rel($algoritmDir . '/algoritm.editor.json', $this->paths->root()));
 
-        // 2b. Схема по умолчанию для алиаса
-        $schemesDir = $this->paths->domain($domain) . '/.schemesglobal';
-        if (!Fs::isDir($schemesDir)) {
-            Fs::mkdir($schemesDir);
-        }
+        // 2b. Схема по умолчанию для алиаса (clean: пропустить)
+        if ($profile !== 'clean') {
+            $schemesDir = $this->paths->domain($realDomain) . '/.schemesglobal';
+            if (!Fs::isDir($schemesDir)) {
+                Fs::mkdir($schemesDir);
+            }
 
-        $schemeName = $name;
-        $schemeEditor = $schemesDir . '/' . $schemeName . '.editor.json';
-        $schemePhp = $schemesDir . '/' . $schemeName . '.php';
-        $schemeRules = $schemesDir . '/' . $schemeName . '.rules.json';
+            $schemeName = $name;
+            $schemeEditor = $schemesDir . '/' . $schemeName . '.editor.json';
+            $schemePhp = $schemesDir . '/' . $schemeName . '.php';
+            $schemeRules = $schemesDir . '/' . $schemeName . '.rules.json';
 
-        if (!is_file($schemePhp)) {
-            $realDomain = (string) ($site['domains_real'][$domain] ?? $domain);
-            $defaultScheme = [
-                'tag' => 'div',
-                'class' => 'layout',
-                'children' => [
-                    ['tag' => 'main', 'slot' => 'center'],
-                ],
-                'meta' => [
-                    'css' => ['/media/' . $realDomain . '/' . $name . '/skin/{skin}/css/main.css'],
-                    'js' => [
-                        '/media/' . $realDomain . '/' . $name . '/skin/{skin}/js/main.js',
-                        '/media/shared/scripts/cliajax.js',
+            if (!is_file($schemePhp)) {
+                $defaultScheme = [
+                    'tag' => 'div',
+                    'class' => 'layout',
+                    'children' => [
+                        ['tag' => 'header', 'slot' => 'top'],
+                        ['tag' => 'aside', 'slot' => 'left'],
+                        ['tag' => 'main', 'slot' => 'center'],
+                        ['tag' => 'aside', 'slot' => 'right'],
+                        ['tag' => 'footer', 'slot' => 'footer'],
+                        ['tag' => 'section', 'slot' => 'bottom'],
+                        ['tag' => 'div', 'slot' => 'policy'],
+                        ['tag' => 'div', 'slot' => 'toast'],
+                    ],
+                    'meta' => [
+                        'css' => ['/media/' . $realDomain . '/' . $name . '/skin/{skin}/css/main.css'],
+                        'js' => [
+                            '/media/' . $realDomain . '/' . $name . '/skin/{skin}/js/main.js',
+                            '/media/shared/scripts/cliajax.js',
+                        ],
+                    ],
+                ];
+                Fs::writeAtomic($schemePhp, "<?php\n\nreturn " . var_export($defaultScheme, true) . ";\n");
+                $r->file(Fs::rel($schemePhp, $this->paths->root()));
+
+                Fs::writeAtomic(
+                    $schemeEditor,
+                    json_encode(['scheme' => ['children' => [['type' => 'slot', 'name' => 'center']]]], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n",
+                );
+                $r->file(Fs::rel($schemeEditor, $this->paths->root()));
+
+                Fs::writeAtomic($schemeRules, json_encode(['enabled' => true], JSON_PRETTY_PRINT) . "\n");
+                $r->file(Fs::rel($schemeRules, $this->paths->root()));
+            }
+        } // end if profile !== clean
+
+        // 2c. FULL профиль для алиаса (без глобальных блоков и shared media — они создаются domain:new)
+        if ($profile === 'full') {
+            $mediaAlias = $this->paths->mediaAlias($realDomain, $name);
+            Fs::mkdir($mediaAlias . '/css');
+            Fs::mkdir($mediaAlias . '/scripts');
+            Fs::mkdir($mediaAlias . '/images');
+            Fs::writeAtomic($mediaAlias . '/css/.gitkeep', '');
+            Fs::writeAtomic($mediaAlias . '/scripts/.gitkeep', '');
+            Fs::writeAtomic($mediaAlias . '/images/.gitkeep', '');
+
+            $i18nLocal = $this->paths->i18nLocal($realDomain, $name);
+            Fs::mkdir($i18nLocal);
+            Fs::writeAtomic($i18nLocal . '/ru.json', "{}\n");
+            Fs::writeAtomic($i18nLocal . '/en.json', "{}\n");
+
+            $schema = [
+                'tables' => [
+                    'test_items' => [
+                        'columns' => [
+                            'id' => ['type' => 'int', 'primary' => true, 'auto_increment' => true],
+                            'title' => ['type' => 'varchar', 'length' => 255],
+                            'body' => ['type' => 'text'],
+                            'created_at' => ['type' => 'timestamp', 'default' => 'CURRENT_TIMESTAMP'],
+                        ],
                     ],
                 ],
             ];
-            Fs::writeAtomic($schemePhp, "<?php\n\nreturn " . var_export($defaultScheme, true) . ";\n");
-            $r->file(Fs::rel($schemePhp, $this->paths->root()));
+            $schemaJson = json_encode($schema, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
+            $dbLocal = $this->paths->dbLocal($realDomain, $name);
+            Fs::mkdir($dbLocal);
+            Fs::writeAtomic($dbLocal . '/schema.json', $schemaJson);
 
-            Fs::writeAtomic(
-                $schemeEditor,
-                json_encode(['scheme' => ['children' => [['type' => 'slot', 'name' => 'center']]]], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n",
-            );
-            $r->file(Fs::rel($schemeEditor, $this->paths->root()));
+            $localBlocks = ['top', 'left', 'center', 'right', 'bottom', 'footer', 'policy'];
+            $localDir = $alliasDir . '/.blockslocal';
+            foreach ($localBlocks as $b) {
+                $lDir = $localDir . '/' . $b;
+                Fs::mkdir($lDir);
+                $php = "<?php\n\ndeclare(strict_types=1);\n\nnamespace {$namespace};\n\nuse Damoony\\UI\\Region\\RegionContext;\nuse Damoony\\UI\\Region\\RegionInterface;\nuse Damoony\\UI\\Builder;\nuse Damoony\\UI\\Node;\n\nfinal class blockslocal_{$name}_{$b} implements RegionInterface\n{\n    public function name(): string { return '{$b}'; }\n    public function enabled(): bool { return true; }\n\n    public function render(RegionContext \$context): Node\n    {\n        \$wrap = Builder::div('site-local-{$b}');\n        \$wrap->append(Builder::p()->content('это локальный блок {$b}'));\n        return \$wrap;\n    }\n}\n";
+                Fs::writeAtomic($lDir . '/' . $b . '.php', $php);
+                Fs::writeAtomic($lDir . '/' . $b . '.rules.json', json_encode(['enabled' => true, 'type' => 'mixed'], JSON_PRETTY_PRINT) . "\n");
+                Fs::writeAtomic($lDir . '/' . $b . '.editor.json', json_encode([], JSON_PRETTY_PRINT) . "\n");
+                $r->file(Fs::rel($lDir . '/' . $b . '.php', $this->paths->root()));
+            }
 
-            Fs::writeAtomic($schemeRules, json_encode(['enabled' => true], JSON_PRETTY_PRINT) . "\n");
-            $r->file(Fs::rel($schemeRules, $this->paths->root()));
+            $slDir = $alliasDir . '/.schemeslocal';
+            Fs::mkdir($slDir);
+            $tsScheme = "<?php\n\nreturn [\n    'tag' => 'div',\n    'class' => 'layout',\n    'children' => [\n        ['tag' => 'main', 'slot' => 'center'],\n    ],\n    'meta' => [\n        'css' => [],\n        'js' => [],\n    ],\n];\n";
+            Fs::writeAtomic($slDir . '/testscheme.php', $tsScheme);
+            Fs::writeAtomic($slDir . '/testscheme.rules.json', json_encode(['enabled' => true], JSON_PRETTY_PRINT) . "\n");
+
+            $tsDir = $algoritmDir . '/testscheme';
+            Fs::mkdir($tsDir);
+            $tsPhp = "<?php\n\ndeclare(strict_types=1);\n\nnamespace {$namespace}\\{$name};\n\nuse Damoony\\UI\\Algoritm\\Page;\nuse Damoony\\UI\\Builder;\nuse Damoony\\UI\\Node;\n\nfinal class algoritm_testscheme extends Page\n{\n    protected function content(): Node|null\n    {\n        return Builder::div('page-content')->content('Test Scheme Page');\n    }\n}\n";
+            Fs::writeAtomic($tsDir . '/algoritm_testscheme.php', $tsPhp);
+            Fs::writeAtomic($tsDir . '/algoritm_testscheme.rules.json', json_encode(['available' => ['' => '^$'], 'auth' => false], JSON_PRETTY_PRINT) . "\n");
+            Fs::writeAtomic($tsDir . '/algoritm_testscheme.editor.json', "[]\n");
+            $r->file(Fs::rel($tsDir . '/algoritm_testscheme.php', $this->paths->root()));
         }
 
         // 3. Конфиг (все ключи)
-        $site['alliases_real'][$domain][$name] = $name;
-        $site['alliases_available'][$domain][$name] = true;
+        $site['alliases_real'][$realDomain][$name] = $name;
+        $site['alliases_available'][$realDomain][$name] = true;
 
         Fs::writeAtomic(
             $siteFile,
@@ -141,29 +224,31 @@ final class AlliasNewCommand implements CommandInterface
         );
         $r->file(Fs::rel($siteFile, $this->paths->root()));
 
-        // 4. Скин по умолчанию (css/, js/, img/, skin.json) + регистрация в site.config
-        $skinCmd = new SkinNewCommand($this->paths);
-        $skinResult = $skinCmd->run(
-            ['domain' => $domain, 'allias' => $name, 'name' => 'default'],
-            $context,
-        );
-        foreach ($skinResult->steps as $s) {
-            $r->steps[] = $s;
-        }
-        foreach ($skinResult->created as $f) {
-            $r->file($f);
-        }
-        foreach ($skinResult->warnings as $w) {
-            $r->warn($w);
-        }
-        foreach ($skinResult->errors as $e) {
-            $r->error($e);
-        }
-        if (!$skinResult->ok) {
-            $r->ok = false;
-        }
+        // 4. Скин по умолчанию (clean: пропустить)
+        if ($profile !== 'clean') {
+            $skinCmd = new SkinNewCommand($this->paths);
+            $skinResult = $skinCmd->run(
+                ['domain' => $domain, 'allias' => $name, 'name' => 'default'],
+                $context,
+            );
+            foreach ($skinResult->steps as $s) {
+                $r->steps[] = $s;
+            }
+            foreach ($skinResult->created as $f) {
+                $r->file($f);
+            }
+            foreach ($skinResult->warnings as $w) {
+                $r->warn($w);
+            }
+            foreach ($skinResult->errors as $e) {
+                $r->error($e);
+            }
+            if (!$skinResult->ok) {
+                $r->ok = false;
+            }
+        } // end if profile !== clean
 
-        $context->step('Алиас создан', true, $domain . '/' . $name);
+        $context->step('Алиас создан (профиль: ' . $profile . ')', true, $domain . '/' . $name);
 
         return $r;
     }

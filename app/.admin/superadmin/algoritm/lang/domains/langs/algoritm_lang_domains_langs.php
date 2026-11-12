@@ -90,9 +90,19 @@ final class algoritm_lang_domains_langs extends AdminPage
                 $res = $runCli($cmd, $cliArgs);
                 $ok = ($res['ok'] ?? false) === true;
                 $errors = (array) ($res['errors'] ?? []);
+                $msg = $ok ? 'OK: ' . $cmd : 'Ошибка: ' . implode('; ', array_map('strval', $errors));
+
+                if ($this->context->request->isAjax()) {
+                    $struct = new \Damoony\UI\Response\MinStruct();
+                    $struct->ok($ok);
+                    $struct->message($ok ? 'success' : 'error', $msg);
+                    $struct->form(false, [], $baseUrl); // JS сделает soft-redirect на $baseUrl
+                    return $struct->toResponse();
+                }
+
                 $_SESSION['flash'][] = [
                     'type' => $ok ? 'success' : 'error',
-                    'message' => $ok ? 'OK: ' . $cmd : 'Ошибка: ' . implode('; ', array_map('strval', $errors)),
+                    'message' => $msg,
                 ];
                 return Response::redirect($baseUrl);
             }

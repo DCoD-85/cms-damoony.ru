@@ -102,7 +102,7 @@ final class BlockNewCommand implements CommandInterface
                 . "    public function enabled(): bool\n    {\n        return true;\n    }\n\n"
                 . "    public function render(RegionContext \$context): Node\n    {\n"
                 . "        \$wrap = Builder::div('{$name}');\n"
-                . "        \$wrap->append(Builder::p()->content('Блок {$name} ({$type})'));\n"
+                . "        \$wrap->append(Builder::p()->content('это глобальный блок {$name}'));\n"
                 . "        return \$wrap;\n    }\n"
                 . "}\n";
         }

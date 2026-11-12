@@ -92,10 +92,29 @@ final class PageNewCommand implements CommandInterface
             return $r;
         }
 
+        // 2b. realDomain: FS-пути строятся только от него.
+        $realDomain = (string) ($site['domains_real'][$domain] ?? '');
+        if ($realDomain === '') {
+            $r->error('Домен не найден в site.config');
+            return $r;
+        }
+
+        // 2a. Session-guard (контракт един с PageWriteCommand)
+        if ($sessionId !== '') {
+            if (!preg_match('/^[a-f0-9]{8,32}$/', $sessionId)) {
+                $r->error('Некорректный --session (8-32 hex символов)');
+                return $r;
+            }
+            if (!is_dir($this->paths->sessionDir($sessionId, $realDomain))) {
+                $r->error('Сессия не найдена: ' . $sessionId);
+                return $r;
+            }
+        }
+
         // 3. Резолвинг путей
         $page = PagePath::resolve(
             $this->paths,
-            $domain,
+            $realDomain,
             $allias,
             $name,
             $parent,

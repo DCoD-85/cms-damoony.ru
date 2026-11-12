@@ -258,6 +258,7 @@ AI не видит файловую систему напрямую. Никог�
 
 - **Фаза A** (изоляция FS): `--session` для `page:new`/`page:write`, `SchemeLoader` session-aware, `SessionStartCommand` копирует `www/media/` + `.schemesglobal/` + пишет `permissions` в `.session.json`. См. коммиты `1916b46`, `23d1f9e`.
 - **Фаза B** (Multi-Agent Orchestrator): Blackboard (`context.json`), Interviewer -> Architect -> Coder, `ModelRouter` (`config/models.config`), AIUI (`/admin/aiui.php`, 4 action). См. `_doc/orchestrator.md`, `_doc/aiui.md`, коммиты `441e060`, `b7500ef`.
+- **RealDomain sweep** (v3.1): все CLI-команды резолвят `realDomain` для FS-путей. Trait `ResolvesRealDomain` (`src/Cli/Commands/Concerns/`). Session-isolation закрыта (permissions enforced). 9 новых тестовых классов (`*RealDomainTest`, `*SessionPermissionTest`). Критерий: `grep -rln "paths->\(domain\|algoritm\|media\|content\)(\$domain" src/Cli/Commands/` → 4 justified файла (`AlliasRemove`, `DomainList`, `DomainNew`, `DomainRemove`).
 
 **Закрытые фазы:**
 

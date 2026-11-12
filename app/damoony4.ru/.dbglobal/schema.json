@@ -1,0 +1,24 @@
+{
+    "tables": {
+        "test_items": {
+            "columns": {
+                "id": {
+                    "type": "int",
+                    "primary": true,
+                    "auto_increment": true
+                },
+                "title": {
+                    "type": "varchar",
+                    "length": 255
+                },
+                "body": {
+                    "type": "text"
+                },
+                "created_at": {
+                    "type": "timestamp",
+                    "default": "CURRENT_TIMESTAMP"
+                }
+            }
+        }
+    }
+}

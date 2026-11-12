@@ -10,7 +10,7 @@
 
 - **Path Traversal Guard:** все команды с `--domain`/`--name` проверяют на `..` и regex. `--domain=a..ru` отклоняется. Regex домена — `/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/`; имени/алиаса/блока — `/^[a-z][a-z0-9_]*$/`; категории контента — `/^[a-z0-9_-]{1,32}$/`; hash — `/^[a-f0-9]{16}$/`.
 - **Карантин (6 уровней):** все destructive-команды (`*:remove`, `trash:clear`) перемещают файлы в папку `*_trash_[timestamp]/`, а не удаляют сразу. Требуют флаг `--force`.
-- **realDomain:** если `domains_real["alias.ru"] = "real.ru"`, пути в `app/` строятся по `real.ru`.
+- **realDomain:** `--domain=alias.ru` → FS-пути в `app/<real>/` (через `domains_real[alias.ru]`), конфиг под ключом `domains_real[alias.ru]`. CLI-команды резолвят через trait `ResolvesRealDomain`. Исключения: `domain:new` (self-mapping), `domain:list` (итерирует real), `allias:remove`/`domain:remove` (guard отклоняет non-self-mapped).
 - **`--session=<tab>`** — изоляция AIUI. Принимают только `page:new` и `page:write` (см. §9). Остальные команды пишут в production.
 
 ---

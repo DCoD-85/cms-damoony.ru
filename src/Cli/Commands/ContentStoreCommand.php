@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Damoony\Cli\Commands;
 
 use Damoony\Cli\CommandInterface;
+use Damoony\Cli\Commands\Concerns\ResolvesRealDomain;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
 use Damoony\Core\Files\Fs;
@@ -12,6 +13,8 @@ use Damoony\Core\Files\Paths;
 
 final class ContentStoreCommand implements CommandInterface
 {
+    use ResolvesRealDomain;
+
     private const MIME_EXT = [
         'image/jpeg' => 'jpg',
         'image/png' => 'png',
@@ -100,6 +103,14 @@ final class ContentStoreCommand implements CommandInterface
             return $r;
         }
 
+        // 4a. realDomain (FS-путь) — после policy-проверки allowed_domains
+        try {
+            $realDomain = $this->resolveRealDomain($this->paths, $domain);
+        } catch (\RuntimeException $e) {
+            $r->error($e->getMessage());
+            return $r;
+        }
+
         // 5. Лимит размера (25 MB — как в ainet.config)
         $maxSize = 26214400;
         if (strlen($bytes) > $maxSize) {
@@ -127,7 +138,7 @@ final class ContentStoreCommand implements CommandInterface
         // 7. Хэш и путь (contentRoot, вне webroot)
         $hash = substr(hash('sha256', $bytes), 0, 16);
         $ext = self::MIME_EXT[$mime];
-        $contentDir = $this->paths->content($domain, $allias) . '/' . $category;
+        $contentDir = $this->paths->content($realDomain, $allias) . '/' . $category;
         $file = $contentDir . '/' . $hash . '.' . $ext;
         $metaFile = $contentDir . '/' . $hash . '.meta.json';
 

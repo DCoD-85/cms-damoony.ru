@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Damoony\Cli\Commands;
 
 use Damoony\Cli\CommandInterface;
+use Damoony\Cli\Commands\Concerns\ResolvesRealDomain;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
 use Damoony\Core\Files\Fs;
@@ -12,6 +13,8 @@ use Damoony\Core\Files\Paths;
 
 final class ContentRemoveCommand implements CommandInterface
 {
+    use ResolvesRealDomain;
+
     public function __construct(private readonly Paths $paths)
     {
     }
@@ -57,7 +60,14 @@ final class ContentRemoveCommand implements CommandInterface
             return $r;
         }
 
-        $contentDir = $this->paths->content($domain, $allias) . '/' . $category;
+        try {
+            $realDomain = $this->resolveRealDomain($this->paths, $domain);
+        } catch (\RuntimeException $e) {
+            $r->error($e->getMessage());
+            return $r;
+        }
+
+        $contentDir = $this->paths->content($realDomain, $allias) . '/' . $category;
         $files = glob($contentDir . '/' . $hash . '.*') ?: [];
         if ($files === []) {
             $r->warn("Контент не найден: {$hash}");
@@ -66,7 +76,7 @@ final class ContentRemoveCommand implements CommandInterface
         }
 
         $trashRoot = $this->paths->contentRoot() . '/.trash';
-        $trashDir = $trashRoot . '/' . $domain . '_' . $allias . '_' . $category . '_' . $hash . '_trash_' . time();
+        $trashDir = $trashRoot . '/' . $realDomain . '_' . $allias . '_' . $category . '_' . $hash . '_trash_' . time();
         Fs::mkdir($trashDir);
 
         foreach ($files as $file) {

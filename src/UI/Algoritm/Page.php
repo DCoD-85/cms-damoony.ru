@@ -60,14 +60,14 @@ class Page implements PageInterface
     /**
      * Финальная точка входа. Движок сам решает, как рендерить результат.
      */
-    final public function default(): Node|Response
+    final public function default(): Node|Response|null
     {
         $guard = $this->guard();
         if ($guard !== null) {
             return $guard;
         }
 
-        return $this->content() ?? Response::text('', 204);
+        return $this->content();
     }
 
     public function isAjax(): bool

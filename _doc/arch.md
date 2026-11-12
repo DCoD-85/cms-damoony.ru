@@ -102,6 +102,7 @@
 ## 5. Инварианты (что всегда должно быть истинным)
 
 - Домен ≠ Алиас.
+- **FS-пути — только от `realDomain`.** `Paths::domain/algoritm/media/content/sessionDir` принимает realDomain из `site.config.domains_real`. CLI-команды резолвят через trait `ResolvesRealDomain` (`src/Cli/Commands/Concerns/`) первым делом. `$domain` (alias) — только для валидации и сообщений. Исключения: `domain:new` (self-mapping), `domain:list` (итерирует real), `allias:remove`/`domain:remove` (guard отклоняет non-self-mapped).
 - Ядро знает только `RegionInterface`.
 - Все POST защищены CSRF. Destructive — только POST+CSRF (UI) или `--force` (CLI).
 - **Auth — ответственность страницы, не маршрута.** Движок не проверяет `.rules.json:auth` (метаданные для UI). Public: `$this->isAuthenticated()` (`Damoony\Data\Auth\AuthInterface`). Admin: `extends Damoony\UI\Algoritm\AdminPage` (`Damoony\Admin\AuthInterface::isLoggedIn()`).

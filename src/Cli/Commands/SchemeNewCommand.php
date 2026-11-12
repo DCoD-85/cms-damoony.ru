@@ -5,14 +5,16 @@ declare(strict_types=1);
 namespace Damoony\Cli\Commands;
 
 use Damoony\Cli\CommandInterface;
+use Damoony\Cli\Commands\Concerns\ResolvesRealDomain;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
-use Damoony\Core\Config;
 use Damoony\Core\Files\Fs;
 use Damoony\Core\Files\Paths;
 
 final class SchemeNewCommand implements CommandInterface
 {
+    use ResolvesRealDomain;
+
     public function __construct(private readonly Paths $paths)
     {
     }
@@ -42,18 +44,14 @@ final class SchemeNewCommand implements CommandInterface
             return $r;
         }
 
-        $siteFile = $this->paths->siteConfig();
-        if (!is_file($siteFile)) {
-            $r->error('site.config не найден');
-            return $r;
-        }
-        $site = Config::fromFile($siteFile)->all();
-        if (!isset($site['domains_real'][$domain])) {
-            $r->error('Домен не найден');
+        try {
+            $realDomain = $this->resolveRealDomain($this->paths, $domain);
+        } catch (\RuntimeException $e) {
+            $r->error($e->getMessage());
             return $r;
         }
 
-        $schemesDir = $this->paths->domain($domain) . '/.schemesglobal';
+        $schemesDir = $this->paths->domain($realDomain) . '/.schemesglobal';
         $editorFile = $schemesDir . '/' . $name . '.editor.json';
         $phpFile = $schemesDir . '/' . $name . '.php';
         $rulesFile = $schemesDir . '/' . $name . '.rules.json';
@@ -66,7 +64,7 @@ final class SchemeNewCommand implements CommandInterface
         Fs::mkdir($schemesDir);
 
         // Сканируем доступные блоки
-        $blocksDir = $this->paths->domain($domain) . '/.blocksglobal';
+        $blocksDir = $this->paths->domain($realDomain) . '/.blocksglobal';
         $fields = [];
 
         if (is_dir($blocksDir)) {

@@ -14,7 +14,7 @@ interface PageInterface
     /** @param array<string, string> $args */
     public function __construct(RegionContext $context, RegionRegistry $regions, array $args = []);
 
-    public function default(): Node|Response;
+    public function default(): Node|Response|null;
 
     /** @return list<string> */
     public function ajaxBlocks(): array;

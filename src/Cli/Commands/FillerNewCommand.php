@@ -74,20 +74,26 @@ final class FillerNewCommand implements CommandInterface
             return $r;
         }
 
-        $blockDir = $this->paths->domain($realDomain) . '/.blocksglobal/' . $block;
-        if (!Fs::isDir($blockDir)) {
+        // Базовый блок должен существовать в .blocksglobal (иначе filler не имеет смысла)
+        $globalBlockDir = $this->paths->domain($realDomain) . '/.blocksglobal/' . $block;
+        if (!Fs::isDir($globalBlockDir)) {
             $r->error('Блок не найден: ' . $block);
             return $r;
         }
 
-        $className = 'blocksglobal_' . $block . '_' . $allias;
-        $fillerPhp = $blockDir . '/' . $block . '_' . $allias . '.php';
-        $rulesFile = $blockDir . '/' . $block . '_' . $allias . '.rules.json';
-        $editorFile = $blockDir . '/' . $block . '_' . $allias . '.editor.json';
+        // Filler пишется в {real}/{alias}/.blockslocal/{block}/{block}.php
+        $blockDir = $this->paths->allias($realDomain, $allias) . '/.blockslocal/' . $block;
+        $className = 'blockslocal_' . $allias . '_' . $block;
+        $fillerPhp = $blockDir . '/' . $block . '.php';
+        $rulesFile = $blockDir . '/' . $block . '.rules.json';
+        $editorFile = $blockDir . '/' . $block . '.editor.json';
 
         if (Fs::isFile($fillerPhp) || Fs::isFile($rulesFile)) {
             $r->error('Filler уже существует');
             return $r;
+        }
+        if (!Fs::isDir($blockDir)) {
+            Fs::mkdir($blockDir);
         }
 
         $php = "<?php\n\n"
@@ -110,20 +116,20 @@ final class FillerNewCommand implements CommandInterface
             . "    public function render(RegionContext \$context): Node\n"
             . "    {\n"
             . "        \$wrap = Builder::div('{$block}-{$allias}');\n"
-            . "        \$wrap->append(Builder::p()->content('Filler {$block} для алиаса {$allias}'));\n"
+            . "        \$wrap->append(Builder::p()->content('это локальный блок {$block}'));\n"
             . "        return \$wrap;\n"
             . "    }\n"
             . "}\n";
         Fs::writeAtomic($fillerPhp, $php);
         $r->file(Fs::rel($fillerPhp, $this->paths->root()));
 
-        Fs::writeAtomic($rulesFile, json_encode(['enabled' => true], JSON_PRETTY_PRINT) . "\n");
+        Fs::writeAtomic($rulesFile, json_encode(['enabled' => true, 'type' => 'mixed'], JSON_PRETTY_PRINT) . "\n");
         Fs::writeAtomic($editorFile, json_encode([], JSON_PRETTY_PRINT) . "\n");
         $r->file(Fs::rel($rulesFile, $this->paths->root()));
         $r->file(Fs::rel($editorFile, $this->paths->root()));
 
         // Конфиг: fillers[domain][allias][block] = true (по входному домену, как остальные ключи)
-        $site['fillers'][$domain][$allias][$block] ??= true;
+        $site['fillers'][$realDomain][$allias][$block] ??= true;
         Fs::writeAtomic(
             $siteFile,
             json_encode($site, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n",

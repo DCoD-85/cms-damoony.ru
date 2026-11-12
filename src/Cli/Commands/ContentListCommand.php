@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Damoony\Cli\Commands;
 
 use Damoony\Cli\CommandInterface;
+use Damoony\Cli\Commands\Concerns\ResolvesRealDomain;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
 use Damoony\Core\Files\Fs;
@@ -12,6 +13,8 @@ use Damoony\Core\Files\Paths;
 
 final class ContentListCommand implements CommandInterface
 {
+    use ResolvesRealDomain;
+
     public function __construct(private readonly Paths $paths)
     {
     }
@@ -47,9 +50,16 @@ final class ContentListCommand implements CommandInterface
             return $r;
         }
 
+        try {
+            $realDomain = $this->resolveRealDomain($this->paths, $domain);
+        } catch (\RuntimeException $e) {
+            $r->error($e->getMessage());
+            return $r;
+        }
+
         $base = $allias === ''
-            ? $this->paths->contentRoot() . '/' . $domain
-            : $this->paths->content($domain, $allias);
+            ? $this->paths->contentRoot() . '/' . $realDomain
+            : $this->paths->content($realDomain, $allias);
 
         if (!is_dir($base)) {
             $context->step('Контент не найден', true);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Damoony\Cli\Commands;
 
 use Damoony\Cli\CommandInterface;
+use Damoony\Cli\Commands\Concerns\ResolvesRealDomain;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
 use Damoony\Core\Files\Paths;
@@ -13,6 +14,8 @@ use Damoony\Data\Db\DataProvider\Template\SelectWhereTemplate;
 
 final class DataproviderAddMethodCommand implements CommandInterface
 {
+    use ResolvesRealDomain;
+
     public function __construct(
         private readonly Paths $paths,
     ) {
@@ -56,15 +59,22 @@ final class DataproviderAddMethodCommand implements CommandInterface
         }
 
         try {
+            $realDomain = $this->resolveRealDomain($this->paths, $domain);
+        } catch (\RuntimeException $e) {
+            $r->error($e->getMessage());
+            return $r;
+        }
+
+        try {
             $methodCode = $templateClass::compile($templateArgs);
         } catch (\Throwable $e) {
             $r->error('Compile failed: ' . $e->getMessage());
             return $r;
         }
 
-        $namespace = str_replace(['.', '-'], '_', $domain) . '\\' . $alias . '\\provider';
+        $namespace = str_replace(['.', '-'], '_', $realDomain) . '\\' . $alias . '\\provider';
         $className = ucfirst($provider) . 'Provider';
-        $filePath = $this->paths->appRoot() . '/' . $domain . '/' . $alias . '/.dbprovider/' . $className . '.php';
+        $filePath = $this->paths->appRoot() . '/' . $realDomain . '/' . $alias . '/.dbprovider/' . $className . '.php';
 
         if (!is_file($filePath)) {
             $dir = dirname($filePath);
@@ -73,7 +83,7 @@ final class DataproviderAddMethodCommand implements CommandInterface
                 return $r;
             }
 
-            $coreClass = 'Damoony\\Db\\DataProvider\\' . $className;
+            $coreClass = 'Damoony\\Data\\Db\\DataProvider\\' . $className;
             $boilerplate = <<<PHP
                 <?php
 

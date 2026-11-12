@@ -1,0 +1,9 @@
+{
+    "available": {
+        "": "^$",
+        "testscheme": "^testscheme$"
+    },
+    "auth": false,
+    "search": true,
+    "default": false
+}

@@ -67,9 +67,12 @@ final class FillerCommandsTest extends TestCase
             ->run(['domain' => 'example.ru', 'allias' => 'www', 'block' => 'top'], $this->ctx($r));
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
-        self::assertFileExists($this->root . '/app/example.ru/.blocksglobal/top/top_www.php');
-        self::assertFileExists($this->root . '/app/example.ru/.blocksglobal/top/top_www.rules.json');
-        self::assertFileExists($this->root . '/app/example.ru/.blocksglobal/top/top_www.editor.json');
+        // Filler пишется в {real}/{alias}/.blockslocal/{block}/{block}.*
+        self::assertFileExists($this->root . '/app/example.ru/www/.blockslocal/top/top.php');
+        self::assertFileExists($this->root . '/app/example.ru/www/.blockslocal/top/top.rules.json');
+        self::assertFileExists($this->root . '/app/example.ru/www/.blockslocal/top/top.editor.json');
+        // Базовый блок остаётся в .blocksglobal
+        self::assertFileExists($this->root . '/app/example.ru/.blocksglobal/top/top.php');
 
         $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
         self::assertTrue($site['fillers']['example.ru']['www']['top']);

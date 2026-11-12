@@ -69,14 +69,18 @@ final class FillerToggleCommand implements CommandInterface
             return $r;
         }
 
-        // Idempotent: если значение не меняется — не пишем конфиг
-        $current = $site['fillers'][$domain][$allias][$block] ?? null;
+        // Idempotent: текущее значение — приоритет realDomain (как RegionLoader/FillerNew),
+        // fallback на legacy-ключ $domain для старых конфигов.
+        $current = $site['fillers'][$realDomain][$allias][$block]
+            ?? $site['fillers'][$domain][$allias][$block]
+            ?? null;
         if ($current === $value) {
             $context->step('Filler уже ' . ($value ? 'включён' : 'выключен'), true, $block . '_' . $allias);
             return $r;
         }
 
-        $site['fillers'][$domain][$allias][$block] = $value;
+        // Канонический ключ — realDomain (RegionLoader читает его).
+        $site['fillers'][$realDomain][$allias][$block] = $value;
         Fs::writeAtomic(
             $siteFile,
             json_encode($site, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n",

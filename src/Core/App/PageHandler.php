@@ -130,70 +130,78 @@ final class PageHandler implements PageHandlerInterface
             return $result;
         }
 
-        if ($result instanceof Node) {
-            // AJAX: отдаём блоки как JSON (без skin/document)
-            if ($context->request->isAjax()) {
+        // AJAX: отдаём блоки как JSON (для Node или null)
+        if ($context->request->isAjax()) {
+            if ($result instanceof Node) {
                 $regions->add(new ContentRegion('center', $result));
-                $blocks = [];
-
-                foreach ($ajaxBlocks as $blockName) {
-                    $region = $regions->get($blockName);
-                    if ($region !== null && $region->enabled()) {
-                        $blocks[$blockName] = $region->render($context)->release();
-                    }
-                }
-
-                $flash = $context->service('flash');
-                $messages = $flash instanceof \Damoony\Core\Flash ? $flash->pull() : [];
-
-                return Response::json([
-                    'ok' => true,
-                    'messages' => $messages,
-                    'blocks' => $blocks,
-                    'form' => ['reset' => false, 'keep' => [], 'redirect' => null, 'redirect_time' => null],
-                    'reload' => false,
-                ]);
             }
+            $blocks = [];
 
-            // Загружаем схему (если есть) и оборачиваем в неё контент
-            $paths = $context->service('paths');
-            if ($paths instanceof Paths) {
-                $sid = $context->service('session_id');
-                $loader = new SchemeLoader($paths, is_string($sid) ? $sid : null, $adminRole);
-                $schemeName = $adminRole !== null ? 'admin' : $domain->scheme;
-
-                try {
-                    $manifest = $loader->load($domain, $schemeName);
-                    $regions->add(new ContentRegion('center', $result));
-                    $renderer = new SchemeRenderer();
-                    $result = $renderer->render($manifest, $regions, $context);
-                } catch (\RuntimeException $e) {
-                    // В dev SchemeLoader бросит исключение, если схемы нет.
-                    // В prod вернёт fallback (без исключения).
+            foreach ($ajaxBlocks as $blockName) {
+                $region = $regions->get($blockName);
+                if ($region !== null && $region->enabled()) {
+                    $blocks[$blockName] = $region->render($context)->release();
                 }
             }
 
-            $doc = new Document($context->meta);
-            $doc->lang($domain->language);
-            $doc->body()->append($result);
-
-            // Внедряем Flash-сообщения
             $flash = $context->service('flash');
-            if ($flash instanceof \Damoony\Core\Flash) {
-                $messages = $flash->pull();
-                if (!empty($messages)) {
-                    $script = new \Damoony\UI\Element('script');
-                    $script->attrs()->add('id', 'flash-data');
-                    $script->attrs()->add('type', 'application/json');
-                    $script->append(\Damoony\UI\Text::raw((string) json_encode($messages)));
-                    $doc->body()->append($script);
-                }
-            }
+            $messages = $flash instanceof \Damoony\Core\Flash ? $flash->pull() : [];
 
-            return Response::html($doc->release());
+            return Response::json([
+                'ok' => true,
+                'messages' => $messages,
+                'blocks' => $blocks,
+                'form' => ['reset' => false, 'keep' => [], 'redirect' => null, 'redirect_time' => null],
+                'reload' => false,
+            ]);
         }
 
-        return Response::text('', 204);
+        // SSR: пытаемся загрузить схему; если есть — рендерим (с контентом или без)
+        $paths = $context->service('paths');
+        $schemeRendered = false;
+        if ($paths instanceof Paths) {
+            $sid = $context->service('session_id');
+            $loader = new SchemeLoader($paths, is_string($sid) ? $sid : null, $adminRole);
+            $schemeName = $adminRole !== null ? 'admin' : $domain->scheme;
+
+            try {
+                $manifest = $loader->load($domain, $schemeName);
+                if ($result instanceof Node) {
+                    $regions->add(new ContentRegion('center', $result));
+                }
+                $renderer = new SchemeRenderer();
+                $result = $renderer->render($manifest, $regions, $context);
+                $schemeRendered = true;
+            } catch (\RuntimeException $e) {
+                // В dev SchemeLoader бросит исключение, если схемы нет.
+                // В prod вернёт fallback (без исключения).
+            }
+        }
+
+        // Нет схемы и нет контента → 204
+        if (!$schemeRendered && $result === null) {
+            return Response::text('', 204);
+        }
+
+        // Если схема не отрендерилась, но был Node — оборачиваем в Document как есть
+        $doc = new Document($context->meta);
+        $doc->lang($domain->language);
+        $doc->body()->append($result);
+
+        // Внедряем Flash-сообщения
+        $flash = $context->service('flash');
+        if ($flash instanceof \Damoony\Core\Flash) {
+            $messages = $flash->pull();
+            if (!empty($messages)) {
+                $script = new \Damoony\UI\Element('script');
+                $script->attrs()->add('id', 'flash-data');
+                $script->attrs()->add('type', 'application/json');
+                $script->append(\Damoony\UI\Text::raw((string) json_encode($messages)));
+                $doc->body()->append($script);
+            }
+        }
+
+        return Response::html($doc->release());
     }
 
     private function debugDetail(string $message): string

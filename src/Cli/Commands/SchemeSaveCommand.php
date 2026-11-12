@@ -5,15 +5,19 @@ declare(strict_types=1);
 namespace Damoony\Cli\Commands;
 
 use Damoony\Cli\CommandInterface;
+use Damoony\Cli\Commands\Concerns\EnsuresSessionPermission;
+use Damoony\Cli\Commands\Concerns\ResolvesRealDomain;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
-use Damoony\Core\Config;
 use Damoony\Core\Files\Fs;
 use Damoony\Core\Files\Paths;
 use Damoony\UI\Scheme\SchemeCompiler;
 
 final class SchemeSaveCommand implements CommandInterface
 {
+    use EnsuresSessionPermission;
+    use ResolvesRealDomain;
+
     /** HTML tags allowed in scheme (builder-safe subset; no script/iframe/style/form). */
     private const SAFE_TAGS = [
         'div', 'span', 'section', 'article', 'header', 'footer', 'main', 'aside', 'nav',
@@ -40,6 +44,7 @@ final class SchemeSaveCommand implements CommandInterface
         $r = new Result();
         $domain = $args['domain'] ?? '';
         $name = $args['name'] ?? '';
+        $sessionId = trim((string) ($args['session'] ?? ''));
 
         if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain) || str_contains($domain, '..')) {
             $r->error('Некорректный домен');
@@ -73,18 +78,21 @@ final class SchemeSaveCommand implements CommandInterface
             return $r;
         }
 
-        $siteFile = $this->paths->siteConfig();
-        if (!is_file($siteFile)) {
-            $r->error('site.config не найден');
-            return $r;
-        }
-        $site = Config::fromFile($siteFile)->all();
-        if (!isset($site['domains_real'][$domain])) {
-            $r->error('Домен не найден');
+        try {
+            $realDomain = $this->resolveRealDomain($this->paths, $domain);
+        } catch (\RuntimeException $e) {
+            $r->error($e->getMessage());
             return $r;
         }
 
-        $schemesDir = $this->paths->domain($domain) . '/.schemesglobal';
+        try {
+            $this->ensureSessionPermission($this->paths, $sessionId, $realDomain, 'scheme:save');
+        } catch (\RuntimeException $e) {
+            $r->error($e->getMessage());
+            return $r;
+        }
+
+        $schemesDir = $this->paths->domain($realDomain) . '/.schemesglobal';
         $editorFile = $schemesDir . '/' . $name . '.editor.json';
         $phpFile = $schemesDir . '/' . $name . '.php';
 

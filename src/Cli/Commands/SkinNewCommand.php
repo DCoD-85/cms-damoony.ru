@@ -99,16 +99,16 @@ final class SkinNewCommand implements CommandInterface
         );
         $r->file(Fs::rel($skinDir . '/skin.json', $this->paths->root()));
 
-        // Регистрация в site.config
-        $site['alliases_skins'][$domain][$allias] ??= $name;
-        $allowed = $site['alliases_skins_allowed'][$domain][$allias] ?? [];
+        // Регистрация в site.config — под realDomain (FS-ключ), а не alias
+        $site['alliases_skins'][$realDomain][$allias] ??= $name;
+        $allowed = $site['alliases_skins_allowed'][$realDomain][$allias] ?? [];
         if (!is_array($allowed)) {
             $allowed = [];
         }
         if (!in_array($name, $allowed, true)) {
             $allowed[] = $name;
         }
-        $site['alliases_skins_allowed'][$domain][$allias] = $allowed;
+        $site['alliases_skins_allowed'][$realDomain][$allias] = $allowed;
 
         Fs::writeAtomic(
             $siteFile,

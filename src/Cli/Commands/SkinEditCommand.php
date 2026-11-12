@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Damoony\Cli\Commands;
 
 use Damoony\Cli\CommandInterface;
+use Damoony\Cli\Commands\Concerns\EnsuresSessionPermission;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
 use Damoony\Core\Config;
@@ -13,6 +14,8 @@ use Damoony\Core\Files\Paths;
 
 final class SkinEditCommand implements CommandInterface
 {
+    use EnsuresSessionPermission;
+
     private const MAX_SIZE = 1048576; // 1 MB
     private const SAFE_CSS_RE = '#@import|url\(\s*["\']?\s*javascript:#i';
     // Разрешаем любые css файлы в папке css/ и строго js/main.js
@@ -42,6 +45,7 @@ final class SkinEditCommand implements CommandInterface
         $file = (string) ($args['file'] ?? '');
         $content = (string) ($args['content'] ?? '');
         $contentB64 = (string) ($args['content_b64'] ?? '');
+        $sessionId = trim((string) ($args['session'] ?? ''));
 
         if (!preg_match('/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/', $domain) || str_contains($domain, '..')) {
             $r->error('Некорректный домен');
@@ -112,6 +116,13 @@ final class SkinEditCommand implements CommandInterface
             return $r;
         }
         $realDomain = (string) $site['domains_real'][$domain];
+
+        try {
+            $this->ensureSessionPermission($this->paths, $sessionId, $realDomain, 'skin:edit');
+        } catch (\RuntimeException $e) {
+            $r->error($e->getMessage());
+            return $r;
+        }
 
         $skinDir = $this->paths->media($realDomain, $allias) . '/skin/' . $name;
         if (!Fs::isDir($skinDir)) {

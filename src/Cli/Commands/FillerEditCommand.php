@@ -131,23 +131,31 @@ final class FillerEditCommand implements CommandInterface
         }
         $realDomain = (string) $site['domains_real'][$domain];
 
-        $blockDir = $this->paths->domain($realDomain) . '/.blocksglobal/' . $block;
-        if (!Fs::isDir($blockDir)) {
-            $r->error('Блок не найден');
+        // 1. Проверка базового блока: должен быть хоть где-то (.blocksglobal или .blockslocal)
+        $globalBlockDir = $this->paths->domain($realDomain) . '/.blocksglobal/' . $block;
+        $localBlockDir = $this->paths->allias($realDomain, $allias) . '/.blockslocal/' . $block;
+        if (!Fs::isDir($globalBlockDir) && !Fs::isDir($localBlockDir)) {
+            $r->error('Блок не найден: ' . $block);
             return $r;
         }
 
-        $base = $block . '_' . $allias;
-        $codeFile = $blockDir . '/' . $base . '.php';
-        if (!Fs::isFile($codeFile)) {
-            $r->error("Filler '{$base}' не найден. Сначала выполните filler:new.");
+        // 2. Dual path: .blockslocal/{block}/{block}.{ext} (new) → legacy .blocksglobal/{block}/{block}_{alias}.{ext}
+        $localBase = $localBlockDir . '/' . $block;
+        $legacyBase = $globalBlockDir . '/' . $block . '_' . $allias;
+
+        if (Fs::isFile($localBase . '.php')) {
+            $basePath = $localBase;
+        } elseif (Fs::isFile($legacyBase . '.php')) {
+            $basePath = $legacyBase;
+        } else {
+            $r->error("Filler '{$block}' для алиаса '{$allias}' не найден. Сначала выполните filler:new.");
             return $r;
         }
 
         $target = match ($file) {
-            'code' => $codeFile,
-            'rules' => $blockDir . '/' . $base . '.rules.json',
-            'editor' => $blockDir . '/' . $base . '.editor.json',
+            'code' => $basePath . '.php',
+            'rules' => $basePath . '.rules.json',
+            'editor' => $basePath . '.editor.json',
         };
 
         Fs::writeAtomic($target, $content);

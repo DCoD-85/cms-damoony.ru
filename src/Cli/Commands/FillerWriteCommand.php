@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Damoony\Cli\Commands;
 
 use Damoony\Cli\CommandInterface;
+use Damoony\Cli\Commands\Concerns\EnsuresSessionPermission;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
 use Damoony\Core\Config;
@@ -14,6 +15,8 @@ use Damoony\UI\Region\BlockCompiler;
 
 final class FillerWriteCommand implements CommandInterface
 {
+    use EnsuresSessionPermission;
+
     public function __construct(private readonly Paths $paths)
     {
     }
@@ -34,6 +37,7 @@ final class FillerWriteCommand implements CommandInterface
         $domain = (string) ($args['domain'] ?? '');
         $allias = (string) ($args['allias'] ?? '');
         $block = (string) ($args['block'] ?? '');
+        $sessionId = trim((string) ($args['session'] ?? ''));
 
         $jsonB64 = (string) ($args['json_b64'] ?? '');
         $json = (string) ($args['json'] ?? '');
@@ -59,18 +63,36 @@ final class FillerWriteCommand implements CommandInterface
 
         $siteFile = $this->paths->siteConfig();
         $site = Config::fromFile($siteFile)->all();
-        $realDomain = (string) $site['domains_real'][$domain];
+        $realDomain = (string) ($site['domains_real'][$domain] ?? '');
+        if ($realDomain === '') {
+            $r->error('Домен не найден в site.config');
+            return $r;
+        }
         $namespace = (string) ($site['domains_namespace'][$realDomain] ?? str_replace(['.', '-'], '_', $realDomain));
 
-        $blockDir = $this->paths->domain($realDomain) . '/.blocksglobal/' . $block;
-        $target = $blockDir . '/' . $block . '_' . $allias . '.php';
-
-        if (!Fs::isFile($target)) {
-            $r->error('Filler не найден (сначала создайте его через filler:new)');
+        try {
+            $this->ensureSessionPermission($this->paths, $sessionId, $realDomain, 'filler:write');
+        } catch (\RuntimeException $e) {
+            $r->error($e->getMessage());
             return $r;
         }
 
-        $className = 'blocksglobal_' . $block . '_' . $allias;
+        $baseDir = $this->resolveDomainBase($this->paths, $realDomain, $sessionId);
+
+        // Приоритет: .blockslocal/{block}/{block}.php (new model), fallback — .blocksglobal legacy.
+        $localTarget = $baseDir . '/.blockslocal/' . $block . '/' . $block . '.php';
+        $legacyTarget = $baseDir . '/.blocksglobal/' . $block . '/' . $block . '_' . $allias . '.php';
+
+        if (Fs::isFile($localTarget)) {
+            $target = $localTarget;
+            $className = 'blockslocal_' . $allias . '_' . $block;
+        } elseif (Fs::isFile($legacyTarget)) {
+            $target = $legacyTarget;
+            $className = 'blocksglobal_' . $block . '_' . $allias;
+        } else {
+            $r->error('Filler не найден (сначала создайте его через filler:new)');
+            return $r;
+        }
         $compiler = new BlockCompiler();
         $phpCode = $compiler->compile($namespace, $className, $block, array_values($blocks));
 

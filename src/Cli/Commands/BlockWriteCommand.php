@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Damoony\Cli\Commands;
 
 use Damoony\Cli\CommandInterface;
+use Damoony\Cli\Commands\Concerns\EnsuresSessionPermission;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
 use Damoony\Core\Config;
@@ -14,6 +15,8 @@ use Damoony\UI\Region\BlockCompiler;
 
 final class BlockWriteCommand implements CommandInterface
 {
+    use EnsuresSessionPermission;
+
     public function __construct(private readonly Paths $paths)
     {
     }
@@ -33,6 +36,7 @@ final class BlockWriteCommand implements CommandInterface
         $r = new Result();
         $domain = (string) ($args['domain'] ?? '');
         $name = (string) ($args['name'] ?? '');
+        $sessionId = trim((string) ($args['session'] ?? ''));
 
         $jsonB64 = (string) ($args['json_b64'] ?? '');
         $json = (string) ($args['json'] ?? '');
@@ -58,10 +62,22 @@ final class BlockWriteCommand implements CommandInterface
 
         $siteFile = $this->paths->siteConfig();
         $site = Config::fromFile($siteFile)->all();
-        $realDomain = (string) $site['domains_real'][$domain];
+        $realDomain = (string) ($site['domains_real'][$domain] ?? '');
+        if ($realDomain === '') {
+            $r->error('Домен не найден в site.config');
+            return $r;
+        }
         $namespace = (string) ($site['domains_namespace'][$realDomain] ?? str_replace(['.', '-'], '_', $realDomain));
 
-        $blockDir = $this->paths->domain($realDomain) . '/.blocksglobal/' . $name;
+        try {
+            $this->ensureSessionPermission($this->paths, $sessionId, $realDomain, 'block:write');
+        } catch (\RuntimeException $e) {
+            $r->error($e->getMessage());
+            return $r;
+        }
+
+        $baseDir = $this->resolveDomainBase($this->paths, $realDomain, $sessionId);
+        $blockDir = $baseDir . '/.blocksglobal/' . $name;
         if (!Fs::isDir($blockDir)) {
             $r->error('Блок не найден');
             return $r;
