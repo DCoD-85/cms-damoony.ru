@@ -120,7 +120,7 @@ final class DomainNewCommand implements CommandInterface
             . "    }\n"
             . "}\n";
         Fs::writeAtomic($langDir . '/algoritm_lang.php', $langPhp);
-        Fs::writeAtomic($langDir . '/algoritm_lang.rules.json', json_encode(['available' => ['' => '^$'], 'auth' => false], JSON_PRETTY_PRINT) . "\n");
+        Fs::writeAtomic($langDir . '/algoritm_lang.rules.json', json_encode(['available' => ['' => '^$', 'testscheme' => '^testscheme$'], 'auth' => false], JSON_PRETTY_PRINT) . "\n");
         Fs::writeAtomic($langDir . '/algoritm_lang.editor.json', "[]\n");
         $r->file(Fs::rel($algoritmDir . '/algoritm.php', $this->paths->root()));
 
@@ -221,7 +221,10 @@ final class DomainNewCommand implements CommandInterface
             // 2. Генерируем стили для блоков
             $blocksCss = "header, aside, main, section, footer { background: #fff; padding: 16px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }\n";
             foreach (['top', 'left', 'center', 'right', 'bottom', 'footer', 'policy', 'toast'] as $b) {
-                $blockCss = ".site-{$b} { border-left: 4px solid #007bff; }\n.lang-switcher a { margin-right: 10px; text-decoration: none; color: #007bff; font-weight: bold; }\n";
+                $blockCss = ".site-{$b} { border-left: 4px solid #007bff; }\n";
+                if ($b === 'top') {
+                    $blockCss .= ".lang-switcher a { margin-right: 10px; text-decoration: none; color: #007bff; font-weight: bold; }\n.lang-switcher a.active { color: #333; text-decoration: underline; }\n";
+                }
                 Fs::writeAtomic($mediaAlias . '/css/' . $b . '.css', $blockCss);
                 $r->file(Fs::rel($mediaAlias . '/css/' . $b . '.css', $this->paths->root()));
             }
@@ -278,9 +281,21 @@ final class DomainNewCommand implements CommandInterface
                         . "            if (is_array(\$configured) && \$configured !== []) { \$langs = \$configured; }\n"
                         . "            else { \$configured = \$site->getByKey(['domains_langs', \$context->domain->real], ['ru', 'en']); if (is_array(\$configured) && \$configured !== []) { \$langs = \$configured; } }\n"
                         . "        }\n"
+                        . "        \$currentLang = \$context->domain->language;\n"
+                        . "        \$currentPath = \$context->request->path;\n"
+                        . "        \$prefix = '/' . \$currentLang;\n"
+                        . "        \$pathWithoutLang = \$currentPath;\n"
+                        . "        if (str_starts_with(\$currentPath, \$prefix . '/')) {\n"
+                        . "            \$pathWithoutLang = substr(\$currentPath, strlen(\$prefix));\n"
+                        . "        } elseif (\$currentPath === \$prefix) {\n"
+                        . "            \$pathWithoutLang = '/';\n"
+                        . "        }\n"
                         . "        \$switcher = Builder::div('lang-switcher');\n"
                         . "        foreach (\$langs as \$l) {\n"
-                        . "            \$switcher->append(Builder::a('/' . \$l . '/')->content(strtoupper(\$l)));\n"
+                        . "            \$url = '/' . \$l . (\$pathWithoutLang === '/' ? '/' : \$pathWithoutLang);\n"
+                        . "            \$a = Builder::a(\$url)->content(strtoupper(\$l));\n"
+                        . "            if (\$l === \$currentLang) { \$a->attrs()->classAdd('active'); }\n"
+                        . "            \$switcher->append(\$a);\n"
                         . "        }\n"
                         . "        \$wrap->append(\$switcher);\n";
                 }
@@ -329,11 +344,77 @@ final class DomainNewCommand implements CommandInterface
             // Test page
             $tsDir = $algoritmDir . '/testscheme';
             Fs::mkdir($tsDir);
-            $tsPhp = "<?php\n\ndeclare(strict_types=1);\n\nnamespace {$namespace}\\{$allias};\n\nuse Damoony\\UI\\Algoritm\\Page;\nuse Damoony\\UI\\Builder;\nuse Damoony\\UI\\Node;\n\nfinal class algoritm_testscheme extends Page\n{\n    protected function content(): Node|null\n    {\n        return Builder::div('page-content')->content('Test Scheme Page');\n    }\n}\n";
-            Fs::writeAtomic($tsDir . '/algoritm_testscheme.php', $tsPhp);
-            Fs::writeAtomic($tsDir . '/algoritm_testscheme.rules.json', json_encode(['available' => ['' => '^$'], 'auth' => false], JSON_PRETTY_PRINT) . "\n");
-            Fs::writeAtomic($tsDir . '/algoritm_testscheme.editor.json', "[]\n");
-            $r->file(Fs::rel($tsDir . '/algoritm_testscheme.php', $this->paths->root()));
+            $tsPhp = "<?php\n\ndeclare(strict_types=1);\n\n"
+                . "namespace {$namespace}\\{$allias};\n\n"
+                . "use Damoony\\Core\\Http\\Response;\n"
+                . "use Damoony\\UI\\Algoritm\\Page;\n"
+                . "use Damoony\\UI\\Builder;\n"
+                . "use Damoony\\UI\\Node;\n"
+                . "use Damoony\\UI\\Components\\Form;\n"
+                . "use Damoony\\UI\\Components\\Input;\n"
+                . "use Damoony\\UI\\Components\\Button;\n"
+                . "use Damoony\\UI\\Response\\MinStruct;\n\n"
+                . "final class algoritm_testscheme extends Page\n"
+                . "{\n"
+                . "    protected function content(): Node|Response|null\n"
+                . "    {\n"
+                . "        \$paths = \$this->context->service('paths');\n"
+                . "        \$site = \$this->context->service('site');\n"
+                . "        \$db = \$this->context->service('db');\n"
+                . "        if (!\$db instanceof \\Damoony\\Data\\Db\\Connection) { return Response::internalError('DB missing'); }\n"
+                . "        \$providerFile = \$paths->allias(\$this->context->domain->real, \$this->context->domain->allias) . '/.dbprovider/Test_itemsProvider.php';\n"
+                . "        if (!is_file(\$providerFile)) { return Builder::div()->content('Provider not found'); }\n"
+                . "        require_once \$providerFile;\n"
+                . "        \$className = '\\\\{$namespace}\\\\{$allias}\\\\Test_itemsProvider';\n"
+                . "        \$provider = new \$className(\$db, \$site, \$this->context->domain->real, \$this->context->domain->allias);\n\n"
+                . "        if (\$this->isPost()) {\n"
+                . "            \$title = (string) \$this->context->request->post('title');\n"
+                . "            \$body = (string) \$this->context->request->post('body');\n"
+                . "            if (\$title !== '') {\n"
+                . "                \$provider->create(['title' => \$title, 'body' => \$body]);\n"
+                . "            }\n"
+                . "            if (\$this->isAjax()) {\n"
+                . "                \$struct = new MinStruct();\n"
+                . "                \$struct->ok(true);\n"
+                . "                \$struct->release(\$this->renderList(\$provider)->release());\n"
+                . "                return \$struct->toResponse();\n"
+                . "            }\n"
+                . "            return Response::redirect(\$this->context->request->path);\n"
+                . "        }\n\n"
+                . "        \$wrap = Builder::div('testscheme-wrapper');\n"
+                . "        \$wrap->append(Builder::h(1)->content('Test Scheme: DB CRUD'));\n"
+                . "        \$wrap->append(\$this->renderForm());\n"
+                . "        \$wrap->append(\$this->renderList(\$provider));\n"
+                . "        return \$wrap;\n"
+                . "    }\n\n"
+                . "    private function renderForm(): Node\n"
+                . "    {\n"
+                . "        \$form = new Form();\n"
+                . "        \$form->action('')->method('POST');\n"
+                . "        \$title = new Input('text', 'title');\n"
+                . "        \$title->attrs()->add('placeholder', 'Title');\n"
+                . "        \$title->attrs()->add('required', 'required');\n"
+                . "        \$form->add(\$title);\n"
+                . "        \$body = new Input('text', 'body');\n"
+                . "        \$body->attrs()->add('placeholder', 'Body');\n"
+                . "        \$form->add(\$body);\n"
+                . "        \$form->add(new Button('Add Item'));\n"
+                . "        return \$form;\n"
+                . "    }\n\n"
+                . "    private function renderList(\$provider): Node\n"
+                . "    {\n"
+                . "        \$items = \$provider->get([], 50);\n"
+                . "        \$ul = Builder::ul('test-items-list');\n"
+                . "        foreach (\$items as \$item) {\n"
+                . "            \$ul->append(Builder::li()->content('#' . \$item['id'] . ' - ' . \$item['title'] . ' (' . \$item['created_at'] . ')'));\n"
+                . "        }\n"
+                . "        return \$ul;\n"
+                . "    }\n"
+                . "}\n";
+            Fs::writeAtomic($tsDir . '/algoritm_lang_testscheme.php', $tsPhp);
+            Fs::writeAtomic($tsDir . '/algoritm_lang_testscheme.rules.json', json_encode(['available' => ['' => '^$'], 'auth' => false], JSON_PRETTY_PRINT) . "\n");
+            Fs::writeAtomic($tsDir . '/algoritm_lang_testscheme.editor.json', "[]\n");
+            $r->file(Fs::rel($tsDir . '/algoritm_lang_testscheme.php', $this->paths->root()));
         }
 
         // 4a. Скин по умолчанию (только для minimal)

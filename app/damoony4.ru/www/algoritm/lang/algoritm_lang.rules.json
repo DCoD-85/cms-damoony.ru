@@ -1,6 +1,7 @@
 {
     "available": {
-        "": "^$"
+        "": "^$",
+        "testscheme": "^testscheme$"
     },
     "auth": false
 }

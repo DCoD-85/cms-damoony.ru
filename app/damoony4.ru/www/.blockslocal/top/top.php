@@ -25,9 +25,22 @@ final class blockslocal_www_top implements RegionInterface
             if (is_array($configured) && $configured !== []) { $langs = $configured; }
             else { $configured = $site->getByKey(['domains_langs', $context->domain->real], ['ru', 'en']); if (is_array($configured) && $configured !== []) { $langs = $configured; } }
         }
+        $t = $context->service('i18n');
+        $currentLang = $t instanceof \Damoony\Core\I18n\Translator ? $t->current() : $context->domain->language;
+        $currentPath = $context->request->path;
+        $pathWithoutLang = $currentPath;
+        if (str_starts_with($currentPath, '/' . $currentLang)) {
+            $pathWithoutLang = substr($currentPath, strlen('/' . $currentLang));
+        }
+        if ($pathWithoutLang === '') {
+            $pathWithoutLang = '/';
+        }
         $switcher = Builder::div('lang-switcher');
         foreach ($langs as $l) {
-            $switcher->append(Builder::a('/' . $l . '/')->content(strtoupper($l)));
+            $url = '/' . $l . ($pathWithoutLang === '/' ? '/' : $pathWithoutLang);
+            $a = Builder::a($url)->content(strtoupper($l));
+            if ($l === $currentLang) { $a->attrs()->classAdd('active'); }
+            $switcher->append($a);
         }
         $wrap->append($switcher);
         return $wrap;
