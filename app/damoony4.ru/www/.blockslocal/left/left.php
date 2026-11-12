@@ -17,7 +17,6 @@ final class blockslocal_www_left implements RegionInterface
     public function render(RegionContext $context): Node
     {
         $wrap = Builder::div('site-local-left');
-        $wrap->append(Builder::p()->content('это локальный блок left'));
-        return $wrap;
+        $wrap->append(Builder::p()->content('это локальный блок left'));        return $wrap;
     }
 }

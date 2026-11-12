@@ -17,7 +17,6 @@ final class blockslocal_www_bottom implements RegionInterface
     public function render(RegionContext $context): Node
     {
         $wrap = Builder::div('site-local-bottom');
-        $wrap->append(Builder::p()->content('это локальный блок bottom'));
-        return $wrap;
+        $wrap->append(Builder::p()->content('это локальный блок bottom'));        return $wrap;
     }
 }

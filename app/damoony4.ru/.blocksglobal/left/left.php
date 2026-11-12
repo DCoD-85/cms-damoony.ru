@@ -17,7 +17,6 @@ final class blocksglobal_left implements RegionInterface
     public function render(RegionContext $context): Node
     {
         $wrap = Builder::div('site-left');
-        $wrap->append(Builder::p()->content('это глобальный блок left'));
-        return $wrap;
+        $wrap->append(Builder::p()->content('это глобальный блок left'));        return $wrap;
     }
 }

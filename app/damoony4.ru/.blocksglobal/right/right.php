@@ -17,7 +17,6 @@ final class blocksglobal_right implements RegionInterface
     public function render(RegionContext $context): Node
     {
         $wrap = Builder::div('site-right');
-        $wrap->append(Builder::p()->content('это глобальный блок right'));
-        return $wrap;
+        $wrap->append(Builder::p()->content('это глобальный блок right'));        return $wrap;
     }
 }

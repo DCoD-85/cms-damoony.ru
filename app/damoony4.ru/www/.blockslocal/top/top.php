@@ -18,6 +18,18 @@ final class blockslocal_www_top implements RegionInterface
     {
         $wrap = Builder::div('site-local-top');
         $wrap->append(Builder::p()->content('это локальный блок top'));
+        $site = $context->service('site');
+        $langs = ['ru', 'en'];
+        if ($site instanceof \Damoony\Core\Config) {
+            $configured = $site->getByKey(['alliases_langs', $context->domain->real, $context->domain->allias], []);
+            if (is_array($configured) && $configured !== []) { $langs = $configured; }
+            else { $configured = $site->getByKey(['domains_langs', $context->domain->real], ['ru', 'en']); if (is_array($configured) && $configured !== []) { $langs = $configured; } }
+        }
+        $switcher = Builder::div('lang-switcher');
+        foreach ($langs as $l) {
+            $switcher->append(Builder::a('/' . $l . '/')->content(strtoupper($l)));
+        }
+        $wrap->append($switcher);
         return $wrap;
     }
 }

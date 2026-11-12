@@ -17,7 +17,6 @@ final class blocksglobal_footer implements RegionInterface
     public function render(RegionContext $context): Node
     {
         $wrap = Builder::div('site-footer');
-        $wrap->append(Builder::p()->content('это глобальный блок footer'));
-        return $wrap;
+        $wrap->append(Builder::p()->content('это глобальный блок footer'));        return $wrap;
     }
 }

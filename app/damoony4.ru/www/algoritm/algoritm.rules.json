@@ -1,6 +1,7 @@
 {
     "available": {
         "": "^$",
+        "lang": "^([a-z]{2})$",
         "testscheme": "^testscheme$"
     },
     "auth": false,

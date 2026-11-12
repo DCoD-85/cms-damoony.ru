@@ -94,7 +94,7 @@ final class AlliasNewCommand implements CommandInterface
         Fs::writeAtomic($algoritmDir . '/algoritm.php', $rootPhp);
         $r->file(Fs::rel($algoritmDir . '/algoritm.php', $this->paths->root()));
 
-        $rootRules = ['available' => ['' => '^$'], 'auth' => false, 'search' => true, 'default' => false];
+        $rootRules = ['available' => ['' => '^$', 'lang' => '^([a-z]{2})$'], 'auth' => false, 'search' => true, 'default' => false];
         if ($profile === 'full') {
             $rootRules['available']['testscheme'] = '^testscheme$';
         }
@@ -192,7 +192,22 @@ final class AlliasNewCommand implements CommandInterface
             foreach ($localBlocks as $b) {
                 $lDir = $localDir . '/' . $b;
                 Fs::mkdir($lDir);
-                $php = "<?php\n\ndeclare(strict_types=1);\n\nnamespace {$namespace};\n\nuse Damoony\\UI\\Region\\RegionContext;\nuse Damoony\\UI\\Region\\RegionInterface;\nuse Damoony\\UI\\Builder;\nuse Damoony\\UI\\Node;\n\nfinal class blockslocal_{$name}_{$b} implements RegionInterface\n{\n    public function name(): string { return '{$b}'; }\n    public function enabled(): bool { return true; }\n\n    public function render(RegionContext \$context): Node\n    {\n        \$wrap = Builder::div('site-local-{$b}');\n        \$wrap->append(Builder::p()->content('это локальный блок {$b}'));\n        return \$wrap;\n    }\n}\n";
+                $extra = '';
+                if ($b === 'top') {
+                    $extra = "\n        \$site = \$context->service('site');\n"
+                        . "        \$langs = ['ru', 'en'];\n"
+                        . "        if (\$site instanceof \\Damoony\\Core\\Config) {\n"
+                        . "            \$configured = \$site->getByKey(['alliases_langs', \$context->domain->real, \$context->domain->allias], []);\n"
+                        . "            if (is_array(\$configured) && \$configured !== []) { \$langs = \$configured; }\n"
+                        . "            else { \$configured = \$site->getByKey(['domains_langs', \$context->domain->real], ['ru', 'en']); if (is_array(\$configured) && \$configured !== []) { \$langs = \$configured; } }\n"
+                        . "        }\n"
+                        . "        \$switcher = Builder::div('lang-switcher');\n"
+                        . "        foreach (\$langs as \$l) {\n"
+                        . "            \$switcher->append(Builder::a('/' . \$l . '/')->content(strtoupper(\$l)));\n"
+                        . "        }\n"
+                        . "        \$wrap->append(\$switcher);\n";
+                }
+                $php = "<?php\n\ndeclare(strict_types=1);\n\nnamespace {$namespace};\n\nuse Damoony\\UI\\Region\\RegionContext;\nuse Damoony\\UI\\Region\\RegionInterface;\nuse Damoony\\UI\\Builder;\nuse Damoony\\UI\\Node;\n\nfinal class blockslocal_{$name}_{$b} implements RegionInterface\n{\n    public function name(): string { return '{$b}'; }\n    public function enabled(): bool { return true; }\n\n    public function render(RegionContext \$context): Node\n    {\n        \$wrap = Builder::div('site-local-{$b}');\n        \$wrap->append(Builder::p()->content('это локальный блок {$b}'));{$extra}        return \$wrap;\n    }\n}\n";
                 Fs::writeAtomic($lDir . '/' . $b . '.php', $php);
                 Fs::writeAtomic($lDir . '/' . $b . '.rules.json', json_encode(['enabled' => true, 'type' => 'mixed'], JSON_PRETTY_PRINT) . "\n");
                 Fs::writeAtomic($lDir . '/' . $b . '.editor.json', json_encode([], JSON_PRETTY_PRINT) . "\n");

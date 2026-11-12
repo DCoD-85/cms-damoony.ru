@@ -79,23 +79,52 @@ final class DomainNewCommand implements CommandInterface
         $algoritmDir = $this->paths->algoritm($domain, $allias);
         Fs::mkdir($algoritmDir);
 
-        // 2a. Root-страница: content() = null (пусть рендерится из scheme -> blocksglobal_center)
+        // 2a. Root-страница: редирект на язык по умолчанию
         $rootPhp = "<?php\n\n"
+            . "declare(strict_types=1);\n\n"
+            . "namespace {$namespace}\\{$allias};\n\n"
+            . "use Damoony\\Core\\Http\\Response;\n"
+            . "use Damoony\\UI\\Algoritm\\Page;\n"
+            . "use Damoony\\UI\\Node;\n\n"
+            . "final class algoritm extends Page\n"
+            . "{\n"
+            . "    protected function content(): Node|Response|null\n"
+            . "    {\n"
+            . "        \$lang = \$this->args['lang'] ?? '';\n"
+            . "        if (\$lang === '') {\n"
+            . "            \$default = 'ru';\n"
+            . "            \$site = \$this->context->service('site');\n"
+            . "            if (\$site instanceof \\Damoony\\Core\\Config) {\n"
+            . "                \$default = (string) \$site->getByKey(['domains_langs', \$this->context->domain->real, 0], 'ru');\n"
+            . "            }\n"
+            . "            return Response::redirect('/' . \$default . '/');\n"
+            . "        }\n"
+            . "        return null;\n"
+            . "    }\n"
+            . "}\n";
+        Fs::writeAtomic($algoritmDir . '/algoritm.php', $rootPhp);
+
+        // 2a2. Lang страница
+        $langDir = $algoritmDir . '/lang';
+        Fs::mkdir($langDir);
+        $langPhp = "<?php\n\n"
             . "declare(strict_types=1);\n\n"
             . "namespace {$namespace}\\{$allias};\n\n"
             . "use Damoony\\UI\\Algoritm\\Page;\n"
             . "use Damoony\\UI\\Node;\n\n"
-            . "final class algoritm extends Page\n"
+            . "final class algoritm_lang extends Page\n"
             . "{\n"
             . "    protected function content(): Node|null\n"
             . "    {\n"
             . "        return null;\n"
             . "    }\n"
             . "}\n";
-        Fs::writeAtomic($algoritmDir . '/algoritm.php', $rootPhp);
+        Fs::writeAtomic($langDir . '/algoritm_lang.php', $langPhp);
+        Fs::writeAtomic($langDir . '/algoritm_lang.rules.json', json_encode(['available' => ['' => '^$'], 'auth' => false], JSON_PRETTY_PRINT) . "\n");
+        Fs::writeAtomic($langDir . '/algoritm_lang.editor.json', "[]\n");
         $r->file(Fs::rel($algoritmDir . '/algoritm.php', $this->paths->root()));
 
-        $rootRules = ['available' => ['' => '^$'], 'auth' => false, 'search' => true, 'default' => false];
+        $rootRules = ['available' => ['' => '^$', 'lang' => '^([a-z]{2})$'], 'auth' => false, 'search' => true, 'default' => false];
         if ($profile === 'full') {
             $rootRules['available']['testscheme'] = '^testscheme$';
         }
@@ -208,7 +237,22 @@ final class DomainNewCommand implements CommandInterface
             foreach ($globalBlocks as $b) {
                 $gDir = $domainDir . '/.blocksglobal/' . $b;
                 Fs::mkdir($gDir);
-                $php = "<?php\n\ndeclare(strict_types=1);\n\nnamespace {$namespace};\n\nuse Damoony\\UI\\Region\\RegionContext;\nuse Damoony\\UI\\Region\\RegionInterface;\nuse Damoony\\UI\\Builder;\nuse Damoony\\UI\\Node;\n\nfinal class blocksglobal_{$b} implements RegionInterface\n{\n    public function name(): string { return '{$b}'; }\n    public function enabled(): bool { return true; }\n\n    public function render(RegionContext \$context): Node\n    {\n        \$wrap = Builder::div('site-{$b}');\n        \$wrap->append(Builder::p()->content('это глобальный блок {$b}'));\n        return \$wrap;\n    }\n}\n";
+                $extra = '';
+                if ($b === 'top') {
+                    $extra = "\n        \$site = \$context->service('site');\n"
+                        . "        \$langs = ['ru', 'en'];\n"
+                        . "        if (\$site instanceof \\Damoony\\Core\\Config) {\n"
+                        . "            \$configured = \$site->getByKey(['alliases_langs', \$context->domain->real, \$context->domain->allias], []);\n"
+                        . "            if (is_array(\$configured) && \$configured !== []) { \$langs = \$configured; }\n"
+                        . "            else { \$configured = \$site->getByKey(['domains_langs', \$context->domain->real], ['ru', 'en']); if (is_array(\$configured) && \$configured !== []) { \$langs = \$configured; } }\n"
+                        . "        }\n"
+                        . "        \$switcher = Builder::div('lang-switcher');\n"
+                        . "        foreach (\$langs as \$l) {\n"
+                        . "            \$switcher->append(Builder::a('/' . \$l . '/')->content(strtoupper(\$l)));\n"
+                        . "        }\n"
+                        . "        \$wrap->append(\$switcher);\n";
+                }
+                $php = "<?php\n\ndeclare(strict_types=1);\n\nnamespace {$namespace};\n\nuse Damoony\\UI\\Region\\RegionContext;\nuse Damoony\\UI\\Region\\RegionInterface;\nuse Damoony\\UI\\Builder;\nuse Damoony\\UI\\Node;\n\nfinal class blocksglobal_{$b} implements RegionInterface\n{\n    public function name(): string { return '{$b}'; }\n    public function enabled(): bool { return true; }\n\n    public function render(RegionContext \$context): Node\n    {\n        \$wrap = Builder::div('site-{$b}');\n        \$wrap->append(Builder::p()->content('это глобальный блок {$b}'));{$extra}        return \$wrap;\n    }\n}\n";
                 Fs::writeAtomic($gDir . '/' . $b . '.php', $php);
                 Fs::writeAtomic($gDir . '/' . $b . '.rules.json', json_encode(['enabled' => true, 'type' => 'mixed'], JSON_PRETTY_PRINT) . "\n");
                 Fs::writeAtomic($gDir . '/' . $b . '.editor.json', json_encode([], JSON_PRETTY_PRINT) . "\n");
@@ -221,7 +265,22 @@ final class DomainNewCommand implements CommandInterface
             foreach ($localBlocks as $b) {
                 $lDir = $localDir . '/' . $b;
                 Fs::mkdir($lDir);
-                $php = "<?php\n\ndeclare(strict_types=1);\n\nnamespace {$namespace};\n\nuse Damoony\\UI\\Region\\RegionContext;\nuse Damoony\\UI\\Region\\RegionInterface;\nuse Damoony\\UI\\Builder;\nuse Damoony\\UI\\Node;\n\nfinal class blockslocal_{$allias}_{$b} implements RegionInterface\n{\n    public function name(): string { return '{$b}'; }\n    public function enabled(): bool { return true; }\n\n    public function render(RegionContext \$context): Node\n    {\n        \$wrap = Builder::div('site-local-{$b}');\n        \$wrap->append(Builder::p()->content('это локальный блок {$b}'));\n        return \$wrap;\n    }\n}\n";
+                $extra = '';
+                if ($b === 'top') {
+                    $extra = "\n        \$site = \$context->service('site');\n"
+                        . "        \$langs = ['ru', 'en'];\n"
+                        . "        if (\$site instanceof \\Damoony\\Core\\Config) {\n"
+                        . "            \$configured = \$site->getByKey(['alliases_langs', \$context->domain->real, \$context->domain->allias], []);\n"
+                        . "            if (is_array(\$configured) && \$configured !== []) { \$langs = \$configured; }\n"
+                        . "            else { \$configured = \$site->getByKey(['domains_langs', \$context->domain->real], ['ru', 'en']); if (is_array(\$configured) && \$configured !== []) { \$langs = \$configured; } }\n"
+                        . "        }\n"
+                        . "        \$switcher = Builder::div('lang-switcher');\n"
+                        . "        foreach (\$langs as \$l) {\n"
+                        . "            \$switcher->append(Builder::a('/' . \$l . '/')->content(strtoupper(\$l)));\n"
+                        . "        }\n"
+                        . "        \$wrap->append(\$switcher);\n";
+                }
+                $php = "<?php\n\ndeclare(strict_types=1);\n\nnamespace {$namespace};\n\nuse Damoony\\UI\\Region\\RegionContext;\nuse Damoony\\UI\\Region\\RegionInterface;\nuse Damoony\\UI\\Builder;\nuse Damoony\\UI\\Node;\n\nfinal class blockslocal_{$allias}_{$b} implements RegionInterface\n{\n    public function name(): string { return '{$b}'; }\n    public function enabled(): bool { return true; }\n\n    public function render(RegionContext \$context): Node\n    {\n        \$wrap = Builder::div('site-local-{$b}');\n        \$wrap->append(Builder::p()->content('это локальный блок {$b}'));{$extra}        return \$wrap;\n    }\n}\n";
                 Fs::writeAtomic($lDir . '/' . $b . '.php', $php);
                 Fs::writeAtomic($lDir . '/' . $b . '.rules.json', json_encode(['enabled' => true, 'type' => 'mixed'], JSON_PRETTY_PRINT) . "\n");
                 Fs::writeAtomic($lDir . '/' . $b . '.editor.json', json_encode([], JSON_PRETTY_PRINT) . "\n");

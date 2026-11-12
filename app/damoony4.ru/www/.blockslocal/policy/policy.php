@@ -17,7 +17,6 @@ final class blockslocal_www_policy implements RegionInterface
     public function render(RegionContext $context): Node
     {
         $wrap = Builder::div('site-local-policy');
-        $wrap->append(Builder::p()->content('это локальный блок policy'));
-        return $wrap;
+        $wrap->append(Builder::p()->content('это локальный блок policy'));        return $wrap;
     }
 }
