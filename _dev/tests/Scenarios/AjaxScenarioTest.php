@@ -151,9 +151,9 @@ final class AjaxScenarioTest extends TestCase
         self::assertSame('application/json; charset=utf-8', $r->headers['content-type']);
         $data = json_decode($r->body, true);
         self::assertIsArray($data);
-        self::assertFalse($data['error']);
-        self::assertSame('<div class="msg">ok</div>', $data['messages']);
-        self::assertSame('<div class="min-release">ajax min</div>', $data['release']);
+        self::assertTrue($data['ok']);
+        self::assertSame([['type' => 'info', 'text' => 'ok']], $data['messages']);
+        self::assertSame(['center' => '<div class="min-release">ajax min</div>'], $data['blocks']);
         self::assertSame('/next', $data['form']['redirect']);
         self::assertSame(2, $data['form']['redirect_time']);
     }

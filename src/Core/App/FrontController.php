@@ -6,8 +6,6 @@ namespace Damoony\Core\App;
 
 use Damoony\Core\Config;
 use Damoony\Core\Domain\DomainResolverInterface;
-use Damoony\UI\Url\AdminUrlBuilder;
-use Damoony\UI\Url\SiteUrlBuilder;
 use Damoony\Core\Error\ErrorPage;
 use Damoony\Core\Files\Paths;
 use Damoony\Core\Http\Request;
@@ -19,6 +17,8 @@ use Damoony\Core\Security\Csrf;
 use Damoony\Data\Auth\AuthInterface;
 use Damoony\UI\Meta;
 use Damoony\UI\Region\RegionContext;
+use Damoony\UI\Url\AdminUrlBuilder;
+use Damoony\UI\Url\SiteUrlBuilder;
 use Psr\Container\ContainerInterface;
 
 final class FrontController
@@ -133,7 +133,7 @@ final class FrontController
         $isVirtualAdmin = str_ends_with($host, '.admin') && $adminRole === null;
         $effectiveAdminRole = $adminRole ?? ($isVirtualAdmin ? explode('.', $host)[0] : null);
         $isAdminCtx = $effectiveAdminRole !== null;
-        
+
         $langStrategy = 'path';
         if (isset($request->query['lang'])) {
             $langStrategy = 'query';
@@ -163,7 +163,7 @@ final class FrontController
             currentPath: $currentPath,
         );
 
-        $urlBuilder = $isAdminCtx 
+        $urlBuilder = $isAdminCtx
             ? new AdminUrlBuilder($requestContext)
             : new SiteUrlBuilder($requestContext);
 

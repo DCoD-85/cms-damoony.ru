@@ -7,7 +7,6 @@ use Damoony\Core\App\AppFactory;
 use Damoony\Core\App\FrontController;
 use Damoony\Core\App\PageHandlerInterface;
 use Damoony\Core\Config;
-use Damoony\Core\Domain\DomainResolverInterface;
 use Damoony\Core\Http\Request;
 use Damoony\Core\Session\NativeSession;
 
@@ -44,8 +43,19 @@ if (!preg_match('/^[a-z][a-z0-9_]*$/', $ctxRole)) {
     echo 'invalid role';
     exit;
 }
-$resolver = $container->get(DomainResolverInterface::class);
-$domainContext = $resolver->resolve('.admin')->withAllias($ctxRole);
+$adminLangsRaw = (array) $adminConfig->getByKey(['domains_langs'], ['ru']);
+$adminLangs = array_values(array_filter($adminLangsRaw, 'is_string')) ?: ['ru'];
+$adminLangDefault = (string) $adminConfig->getByKey(['default_lang'], $adminLangs[0]);
+
+$domainContext = new \Damoony\Core\Domain\DomainContext(
+    domain: '.admin',
+    real: '.admin',
+    allias: $ctxRole,
+    skin: 'default',
+    language: $adminLangDefault,
+    available: true,
+    supportedLanguages: $adminLangs,
+);
 
 $path = $req->path;
 if (str_starts_with($path, '/admin')) {

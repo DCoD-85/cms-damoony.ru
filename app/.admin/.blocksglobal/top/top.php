@@ -64,7 +64,7 @@ final class blocksglobal_top implements RegionInterface
         $switcher->append(Builder::span('lang-label')->content($label));
         foreach ($routing->domain->supportedLanguages as $l) {
             $a = Builder::a($url->switchLang($l))->content(strtoupper($l));
-            $a->attrs()->add('data-update', 'all');
+            $a;
             if ($l === $routing->lang) {
                 $a->attrs()->classAdd('active');
             }

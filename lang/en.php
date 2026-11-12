@@ -289,4 +289,7 @@ return array (
   'admin.dash.current_lang' => 'Current language: {lang}',
   'admin.dash.lang' => 'Language: ',
   'admin.start.placeholder' => 'Start page',
+  'admin.nav.login' => 'Login',
+  'admin.nav.home' => 'Home',
+  'admin.nav.profile' => 'Profile',
 );

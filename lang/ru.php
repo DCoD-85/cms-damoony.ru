@@ -289,4 +289,7 @@ return array (
   'admin.dash.current_lang' => 'Текущий язык: {lang}',
   'admin.dash.lang' => 'Язык: ',
   'admin.start.placeholder' => 'Стартовая страница',
+  'admin.nav.login' => 'Войти',
+  'admin.nav.home' => 'Главная',
+  'admin.nav.profile' => 'Профиль',
 );

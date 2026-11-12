@@ -4,21 +4,21 @@ declare(strict_types=1);
 
 return [
     'tag' => 'div',
-    'class' => 'admin-wrapper',
+    'class' => 'dt_wrapper',
     'children' => [
-        ['tag' => 'div', 'class' => 'admin-top', 'slot' => 'top'],
+        ['tag' => 'div', 'class' => 'dt_top', 'slot' => 'top'],
         [
             'tag' => 'div',
-            'class' => 'admin-middle',
+            'class' => 'dt_middle',
             'children' => [
-                ['tag' => 'div', 'class' => 'admin-left', 'slot' => 'left'],
-                ['tag' => 'div', 'class' => 'admin-center', 'slot' => 'center'],
-                ['tag' => 'div', 'class' => 'admin-right', 'slot' => 'right'],
+                ['tag' => 'div', 'class' => 'dt_left', 'slot' => 'left'],
+                ['tag' => 'div', 'class' => 'dt_center', 'slot' => 'center'],
+                ['tag' => 'div', 'class' => 'dt_right', 'slot' => 'right'],
             ],
         ],
-        ['tag' => 'div', 'class' => 'admin-bottom', 'slot' => 'bottom'],
-        ['tag' => 'div', 'class' => 'admin-policy', 'slot' => 'policy'],
-        ['tag' => 'div', 'class' => 'admin-toast', 'slot' => 'toast'],
+        ['tag' => 'div', 'class' => 'dt_bottom', 'slot' => 'bottom'],
+        ['tag' => 'div', 'class' => 'dt_policy', 'slot' => 'policy'],
+        ['tag' => 'div', 'class' => 'dt_toast', 'slot' => 'toast'],
     ],
     'scripts' => [],
     'meta' => [

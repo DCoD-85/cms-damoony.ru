@@ -289,4 +289,7 @@ return array (
   'admin.dash.current_lang' => '当前语言: {lang}',
   'admin.dash.lang' => '语言: ',
   'admin.start.placeholder' => '起始页',
+  'admin.nav.login' => '登录',
+  'admin.nav.home' => '主页',
+  'admin.nav.profile' => '个人资料',
 );

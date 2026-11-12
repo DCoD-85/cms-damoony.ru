@@ -9,45 +9,69 @@ use Damoony\UI\Node;
 
 final class MinStruct
 {
-    private bool $error = false;
+    private bool $ok = true;
 
-    private string $messages = '';
+    /** @var list<array{type: string, text: string}> */
+    private array $messages = [];
 
-    private ?Node $release = null;
+    /** @var array<string, string> */
+    private array $blocks = [];
 
     private bool $formReset = false;
+
+    /** @var list<string> */
+    private array $formKeep = [];
 
     private ?string $formRedirect = null;
 
     private ?int $formRedirectTime = null;
 
-    private ?string $referer = null;
-
-    private bool $refererSet = false;
-
     private bool $reload = false;
 
-    public function error(bool $value = false): self
+    public function ok(bool $value = true): self
     {
-        $this->error = $value;
+        $this->ok = $value;
         return $this;
     }
 
-    public function messages(string $html = ''): self
+    public function error(bool $value = true): self
     {
-        $this->messages = $html;
+        $this->ok = !$value;
+        return $this;
+    }
+
+    public function message(string $type, string $text): self
+    {
+        $this->messages[] = ['type' => $type, 'text' => $text];
+        return $this;
+    }
+
+    /** @param list<array{type: string, text: string}> $messages */
+    public function messages(array $messages): self
+    {
+        $this->messages = $messages;
+        return $this;
+    }
+
+    public function block(string $name, string $html): self
+    {
+        $this->blocks[$name] = $html;
         return $this;
     }
 
     public function release(?Node $node = null): self
     {
-        $this->release = $node;
+        if ($node !== null) {
+            $this->blocks['center'] = $node->release();
+        }
         return $this;
     }
 
-    public function form(bool $reset = false, ?string $redirect = null, ?int $redirectTime = null): self
+    /** @param list<string> $keep */
+    public function form(bool $reset = false, array $keep = [], ?string $redirect = null, ?int $redirectTime = null): self
     {
         $this->formReset = $reset;
+        $this->formKeep = $keep;
         $this->formRedirect = $redirect;
         $this->formRedirectTime = $redirectTime;
         return $this;
@@ -59,33 +83,19 @@ final class MinStruct
         return $this;
     }
 
-    public function referer(?string $referer = null): self
-    {
-        $this->referer = $referer;
-        $this->refererSet = true;
-        return $this;
-    }
-
     /** @return array<string, mixed> */
     public function toArray(): array
     {
-        $referer = $this->referer;
-        if (!$this->refererSet) {
-            $referer = isset($_SERVER['HTTP_REFERER']) && is_string($_SERVER['HTTP_REFERER'])
-                ? $_SERVER['HTTP_REFERER']
-                : null;
-        }
-
         return [
-            'error' => $this->error,
+            'ok' => $this->ok,
             'messages' => $this->messages,
-            'release' => $this->release?->release(),
+            'blocks' => $this->blocks,
             'form' => [
                 'reset' => $this->formReset,
+                'keep' => $this->formKeep,
                 'redirect' => $this->formRedirect,
                 'redirect_time' => $this->formRedirectTime,
             ],
-            'referer' => $referer,
             'reload' => $this->reload,
         ];
     }

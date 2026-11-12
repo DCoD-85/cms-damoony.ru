@@ -202,7 +202,7 @@ final class AdminLoginScenarioTest extends TestCase
         $this->auth->attempt('admin', 'test123');
         self::assertTrue($this->auth->isLoggedIn());
 
-        $r = $this->handle(new Request('GET', '/ru/logout'));
+        $r = $this->handle(new Request('GET', '/ru/profile/logout'));
         self::assertSame(302, $r->status);
         self::assertSame('/admin/ru/login', $r->headers['location'] ?? null);
         self::assertFalse($this->auth->isLoggedIn());

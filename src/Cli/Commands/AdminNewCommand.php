@@ -227,21 +227,21 @@ final class AdminNewCommand implements CommandInterface
 
             return [
                 'tag' => 'div',
-                'class' => 'admin-wrapper',
+                'class' => 'dt_wrapper',
                 'children' => [
-                    ['tag' => 'div', 'class' => 'admin-top', 'slot' => 'top'],
+                    ['tag' => 'div', 'class' => 'dt_top', 'slot' => 'top'],
                     [
                         'tag' => 'div',
-                        'class' => 'admin-middle',
+                        'class' => 'dt_middle',
                         'children' => [
-                            ['tag' => 'div', 'class' => 'admin-left', 'slot' => 'left'],
-                            ['tag' => 'div', 'class' => 'admin-center', 'slot' => 'center'],
-                            ['tag' => 'div', 'class' => 'admin-right', 'slot' => 'right'],
+                            ['tag' => 'div', 'class' => 'dt_left', 'slot' => 'left'],
+                            ['tag' => 'div', 'class' => 'dt_center', 'slot' => 'center'],
+                            ['tag' => 'div', 'class' => 'dt_right', 'slot' => 'right'],
                         ],
                     ],
-                    ['tag' => 'div', 'class' => 'admin-bottom', 'slot' => 'bottom'],
-                    ['tag' => 'div', 'class' => 'admin-policy', 'slot' => 'policy'],
-                    ['tag' => 'div', 'class' => 'admin-toast', 'slot' => 'toast'],
+                    ['tag' => 'div', 'class' => 'dt_bottom', 'slot' => 'bottom'],
+                    ['tag' => 'div', 'class' => 'dt_policy', 'slot' => 'policy'],
+                    ['tag' => 'div', 'class' => 'dt_toast', 'slot' => 'toast'],
                 ],
                 'scripts' => [],
                 'meta' => [
@@ -322,7 +322,7 @@ final class AdminNewCommand implements CommandInterface
                     \$switcher->append(Builder::span('lang-label')->content(\$label));
                     foreach (\$routing->domain->supportedLanguages as \$l) {
                         \$a = Builder::a(\$url->switchLang(\$l))->content(strtoupper(\$l));
-                        \$a->attrs()->add('data-update', 'all');
+                        \$a;
                         if (\$l === \$routing->lang) {
                             \$a->attrs()->classAdd('active');
                         }
@@ -813,16 +813,16 @@ final class AdminNewCommand implements CommandInterface
         return <<<CSS
             /* Admin skin: main */
             body { font-family: system-ui, sans-serif; margin: 0; padding: 0; background: #f5f5f5; }
-            .admin-wrapper { min-height: 100vh; display: flex; flex-direction: column; }
-            .admin-top { background: #1f2937; color: #fff; padding: 8px 16px; }
-            .admin-middle { display: flex; flex: 1; }
-            .admin-left { width: 220px; background: #fff; border-right: 1px solid #e5e7eb; }
-            .admin-center { flex: 1; padding: 16px; }
-            .admin-right { width: 220px; background: #fff; border-left: 1px solid #e5e7eb; }
-            .admin-bottom { background: #1f2937; color: #fff; padding: 8px 16px; }
-            .admin-policy { background: #111827; color: #9ca3af; padding: 6px 16px; font-size: 12px; }
-            .admin-toast { position: fixed; bottom: 16px; right: 16px; z-index: 1000; }
-            .admin-start { font-size: 20px; color: #374151; }
+            .dt_wrapper { min-height: 100vh; display: flex; flex-direction: column; }
+            .dt_top { background: #1f2937; color: #fff; padding: 8px 16px; }
+            .dt_middle { display: flex; flex: 1; }
+            .dt_left { width: 220px; background: #fff; border-right: 1px solid #e5e7eb; }
+            .dt_center { flex: 1; padding: 16px; }
+            .dt_right { width: 220px; background: #fff; border-left: 1px solid #e5e7eb; }
+            .dt_bottom { background: #1f2937; color: #fff; padding: 8px 16px; }
+            .dt_policy { background: #111827; color: #9ca3af; padding: 6px 16px; font-size: 12px; }
+            .dt_toast { position: fixed; bottom: 16px; right: 16px; z-index: 1000; }
+            .dt_start { font-size: 20px; color: #374151; }
             .login-page-wrapper { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
             CSS;
     }

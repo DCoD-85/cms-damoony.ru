@@ -115,6 +115,18 @@ final class PageHandler implements PageHandlerInterface
     private function toResponse(Node|Response|null $result, DomainContext $domain, RegionContext $context, RegionRegistry $regions, ?string $adminRole = null, array $ajaxBlocks = ['center'], float $debugTime = 0.0): Response
     {
         if ($result instanceof Response) {
+            // AJAX: перехватываем редиректы, чтобы JS мог их обработать
+            if ($context->request->isAjax() && in_array($result->status, [301, 302, 303, 307, 308], true)) {
+                $flash = $context->service('flash');
+                $messages = $flash instanceof \Damoony\Core\Flash ? $flash->pull() : [];
+                return Response::json([
+                    'ok' => true,
+                    'messages' => $messages,
+                    'blocks' => [],
+                    'form' => ['reset' => false, 'keep' => [], 'redirect' => $result->headers['location'] ?? null, 'redirect_time' => 0],
+                    'reload' => false,
+                ]);
+            }
             return $result;
         }
 
@@ -131,11 +143,15 @@ final class PageHandler implements PageHandlerInterface
                     }
                 }
 
+                $flash = $context->service('flash');
+                $messages = $flash instanceof \Damoony\Core\Flash ? $flash->pull() : [];
+
                 return Response::json([
                     'ok' => true,
+                    'messages' => $messages,
                     'blocks' => $blocks,
-                    'url' => $context->request->path,
-                    'debug_time' => $debugTime,
+                    'form' => ['reset' => false, 'keep' => [], 'redirect' => null, 'redirect_time' => null],
+                    'reload' => false,
                 ]);
             }
 

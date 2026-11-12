@@ -12,7 +12,7 @@ use Damoony\UI\Region\RegionRegistry;
 class Page implements PageInterface
 {
     /** @var list<string> */
-    protected array $ajaxBlocks = ['center'];
+    protected array $ajaxBlocks = ['top', 'left', 'center', 'right', 'bottom', 'policy', 'toast'];
 
     /** @param array<string, string> $args */
     public function __construct(

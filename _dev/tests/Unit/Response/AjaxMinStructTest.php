@@ -16,36 +16,28 @@ final class AjaxMinStructTest extends TestCase
         $m = new MinStruct();
         $a = $m->toArray();
 
-        self::assertFalse($a['error']);
-        self::assertSame('', $a['messages']);
-        self::assertNull($a['release']);
-        self::assertSame(['reset' => false, 'redirect' => null, 'redirect_time' => null], $a['form']);
-        self::assertNull($a['referer']);
+        self::assertTrue($a['ok']);
+        self::assertSame([], $a['messages']);
+        self::assertSame([], $a['blocks']);
+        self::assertSame(['reset' => false, 'keep' => [], 'redirect' => null, 'redirect_time' => null], $a['form']);
+        self::assertFalse($a['reload']);
     }
 
     public function testMinFilled(): void
     {
         $m = new MinStruct();
         $m->error(true)
-            ->messages('<b>err</b>')
+            ->message('error', 'err')
             ->release(Builder::div('x')->content('y'))
-            ->form(true, '/login', 3)
-            ->referer('https://ref.example');
+            ->form(true, [], '/login', 3);
 
         $a = $m->toArray();
-        self::assertTrue($a['error']);
-        self::assertSame('<b>err</b>', $a['messages']);
-        self::assertSame('<div class="x">y</div>', $a['release']);
-        self::assertSame(['reset' => true, 'redirect' => '/login', 'redirect_time' => 3], $a['form']);
-        self::assertSame('https://ref.example', $a['referer']);
+        self::assertFalse($a['ok']);
+        self::assertSame([['type' => 'error', 'text' => 'err']], $a['messages']);
+        self::assertSame(['center' => '<div class="x">y</div>'], $a['blocks']);
+        self::assertSame(['reset' => true, 'keep' => [], 'redirect' => '/login', 'redirect_time' => 3], $a['form']);
     }
 
-    public function testMinRefererFalsyZero(): void
-    {
-        $m = new MinStruct();
-        $m->referer('0');
-        self::assertSame('0', $m->toArray()['referer']);
-    }
 
     public function testMinToResponse(): void
     {

@@ -36,9 +36,9 @@ class AjaxPage extends Page
 
         $min = new MinStruct();
         $min->error(false);
-        $min->messages('<div class="msg">ok</div>');
+        $min->message('info', 'ok');
         $min->release(Builder::div('min-release')->content('ajax min'));
-        $min->form(false, '/next', 2);
+        $min->form(false, [], '/next', 2);
         return $min->toResponse();
     }
 }
