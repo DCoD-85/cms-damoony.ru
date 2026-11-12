@@ -68,7 +68,12 @@ final class DbMethodsCommand implements CommandInterface
 
         $methods = [];
         foreach ($ref->getMethods(\ReflectionMethod::IS_PUBLIC) as $m) {
-            if ($m->getDeclaringClass()->getName() !== $ref->getName()) {
+            $declarer = $m->getDeclaringClass()->getName();
+            $allowed = [
+                $ref->getName(),
+                \Damoony\Data\Db\DataProvider\BasicCrudProvider::class,
+            ];
+            if (!in_array($declarer, $allowed, true)) {
                 continue;
             }
             if (in_array($m->getName(), self::CONTRACT_METHODS, true)) {
