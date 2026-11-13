@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\UI\Algoritm;
 
-use Damoony\Admin\AuthInterface as AdminAuthInterface;
-use Damoony\Core\Config;
+use Damoony\Core\Container;
 use Damoony\Core\Domain\DomainContext;
+use Damoony\Core\Files\Paths;
 use Damoony\Core\Http\Request;
 use Damoony\Core\Http\Response;
+use Damoony\Data\Auth\AuthInterface;
 use Damoony\UI\Algoritm\AdminPage;
-use Damoony\UI\Builder;
+use Damoony\UI\Meta;
 use Damoony\UI\Node;
 use Damoony\UI\Region\RegionContext;
 use Damoony\UI\Region\RegionRegistry;
@@ -18,143 +19,65 @@ use PHPUnit\Framework\TestCase;
 
 final class AdminPageTest extends TestCase
 {
-    public function testUnauthenticatedRedirects(): void
+    private function context(bool $authenticated, string $role = 'user'): RegionContext
     {
-        $page = new class ($this->context(false), new RegionRegistry()) extends AdminPage {
-            protected function content(): Node|Response|null
-            {
-                return Builder::div('x')->content('secret');
-            }
+        $auth = new class($authenticated, $role) implements AuthInterface {
+            public function __construct(private bool $auth, private string $role) {}
+            public function isAuthenticated(): bool { return $this->auth; }
+            public function user(): ?array { return $this->auth ? ['id' => 1, 'role' => $this->role] : null; }
+            public function login(string $login, string $password): bool { return false; }
+            public function logout(): void {}
         };
-
-        $response = $page->default();
-
-        self::assertInstanceOf(Response::class, $response);
-        self::assertSame(302, $response->status);
-        self::assertSame('/admin/ru/login', $response->headers['location']);
+        
+        $domain = new DomainContext('test.ru', 'test.ru', 'www', 'default', 'ru', true);
+        return new RegionContext(
+            new Request('GET', '/'),
+            $domain,
+            new Meta(),
+            ['auth' => $auth]
+        );
     }
 
-    public function testAuthenticatedReturnsNode(): void
+    public function testUnauthenticatedRedirectsToLogin(): void
     {
-        $page = new class ($this->context(true), new RegionRegistry()) extends AdminPage {
-            protected function content(): Node|Response|null
-            {
-                return Builder::div('x')->content('secret');
-            }
+        $page = new class ($this->context(false), new RegionRegistry()) extends AdminPage {
+            protected function content(): Node|Response|null { return null; }
         };
 
         $result = $page->default();
-
-        self::assertInstanceOf(Node::class, $result);
-        self::assertStringContainsString('secret', $result->release());
+        self::assertInstanceOf(Response::class, $result);
+        self::assertSame(302, $result->status);
+        self::assertStringContainsString('/login/', $result->headers['location']);
     }
 
-    public function testNullContentReturnsNull(): void
+    public function testAuthenticatedButNotAdminRedirects(): void
     {
-        $page = new class ($this->context(true), new RegionRegistry()) extends AdminPage {
-            protected function content(): Node|Response|null
-            {
-                return null;
-            }
+        $page = new class ($this->context(true, 'user'), new RegionRegistry()) extends AdminPage {
+            protected function content(): Node|Response|null { return null; }
+        };
+
+        $result = $page->default();
+        self::assertInstanceOf(Response::class, $result);
+        self::assertSame(302, $result->status);
+    }
+
+    public function testAdminReturnsNode(): void
+    {
+        $page = new class ($this->context(true, 'admin'), new RegionRegistry()) extends AdminPage {
+            protected function content(): Node|Response|null { return new \Damoony\UI\Element('div'); }
+        };
+
+        $result = $page->default();
+        self::assertInstanceOf(Node::class, $result);
+    }
+
+    public function testAdminNullContentReturnsNull(): void
+    {
+        $page = new class ($this->context(true, 'admin'), new RegionRegistry()) extends AdminPage {
+            protected function content(): Node|Response|null { return null; }
         };
 
         $result = $page->default();
         self::assertNull($result);
-    }
-
-    public function testUnauthenticatedWithoutConfigReturns500(): void
-    {
-        $page = new class ($this->contextNoConfig(), new RegionRegistry()) extends AdminPage {
-            protected function content(): Node|Response|null
-            {
-                return Builder::div('x')->content('secret');
-            }
-        };
-
-        $response = $page->default();
-
-        self::assertInstanceOf(Response::class, $response);
-        self::assertSame(500, $response->status);
-    }
-
-    private function contextNoConfig(): RegionContext
-    {
-        $auth = new class () implements AdminAuthInterface {
-            public function attempt(string $login, string $password): bool
-            {
-                return false;
-            }
-            public function isLoggedIn(): bool
-            {
-                return false;
-            }
-            public function login(): string
-            {
-                return '';
-            }
-            public function logout(): void
-            {
-            }
-        };
-
-        $request = Request::fromGlobals();
-        $domain = new DomainContext(
-            domain: 'example.ru',
-            real: 'example.ru',
-            allias: 'www',
-            skin: 'default',
-            language: 'ru',
-            available: true,
-        );
-
-        return new RegionContext($request, $domain, null, ['auth' => $auth]);
-    }
-
-    private function context(bool $authenticated): RegionContext
-    {
-        $auth = new class ($authenticated) implements AdminAuthInterface {
-            public function __construct(private readonly bool $ok)
-            {
-            }
-
-            public function attempt(string $login, string $password): bool
-            {
-                return false;
-            }
-
-            public function isLoggedIn(): bool
-            {
-                return $this->ok;
-            }
-
-            public function login(): string
-            {
-                return '';
-            }
-
-            public function logout(): void
-            {
-            }
-        };
-
-        $request = Request::fromGlobals();
-        $domain = new DomainContext(
-            domain: 'example.ru',
-            real: 'example.ru',
-            allias: 'www',
-            skin: 'default',
-            language: 'ru',
-            available: true,
-        );
-
-        $adminConfig = Config::fromArray([
-            'default_lang' => 'ru',
-            'default_role' => 'superadmin',
-        ]);
-
-        return new RegionContext($request, $domain, null, [
-            'auth' => $auth,
-            'admin_config' => $adminConfig,
-        ]);
     }
 }

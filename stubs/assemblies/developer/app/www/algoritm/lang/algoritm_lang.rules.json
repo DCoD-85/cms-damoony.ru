@@ -1,1 +1,11 @@
-{"available": {"": "^$", "about": "^about$", "tests": "^tests$"}, "auth": false}
+{
+    "available": {
+        "": "^$",
+        "about": "^about$",
+        "tests": "^tests$",
+        "login": "^login$",
+        "logout": "^logout$",
+        "profile": "^profile$"
+    },
+    "auth": false
+}

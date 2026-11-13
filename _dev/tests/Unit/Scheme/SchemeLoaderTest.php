@@ -50,7 +50,7 @@ final class SchemeLoaderTest extends TestCase
         $loader = new SchemeLoader(new Paths($this->root));
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Scheme not found:');
+        $this->expectExceptionMessage('Scheme not found for alias:');
 
         $loader->load($this->domain(), 'www');
     }
