@@ -58,8 +58,10 @@
 **Правило:** если код нужен и сайту, и админке, и CLI — он живёт в `Core` или `UI`. Если только CLI — в `Cli`.
 
 ### 3.2. Правило 3 файлов
+### 3.2. Правило 3 файлов
 - **Страница:** `algoritm_[name].{php,rules.json,editor.json}` (все три в одной папке). Root: `algoritm/algoritm.{php,rules.json,editor.json}`.
-- **Блок / Схема:** `[name].{php,rules.json,editor.json}` в `.blocksglobal/` или `.schemesglobal/`.
+- **Блок / Схема:** `[name].{php,rules.json,editor.json}` в `.blocksglobal/` (глобальные) или `.blockslocal/` (локальные). Схемы: `.schemesglobal/` или `.schemeslocal/`.
+- **Приоритет:** `.blockslocal/{name}/{name}.php` перекрывает `.blocksglobal/{name}/{name}.php`. Локальный класс: `blockslocal_{alias}_{name}`, глобальный: `blocksglobal_{name}`.
 
 ### 3.3. Content vs Skin (две разные зоны)
 - **Content (`/content/[domain]/[allias]/[category]/`)** — runtime AI-контент. Вне webroot. Формат: `[hash].[ext]` + `[hash].meta.json`. Отдаётся через `www/content.php`. Запись только через CLI (`content:store`).
@@ -100,27 +102,17 @@
 ---
 
 ## 5. Инварианты (что всегда должно быть истинным)
-
+## 5. Инварианты (что всегда должно быть истинным)
 - Домен ≠ Алиас.
-- **FS-пути — только от `realDomain`.** `Paths::domain/algoritm/media/content/sessionDir` принимает realDomain из `site.config.domains_real`. CLI-команды резолвят через trait `ResolvesRealDomain` (`src/Cli/Commands/Concerns/`) первым делом. `$domain` (alias) — только для валидации и сообщений. Исключения: `domain:new` (self-mapping), `domain:list` (итерирует real), `allias:remove`/`domain:remove` (guard отклоняет non-self-mapped).
-- Ядро знает только `RegionInterface`.
-- Все POST защищены CSRF. Destructive — только POST+CSRF (UI) или `--force` (CLI).
-- **Auth — ответственность страницы, не маршрута.** Движок не проверяет `.rules.json:auth` (метаданные для UI). Public: `$this->isAuthenticated()` (`Damoony\Data\Auth\AuthInterface`). Admin: `extends Damoony\UI\Algoritm\AdminPage` (`Damoony\Admin\AuthInterface::isLoggedIn()`).
-- Пароли — `password_hash`. Минимум 8 символов.
-- `Document::release()` идемпотентен. `content(): null` возвращает 204 (не 500).
-- Path traversal guard: все CLI-команды с `--domain`/`--name` проверяют `..` и regex.
-- Карантин: destructive CLI-команды не удаляют сразу, а перемещают в `*_trash_[timestamp]/` (6 уровней).
-- AI-Слой — **две независимые точки входа**:
-  - `bin/aicli.php` — внешние AI-агенты (`brain.py`, сторонние). JSON-in/out, 9 ролей (`Roles.php`), HATEOAS (`Navigator`).
-  - `Orchestrator` (`src/Ai/Orchestrator/`) — внутренний конвейер AIUI. Вызывается из `www/admin/ai_edit.php`. Не знает о ролях aicli, использует `ModelRouter` + `AgentInterface`.
-- AI не пишет сырой PHP. Используется безопасный JSON (PageCompiler/BlockCompiler).
-- **Сессии изолируют FS**: все операции записи AIUI (`page:new`, `page:write`) идут с `--session=X` и пишут только в `app/.sess_{tab}.{domain}/` и `www/media/.sess_{tab}.{domain}/`. Production (`app/[domain]/`) меняется только через `session:apply`. Без `--session` команда пишет в production (CLI-режим для разработчика).
-- Content: запись только через CLI. AINET не пишет на диск.
-- Skin: `skin:edit` разрешает `css/*.css` и `js/main.js` (≤ 1 MB, без `@import`/`javascript:`).
-- AINET: только GET, scheme (http/https), port (80/443), блок private IP. Whitelist без wildcard.
-- **DataProvider — только через `bin/aicli.php`/`brain.py`.** Orchestrator (AIUI) не использует `db:*` (schema, call, mutate). Разделение сознательное: `db:*` — для wizard/bulk-генерации, не для пошагового редактирования в UI. См. `_doc/cli.md` §11 и `_doc/dataprovider-design.md` §6.2.
-
----
+- **FS-пути — только от `realDomain`.** `Paths` принимает realDomain. CLI-команды резолвят через `ResolvesRealDomain`.
+- **Структура v4 (по умолчанию для новых):** `domains_structure[real] = 'v4'`. Разделение на `global` (домен) и `local` (алиас): `.blocksglobal`/`.blockslocal`, `.dbglobal`/`.dblocal`, `.i18nglobal`/`.i18nlocal`.
+- **Schema-First.** Если `Page::content()` возвращает `null`, `PageHandler` всё равно рендерит схему (`SchemeRenderer`). Пустая страница (204) отдается только если нет ни схемы, ни контента.
+- **CSRF обязателен для всех POST.** `PageHandler` проверяет токен `_csrf` (через `Csrf::check()`) для любого POST-запроса. При ошибке — 403.
+- **Auth — ответственность страницы.** `AdminPage::guard()` проверяет `AuthInterface::isLoggedIn()`.
+- **i18n:** Плоские JSON-ключи (`site.block.top`). Fallback: `local` перекрывает `global`. Метод `tPlural()` для склонений.
+- **Сборки (Assemblies).** `bin/cli.php new --domain=X --assembly=developer` разворачивает структуру из `stubs/assemblies/`. Никаких хардкодов структуры в PHP-командах.
+- **AI не пишет сырой PHP.** Используется безопасный JSON (`PageCompiler`/`BlockCompiler`).
+- **DataProvider — только через `bin/aicli.php`/`brain.py`.** CLI работает с БД через `dbcli` и `db:*`.
 
 ## 6. Открытые P2 (Технический долг)
 
