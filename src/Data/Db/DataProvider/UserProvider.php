@@ -16,45 +16,12 @@ class UserProvider extends AbstractProvider
         return 'users';
     }
 
-    /**
-     * @return array{id: int, login: string, email: string, password_hash: string, status: string, created_at: string}|array{}
-     */
-    public function by_login(string $login): array
-    {
-        $row = $this->query(
-            'SELECT id, login, email, password_hash, status, created_at
-             FROM ' . $this->physicalTable() . '
-             WHERE login = :login
-             LIMIT 1',
-            ['login' => $login],
-        )->fetch();
-
-        return is_array($row) ? $this->castRow($row) : [];
-    }
-
-    /**
-     * @return array{id: int, login: string, email: string, password_hash: string, status: string, created_at: string}|array{}
-     */
-    public function by_id(int $id): array
-    {
-        $row = $this->query(
-            'SELECT id, login, email, password_hash, status, created_at
-             FROM ' . $this->physicalTable() . '
-             WHERE id = :id
-             LIMIT 1',
-            ['id' => $id],
-        )->fetch();
-
-        return is_array($row) ? $this->castRow($row) : [];
-    }
-
     public function exists(string $login): bool
     {
         $row = $this->query(
             'SELECT 1 FROM ' . $this->physicalTable() . ' WHERE login = :login LIMIT 1',
             ['login' => $login],
         )->fetch();
-
         return $row !== false;
     }
 
@@ -62,16 +29,18 @@ class UserProvider extends AbstractProvider
         string $login,
         string $passwordHash,
         string $email,
-        string $status = 'active',
+        string $role = 'user',
+        string $status = 'active'
     ): int {
         $this->query(
-            'INSERT INTO ' . $this->physicalTable()
-            . ' (login, password_hash, email, status)'
-            . ' VALUES (:login, :password_hash, :email, :status)',
+            'INSERT INTO ' . $this->physicalTable() 
+            . ' (login, password_hash, email, role, status)'
+            . ' VALUES (:login, :password_hash, :email, :role, :status)',
             [
                 'login' => $login,
                 'password_hash' => $passwordHash,
                 'email' => $email,
+                'role' => $role,
                 'status' => $status,
             ],
         );
@@ -80,19 +49,26 @@ class UserProvider extends AbstractProvider
     }
 
     /**
-     * @param array<string, mixed> $row
-     *
-     * @return array{id: int, login: string, email: string, password_hash: string, status: string, created_at: string}
+     * @param array<string, mixed> $data
      */
-    private function castRow(array $row): array
+    public function update(string $login, array $data): void
     {
-        return [
-            'id' => (int) $row['id'],
-            'login' => (string) $row['login'],
-            'email' => (string) $row['email'],
-            'password_hash' => (string) $row['password_hash'],
-            'status' => (string) $row['status'],
-            'created_at' => (string) $row['created_at'],
-        ];
+        $sets = [];
+        $params = ['login' => $login];
+
+        foreach ($data as $col => $val) {
+            $sets[] = $col . ' = :' . $col;
+            $params[$col] = $val;
+        }
+
+        if ($sets === []) {
+            return;
+        }
+
+        $sql = 'UPDATE ' . $this->physicalTable() 
+             . ' SET ' . implode(', ', $sets) 
+             . ' WHERE login = :login';
+
+        $this->query($sql, $params);
     }
 }

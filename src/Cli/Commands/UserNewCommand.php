@@ -7,7 +7,9 @@ namespace Damoony\Cli\Commands;
 use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
+use Damoony\Core\Config;
 use Damoony\Data\Db\Connection;
+use Damoony\Data\Db\DataProvider\UserProvider;
 
 final class UserNewCommand implements CommandInterface
 {
@@ -22,19 +24,20 @@ final class UserNewCommand implements CommandInterface
 
     public function description(): string
     {
-        return 'Создать пользователя (login/email/password)';
+        return 'Создать/обновить пользователя';
     }
 
     public function run(array $args, Context $context): Result
     {
         $r = new Result();
-
-        $login = (string) ($args['login'] ?? '');
-        $email = (string) ($args['email'] ?? '');
+        $login    = (string) ($args['login'] ?? '');
+        $email    = (string) ($args['email'] ?? '');
         $password = (string) ($args['password'] ?? '');
+        $role     = (string) ($args['role'] ?? 'user');
+        $update   = isset($args['update']) && $args['update'] !== '0';
 
         if (!preg_match('/^[a-zA-Z0-9_]{3,32}$/', $login)) {
-            $r->error('Некорректный login (3-32, [a-zA-Z0-9_])');
+            $r->error('Некорректный login');
             return $r;
         }
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -45,32 +48,31 @@ final class UserNewCommand implements CommandInterface
             $r->error('Пароль минимум 8 символов');
             return $r;
         }
-
-        $pdo = $this->connection->pdo();
-
-        // Проверка login
-        $check = $pdo->prepare('SELECT id FROM users WHERE login = ? LIMIT 1');
-        $check->execute([$login]);
-        if ($check->fetch()) {
-            $r->error('Пользователь с таким login уже существует');
+        if (!in_array($role, ['user', 'admin'], true)) {
+            $r->error('Роль должна быть user или admin');
             return $r;
         }
 
-        // Проверка email
-        $checkEmail = $pdo->prepare('SELECT id FROM users WHERE email = ? LIMIT 1');
-        $checkEmail->execute([$email]);
-        if ($checkEmail->fetch()) {
-            $r->error('Пользователь с таким email уже существует');
-            return $r;
+        $siteFile = getcwd() . '/config/site.config';
+        $site = is_file($siteFile) ? Config::fromFile($siteFile) : Config::fromArray([]);
+
+        $provider = new UserProvider($this->connection, $site, 'local', 'www');
+
+        if ($provider->exists($login)) {
+            if (!$update) {
+                $r->error("Пользователь с login '{$login}' уже существует. Используйте --update");
+                return $r;
+            }
+            $provider->update($login, [
+                'email'         => $email,
+                'password_hash' => password_hash($password, PASSWORD_DEFAULT),
+                'role'          => $role,
+            ]);
+            $context->step("Пользователь обновлён: {$login}", true);
+        } else {
+            $provider->create($login, password_hash($password, PASSWORD_DEFAULT), $email, $role);
+            $context->step("Пользователь создан: {$login}", true);
         }
-
-        $hash = password_hash($password, PASSWORD_DEFAULT);
-        $stmt = $pdo->prepare(
-            'INSERT INTO users (login, email, password_hash, status) VALUES (?, ?, ?, ?)',
-        );
-        $stmt->execute([$login, $email, $hash, 'active']);
-
-        $context->step('Пользователь создан', true, $login);
 
         return $r;
     }

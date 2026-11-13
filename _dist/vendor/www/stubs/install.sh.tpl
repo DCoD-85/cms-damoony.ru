@@ -28,15 +28,12 @@ FILES_COUNT=$(ls -A | grep -v "^${SCRIPT_NAME}$" | wc -l)
 if [ "$FILES_COUNT" -gt 0 ]; then
     echo -e "${RED}ОШИБКА: директория должна быть пустой (кроме install.sh)${NC}"
     echo "Найдено посторонних файлов: $FILES_COUNT"
-    echo ""
     echo "Этот скрипт не удаляет существующие файлы."
-    echo "Если нужна чистая установка, очистите папку вручную:"
-    echo "  rm -rf $(pwd)/*"
     exit 1
 fi
 echo "OK: директория чистая"
 
-# 2. Настройки БД (3 попытки, безопасный пароль)
+# 2. Настройки БД
 echo ""
 echo -e "${YELLOW}[2/9] Настройки БД${NC}"
 
@@ -63,14 +60,10 @@ for attempt in 1 2 3; do
         break
     fi
     echo -e "${RED}  ✗ Не удалось подключиться${NC}"
-    echo ""
 done
 
 if [ "$DB_OK" -ne 1 ]; then
     echo -e "${RED}ОШИБКА: 3 неудачные попытки.${NC}"
-    echo "Создайте пользователя вручную:"
-    echo "  mysql -u root -e \"CREATE USER '$DB_USER'@'localhost' IDENTIFIED BY 'ПАРОЛЬ';\""
-    echo "  mysql -u root -e \"GRANT ALL PRIVILEGES ON $DB_NAME.* TO '$DB_USER'@'localhost'; FLUSH PRIVILEGES;\""
     exit 1
 fi
 
@@ -115,7 +108,7 @@ cat > config/engine.config << JSON
 JSON
 echo "OK"
 
-# 7. Миграции ДО сборки (чтобы users.role существовал)
+# 7. Миграции ДО сборки
 echo -e "${YELLOW}[7/9] Миграции БД...${NC}"
 php bin/cli.php db:migrate
 echo "OK"
@@ -126,15 +119,31 @@ rm -f config/site.config
 php bin/cli.php new --domain="$DOMAIN" --assembly=developer
 php bin/dbcli.php db:schema:generate-provider --domain="$DOMAIN" --table=test_items
 
+# АВТОМАТИЧЕСКОЕ СОЗДАНИЕ АДМИНА
 echo -e "${YELLOW}[8/9] Создание администратора...${NC}"
-read -p "Логин админа [admin]: " ADMIN_LOGIN
-ADMIN_LOGIN=${ADMIN_LOGIN:-admin}
-read -sp "Пароль админа [admin123]: " ADMIN_PASS
-ADMIN_PASS=${ADMIN_PASS:-admin123}
-echo ""
+ADMIN_LOGIN="admin"
+# Генерируем случайный пароль из 12 символов
+ADMIN_PASS=$(php -r "echo substr(bin2hex(random_bytes(6)), 0, 12);")
 
-# Создаем или обновляем админа через CLI (CLI-First)
+# Создаем или обновляем через CLI
 php bin/cli.php user:new --login="$ADMIN_LOGIN" --email="admin@$DOMAIN" --password="$ADMIN_PASS" --role=admin --update
+
+# Сохраняем данные в файл
+cat > CREDENTIALS.txt << CRED
+==========================================
+ Администратор Damoony
+==========================================
+
+Логин:  $ADMIN_LOGIN
+Пароль: $ADMIN_PASS
+Email:  admin@$DOMAIN
+
+Вход: https://$DOMAIN/ru/login/
+
+Рекомендуется сменить пароль после первого входа:
+  php bin/cli.php user:new --login=$ADMIN_LOGIN --password=НОВЫЙ_ПАРОЛЬ --update
+CRED
+chmod 600 CREDENTIALS.txt
 
 # 9. Права и инструкция
 echo -e "${YELLOW}[9/9] Финализация...${NC}"
@@ -151,7 +160,7 @@ cat > INSTALL_INSTRUCTION.txt << TXT
 Что делать дальше:
 1. Откройте https://$DOMAIN/ru/ - главная
 2. Войдите: https://$DOMAIN/ru/login/
-3. Логин/пароль администратора: см. выше
+3. Логин и пароль администратора находятся в файле CREDENTIALS.txt
 
 Управление:
 - CLI: php bin/cli.php help
@@ -168,6 +177,7 @@ echo ""
 echo -e "${GREEN}======================================"
 echo " УСТАНОВКА ЗАВЕРШЕНА"
 echo -e "======================================${NC}"
-echo "Админ: $ADMIN_LOGIN / $ADMIN_PASS"
+echo "Логин: $ADMIN_LOGIN"
+echo "Пароль: $ADMIN_PASS (сохранен в CREDENTIALS.txt)"
 echo "Откройте: https://$DOMAIN/ru/"
 echo "Инструкция: INSTALL_INSTRUCTION.txt"
