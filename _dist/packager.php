@@ -2,11 +2,11 @@
 $sourceDir = dirname(__DIR__);
 $zipFile = $sourceDir . '/downloads/core-v4.zip';
 
-@mkdir(dirname($zipFile), 0755, true);
-
-// Создаем свою папку для временных файлов, чтобы избежать ошибки /tmp
-$tempDir = $sourceDir . '/var/tmp_zip_' . time();
-@mkdir($tempDir, 0755, true);
+// Создаём папку downloads, если её нет
+$downloadsDir = dirname($zipFile);
+if (!is_dir($downloadsDir)) {
+    mkdir($downloadsDir, 0777, true);
+}
 
 $exclude = [
     '.git', 'app', 'config', 'var', 'content', 'downloads', 'api',
@@ -20,9 +20,6 @@ if ($zip->open($zipFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
     echo "ОШИБКА: не могу открыть архив для записи\n";
     exit(1);
 }
-
-// Указываем временную директорию
-$zip->setTempDir($tempDir);
 
 $files = new RecursiveIteratorIterator(
     new RecursiveDirectoryIterator($sourceDir, RecursiveDirectoryIterator::SKIP_DOTS),
@@ -51,9 +48,6 @@ if (!$zip->close()) {
     echo "ОШИБКА: не могу закрыть архив\n";
     exit(1);
 }
-
-// Удаляем временную папку
-exec("rm -rf " . escapeshellarg($tempDir));
 
 echo "Архив создан: downloads/core-v4.zip\n";
 echo "Размер: " . number_format(filesize($zipFile)) . " байт\n";
