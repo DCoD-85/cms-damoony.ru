@@ -22,6 +22,7 @@ final class PageWriteSessionTest extends TestCase
         file_put_contents(
             $this->root . '/config/site.config',
             json_encode([
+                'domains_real' => ['damoony.ru' => 'damoony.ru'],
                 'domains_namespace' => ['damoony.ru' => 'damoony_ru'],
             ]),
         );

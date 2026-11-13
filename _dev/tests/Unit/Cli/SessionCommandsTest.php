@@ -26,6 +26,8 @@ final class SessionCommandsTest extends TestCase
             json_encode([['type' => 'h1', 'content' => 'Original']]),
         );
         $this->paths = new Paths($this->root);
+        @mkdir($this->root . '/config', 0o777, true);
+        file_put_contents($this->root . '/config/site.config', json_encode(['domains_real' => ['example.ru' => 'example.ru', 'damoony3.ru' => 'damoony3.ru'], 'domains_namespace' => ['example.ru' => 'example_ru']]));
     }
 
     protected function tearDown(): void

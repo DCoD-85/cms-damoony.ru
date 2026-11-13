@@ -1,29 +1,23 @@
 <?php
-
 return [
-    'tag' => 'div',
-    'class' => 'layout',
+    'tag' => 'div', 'class' => 'dt',
     'children' => [
-        ['tag' => 'header', 'slot' => 'top'],
-        ['tag' => 'aside', 'slot' => 'left'],
-        ['tag' => 'main', 'slot' => 'center'],
-        ['tag' => 'aside', 'slot' => 'right'],
-        ['tag' => 'footer', 'slot' => 'footer'],
-        ['tag' => 'section', 'slot' => 'bottom'],
-        ['tag' => 'div', 'slot' => 'policy'],
-        ['tag' => 'div', 'slot' => 'toast'],
+        ['tag' => 'header', 'class' => 'dt_top', 'slot' => 'top'],
+        ['tag' => 'aside', 'class' => 'dt_left', 'slot' => 'left'],
+        ['tag' => 'main', 'class' => 'dt_center', 'slot' => 'center'],
+        ['tag' => 'aside', 'class' => 'dt_right', 'slot' => 'right'],
+        ['tag' => 'section', 'class' => 'dt_bottom', 'slot' => 'bottom'],
+        ['tag' => 'footer', 'class' => 'dt_footer', 'slot' => 'footer'],
+        ['tag' => 'div', 'class' => 'dt_policy', 'slot' => 'policy'],
+        ['tag' => 'div', 'class' => 'dt_toast', 'slot' => 'toast'],
     ],
     'meta' => [
-        'css' => array_merge(['/media/damoony4.ru/www/css/main.css', '/media/damoony4.ru/www/skin/{skin}/css/main.css'], array (
-  0 => '/media/damoony4.ru/www/css/top.css',
-  1 => '/media/damoony4.ru/www/css/left.css',
-  2 => '/media/damoony4.ru/www/css/center.css',
-  3 => '/media/damoony4.ru/www/css/right.css',
-  4 => '/media/damoony4.ru/www/css/bottom.css',
-  5 => '/media/damoony4.ru/www/css/footer.css',
-  6 => '/media/damoony4.ru/www/css/policy.css',
-  7 => '/media/damoony4.ru/www/css/toast.css',
-)),
-        'js' => ['/media/damoony4.ru/www/skin/{skin}/js/main.js', '/media/shared/scripts/cliajax.js'],
+        'css' => [
+            '/media/damoony4.ru/www/css/main.css',
+            '/media/damoony4.ru/www/css/blocks.css',
+            '/media/damoony4.ru/www/css/toast.css',
+            '/media/damoony4.ru/www/css/components.css',
+        ],
+        'js' => ['/media/shared/scripts/cliajax.js'],
     ],
 ];

@@ -1,7 +1,1 @@
-{
-    "available": {
-        "": "^$",
-        "testscheme": "^testscheme$"
-    },
-    "auth": false
-}
+{"available": {"": "^$", "tests": "^tests$"}, "auth": false}

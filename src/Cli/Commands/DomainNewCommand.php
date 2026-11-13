@@ -120,7 +120,7 @@ final class DomainNewCommand implements CommandInterface
             . "    }\n"
             . "}\n";
         Fs::writeAtomic($langDir . '/algoritm_lang.php', $langPhp);
-        Fs::writeAtomic($langDir . '/algoritm_lang.rules.json', json_encode(['available' => ['' => '^$', 'testscheme' => '^testscheme$'], 'auth' => false], JSON_PRETTY_PRINT) . "\n");
+        Fs::writeAtomic($langDir . '/algoritm_lang.rules.json', json_encode(['available' => ['' => '^$', 'tests' => '^tests$'], 'auth' => false], JSON_PRETTY_PRINT) . "\n");
         Fs::writeAtomic($langDir . '/algoritm_lang.editor.json', "[]\n");
         $r->file(Fs::rel($algoritmDir . '/algoritm.php', $this->paths->root()));
 
@@ -225,6 +225,12 @@ final class DomainNewCommand implements CommandInterface
                 if ($b === 'top') {
                     $blockCss .= ".lang-switcher a { margin-right: 10px; text-decoration: none; color: #007bff; font-weight: bold; }\n.lang-switcher a.active { color: #333; text-decoration: underline; }\n";
                 }
+                if ($b === 'left') {
+                    $blockCss .= ".test-menu { list-style: none; padding: 0; }\n.test-menu li { margin-bottom: 8px; }\n.test-menu a { color: #007bff; text-decoration: none; }\n";
+                }
+                if ($b === 'toast') {
+                    $blockCss = ".site-toast { position: fixed; bottom: 20px; right: 20px; background: #333; color: #fff; padding: 12px 24px; border-radius: 4px; display: none; z-index: 9999; font-family: sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }\n.site-toast .success { color: #98ff98; }\n.site-toast .error { color: #ff9898; }\n.site-toast .info { color: #98c1ff; }\n";
+                }
                 Fs::writeAtomic($mediaAlias . '/css/' . $b . '.css', $blockCss);
                 $r->file(Fs::rel($mediaAlias . '/css/' . $b . '.css', $this->paths->root()));
             }
@@ -273,6 +279,14 @@ final class DomainNewCommand implements CommandInterface
                 $gDir = $domainDir . '/.blocksglobal/' . $b;
                 Fs::mkdir($gDir);
                 $extra = '';
+                if ($b === 'left') {
+                    $extra = "\n        \$t = \$context->service('i18n');\n"
+                        . "        \$lang = \$t instanceof \\Damoony\\Core\\I18n\\Translator ? \$t->current() : 'ru';\n"
+                        . "        \$menu = Builder::ul('test-menu');\n"
+                        . "        \$menu->append(Builder::li()->append(Builder::a('/' . \$lang . '/tests/')->content('Tests Home')));\n"
+                        . "        \$menu->append(Builder::li()->append(Builder::a('/' . \$lang . '/tests/first/')->content('First Test (CRUD)')));\n"
+                        . "        \$wrap->append(\$menu);\n";
+                }
                 if ($b === 'top') {
                     $extra = "\n        \$site = \$context->service('site');\n"
                         . "        \$langs = ['ru', 'en'];\n"

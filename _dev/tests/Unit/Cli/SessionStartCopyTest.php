@@ -16,6 +16,8 @@ final class SessionStartCopyTest extends TestCase
     protected function setUp(): void
     {
         $this->root = sys_get_temp_dir() . '/ssc_' . bin2hex(random_bytes(4));
+        mkdir($this->root . '/config', 0o777, true);
+        file_put_contents($this->root . '/config/site.config', json_encode(['domains_real' => ['example.ru' => 'example.ru', 'damoony.ru' => 'damoony.ru', 'damoony3.ru' => 'damoony3.ru']]));
         mkdir($this->root . '/app/example.ru/www/algoritm', 0o775, true);
         mkdir($this->root . '/app/example.ru/.schemesglobal/default', 0o775, true);
         mkdir($this->root . '/www/media/example.ru/www/skin/default/css', 0o775, true);

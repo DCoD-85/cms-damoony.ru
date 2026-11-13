@@ -1,10 +1,1 @@
-{
-    "available": {
-        "": "^$",
-        "lang": "^([a-z]{2})$",
-        "testscheme": "^testscheme$"
-    },
-    "auth": false,
-    "search": true,
-    "default": false
-}
+{"available": {"": "^$", "lang": "^([a-z]{2})$"}, "auth": false}

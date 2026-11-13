@@ -1,12 +1,9 @@
 {
-    "site.block.top": "Top block (global)",
-    "site.block.left": "Left block (global)",
-    "site.block.center": "Center block (global)",
-    "site.block.right": "Right block (global)",
-    "site.block.bottom": "Bottom block (global)",
-    "site.block.footer": "Footer (global)",
-    "site.block.policy": "Policy (global)",
-    "site.block.toast": "Toast (global)",
-    "site.balance.one": "You have {{amount}} dollar",
-    "site.balance.other": "You have {{amount}} dollars"
+    "site.block.top": "Top block",
+    "site.block.left": "Left block",
+    "site.block.center": "Center block",
+    "site.block.right": "Right block",
+    "site.block.bottom": "Bottom block",
+    "site.block.footer": "Footer",
+    "site.block.policy": "Policy"
 }

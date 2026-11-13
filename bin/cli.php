@@ -70,6 +70,7 @@ use Damoony\Cli\Renderer;
 use Damoony\Core\Config;
 use Damoony\Core\Files\Paths;
 use Damoony\Data\Db\Connection;
+use Damoony\Cli\Commands\AssemblyNewCommand;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -97,6 +98,7 @@ $registry = new CommandRegistry();
 $registry->add(new HelpCommand($registry));
 $registry->add(new DomainListCommand($paths));
 $registry->add(new DomainNewCommand($paths));
+$registry->add(new AssemblyNewCommand($paths));
 $registry->add(new DomainRemoveCommand($paths));
 $registry->add(new AlliasListCommand($paths));
 $registry->add(new AlliasNewCommand($paths));

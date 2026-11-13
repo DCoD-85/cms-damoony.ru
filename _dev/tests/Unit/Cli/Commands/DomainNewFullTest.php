@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Cli\Commands;
 
-use Damoony\Cli\Commands\DomainNewCommand;
+use Damoony\Cli\Commands\AssemblyNewCommand;
 use Damoony\Cli\Context;
 use Damoony\Core\Files\Paths;
 use PHPUnit\Framework\TestCase;
@@ -21,6 +21,22 @@ final class DomainNewFullTest extends TestCase
         mkdir($this->root . '/www/media', 0o775, true);
         mkdir($this->root . '/stubs', 0o775, true);
         $this->paths = new Paths($this->root);
+        // Копируем сборку в тестовое окружение, чтобы AssemblyBuilder её нашел
+        $stubsSrc = dirname(__DIR__, 5) . '/stubs/assemblies/developer';
+        $stubsDst = $this->root . '/stubs/assemblies/developer';
+        if (is_dir($stubsSrc)) {
+            mkdir(dirname($stubsDst), 0777, true);
+            $it = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($stubsSrc, \FilesystemIterator::SKIP_DOTS),
+                \RecursiveIteratorIterator::SELF_FIRST
+            );
+            foreach ($it as $item) {
+                $target = $stubsDst . '/' . $it->getSubPathname();
+                if ($item->isDir()) { @mkdir($target, 0777, true); }
+                else { @copy($item->getPathname(), $target); }
+            }
+        }
+
 
         file_put_contents($this->root . '/config/site.config', json_encode([], JSON_THROW_ON_ERROR));
         file_put_contents($this->root . '/stubs/cliajax.js', '// cliajax stub');
@@ -33,8 +49,8 @@ final class DomainNewFullTest extends TestCase
 
     public function testProfileFullCreatesEverything(): void
     {
-        new DomainNewCommand($this->paths)->run(
-            ['domain' => 'full.ru', 'profile' => 'full'],
+        new AssemblyNewCommand($this->paths)->run(
+            ['domain' => 'full.ru', 'assembly' => 'developer'],
             $this->ctx(),
         );
 
@@ -69,39 +85,39 @@ final class DomainNewFullTest extends TestCase
         $this->assertDirectoryExists($this->root . '/www/media/full.ru/www/css');
 
         // Tests
-        $this->assertFileExists($this->root . '/app/full.ru/www/algoritm/testscheme/algoritm_testscheme.php');
-        $this->assertFileExists($this->root . '/app/full.ru/www/.schemeslocal/testscheme.php');
+        $this->assertFileExists($this->root . '/app/full.ru/www/algoritm/lang/tests/first/algoritm_lang_tests_first.php');
+        $this->assertFileExists($this->root . '/app/full.ru/.schemesglobal/www.php');
     }
 
     public function testCliajaxIsCopied(): void
     {
-        new DomainNewCommand($this->paths)->run(
-            ['domain' => 'full.ru', 'profile' => 'full'],
+        new AssemblyNewCommand($this->paths)->run(
+            ['domain' => 'full.ru', 'assembly' => 'developer'],
             $this->ctx(),
         );
 
-        $this->assertSame(
-            '// cliajax stub',
+        $this->assertStringContainsString(
+            'document.addEventListener',
             (string) file_get_contents($this->root . '/www/media/shared/scripts/cliajax.js'),
         );
     }
 
     public function testFullContentBlocksHaveCorrectText(): void
     {
-        new DomainNewCommand($this->paths)->run(
-            ['domain' => 'full.ru', 'profile' => 'full'],
+        new AssemblyNewCommand($this->paths)->run(
+            ['domain' => 'full.ru', 'assembly' => 'developer'],
             $this->ctx(),
         );
 
         $globalPhp = (string) file_get_contents(
             $this->root . '/app/full.ru/.blocksglobal/top/top.php',
         );
-        $this->assertStringContainsString('это глобальный блок top', $globalPhp);
+        $this->assertStringContainsString("lang('block.top')", $globalPhp);
 
         $localPhp = (string) file_get_contents(
             $this->root . '/app/full.ru/www/.blockslocal/top/top.php',
         );
-        $this->assertStringContainsString('это локальный блок top', $localPhp);
+        $this->assertStringContainsString("lang('block.top')", $localPhp);
     }
 
     private function ctx(): Context

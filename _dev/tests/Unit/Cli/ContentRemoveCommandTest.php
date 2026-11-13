@@ -18,7 +18,9 @@ final class ContentRemoveCommandTest extends TestCase
     protected function setUp(): void
     {
         $this->root = sys_get_temp_dir() . '/damoony_content_rm_' . bin2hex(random_bytes(4));
+        
         mkdir($this->root . '/config', 0o777, true);
+        file_put_contents($this->root . '/config/site.config', json_encode(['domains_real' => ['example.ru' => 'example.ru', 'damoony.ru' => 'damoony.ru', 'damoony3.ru' => 'damoony3.ru']]));
         file_put_contents($this->root . '/config/agent.config', json_encode([
             'allowed_domains' => ['example.ru'],
         ]));

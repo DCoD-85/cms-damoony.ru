@@ -1,13 +1,9 @@
 {
-    "site.block.top": "Верхний блок (глобальный)",
-    "site.block.left": "Левый блок (глобальный)",
-    "site.block.center": "Центральный блок (глобальный)",
-    "site.block.right": "Правый блок (глобальный)",
-    "site.block.bottom": "Нижний блок (глобальный)",
-    "site.block.footer": "Подвал (глобальный)",
-    "site.block.policy": "Политика (глобальная)",
-    "site.block.toast": "Уведомление (глобальное)",
-    "site.balance.one": "У вас {{amount}} рубль",
-    "site.balance.few": "У вас {{amount}} рубля",
-    "site.balance.many": "У вас {{amount}} рублей"
+    "site.block.top": "\u0412\u0435\u0440\u0445\u043d\u0438\u0439 \u0431\u043b\u043e\u043a",
+    "site.block.left": "\u041b\u0435\u0432\u044b\u0439 \u0431\u043b\u043e\u043a",
+    "site.block.center": "\u0426\u0435\u043d\u0442\u0440\u0430\u043b\u044c\u043d\u044b\u0439 \u0431\u043b\u043e\u043a",
+    "site.block.right": "\u041f\u0440\u0430\u0432\u044b\u0439 \u0431\u043b\u043e\u043a",
+    "site.block.bottom": "\u041d\u0438\u0436\u043d\u0438\u0439 \u0431\u043b\u043e\u043a",
+    "site.block.footer": "\u041f\u043e\u0434\u0432\u0430\u043b",
+    "site.block.policy": "\u041f\u043e\u043b\u0438\u0442\u0438\u043a\u0430"
 }

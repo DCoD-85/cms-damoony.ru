@@ -1,0 +1,11 @@
+.dt_top, .dt_left, .dt_center, .dt_right, .dt_bottom, .dt_footer {
+    background: #fff;
+    padding: 16px;
+    border-radius: 6px;
+    /* box-shadow убран */
+}
+.dt_inner {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}

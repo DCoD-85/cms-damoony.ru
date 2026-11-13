@@ -73,16 +73,15 @@ final class DomainNewProfileTest extends TestCase
         $this->assertFileExists($this->root . '/app/test.ru/.blocksglobal/center/center.php');
     }
 
-    public function testProfileFullRejectedWithMessage(): void
+    public function testProfileFullCreatesDomain(): void
     {
         $res = new DomainNewCommand($this->paths)->run(
             ['domain' => 'test.ru', 'profile' => 'full'],
             $this->ctx(),
         );
 
-        $this->assertFalse($res->ok);
-        $this->assertStringContainsString('full в разработке', $res->errors[0] ?? '');
-        $this->assertDirectoryDoesNotExist($this->root . '/app/test.ru');
+        $this->assertTrue($res->ok, implode('; ', $res->errors));
+        $this->assertDirectoryExists($this->root . '/app/test.ru');
     }
 
     public function testInvalidProfileRejected(): void

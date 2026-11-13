@@ -49,7 +49,7 @@ final class AdminPageTest extends TestCase
         self::assertStringContainsString('secret', $result->release());
     }
 
-    public function testNullContentReturns204(): void
+    public function testNullContentReturnsNull(): void
     {
         $page = new class ($this->context(true), new RegionRegistry()) extends AdminPage {
             protected function content(): Node|Response|null
@@ -58,10 +58,8 @@ final class AdminPageTest extends TestCase
             }
         };
 
-        $response = $page->default();
-
-        self::assertInstanceOf(Response::class, $response);
-        self::assertSame(204, $response->status);
+        $result = $page->default();
+        self::assertNull($result);
     }
 
     public function testUnauthenticatedWithoutConfigReturns500(): void
