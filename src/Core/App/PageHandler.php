@@ -217,6 +217,13 @@ final class PageHandler implements PageHandlerInterface
         $doc->lang($domain->language);
         $doc->body()->append($result);
 
+		// Debug benchmark
+        $benchmark = new \Damoony\UI\Element('div');
+        $benchmark->attrs()->add('id', 'dt_benchmark');
+        $benchmark->attrs()->add('class', 'dt_benchmark');
+        $benchmark->append(\Damoony\UI\Text::raw('⚡ ' . $debugTime . ' ms'));
+        $doc->body()->append($benchmark);
+
         // Внедряем Flash-сообщения
         $flash = $context->service('flash');
         if ($flash instanceof \Damoony\Core\Flash) {
