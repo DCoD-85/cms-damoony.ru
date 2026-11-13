@@ -21,6 +21,7 @@ use Damoony\UI\Region\RegionLoader;
 use Damoony\UI\Region\RegionRegistry;
 use Damoony\UI\Scheme\SchemeLoader;
 use Damoony\UI\Scheme\SchemeRenderer;
+use Damoony\Core\Security\Csrf;
 
 final class PageHandler implements PageHandlerInterface
 {
@@ -62,6 +63,17 @@ final class PageHandler implements PageHandlerInterface
 
         if (!is_subclass_of($class, PageInterface::class)) {
             return ErrorPage::serverError($domain->language, $this->debugDetail('Page class does not implement PageInterface'));
+        }
+
+        // Глобальная проверка CSRF для всех POST-запросов
+        if ($context->request->isPost()) {
+            $csrf = $context->service('csrf');
+            if ($csrf instanceof Csrf && !$csrf->check($context->request->post)) {
+                if ($context->request->isAjax()) {
+                    return Response::json(['ok' => false, 'messages' => [['type' => 'error', 'message' => 'CSRF token mismatch']]], 403);
+                }
+                return Response::text('403 Forbidden: CSRF token mismatch', 403);
+            }
         }
 
         $paths = $context->service('paths');

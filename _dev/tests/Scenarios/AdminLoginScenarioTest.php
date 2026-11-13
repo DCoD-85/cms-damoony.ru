@@ -151,10 +151,11 @@ final class AdminLoginScenarioTest extends TestCase
 
     public function testLoginWrongPassword(): void
     {
+        $csrf = new Csrf($this->session);
         $r = $this->handle(new Request(
             method: 'POST',
             path: '/ru/login',
-            post: ['login' => 'admin', 'password' => 'wrong'],
+            post: ['login' => 'admin', 'password' => 'wrong', '_csrf' => $csrf->token()],
         ));
         self::assertSame(200, $r->status);
         self::assertStringContainsString('Неверный логин или пароль', $r->body);
@@ -163,10 +164,11 @@ final class AdminLoginScenarioTest extends TestCase
 
     public function testLoginSuccess(): void
     {
+        $csrf = new Csrf($this->session);
         $r = $this->handle(new Request(
             method: 'POST',
             path: '/ru/login',
-            post: ['login' => 'admin', 'password' => 'test123'],
+            post: ['login' => 'admin', 'password' => 'test123', '_csrf' => $csrf->token()],
         ));
         self::assertSame(302, $r->status);
         self::assertSame('/admin/ru/', $r->headers['location'] ?? null);

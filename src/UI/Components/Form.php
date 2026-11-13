@@ -7,6 +7,7 @@ namespace Damoony\UI\Components;
 use Damoony\UI\Builder;
 use Damoony\UI\Element;
 use Damoony\UI\Node;
+use Damoony\UI\Components\Input;
 
 class Form extends Element
 {
@@ -42,6 +43,12 @@ class Form extends Element
     public function method(string $method = 'POST'): self
     {
         $this->formNode->attrs()->add('method', strtoupper($method));
+        return $this;
+    }
+
+    public function csrf(\Damoony\Core\Security\Csrf $csrf): self
+    {
+        $this->add(new Input('hidden', $csrf->fieldName(), $csrf->token()));
         return $this;
     }
 }
