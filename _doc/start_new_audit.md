@@ -131,7 +131,7 @@
 | Блоки | `app/[domain]/.blocksglobal/[name]/` |
 | Схемы | `app/[domain]/.schemesglobal/[name].{php,rules.json,editor.json}` (плоские файлы) |
 | Content (runtime) | `/content/[domain]/[allias]/[category]/[hash].[ext]` + `[hash].meta.json` |
-| DataProvider (alias) | `app/[domain]/[allias]/.dbprovider/[Name]Provider.php` |
+| DataProvider (alias) | `app/{real}/{alias}/.dbprovider/[Name]Provider.php` |
 | DataProvider (domain) | `app/[domain]/.dbprovider/[Name]Provider.php` |
 | i18n (домен) | `app/[domain]/.i18n/[lang].json` (создаётся `lang:add`) |
 | i18n (алиас) | `app/[domain]/[allias]/.i18n/[lang].json` (создаётся `lang:add --allias`) |
@@ -254,20 +254,20 @@ AI не видит файловую систему напрямую. Никог�
 
 Стратегия: **Tools-First**. AI — ассистент, не генератор. Основной продукт работает без AI (IDE-подсказки, JSON-редактор, DataProvider). AI остаётся опциональным (wizard, bulk, review).
 
-**Закрытые фазы:**
+**Закрытые фазы (v4):**
 
 - **Фаза A** (изоляция FS): `--session` для `page:new`/`page:write`, `SchemeLoader` session-aware, `SessionStartCommand` копирует `www/media/` + `.schemesglobal/` + пишет `permissions` в `.session.json`. См. коммиты `1916b46`, `23d1f9e`.
 - **Фаза B** (Multi-Agent Orchestrator): Blackboard (`context.json`), Interviewer -> Architect -> Coder, `ModelRouter` (`config/models.config`), AIUI (`/admin/aiui.php`, 4 action). См. `_doc/orchestrator.md`, `_doc/aiui.md`, коммиты `441e060`, `b7500ef`.
 - **RealDomain sweep** (v3.1): все CLI-команды резолвят `realDomain` для FS-путей. Trait `ResolvesRealDomain` (`src/Cli/Commands/Concerns/`). Session-isolation закрыта (permissions enforced). 9 новых тестовых классов (`*RealDomainTest`, `*SessionPermissionTest`). Критерий: `grep -rln "paths->\(domain\|algoritm\|media\|content\)(\$domain" src/Cli/Commands/` → 4 justified файла (`AlliasRemove`, `DomainList`, `DomainNew`, `DomainRemove`).
 
-**Закрытые фазы:**
+**Закрытые фазы (v4):**
 
 - **Фаза E** (DB CLI): Инструмент `bin/dbcli.php` — декларативное управление БД через JSON-схемы. Генерация SQL-миграций и PHP-провайдеров. См. `_doc/dbcli.md`.
 - **Фаза F** (Visual DB Admin): Визуальный конструктор таблиц в админке (`/admin/{lang}/domains/{domain}/db`). Создание таблиц и колонок через UI, которое вызывает `dbcli` под капотом.
 
 **Текущая работа:**
 
-- **Фаза G** (CRUD Records): Добавление кнопок «Создать запись», «Редактировать», «Удалить» для записей в таблицах через UI админки.
+- **Фаза G** (Сборки и CRUD): Внедрены CLI-сборки (`new --assembly`). Реализован SSR рендеринг схем даже при `content()=null`. Глобальная CSRF-защита в `PageHandler`. Клиентский AJAX через `cliajax.js`.
 
 **Следующие фазы:**
 
