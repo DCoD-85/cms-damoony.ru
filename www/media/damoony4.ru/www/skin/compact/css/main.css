@@ -1,0 +1,11 @@
+@media (max-width: 768px) {
+    .dt {
+        grid-template-areas: "top" "center" "bottom" "footer";
+        grid-template-columns: 1fr;
+        padding: 10px;
+        gap: 10px;
+    }
+    .dt_left, .dt_right, .dt_policy { display: none; }
+    header, aside, main, section, footer { padding: 10px; }
+    h1 { font-size: 1.5rem; }
+}

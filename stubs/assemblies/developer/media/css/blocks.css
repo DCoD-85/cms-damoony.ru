@@ -1,16 +1,16 @@
 .dt_top, .dt_left, .dt_center, .dt_right, .dt_bottom, .dt_footer {
-    background: #fff;
     padding: 16px;
     border-radius: 6px;
-    /* box-shadow убран */
 }
-.dt_inner {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
+.dt_inner { display: flex; flex-direction: column; gap: 8px; }
 .dt_menu { list-style: none; padding: 0; margin: 10px 0 0 0; }
 .dt_menu li { margin-bottom: 8px; }
-.dt_menu a { text-decoration: none; color: #007bff; font-weight: bold; }
+.dt_menu a { text-decoration: none; font-weight: bold; }
 .dt_menu a:hover { text-decoration: underline; }
+
+.skin-switcher { display: flex; gap: 10px; margin-top: 10px; font-size: 0.9em; align-items: center; }
+.skin-switcher .label { color: #888; }
+.skin-switcher a { color: #007bff; text-decoration: none; }
+.skin-switcher a:hover { text-decoration: underline; }
+.skin-switcher a.active { color: #333; font-weight: bold; text-decoration: none; pointer-events: none; }
+body.dark-theme .skin-switcher a.active { color: #fff; }

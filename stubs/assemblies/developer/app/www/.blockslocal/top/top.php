@@ -40,6 +40,24 @@ final class blockslocal_{{alias}}_top implements RegionInterface
         }
         $wrap->append($switcher);
 
+        // Skin Switcher
+        $skins = [];
+        $activeSkin = $context->domain->skin;
+        if ($site instanceof \Damoony\Core\Config) {
+            $skins = $site->getByKey(['alliases_skins_allowed', $context->domain->real, $context->domain->allias], []);
+            if (!is_array($skins)) $skins = [];
+        }
+        if ($skins !== []) {
+            $skinSwitcher = Builder::div('skin-switcher');
+            foreach ($skins as $s) {
+                $url = '/' . $currentLang . '/skin/' . $s . '/';
+                $a = Builder::a($url)->content(ucfirst($s));
+                if ($s === $activeSkin) { $a->attrs()->classAdd('active'); }
+                $skinSwitcher->append($a);
+            }
+            $wrap->append($skinSwitcher);
+        }
+
         return $wrap;
     }
 }

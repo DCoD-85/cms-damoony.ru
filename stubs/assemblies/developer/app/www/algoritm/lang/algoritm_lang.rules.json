@@ -5,7 +5,8 @@
         "tests": "^tests$",
         "login": "^login$",
         "logout": "^logout$",
-        "profile": "^profile$"
+        "profile": "^profile$",
+        "skin": "^skin$"
     },
     "auth": false
 }

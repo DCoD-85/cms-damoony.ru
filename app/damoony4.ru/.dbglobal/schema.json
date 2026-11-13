@@ -19,6 +19,67 @@
                     "default": "CURRENT_TIMESTAMP"
                 }
             }
+        },
+        "users": {
+            "columns": {
+                "id": {
+                    "type": "int",
+                    "primary": true,
+                    "auto_increment": true
+                },
+                "login": {
+                    "type": "varchar",
+                    "length": 64
+                },
+                "email": {
+                    "type": "varchar",
+                    "length": 255
+                },
+                "password_hash": {
+                    "type": "varchar",
+                    "length": 255
+                },
+                "role": {
+                    "type": "varchar",
+                    "length": 16,
+                    "default": "user"
+                },
+                "status": {
+                    "type": "varchar",
+                    "length": 16,
+                    "default": "active"
+                },
+                "created_at": {
+                    "type": "timestamp",
+                    "default": "CURRENT_TIMESTAMP"
+                }
+            }
+        },
+        "sessions": {
+            "columns": {
+                "id": {
+                    "type": "varchar",
+                    "length": 128,
+                    "primary": true
+                },
+                "user_id": {
+                    "type": "int"
+                },
+                "ip_address": {
+                    "type": "varchar",
+                    "length": 45
+                },
+                "user_agent": {
+                    "type": "text",
+                    "null": true
+                },
+                "payload": {
+                    "type": "text"
+                },
+                "last_activity": {
+                    "type": "int"
+                }
+            }
         }
     }
 }

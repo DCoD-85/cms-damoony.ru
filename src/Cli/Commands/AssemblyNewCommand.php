@@ -67,6 +67,8 @@ final class AssemblyNewCommand implements CommandInterface
         $site['alliases_available'][$realDomain][$alias] = true;
         $site['alliases_langs'][$realDomain][$alias] = ['ru', 'en'];
         $site['domains_langs'][$realDomain] = ['ru', 'en'];
+        $site['alliases_skins'][$realDomain][$alias] = 'light';
+        $site['alliases_skins_allowed'][$realDomain][$alias] = ['light', 'dark'];
 
         Fs::writeAtomic($siteFile, json_encode($site, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
 

@@ -85,7 +85,7 @@ final class ConfigDomainResolver implements DomainResolverInterface
             domain: $host,
             real: $real,
             allias: $allias,
-            skin: (string) $this->site->getByKey(['domains_skins', $real], $this->defaultSkin),
+            skin: $this->resolveSkin($real, $allias),
             language: $lang,
             available: $available,
             stub: $stub,
@@ -134,5 +134,20 @@ final class ConfigDomainResolver implements DomainResolverInterface
         }
 
         return $map;
+    }
+
+    private function resolveSkin(string $real, string $allias): string
+    {
+        $default = (string) $this->site->getByKey(['alliases_skins', $real, $allias], '');
+        if ($default === '') {
+            $default = (string) $this->site->getByKey(['domains_skins', $real], $this->defaultSkin);
+        }
+        $allowed = $this->site->getByKey(['alliases_skins_allowed', $real, $allias], []);
+        if (!is_array($allowed)) $allowed = [];
+        $cookie = $_COOKIE['skin'] ?? '';
+        if (is_string($cookie) && in_array($cookie, $allowed, true)) {
+            return $cookie;
+        }
+        return $default;
     }
 }
