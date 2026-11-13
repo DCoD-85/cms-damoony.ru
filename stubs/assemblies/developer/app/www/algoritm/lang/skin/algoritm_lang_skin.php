@@ -44,7 +44,6 @@ final class algoritm_lang_skin extends Page
                 'ok' => true,
                 'skin_updated' => $skinName,
                 'redirect_url' => $path,
-                'reload' => true, // fallback для старого JS
             ]);
         }
         

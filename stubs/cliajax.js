@@ -63,14 +63,17 @@
         
         // Смена скина без перезагрузки
         if (data.skin_updated) {
+            // Меняем CSS-ссылки
             document.querySelectorAll('link[rel="stylesheet"]').forEach(function(link) {
                 var href = link.getAttribute('href');
                 if (href && /\/skin\/[a-z0-9_]+\//.test(href)) {
                     link.setAttribute('href', href.replace(/\/skin\/[a-z0-9_]+\//, '/skin/' + data.skin_updated + '/'));
                 }
             });
+            // Подгружаем контент текущей страницы (без перезагрузки)
             if (data.redirect_url) {
-                navigateTo(window.location.origin + data.redirect_url, false);
+                var currentPath = window.location.pathname.replace(/\/skin\/[a-z0-9_]+\//, '/');
+                navigateTo(window.location.origin + (data.redirect_url || currentPath), false);
             }
             return true;
         }
