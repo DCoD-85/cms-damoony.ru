@@ -136,8 +136,17 @@ echo ""
 # Гарантируем колонку role (на случай старых БД)
 MYSQL_PWD="$DB_PASS" mysql -u "$DB_USER" "$DB_NAME" -e "ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(16) NOT NULL DEFAULT 'user';" 2>/dev/null || true
 
-php bin/cli.php user:new --login="$ADMIN_LOGIN" --email="admin@$DOMAIN" --password="$ADMIN_PASS"
-MYSQL_PWD="$DB_PASS" mysql -u "$DB_USER" "$DB_NAME" -e "UPDATE users SET role='admin' WHERE login='$ADMIN_LOGIN';"
+# Генерируем хеш пароля через PHP
+HASH=$(php -r "echo password_hash('$ADMIN_PASS', PASSWORD_BCRYPT);")
+
+# Создаем или обновляем админа напрямую через SQL (без ошибок при дублях)
+MYSQL_PWD="$DB_PASS" mysql -u "$DB_USER" "$DB_NAME" -e "
+INSERT INTO users (login, email, password_hash, role, status) 
+VALUES ('$ADMIN_LOGIN', 'admin@$DOMAIN', '$HASH', 'admin', 'active')
+ON DUPLICATE KEY UPDATE 
+    password_hash = VALUES(password_hash), 
+    role = 'admin';
+"
 
 # 9. Права и инструкция
 echo -e "${YELLOW}[9/9] Финализация...${NC}"
