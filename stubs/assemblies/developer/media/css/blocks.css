@@ -9,3 +9,8 @@
     flex-direction: column;
     gap: 8px;
 }
+
+.dt_menu { list-style: none; padding: 0; margin: 10px 0 0 0; }
+.dt_menu li { margin-bottom: 8px; }
+.dt_menu a { text-decoration: none; color: #007bff; font-weight: bold; }
+.dt_menu a:hover { text-decoration: underline; }

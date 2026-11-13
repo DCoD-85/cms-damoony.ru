@@ -9,6 +9,6 @@ final class algoritm_lang_tests extends Page
 {
     protected function content(): Node|null
     {
-        return Builder::div()->content('Добро пожаловать в тесты!');
+        return Builder::div('dt_tests')->content('Р”РѕР±СЂРѕ РїРѕР¶Р°Р»РѕРІР°С‚СЊ РІ СЂР°Р·РґРµР» С‚РµСЃС‚РѕРІ РґРІРёР¶РєР°!');
     }
 }
