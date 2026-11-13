@@ -38,9 +38,14 @@ final class algoritm_lang_skin extends Page
         $isLocal = str_contains($referer, $host);
         $path = $isLocal ? (parse_url($referer, PHP_URL_PATH) ?: '/') : ('/' . $lang . '/');
         
-        // Если это AJAX (cliajax), просим JS перезагрузить страницу
+        // AJAX: меняем скин без перезагрузки страницы
         if ($this->isAjax()) {
-            return Response::json(['ok' => true, 'reload' => true]);
+            return Response::json([
+                'ok' => true,
+                'skin_updated' => $skinName,
+                'redirect_url' => $path,
+                'reload' => true, // fallback для старого JS
+            ]);
         }
         
         return Response::redirect($path, 302);

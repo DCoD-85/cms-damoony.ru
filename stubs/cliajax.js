@@ -61,6 +61,20 @@
             if (main) main.innerHTML = data.release;
         }
         
+        // Смена скина без перезагрузки
+        if (data.skin_updated) {
+            document.querySelectorAll('link[rel="stylesheet"]').forEach(function(link) {
+                var href = link.getAttribute('href');
+                if (href && /\/skin\/[a-z0-9_]+\//.test(href)) {
+                    link.setAttribute('href', href.replace(/\/skin\/[a-z0-9_]+\//, '/skin/' + data.skin_updated + '/'));
+                }
+            });
+            if (data.redirect_url) {
+                navigateTo(window.location.origin + data.redirect_url, false);
+            }
+            return true;
+        }
+
         if (data.messages && data.messages.length > 0) {
             var toast = document.querySelector('[data-block="toast"]') || document.querySelector('.dt_toast');
             if (toast) {

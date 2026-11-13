@@ -1,53 +1,65 @@
-<?php
-$sourceDir = dirname(__DIR__);
-$zipFile = $sourceDir . '/downloads/core-v4.zip';
+from pathlib import Path
 
-// Создаём папку downloads, если её нет
-$downloadsDir = dirname($zipFile);
-if (!is_dir($downloadsDir)) {
-    mkdir($downloadsDir, 0777, true);
-}
+BASE = Path.cwd()
 
-$exclude = [
-    '.git', 'app', 'config', 'var', 'content', 'downloads', 'api',
-    'packager.php', '.env', '.idea', 'node_modules', 'install.php',
-    '.github', '.gitignore', '.gitattributes', '_dist', 'data',
-    'CREDENTIALS.txt', 'INSTALL_INSTRUCTION.txt'
-];
+# 1. Патч algoritm_lang_skin.php (assembly + project)
+SKIN_FILES = [
+    BASE / "stubs/assemblies/developer/app/www/algoritm/lang/skin/algoritm_lang_skin.php",
+    BASE / "app/damoony4.ru/www/algoritm/lang/skin/algoritm_lang_skin.php",
+]
 
-$zip = new ZipArchive();
-if ($zip->open($zipFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-    echo "ОШИБКА: не могу открыть архив для записи\n";
-    exit(1);
-}
+OLD_AJAX = """        // Если это AJAX (cliajax), просим JS перезагрузить страницу
+        if ($this->isAjax()) {
+            return Response::json(['ok' => true, 'reload' => true]);
+        }"""
 
-$files = new RecursiveIteratorIterator(
-    new RecursiveDirectoryIterator($sourceDir, RecursiveDirectoryIterator::SKIP_DOTS),
-    RecursiveIteratorIterator::LEAVES_ONLY
-);
+NEW_AJAX = """        // AJAX: меняем скин без перезагрузки страницы
+        if ($this->isAjax()) {
+            return Response::json([
+                'ok' => true,
+                'skin_updated' => $skinName,
+                'redirect_url' => $path,
+                'reload' => true, // fallback для старого JS
+            ]);
+        }"""
 
-foreach ($files as $name => $file) {
-    if (!$file->isDir()) {
-        $filePath = $file->getRealPath();
-        $relativePath = substr($filePath, strlen($sourceDir) + 1);
+for p in SKIN_FILES:
+    if not p.exists(): print(f"SKIP (no file): {p}"); continue
+    src = p.read_text(encoding="utf-8")
+    if NEW_AJAX in src: print(f"SKIP (already): {p}"); continue
+    if OLD_AJAX not in src: print(f"FAIL (marker): {p}"); continue
+    p.write_text(src.replace(OLD_AJAX, NEW_AJAX, 1), encoding="utf-8", newline="")
+    print(f"OK: {p}")
 
-        $excludeFile = false;
-        foreach ($exclude as $ex) {
-            if (str_starts_with($relativePath, $ex . '/') || $relativePath === $ex) {
-                $excludeFile = true;
-                break;
+# 2. Патч cliajax.js (3 копии)
+CLIAJAX_FILES = [
+    BASE / "stubs/cliajax.js",
+    BASE / "stubs/assemblies/developer/shared/scripts/cliajax.js",
+    BASE / "www/media/shared/scripts/cliajax.js",
+]
+
+OLD_MSG = """        if (data.messages && data.messages.length > 0) {"""
+
+NEW_MSG = """        // Смена скина без перезагрузки
+        if (data.skin_updated) {
+            document.querySelectorAll('link[rel="stylesheet"]').forEach(function(link) {
+                var href = link.getAttribute('href');
+                if (href && /\\/skin\\/[a-z0-9_]+\\//.test(href)) {
+                    link.setAttribute('href', href.replace(/\\/skin\\/[a-z0-9_]+\\//, '/skin/' + data.skin_updated + '/'));
+                }
+            });
+            if (data.redirect_url) {
+                navigateTo(window.location.origin + data.redirect_url, false);
             }
+            return true;
         }
-        if (!$excludeFile) {
-            $zip->addFile($filePath, $relativePath);
-        }
-    }
-}
 
-if (!$zip->close()) {
-    echo "ОШИБКА: не могу закрыть архив\n";
-    exit(1);
-}
+        if (data.messages && data.messages.length > 0) {"""
 
-echo "Архив создан: downloads/core-v4.zip\n";
-echo "Размер: " . number_format(filesize($zipFile)) . " байт\n";
+for p in CLIAJAX_FILES:
+    if not p.exists(): print(f"SKIP (no file): {p}"); continue
+    src = p.read_text(encoding="utf-8")
+    if "skin_updated" in src: print(f"SKIP (already): {p}"); continue
+    if OLD_MSG not in src: print(f"FAIL (marker): {p}"); continue
+    p.write_text(src.replace(OLD_MSG, NEW_MSG, 1), encoding="utf-8", newline="")
+    print(f"OK: {p}")
