@@ -76,7 +76,7 @@
         }
 
         if (data.messages && data.messages.length > 0) {
-            var toast = document.querySelector('.site-toast') || document.querySelector('.dt_toast');
+            var toast = document.querySelector('.dt_toast') || document.querySelector('.site-toast');
             if (toast) {
                 toast.innerHTML = '';
                 data.messages.forEach(function(msg) {

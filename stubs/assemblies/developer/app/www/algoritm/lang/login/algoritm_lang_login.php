@@ -19,7 +19,6 @@ final class algoritm_lang_login extends Page
             return Response::redirect('/' . $this->context->domain->language . '/profile/');
         }
 
-        $error = '';
         if ($this->isPost()) {
             $login = (string) $this->context->request->post('login');
             $password = (string) $this->context->request->post('password');
@@ -27,7 +26,15 @@ final class algoritm_lang_login extends Page
             if ($auth instanceof \Damoony\Data\Auth\AuthInterface && $auth->login($login, $password)) {
                 return Response::redirect('/' . $this->context->domain->language . '/profile/');
             }
-            $error = $this->context->lang('auth.error');
+            // Ошибка через flash → в AJAX прилетит как toast
+            $flash = $this->context->service('flash');
+            if ($flash instanceof \Damoony\Core\Flash) {
+                $flash->add('error', $this->context->lang('auth.error'));
+            }
+            // При нативном POST (без JS) — рендерим форму заново, тост не нужен
+            if (!$this->isAjax()) {
+                return Response::redirect($this->context->request->path);
+            }
         }
 
         $form = new Form();
