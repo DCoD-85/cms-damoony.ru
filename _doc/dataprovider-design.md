@@ -15,35 +15,18 @@
 
 ## 2. DB Architecture
 
-### 2.1. Единая БД + префиксы
-
-    damoony_main
-    ├── users, sessions, roles, user_roles, login_attempts  ← глобальные (SSO)
-    ├── domains, aliases                                     ← реестр
-    ├── d1_www__news, d1_www__doc_articles, ...              ← alias-данные
-    ├── d1_doc__articles, d1_doc__sections, ...
-    └── d2_www__news, d2_shop__orders, ...
-
-Правило: `d{N}_{alias}__{table}` — alias-данные. Глобальные таблицы (`users`, `sessions`, `audit_log`, …) — без префикса.
+### 2.1. Структура v4
+- `.dbglobal/schema.json` — схема БД домена (глобальные таблицы).
+- `.dblocal/schema.json` — схема БД алиаса (локальные таблицы).
+- `.dbprovider/` — PHP-классы провайдеров (генерируются `dbcli`).
 
 ### 2.2. Инварианты
+1. Всё взаимодействие с БД — только через `DataProvider`.
+2. Запись — только через `db:mutate` (с `--force`). Read-only — `db:call`.
+3. Миграции — `db:migrate`. Никаких `ALTER TABLE` через AI.
+4. Cross-alias FK — запрещены.
 
-1. Всё взаимодействие с БД — только через `DataProvider`. Никакого raw SQL в страницах, регионах, контроллерах.
-2. Cross-alias FK — запрещены.
-3. `JOIN` разрешён: внутри одного alias; с глобальной таблицей.
-4. Транзакции — внутри одного alias.
-5. `site.config.domains_aliases_storage` — mapping `{db, prefix}`.
-
-### 2.3. domains_aliases_storage — opt-in
-
-    "domains_aliases_storage": {
-      "damoony.ru": {
-        "www": { "db": "main", "prefix": "d1_www__" },
-        "doc": { "db": "main", "prefix": "d1_doc__" }
-      }
-    }
-
-`db: "main"` = `engine.config.db.dbname`. Ключ опционален: если отсутствует, `AbstractProvider::physicalTable()` возвращает логическое имя без префикса. Глобальные таблицы не префиксуются никогда.
+## 3. DataProvider
 
 ## 3. DataProvider
 
@@ -122,17 +105,13 @@ Per-command флаги — `_doc/cli.md` §10.
     {"ok": true, "data": {"rows": […], "count": 5}, "error": "", "hint": "", "role": "inspector", "next": […]}
 
 ## 6. Статус фаз
-
 | Phase | Что | Статус |
 |---|---|---|
-| 0 | Refactor `bin/aicli.php` → handlers | done |
-| 1 | 6 DataProviders | partial (User/News/Files; Doc/Stats/Audit — TBD) |
+| 1 | 6 DataProviders | done |
 | 2 | Introspection | done |
 | 3 | `db:call`, `db:mutate`, audit_log | done |
 | 4.1–4.2 | `select_where`, `insert`, `BlockCodegen` | done |
-| 4.4–4.5 | `www/forms.php` + `brain.py` forms | done |
-| 4.6–4.7 | AIUI (backend + frontend) | done |
-| 4.8 | Остальные 10 шаблонов | pending |
-| 5 | Wizard integration (`db:introspect → plan → generate → test`) | pending |
+| 4.8 | Остальные шаблоны | pending |
+| 5 | Wizard integration | pending |
 
-Детали — `git log`, `arch.md` §4/§5, `cli.md` §10.
+Детали — `git log`, `arch.md` §5.

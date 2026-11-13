@@ -18,6 +18,7 @@
 ## 1. Диагностика и миграции
 
 - `help` — список всех команд.
+- `new --domain=[fqdn] --assembly=[name]` — **Главная команда**. Создаёт домен и разворачивает структуру из сборки (`stubs/assemblies/`).
 - `api:reflect` — генерирует стабы для IDE (автодополнение `Builder`, `Element`, `Attrs`) в `_dev/api.stub.php`.
 - `structure:check` — проверка целостности (наличие 3 файлов, стыковка филлеров). Severity-aware: `error` (exit 1) и `warning` (exit 0).
 - `structure:repair --domain=[d]` — восстанавливает отсутствующие `.php`, `.rules.json`, `.editor.json`.
@@ -42,23 +43,17 @@
 - `page:toggle --domain=[d] --allias=[a] --name=[n] --key=auth|search|default --value=1|0 [--parent=...]` — переключение флага в `.rules.json`.
 - `page:list --domain=[d] --allias=[a]` — рекурсивный список страниц (с флагами).
 
-## 4. Блоки и Филлеры
+## 4. Блоки (Blocks)
 
-**Блоки** (в `.blocksglobal/`):
-
-- `block:new --domain=[d] --name=[n] [--type=script|visual|mixed]` — создаёт 3 файла. `--type` default `mixed`.
-- `block:write --domain=[d] --name=[n] --json='[...]' [--json_b64=...]` — безопасная запись JSON-контента в блок (компилируется через `BlockCompiler`).
-- `block:edit --domain=[d] --name=[n] --file=[php|rules|editor] [--content="..."] [--content_b64=...] [--allow_php=1]` — правка `.php` / `.rules.json` / `.editor.json`. `--allow_php` — RCE-guard: разрешён только если `engine.config.security.allow_php_blocks=true`.
+- `block:new --domain=[d] --name=[n] [--type=script|visual|mixed]` — создаёт 3 файла в `.blocksglobal/`.
+- `block:write --domain=[d] --name=[n] --json='[...]'` — безопасная запись JSON-контента.
+- `block:edit --domain=[d] --name=[n] --file=[php|rules|editor]` — правка файлов блока.
 - `block:remove --domain=[d] --name=[n] --force` — в карантин.
 - `block:list --domain=[d]` — список глобальных блоков.
 
-**Филлеры** (переопределения блоков для алиаса):
+⚠️ **Локальные блоки** (`.blockslocal/`) перекрывают глобальные. Они создаются из сборок (`new --assembly`) или вручную по правилу 3 файлов. Команда `filler:*` устарела и больше не используется.
 
-- `filler:new --domain=[d] --allias=[a] --block=[b]` — создаёт 3 файла `[block]_[allias].*`.
-- `filler:write --domain=[d] --allias=[a] --block=[b] --json='[...]' [--json_b64=...]` — безопасная запись JSON-контента в филлер.
-- `filler:toggle --domain=[d] --allias=[a] --block=[b] [--value=1|0]` — idempotent. `--value` default `1`. Проверяет блок на диске.
-- `filler:edit --domain=[d] --allias=[a] --block=[b] --file=[php|rules|editor] [--content="..."] [--content_b64=...] [--allow_php=1]` — правка правил.
-- `filler:list --domain=[d] --allias=[a]` — список филлеров.
+## 5. Схемы (Scheme)
 
 ## 5. Схемы (Scheme)
 
@@ -145,23 +140,16 @@
 
 ## 13. `dbcli` (Управление БД)
 
-Точка входа: `php bin/dbcli.php [command] [--key=value]`. Инструмент для **декларативного управления БД** (без сырого SQL). Создает JSON-схемы, из которых генерируются SQL-миграции и PHP-провайдеры.
+Точка входа: `php bin/dbcli.php [command]`. Работает с v4 структурой (`.dbglobal` для домена, `.dblocal` для алиаса).
 
-- `db:schema:init --domain=[d] --table=[t]` — создать JSON-схему таблицы в `app/[d]/.db/schema.json` (базовая структура: `id`, `created_at`).
-- `db:schema:add-column --domain=[d] --table=[t] --name=[n] --type=[varchar|int|text|timestamp|decimal] [--length=255] [--null=1]` — добавить колонку в таблицу JSON-схемы.
-- `db:schema:generate-sql --domain=[d]` — сгенерировать SQL-миграцию из `schema.json` в папку `migrations/`.
-- `db:schema:generate-provider --domain=[d] --table=[t] [--alias=www]` — сгенерировать PHP-класс провайдера (унаследованный от `BasicCrudProvider`) в `app/[d]/[alias]/.dbprovider/`.
+- `db:schema:init --domain=[d] --table=[t]` — создать JSON-схему таблицы в `app/[d]/.dbglobal/schema.json`.
+- `db:schema:add-column --domain=[d] --table=[t] --name=[n] --type=[varchar|int|text|timestamp|decimal]`
+- `db:schema:generate-sql --domain=[d]` — сгенерировать SQL-миграцию в `migrations/`.
+- `db:schema:generate-provider --domain=[d] --table=[t] [--alias=www]` — сгенерировать PHP-класс провайдера в `.dbprovider/`.
 
-**Полный цикл:**
-```bash
-php bin/dbcli.php db:schema:init --domain=mysite.ru --table=products
-php bin/dbcli.php db:schema:add-column --domain=mysite.ru --table=products --name=title --type=varchar
-php bin/dbcli.php db:schema:generate-sql --domain=mysite.ru
-php bin/cli.php db:migrate
-php bin/dbcli.php db:schema:generate-provider --domain=mysite.ru --table=products
-```
+После генерации провайдера его методы доступны через `db:call` и `db:mutate`.
 
-После генерации провайдера его можно использовать в `db:call` и `db:mutate` (см. §10). Подробнее — `_doc/dbcli.md`.
+## 14. Языки (`bin/cli.php lang:*`)
 
 ## 14. Языки (`bin/cli.php lang:*`)
 
