@@ -10,12 +10,14 @@ RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
 
 echo -e "${GREEN}=== Damoony Engine Installer ===${NC}"
 echo "Домен: $DOMAIN"
+echo ""
 
 # 1. Проверка зависимостей
 echo -e "${YELLOW}[1/9] Проверка зависимостей...${NC}"
 for cmd in php curl unzip mysql; do
     command -v "$cmd" >/dev/null 2>&1 || { echo -e "${RED}ОШИБКА: $cmd не найден${NC}"; exit 1; }
 done
+echo "PHP: $(php -r 'echo PHP_VERSION;')"
 
 # 1.5. Проверка директории
 echo -e "${YELLOW}[1.5/9] Проверка директории...${NC}"
@@ -29,6 +31,7 @@ echo "OK: директория чистая"
 # 2. Настройки БД (Автоматическое создание)
 echo ""
 echo -e "${YELLOW}[2/9] Настройки БД${NC}"
+
 DB_NAME="idoam_db"
 DB_USER="idoam_user"
 DB_PASS="StrongPass123"
@@ -36,13 +39,12 @@ DB_PASS="StrongPass123"
 DB_OK=0
 for attempt in 1 2 3; do
     echo "--- Попытка $attempt/3 ---"
-    read -p "MySQL Root (для создания БД) [root]: " MYSQL_ROOT
+    read -p "MySQL Root [root]: " MYSQL_ROOT
     MYSQL_ROOT=${MYSQL_ROOT:-root}
     read -sp "Пароль MySQL Root: " MYSQL_ROOT_PASS
     echo ""
 
     echo -e "${YELLOW}[3/9] Создание БД и пользователя...${NC}"
-    # Дропаем старую базу и создаем новую
     if MYSQL_PWD="$MYSQL_ROOT_PASS" mysql -u "$MYSQL_ROOT" -e "
         DROP DATABASE IF EXISTS $DB_NAME; 
         CREATE DATABASE $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -71,7 +73,7 @@ if ! echo "$ACTIVATE" | grep -q '"ok":true'; then
 fi
 ZIP_URL=$(echo "$ACTIVATE" | php -r 'echo json_decode(stream_get_contents(STDIN),true)["download_url"] ?? "";')
 
-# 5. Скачивание и распаковка
+# 5. Скачивание
 echo -e "${YELLOW}[5/9] Скачивание ядра...${NC}"
 TMP=$(mktemp -d)
 curl -sk "$ZIP_URL" -o "$TMP/core.zip"
@@ -100,25 +102,20 @@ JSON
 echo -e "${YELLOW}[7/9] Миграции БД...${NC}"
 php bin/cli.php db:migrate
 
-# 8. Сборка проекта и создание админа
-echo -e "${YELLOW}[8/9] Сборка проекта (developer)...${NC}"
+# 8. Сборка и админ
+echo -e "${YELLOW}[8/9] Сборка проекта...${NC}"
 rm -f config/site.config
 php bin/cli.php new --domain="$DOMAIN" --assembly=developer
 php bin/dbcli.php db:schema:generate-provider --domain="$DOMAIN" --table=test_items
 
-# Генерация пароля
 ADMIN_LOGIN="admin"
 ADMIN_PASS=$(php -r "echo substr(bin2hex(random_bytes(6)), 0, 12);")
-
-# Создаем через CLI
 php bin/cli.php user:new --login="$ADMIN_LOGIN" --email="admin@$DOMAIN" --password="$ADMIN_PASS" --role=admin --update
 
-# Сохраняем в файл
 cat > CREDENTIALS.txt << CRED
 ==========================================
  Администратор Damoony
 ==========================================
-
 Логин:  $ADMIN_LOGIN
 Пароль: $ADMIN_PASS
 Email:  admin@$DOMAIN
@@ -126,19 +123,27 @@ Email:  admin@$DOMAIN
 CRED
 chmod 600 CREDENTIALS.txt
 
-# 9. Финализация
+# 9. Финал
 echo -e "${YELLOW}[9/9] Финализация...${NC}"
 chown -R www-data:www-data "$(pwd)" || true
 chmod -R 775 var www/media 2>/dev/null || true
 
 cat > INSTALL_INSTRUCTION.txt << TXT
-Установка завершена!
+==========================================
+ Установка завершена!
+==========================================
 Домен: $DOMAIN
-Инструкция: откройте https://$DOMAIN/ru/ или CREDENTIALS.txt
+Сайт: https://$DOMAIN/ru/
+Админка: https://$DOMAIN/ru/login/
+Логин/пароль: см. файл CREDENTIALS.txt
+
+Поддержка: support@damoony.ru
 TXT
 
 echo -e "${GREEN}======================================"
 echo " УСТАНОВКА ЗАВЕРШЕНА"
 echo -e "======================================${NC}"
 echo "Логин: $ADMIN_LOGIN"
-echo "Пароль: $ADMIN_PASS (сохранен в CREDENTIALS.txt)"
+echo "Пароль: $ADMIN_PASS"
+echo "Сайт: https://$DOMAIN/ru/"
+echo "Данные сохранены в CREDENTIALS.txt"
