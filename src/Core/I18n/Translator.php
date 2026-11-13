@@ -69,8 +69,12 @@ final class Translator
         if ($lang === 'ru') {
             $n10 = (int) $count % 10;
             $n100 = (int) $count % 100;
-            if ($n10 === 1 && $n100 !== 11) return 'one';
-            if ($n10 >= 2 && $n10 <= 4 && ($n100 < 10 || $n100 >= 20)) return 'few';
+            if ($n10 === 1 && $n100 !== 11) {
+                return 'one';
+            }
+            if ($n10 >= 2 && $n10 <= 4 && ($n100 < 10 || $n100 >= 20)) {
+                return 'few';
+            }
             return 'many';
         }
         // Default EN / fallback
@@ -94,6 +98,7 @@ final class Translator
 
     /**
      * @param array<string, mixed> $array
+     *
      * @return array<string, string>
      */
     private static function flatten(array $array, string $prefix = ''): array

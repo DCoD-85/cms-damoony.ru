@@ -9,6 +9,6 @@ final class algoritm_lang extends Page
 {
     protected function content(): Node|null
     {
-        return Builder::div('dt_home')->content('Добро пожаловать на главную страницу Developer!');
+        return Builder::div('dt_home')->content($this->context->lang('home.welcome'));
     }
 }

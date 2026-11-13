@@ -86,7 +86,7 @@ final class FrontController
                 : ErrorPage::notFound($domain->language);
         }
 
-        if ($authOverride instanceof AuthInterface || $authOverride instanceof \Damoony\Admin\AuthInterface) {
+        if ($authOverride instanceof AuthInterface) {
             $auth = $authOverride;
         } else {
             $auth = $this->container->get(AuthInterface::class);

@@ -143,7 +143,9 @@ final class ConfigDomainResolver implements DomainResolverInterface
             $default = (string) $this->site->getByKey(['domains_skins', $real], $this->defaultSkin);
         }
         $allowed = $this->site->getByKey(['alliases_skins_allowed', $real, $allias], []);
-        if (!is_array($allowed)) $allowed = [];
+        if (!is_array($allowed)) {
+            $allowed = [];
+        }
         $cookie = $_COOKIE['skin'] ?? '';
         if (is_string($cookie) && in_array($cookie, $allowed, true)) {
             return $cookie;

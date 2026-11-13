@@ -31,7 +31,7 @@ $skinCss = [
 
 // Compact всегда в самом конце
 $compactCss = [
-    '/media/{{real}}/{{alias}}/skin/compact/css/main.css',
+    '/media/{{real}}/{{alias}}/skin/mobile/css/main.css',
 ];
 
 return [

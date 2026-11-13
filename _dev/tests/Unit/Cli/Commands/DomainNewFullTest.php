@@ -25,15 +25,18 @@ final class DomainNewFullTest extends TestCase
         $stubsSrc = dirname(__DIR__, 5) . '/stubs/assemblies/developer';
         $stubsDst = $this->root . '/stubs/assemblies/developer';
         if (is_dir($stubsSrc)) {
-            mkdir(dirname($stubsDst), 0777, true);
+            mkdir(dirname($stubsDst), 0o777, true);
             $it = new \RecursiveIteratorIterator(
                 new \RecursiveDirectoryIterator($stubsSrc, \FilesystemIterator::SKIP_DOTS),
-                \RecursiveIteratorIterator::SELF_FIRST
+                \RecursiveIteratorIterator::SELF_FIRST,
             );
             foreach ($it as $item) {
                 $target = $stubsDst . '/' . $it->getSubPathname();
-                if ($item->isDir()) { @mkdir($target, 0777, true); }
-                else { @copy($item->getPathname(), $target); }
+                if ($item->isDir()) {
+                    @mkdir($target, 0o777, true);
+                } else {
+                    @copy($item->getPathname(), $target);
+                }
             }
         }
 

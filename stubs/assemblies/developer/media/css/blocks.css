@@ -14,3 +14,14 @@
 .skin-switcher a:hover { text-decoration: underline; }
 .skin-switcher a.active { color: #333; font-weight: bold; text-decoration: none; pointer-events: none; }
 body.dark-theme .skin-switcher a.active { color: #fff; }
+
+/* Header Layout */
+.dt_top_nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid rgba(0,0,0,0.1); }
+.dt_logo { font-size: 1.4em; font-weight: bold; }
+.dt_main_menu, .dt_auth_menu { display: flex; list-style: none; margin: 0; padding: 0; gap: 20px; }
+.dt_main_menu a, .dt_auth_menu a { text-decoration: none; font-weight: 500; }
+.dt_switchers { display: flex; gap: 20px; font-size: 0.85em; color: #888; }
+.lang-switcher, .skin-switcher { display: flex; gap: 8px; align-items: center; }
+.lang-switcher a, .skin-switcher a { text-decoration: none; color: inherit; }
+.lang-switcher a.active, .skin-switcher a.active { font-weight: bold; pointer-events: none; }
+body.dark-theme .dt_top_nav { border-bottom-color: rgba(255,255,255,0.1); }

@@ -22,4 +22,6 @@ interface PageInterface
     public function isAjax(): bool;
 
     public function isPost(): bool;
+
+    public function getScheme(): ?string;
 }

@@ -9,6 +9,6 @@ final class algoritm_lang_about extends Page
 {
     protected function content(): Node|null
     {
-        return Builder::div('dt_about')->content('Это сборка Developer: полный стек, БД, i18n и CRUD-тесты.');
+        return Builder::div('dt_about')->content($this->context->lang('about.text'));
     }
 }

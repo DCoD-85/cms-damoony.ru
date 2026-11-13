@@ -15,7 +15,7 @@ abstract class AdminPage extends Page
         if (!$auth instanceof AuthInterface) {
             return Response::internalError('Auth service missing');
         }
-        
+
         $user = $auth->user();
         if ($user === null || ($user['role'] ?? '') !== 'admin') {
             return Response::redirect('/' . $this->context->domain->language . '/login/');

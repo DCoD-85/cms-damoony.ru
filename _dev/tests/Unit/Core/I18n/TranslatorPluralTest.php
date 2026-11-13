@@ -19,11 +19,11 @@ final class TranslatorPluralTest extends TestCase
             'item.one' => '{{amount}} товар',
             'item.few' => '{{amount}} товара',
             'item.many' => '{{amount}} товаров',
-            'other.other' => '{{amount}} штук'
+            'other.other' => '{{amount}} штук',
         ], JSON_UNESCAPED_UNICODE));
         file_put_contents($this->dir . '/en.json', json_encode([
             'item.one' => '{{amount}} item',
-            'item.other' => '{{amount}} items'
+            'item.other' => '{{amount}} items',
         ], JSON_UNESCAPED_UNICODE));
     }
 
@@ -37,7 +37,7 @@ final class TranslatorPluralTest extends TestCase
     public function testRussianPluralization(): void
     {
         $t = new Translator('ru', 'en', $this->dir, [$this->dir]);
-        
+
         $this->assertSame('1 товар', $t->tPlural('item', 1));
         $this->assertSame('2 товара', $t->tPlural('item', 2));
         $this->assertSame('5 товаров', $t->tPlural('item', 5));
@@ -49,7 +49,7 @@ final class TranslatorPluralTest extends TestCase
     public function testEnglishPluralization(): void
     {
         $t = new Translator('en', null, $this->dir, [$this->dir]);
-        
+
         $this->assertSame('1 item', $t->tPlural('item', 1));
         $this->assertSame('2 items', $t->tPlural('item', 2));
         $this->assertSame('0 items', $t->tPlural('item', 0));

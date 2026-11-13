@@ -19,9 +19,9 @@ final class blockslocal_www_left implements RegionInterface
         $lang = $t instanceof \Damoony\Core\I18n\Translator ? $t->current() : $context->domain->language;
         
         $menu = Builder::ul('dt_menu');
-        $menu->append(Builder::li()->append(Builder::a('/' . $lang . '/')->content('Home')));
-        $menu->append(Builder::li()->append(Builder::a('/' . $lang . '/about/')->content('About')));
-        $menu->append(Builder::li()->append(Builder::a('/' . $lang . '/tests/')->content('Tests')));
+        $menu->append(Builder::li()->append(Builder::a('/' . $lang . '/')->content($context->lang('menu.home'))));
+        $menu->append(Builder::li()->append(Builder::a('/' . $lang . '/about/')->content($context->lang('menu.about'))));
+        $menu->append(Builder::li()->append(Builder::a('/' . $lang . '/tests/')->content($context->lang('menu.tests'))));
         
         $wrap->append($menu);
         return $wrap;

@@ -17,6 +17,3 @@
 .dt_toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 24px; border-radius: 4px; display: none; z-index: 9999; }
 body { margin: 0; font-family: system-ui, sans-serif; }
 #dt_benchmark { position: fixed; bottom: 10px; right: 10px; font-size: 12px; color: #888; background: rgba(255,255,255,0.8); padding: 4px 8px; border-radius: 4px; z-index: 9999; }
-@media (max-width: 768px) {
-    .dt { grid-template-areas: "top" "left" "center" "right" "bottom" "footer"; grid-template-columns: 1fr; padding: 10px; gap: 10px; }
-}

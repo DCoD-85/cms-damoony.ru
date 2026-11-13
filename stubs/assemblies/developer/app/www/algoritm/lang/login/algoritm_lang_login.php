@@ -27,7 +27,7 @@ final class algoritm_lang_login extends Page
             if ($auth instanceof \Damoony\Data\Auth\AuthInterface && $auth->login($login, $password)) {
                 return Response::redirect('/' . $this->context->domain->language . '/profile/');
             }
-            $error = 'Неверный логин или пароль';
+            $error = $this->context->lang('auth.error');
         }
 
         $form = new Form();
@@ -35,12 +35,12 @@ final class algoritm_lang_login extends Page
         $csrf = $this->context->service('csrf');
         if ($csrf instanceof Csrf) { $form->csrf($csrf); }
         
-        $form->add(new Input('text', 'login', '', 'Логин'));
-        $form->add(new Input('password', 'password', '', 'Пароль'));
-        $form->add(new Button('Войти'));
+        $form->add(new Input('text', 'login', '', $this->context->lang('auth.login')));
+        $form->add(new Input('password', 'password', '', $this->context->lang('auth.password')));
+        $form->add(new Button($this->context->lang('auth.submit')));
 
         $wrap = Builder::div('auth-box');
-        $wrap->append(Builder::h(1)->content('Вход'));
+        $wrap->append(Builder::h(1)->content($this->context->lang('auth.title')));
         if ($error) { $wrap->append(Builder::div('error')->content($error)); }
         $wrap->append($form);
         return $wrap;

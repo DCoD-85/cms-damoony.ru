@@ -12,6 +12,7 @@ use Damoony\Core\Error\ErrorPage;
 use Damoony\Core\Files\Paths;
 use Damoony\Core\Http\Response;
 use Damoony\Core\Routing\RouteMatch;
+use Damoony\Core\Security\Csrf;
 use Damoony\UI\Algoritm\PageInterface;
 use Damoony\UI\Document;
 use Damoony\UI\Node;
@@ -21,7 +22,6 @@ use Damoony\UI\Region\RegionLoader;
 use Damoony\UI\Region\RegionRegistry;
 use Damoony\UI\Scheme\SchemeLoader;
 use Damoony\UI\Scheme\SchemeRenderer;
-use Damoony\Core\Security\Csrf;
 
 final class PageHandler implements PageHandlerInterface
 {
@@ -147,7 +147,7 @@ final class PageHandler implements PageHandlerInterface
             if ($result instanceof Node) {
                 $regions->add(new ContentRegion('center', $result));
             }
-            
+
             // Собираем блоки (для быстрых обновлений)
             $blocks = [];
             foreach ($ajaxBlocks as $blockName) {
@@ -168,7 +168,8 @@ final class PageHandler implements PageHandlerInterface
                     $manifest = $loader->load($domain, $schemeName);
                     $renderer = new SchemeRenderer();
                     $layout = $renderer->render($manifest, $regions, $context)->release();
-                } catch (\RuntimeException $e) {}
+                } catch (\RuntimeException $e) {
+                }
             }
 
             $flash = $context->service('flash');

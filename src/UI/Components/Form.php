@@ -7,7 +7,6 @@ namespace Damoony\UI\Components;
 use Damoony\UI\Builder;
 use Damoony\UI\Element;
 use Damoony\UI\Node;
-use Damoony\UI\Components\Input;
 
 class Form extends Element
 {

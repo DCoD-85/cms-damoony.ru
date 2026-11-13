@@ -13,6 +13,7 @@ use Damoony\Cli\Commands\AlliasListCommand;
 use Damoony\Cli\Commands\AlliasNewCommand;
 use Damoony\Cli\Commands\AlliasRemoveCommand;
 use Damoony\Cli\Commands\ApiReflectCommand;
+use Damoony\Cli\Commands\AssemblyNewCommand;
 use Damoony\Cli\Commands\BlockEditCommand;
 use Damoony\Cli\Commands\BlockListCommand;
 use Damoony\Cli\Commands\BlockNewCommand;
@@ -70,7 +71,6 @@ use Damoony\Cli\Renderer;
 use Damoony\Core\Config;
 use Damoony\Core\Files\Paths;
 use Damoony\Data\Db\Connection;
-use Damoony\Cli\Commands\AssemblyNewCommand;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 

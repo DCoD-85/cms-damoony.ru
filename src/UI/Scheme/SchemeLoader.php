@@ -41,7 +41,10 @@ final class SchemeLoader
             ];
 
             foreach ($paths as $p) {
-                if (is_file($p)) { $file = $p; break; }
+                if (is_file($p)) {
+                    $file = $p;
+                    break;
+                }
             }
         } else {
             $domainDir = $this->sessionId !== null
@@ -66,7 +69,10 @@ final class SchemeLoader
             ];
 
             foreach ($paths as $p) {
-                if (is_file($p)) { $file = $p; break; }
+                if (is_file($p)) {
+                    $file = $p;
+                    break;
+                }
             }
         }
 

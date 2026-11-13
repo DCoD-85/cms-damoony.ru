@@ -15,12 +15,12 @@ final class algoritm_lang_profile extends Page
         }
 
         $user = $this->user();
-        $login = $user['login'] ?? 'Гость';
+        $login = $user['login'] ?? $this->context->lang('profile.guest');
 
         $wrap = Builder::div('profile-box');
-        $wrap->append(Builder::h(1)->content('Профиль'));
-        $wrap->append(Builder::p()->content('Вы вошли как: ' . $login));
-        $wrap->append(Builder::a('/' . $this->context->domain->language . '/logout/')->content('Выйти'));
+        $wrap->append(Builder::h(1)->content($this->context->lang('profile.title')));
+        $wrap->append(Builder::p()->content($this->context->lang('profile.logged_as', ['login' => $login])));
+        $wrap->append(Builder::a('/' . $this->context->domain->language . '/logout/')->content($this->context->lang('profile.logout')));
         
         return $wrap;
     }

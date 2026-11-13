@@ -9,6 +9,6 @@ final class algoritm_lang_tests extends Page
 {
     protected function content(): Node|null
     {
-        return Builder::div('dt_tests')->content('Добро пожаловать в раздел тестов движка!');
+        return Builder::div('dt_tests')->content($this->context->lang('tests.welcome'));
     }
 }

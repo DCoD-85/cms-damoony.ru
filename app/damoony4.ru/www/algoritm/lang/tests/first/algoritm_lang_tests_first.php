@@ -30,19 +30,19 @@ final class algoritm_lang_tests_first extends Page
                 $provider->create(['title' => $title, 'body' => $body]);
                 $flash = $this->context->service('flash');
                 if ($flash instanceof \Damoony\Core\Flash) {
-                    $flash->add('success', 'Запись добавлена!');
+                    $flash->add('success', $this->context->lang('tests.success'));
                 }
             }
             if (!$this->isAjax()) { return Response::redirect($this->context->request->path); }
         }
 
         $wrap = Builder::div();
-        $wrap->append(Builder::h(1)->content('First Test (CRUD)'));
+        $wrap->append(Builder::h(1)->content($this->context->lang('tests.first_title')));
         
         $form = new Form(); $form->method('POST');
         $form->add(new Input('text', 'title'));
         $form->add(new Input('text', 'body'));
-        $form->add(new Button('Add Item'));
+        $form->add(new Button($this->context->lang('tests.add_item')));
         $wrap->append($form);
 
         $items = $provider->get([], 50);

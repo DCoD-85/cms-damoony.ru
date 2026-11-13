@@ -35,8 +35,8 @@ final class AssemblyBuilder
         }
 
         $vars['domain'] = $domain;
-        $vars['real'] = $vars['real'] ?? $domain;
-        $vars['alias'] = $vars['alias'] ?? 'www';
+        $vars['real'] ??= $domain;
+        $vars['alias'] ??= 'www';
 
         // 1. Копируем app/
         $this->copyTree($srcBase . '/app', $this->paths->domain($vars['real']), $vars);

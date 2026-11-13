@@ -31,7 +31,7 @@ $skinCss = [
 
 // Compact всегда в самом конце
 $compactCss = [
-    '/media/damoony4.ru/www/skin/compact/css/main.css',
+    '/media/damoony4.ru/www/skin/mobile/css/main.css',
 ];
 
 return [

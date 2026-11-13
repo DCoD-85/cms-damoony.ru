@@ -25,6 +25,11 @@ final class Document
         $charset = new Element('meta', true);
         $charset->attrs()->add('charset', 'utf-8');
         $this->head->append($charset);
+
+        $viewport = new Element('meta', true);
+        $viewport->attrs()->add('name', 'viewport');
+        $viewport->attrs()->add('content', 'width=device-width, initial-scale=1.0');
+        $this->head->append($viewport);
     }
 
     public function lang(string $lang): self
