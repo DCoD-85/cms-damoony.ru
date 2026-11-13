@@ -1,1 +1,1 @@
-{"available": {"": "^$", "first": "^first$"}, "auth": false}
+{"available": {"": "^$", "first": "^first$", "scheme": "^scheme$"}, "auth": false}

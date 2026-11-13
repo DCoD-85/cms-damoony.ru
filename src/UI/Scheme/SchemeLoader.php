@@ -27,48 +27,54 @@ final class SchemeLoader
     public function load(DomainContext $domain, string $schemeName = 'www'): array
     {
         $appRoot = rtrim($this->paths->root(), '/') . '/app';
+        $file = null;
 
         if ($this->adminRole !== null) {
-            // admin = домен .admin + алиас {role}
-            // приоритет: domain-level .admin/.schemesglobal → role-level .admin/{role}/.schemesglobal
             $baseDir = $appRoot . '/.admin/.schemesglobal/';
             $roleDir = $appRoot . '/.admin/' . $this->adminRole . '/.schemesglobal/';
+
+            $paths = [
+                $roleDir . $schemeName . '.php',
+                $roleDir . $domain->allias . '.php',
+                $baseDir . $schemeName . '.php',
+                $baseDir . $domain->allias . '.php',
+            ];
+
+            foreach ($paths as $p) {
+                if (is_file($p)) { $file = $p; break; }
+            }
         } else {
             $domainDir = $this->sessionId !== null
                 ? '/.sess_' . $this->sessionId . '.' . $domain->real
                 : '/' . $domain->real;
+
+            $localDir = $appRoot . $domainDir . '/' . $domain->allias . '/.schemeslocal/';
             $baseDir = $appRoot . $domainDir . '/.schemesglobal/';
-        }
 
-        if ($this->adminRole !== null) {
-            // admin: ищем в role-level (alias override), затем в domain-level
-            $file = $roleDir . $domain->allias . '.php';
-            if (!is_file($file)) {
-                $file = $roleDir . $schemeName . '.php';
-            }
-            if (!is_file($file)) {
-                $file = $baseDir . $domain->allias . '.php';
-            }
-            if (!is_file($file)) {
-                $file = $baseDir . $schemeName . '.php';
-            }
-        } else {
-            // 1. Приоритет: схема алиаса (например, docs.php)
-            $file = $baseDir . $domain->allias . '.php';
+            // v4 Priority:
+            // 1. useScheme() name in .schemeslocal
+            // 2. alias.php in .schemeslocal
+            // 3. useScheme() name in .schemesglobal
+            // 4. alias.php in .schemesglobal
+            // 5. www.php in .schemesglobal
+            $paths = [
+                $localDir . $schemeName . '.php',
+                $localDir . $domain->allias . '.php',
+                $baseDir . $schemeName . '.php',
+                $baseDir . $domain->allias . '.php',
+                $baseDir . 'www.php',
+            ];
 
-            // 2. Если нет — берем переданную схему (www.php)
-            if (!is_file($file)) {
-                $file = $baseDir . $schemeName . '.php';
+            foreach ($paths as $p) {
+                if (is_file($p)) { $file = $p; break; }
             }
         }
 
-        if (!is_file($file)) {
+        if ($file === null) {
             if (!Env::fromServer()->isDev()) {
-                throw new RuntimeException('Scheme not found: ' . $file);
+                throw new RuntimeException('Scheme not found for alias: ' . $domain->allias . ' or scheme: ' . $schemeName);
             }
-
-            error_log('Warning: scheme not found: ' . $file . ' — using fallback (dev only)');
-
+            error_log('Warning: scheme not found (' . $schemeName . ' | ' . $domain->allias . ') — using fallback (dev only)');
             return [
                 'tag' => 'div',
                 'class' => 'layout',

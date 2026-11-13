@@ -14,12 +14,26 @@ class Page implements PageInterface
     /** @var list<string> */
     protected array $ajaxBlocks = ['top', 'left', 'center', 'right', 'bottom', 'policy', 'toast'];
 
+    /** @var string|null Кастомная схема для страницы (из .schemeslocal/) */
+    protected ?string $scheme = null;
+
     /** @param array<string, string> $args */
     public function __construct(
         protected readonly RegionContext $context,
         protected readonly RegionRegistry $regions,
         protected readonly array $args = [],
     ) {
+    }
+
+    public function useScheme(string $scheme): self
+    {
+        $this->scheme = $scheme;
+        return $this;
+    }
+
+    public function getScheme(): ?string
+    {
+        return $this->scheme;
     }
 
     /** Удобный доступ для управления регионами из логики страницы */

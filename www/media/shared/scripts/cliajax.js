@@ -10,17 +10,11 @@
     function updateBenchmark() {
         var bm = document.getElementById('dt_benchmark');
         if (!bm) return;
-        
-        // Формат: ⚡ последний / общее / кол-во
         bm.textContent = '⚡ ' + Math.round(lastRequestTime) + ' ms / ' + Math.round(totalRequestTime) + ' ms / ' + ajaxCount;
     }
 
-    // Инициализация при загрузке
-    document.addEventListener('DOMContentLoaded', function() {
-        updateBenchmark();
-    });
+    document.addEventListener('DOMContentLoaded', updateBenchmark);
 
-    // Перехватываем fetch, чтобы замерять время
     var originalFetch = window.fetch;
     window.fetch = function() {
         var start = performance.now();
@@ -43,7 +37,17 @@
     // -----------------------
 
     function applyMinStruct(data) {
-        if (data.blocks) {
+        if (data.layout) {
+            var currentLayout = document.querySelector('.dt') || document.querySelector('.layout');
+            if (currentLayout) {
+                currentLayout.outerHTML = data.layout;
+                // Обновляем title из нового layout
+                var tempDiv = document.createElement('div');
+                tempDiv.innerHTML = data.layout;
+                var newTitle = tempDiv.querySelector('title');
+                if (newTitle) document.title = newTitle.textContent;
+            }
+        } else if (data.blocks) {
             for (var key in data.blocks) {
                 if (data.blocks.hasOwnProperty(key)) {
                     var el = document.querySelector('[data-block="' + key + '"]');
@@ -51,12 +55,14 @@
                 }
             }
         }
+        
         if (data.release) {
             var main = document.querySelector('[data-block="center"]') || document.querySelector('main') || document.body;
             if (main) main.innerHTML = data.release;
         }
+        
         if (data.messages && data.messages.length > 0) {
-            var toast = document.querySelector('.site-toast');
+            var toast = document.querySelector('.site-toast') || document.querySelector('.dt_toast');
             if (toast) {
                 toast.innerHTML = '';
                 data.messages.forEach(function(msg) {
@@ -80,6 +86,23 @@
         return false;
     }
 
+    function navigateTo(url, pushState) {
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function(res) {
+            var ct = res.headers.get('Content-Type');
+            if (!ct || ct.indexOf('application/json') === -1) { window.location.href = url; return null; }
+            return res.json();
+        })
+        .then(function(data) {
+            if (!data) return;
+            var reloaded = applyMinStruct(data);
+            if (pushState && !reloaded) {
+                window.history.pushState({ url: url }, '', url);
+            }
+        })
+        .catch(function() { window.location.href = url; });
+    }
+
     // Перехват ссылок
     document.addEventListener('click', function(e) {
         var link = e.target.closest('a');
@@ -87,18 +110,7 @@
         if (link.host !== window.location.host) return;
 
         e.preventDefault();
-        fetch(link.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-        .then(function(res) {
-            var ct = res.headers.get('Content-Type');
-            if (!ct || ct.indexOf('application/json') === -1) { window.location.href = link.href; return null; }
-            return res.json();
-        })
-        .then(function(data) {
-            if (!data) return;
-            var reloaded = applyMinStruct(data);
-            if (!reloaded) window.history.pushState({}, '', link.href);
-        })
-        .catch(function() { window.location.href = link.href; });
+        navigateTo(link.href, true);
     });
 
     // Перехват форм
@@ -123,10 +135,13 @@
         .then(function(data) {
             if (!data) return;
             applyMinStruct(data);
-            form.reset(); // Очищаем форму после успешной отправки
+            form.reset(); 
         })
         .catch(function() { form.submit(); });
     });
 
-    window.addEventListener('popstate', function() { window.location.reload(); });
+    // Кнопки назад/вперед (теперь без перезагрузки)
+    window.addEventListener('popstate', function() {
+        navigateTo(window.location.href, false);
+    });
 })();

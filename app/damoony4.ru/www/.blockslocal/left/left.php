@@ -22,6 +22,7 @@ final class blockslocal_www_left implements RegionInterface
         $menu->append(Builder::li()->append(Builder::a('/' . $lang . '/')->content('Home')));
         $menu->append(Builder::li()->append(Builder::a('/' . $lang . '/about/')->content('About')));
         $menu->append(Builder::li()->append(Builder::a('/' . $lang . '/tests/')->content('Tests')));
+        $menu->append(Builder::li()->append(Builder::a('/' . $lang . '/tests/scheme/')->content('Custom Scheme')));
         
         $wrap->append($menu);
         return $wrap;

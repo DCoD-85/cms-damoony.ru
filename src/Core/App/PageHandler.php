@@ -96,7 +96,7 @@ final class PageHandler implements PageHandlerInterface
             $result = $page->default();
             $debugTime = round((microtime(true) - $startTime) * 1000, 2);
 
-            return $this->toResponse($result, $domain, $context, $regions, $adminRole, $page->ajaxBlocks(), $debugTime);
+            return $this->toResponse($result, $domain, $context, $regions, $adminRole, $page->ajaxBlocks(), $debugTime, $page->getScheme());
         } catch (\Throwable $e) {
             return ErrorPage::serverError($domain->language, $this->debugDetail($e->getMessage()));
         }
@@ -124,7 +124,7 @@ final class PageHandler implements PageHandlerInterface
     /**
      * @param list<string> $ajaxBlocks
      */
-    private function toResponse(Node|Response|null $result, DomainContext $domain, RegionContext $context, RegionRegistry $regions, ?string $adminRole = null, array $ajaxBlocks = ['center'], float $debugTime = 0.0): Response
+    private function toResponse(Node|Response|null $result, DomainContext $domain, RegionContext $context, RegionRegistry $regions, ?string $adminRole = null, array $ajaxBlocks = ['center'], float $debugTime = 0.0, ?string $customScheme = null): Response
     {
         if ($result instanceof Response) {
             // AJAX: перехватываем редиректы, чтобы JS мог их обработать
@@ -142,18 +142,33 @@ final class PageHandler implements PageHandlerInterface
             return $result;
         }
 
-        // AJAX: отдаём блоки как JSON (для Node или null)
+        // AJAX: отдаём блоки и полный каркас как JSON (для Node или null)
         if ($context->request->isAjax()) {
             if ($result instanceof Node) {
                 $regions->add(new ContentRegion('center', $result));
             }
+            
+            // Собираем блоки (для быстрых обновлений)
             $blocks = [];
-
             foreach ($ajaxBlocks as $blockName) {
                 $region = $regions->get($blockName);
                 if ($region !== null && $region->enabled()) {
                     $blocks[$blockName] = $region->render($context)->release();
                 }
+            }
+
+            // Собираем полный Layout (если схема поменялась)
+            $layout = null;
+            $paths = $context->service('paths');
+            if ($paths instanceof Paths) {
+                $sid = $context->service('session_id');
+                $loader = new SchemeLoader($paths, is_string($sid) ? $sid : null, $adminRole);
+                $schemeName = $adminRole !== null ? 'admin' : ($customScheme ?? $domain->scheme);
+                try {
+                    $manifest = $loader->load($domain, $schemeName);
+                    $renderer = new SchemeRenderer();
+                    $layout = $renderer->render($manifest, $regions, $context)->release();
+                } catch (\RuntimeException $e) {}
             }
 
             $flash = $context->service('flash');
@@ -163,6 +178,7 @@ final class PageHandler implements PageHandlerInterface
                 'ok' => true,
                 'messages' => $messages,
                 'blocks' => $blocks,
+                'layout' => $layout, // <--- Полный HTML схемы
                 'form' => ['reset' => false, 'keep' => [], 'redirect' => null, 'redirect_time' => null],
                 'reload' => false,
             ]);
@@ -174,7 +190,7 @@ final class PageHandler implements PageHandlerInterface
         if ($paths instanceof Paths) {
             $sid = $context->service('session_id');
             $loader = new SchemeLoader($paths, is_string($sid) ? $sid : null, $adminRole);
-            $schemeName = $adminRole !== null ? 'admin' : $domain->scheme;
+            $schemeName = $adminRole !== null ? 'admin' : ($customScheme ?? $domain->scheme);
 
             try {
                 $manifest = $loader->load($domain, $schemeName);
