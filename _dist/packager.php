@@ -1,7 +1,7 @@
 <?php
 // packager.php лежит в www/
 // Сканируем корень проекта, ZIP кладем в www/downloads/
-$sourceDir = dirname(__DIR__);              // /var/www/damoony.ru/
+$sourceDir = __DIR__;								              // /var/www/damoony.ru/
 $zipFile = __DIR__ . '/downloads/core-v4.zip'; // /var/www/damoony.ru/www/downloads/
 
 $downloadsDir = dirname($zipFile);
