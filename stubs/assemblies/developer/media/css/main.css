@@ -14,6 +14,22 @@
 .dt_bottom { grid-area: bottom; }
 .dt_footer { grid-area: footer; }
 .dt_policy { display: none; }
-.dt_toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 24px; border-radius: 4px; display: none; z-index: 9999; }
+.dt_toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 12px 24px;
+    border-radius: 4px;
+    display: none;
+    z-index: 99999;
+    background: #333;
+    color: #fff;
+    font-family: sans-serif;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    min-width: 200px;
+}
+.dt_toast .success { color: #4ade80; margin-bottom: 4px; }
+.dt_toast .error { color: #f87171; margin-bottom: 4px; }
+.dt_toast .info { color: #60a5fa; margin-bottom: 4px; }
 body { margin: 0; font-family: system-ui, sans-serif; }
 #dt_benchmark { position: fixed; bottom: 10px; right: 10px; font-size: 12px; color: #888; background: rgba(255,255,255,0.8); padding: 4px 8px; border-radius: 4px; z-index: 9999; }

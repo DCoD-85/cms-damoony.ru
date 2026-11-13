@@ -62,17 +62,25 @@
         }
         
         if (data.messages && data.messages.length > 0) {
-            var toast = document.querySelector('.site-toast') || document.querySelector('.dt_toast');
+            var toast = document.querySelector('[data-block="toast"]') || document.querySelector('.dt_toast');
             if (toast) {
                 toast.innerHTML = '';
-                data.messages.forEach(function(msg) {
+                // Поддержка и массива, и строки
+                var messages = Array.isArray(data.messages) ? data.messages : [{ type: 'info', message: data.messages }];
+                messages.forEach(function(msg) {
                     var div = document.createElement('div');
                     div.className = msg.type || 'info';
                     div.textContent = msg.message || msg;
                     toast.appendChild(div);
                 });
+                // Показываем ВСЕХ родителей (dt_toast / site-toast)
+                var parent = toast.closest('.dt_toast');
+                if (parent) parent.style.display = 'block';
                 toast.style.display = 'block';
-                setTimeout(function() { toast.style.display = 'none'; }, 3000);
+                setTimeout(function() {
+                    if (parent) parent.style.display = 'none';
+                    toast.style.display = 'none';
+                }, 3000);
             }
         }
         if (data.form && data.form.redirect) {
