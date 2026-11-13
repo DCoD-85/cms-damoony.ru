@@ -1,46 +1,53 @@
-from pathlib import Path
+<?php
+$sourceDir = dirname(__DIR__);
+$zipFile = $sourceDir . '/downloads/core-v4.zip';
 
-BASE = Path.cwd()
-tpl_path = BASE / "_dist/vendor/www/stubs/install.sh.tpl"
+// Создаём папку downloads, если её нет
+$downloadsDir = dirname($zipFile);
+if (!is_dir($downloadsDir)) {
+    mkdir($downloadsDir, 0777, true);
+}
 
-if not tpl_path.exists():
-    print("FAIL: tpl file not found")
-    exit(1)
+$exclude = [
+    '.git', 'app', 'config', 'var', 'content', 'downloads', 'api',
+    'packager.php', '.env', '.idea', 'node_modules', 'install.php',
+    '.github', '.gitignore', '.gitattributes', '_dist', 'data',
+    'CREDENTIALS.txt', 'INSTALL_INSTRUCTION.txt'
+];
 
-src = tpl_path.read_text(encoding="utf-8")
+$zip = new ZipArchive();
+if ($zip->open($zipFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+    echo "ОШИБКА: не могу открыть архив для записи\n";
+    exit(1);
+}
 
-# 1. Фикс basename
-src = src.replace(
-    'SCRIPT_NAME=$(basename "$0")',
-    'SCRIPT_NAME=$(basename "${BASH_SOURCE[0]:-$0}")'
-)
+$files = new RecursiveIteratorIterator(
+    new RecursiveDirectoryIterator($sourceDir, RecursiveDirectoryIterator::SKIP_DOTS),
+    RecursiveIteratorIterator::LEAVES_ONLY
+);
 
-# 2. Замена блока с SQL на CLI-вызов
-old_block = """# Гарантируем колонку role (на случай старых БД)
-MYSQL_PWD="$DB_PASS" mysql -u "$DB_USER" "$DB_NAME" -e "ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(16) NOT NULL DEFAULT 'user';" 2>/dev/null || true
+foreach ($files as $name => $file) {
+    if (!$file->isDir()) {
+        $filePath = $file->getRealPath();
+        $relativePath = substr($filePath, strlen($sourceDir) + 1);
 
-# Генерируем хеш пароля через PHP
-HASH=$(php -r "echo password_hash('$ADMIN_PASS', PASSWORD_BCRYPT);")
+        $excludeFile = false;
+        foreach ($exclude as $ex) {
+            if (str_starts_with($relativePath, $ex . '/') || $relativePath === $ex) {
+                $excludeFile = true;
+                break;
+            }
+        }
+        if (!$excludeFile) {
+            $zip->addFile($filePath, $relativePath);
+        }
+    }
+}
 
-# Создаем или обновляем админа напрямую через SQL (без ошибок при дублях)
-MYSQL_PWD="$DB_PASS" mysql -u "$DB_USER" "$DB_NAME" -e "
-INSERT INTO users (login, email, password_hash, role, status) 
-VALUES ('$ADMIN_LOGIN', 'admin@$DOMAIN', '$HASH', 'admin', 'active')
-ON DUPLICATE KEY UPDATE 
-    password_hash = VALUES(password_hash), 
-    role = 'admin';
-"
-"""
+if (!$zip->close()) {
+    echo "ОШИБКА: не могу закрыть архив\n";
+    exit(1);
+}
 
-new_block = """# Создаем или обновляем админа через CLI (CLI-First)
-php bin/cli.php user:new --login="$ADMIN_LOGIN" --email="admin@$DOMAIN" --password="$ADMIN_PASS" --role=admin --update
-"""
-
-if new_block in src:
-    print("SKIP: already patched")
-elif old_block not in src:
-    print("FAIL: marker not found")
-else:
-    src = src.replace(old_block, new_block, 1)
-    tpl_path.write_text(src, encoding="utf-8", newline="")
-    print("OK: install.sh.tpl patched (removed hardcode, fixed basename)")
+echo "Архив создан: downloads/core-v4.zip\n";
+echo "Размер: " . number_format(filesize($zipFile)) . " байт\n";
