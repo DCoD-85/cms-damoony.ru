@@ -53,7 +53,6 @@ final class algoritm_lang_login extends Page
 
         $wrap = Builder::div('auth-box');
         $wrap->append(Builder::h(1)->content($this->context->lang('auth.title')));
-        if ($error) { $wrap->append(Builder::div('error')->content($error)); }
         $wrap->append($form);
         return $wrap;
     }

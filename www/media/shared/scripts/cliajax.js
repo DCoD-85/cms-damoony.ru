@@ -76,13 +76,13 @@
         }
 
         if (data.messages && data.messages.length > 0) {
-            var toast = document.querySelector('.dt_toast') || document.querySelector('.site-toast');
+            var toast = document.querySelector('.site-toast') || document.querySelector('.dt_toast');
             if (toast) {
                 toast.innerHTML = '';
                 data.messages.forEach(function(msg) {
                     var div = document.createElement('div');
                     div.className = msg.type || 'info';
-                    div.textContent = msg.text || msg.message || msg;
+                    div.textContent = msg.message || msg;
                     toast.appendChild(div);
                 });
                 toast.style.display = 'block';

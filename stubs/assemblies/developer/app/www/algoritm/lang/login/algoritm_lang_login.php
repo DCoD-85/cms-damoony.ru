@@ -42,13 +42,17 @@ final class algoritm_lang_login extends Page
         $csrf = $this->context->service('csrf');
         if ($csrf instanceof Csrf) { $form->csrf($csrf); }
         
-        $form->add(new Input('text', 'login', '', $this->context->lang('auth.login')));
-        $form->add(new Input('password', 'password', '', $this->context->lang('auth.password')));
+        $loginInput = new Input('text', 'login');
+        $loginInput->attrs()->add('placeholder', $this->context->lang('auth.login'));
+        $form->add($loginInput);
+
+        $passInput = new Input('password', 'password');
+        $passInput->attrs()->add('placeholder', $this->context->lang('auth.password'));
+        $form->add($passInput);
         $form->add(new Button($this->context->lang('auth.submit')));
 
         $wrap = Builder::div('auth-box');
         $wrap->append(Builder::h(1)->content($this->context->lang('auth.title')));
-        if ($error) { $wrap->append(Builder::div('error')->content($error)); }
         $wrap->append($form);
         return $wrap;
     }
