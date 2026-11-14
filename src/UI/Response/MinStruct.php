@@ -26,7 +26,15 @@ final class MinStruct
 
     private ?int $formRedirectTime = null;
 
+    private ?string $layout = null;
+
     private bool $reload = false;
+
+    public function layout(?string $html): self
+    {
+        $this->layout = $html;
+        return $this;
+    }
 
     public function ok(bool $value = true): self
     {
@@ -90,6 +98,7 @@ final class MinStruct
             'ok' => $this->ok,
             'messages' => $this->messages,
             'blocks' => $this->blocks,
+            'layout' => $this->layout,
             'form' => [
                 'reset' => $this->formReset,
                 'keep' => $this->formKeep,

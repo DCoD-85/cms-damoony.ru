@@ -13,6 +13,7 @@ use Damoony\Core\Files\Paths;
 use Damoony\Core\Http\Response;
 use Damoony\Core\Routing\RouteMatch;
 use Damoony\Core\Security\Csrf;
+use Damoony\UI\Response\MinStruct;
 use Damoony\UI\Algoritm\PageInterface;
 use Damoony\UI\Document;
 use Damoony\UI\Node;
@@ -70,7 +71,9 @@ final class PageHandler implements PageHandlerInterface
             $csrf = $context->service('csrf');
             if ($csrf instanceof Csrf && !$csrf->check($context->request->post)) {
                 if ($context->request->isAjax()) {
-                    return Response::json(['ok' => false, 'messages' => [['type' => 'error', 'message' => 'CSRF token mismatch']]], 403);
+                    $m = new MinStruct();
+                    $m->error()->message('error', 'CSRF token mismatch');
+                    return $m->toResponse(403);
                 }
                 return Response::text('403 Forbidden: CSRF token mismatch', 403);
             }
@@ -130,35 +133,30 @@ final class PageHandler implements PageHandlerInterface
             // AJAX: перехватываем редиректы, чтобы JS мог их обработать
             if ($context->request->isAjax() && in_array($result->status, [301, 302, 303, 307, 308], true)) {
                 $flash = $context->service('flash');
-                $messages = $flash instanceof \Damoony\Core\Flash ? $flash->pull() : [];
-                return Response::json([
-                    'ok' => true,
-                    'messages' => $messages,
-                    'blocks' => [],
-                    'form' => ['reset' => false, 'keep' => [], 'redirect' => $result->headers['location'] ?? null, 'redirect_time' => 0],
-                    'reload' => false,
-                ]);
+                $m = new MinStruct();
+                $m->messages($flash instanceof \Damoony\Core\Flash ? $flash->pull() : []);
+                $m->form(false, [], $result->headers['location'] ?? null, 0);
+                return $m->toResponse();
             }
             return $result;
         }
 
         // AJAX: отдаём блоки и полный каркас как JSON (для Node или null)
         if ($context->request->isAjax()) {
+            $m = new MinStruct();
             if ($result instanceof Node) {
                 $regions->add(new ContentRegion('center', $result));
             }
 
             // Собираем блоки (для быстрых обновлений)
-            $blocks = [];
             foreach ($ajaxBlocks as $blockName) {
                 $region = $regions->get($blockName);
                 if ($region !== null && $region->enabled()) {
-                    $blocks[$blockName] = $region->render($context)->release();
+                    $m->block($blockName, $region->render($context)->release());
                 }
             }
 
             // Собираем полный Layout (если схема поменялась)
-            $layout = null;
             $paths = $context->service('paths');
             if ($paths instanceof Paths) {
                 $sid = $context->service('session_id');
@@ -167,22 +165,15 @@ final class PageHandler implements PageHandlerInterface
                 try {
                     $manifest = $loader->load($domain, $schemeName);
                     $renderer = new SchemeRenderer();
-                    $layout = $renderer->render($manifest, $regions, $context)->release();
+                    $m->layout($renderer->render($manifest, $regions, $context)->release());
                 } catch (\RuntimeException $e) {
                 }
             }
 
             $flash = $context->service('flash');
-            $messages = $flash instanceof \Damoony\Core\Flash ? $flash->pull() : [];
+            $m->messages($flash instanceof \Damoony\Core\Flash ? $flash->pull() : []);
 
-            return Response::json([
-                'ok' => true,
-                'messages' => $messages,
-                'blocks' => $blocks,
-                'layout' => $layout, // <--- Полный HTML схемы
-                'form' => ['reset' => false, 'keep' => [], 'redirect' => null, 'redirect_time' => null],
-                'reload' => false,
-            ]);
+            return $m->toResponse();
         }
 
         // SSR: пытаемся загрузить схему; если есть — рендерим (с контентом или без)

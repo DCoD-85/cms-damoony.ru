@@ -19,12 +19,20 @@ final class algoritm_lang_login extends Page
             return Response::redirect('/' . $this->context->domain->language . '/profile/');
         }
 
+        $login = '';
         if ($this->isPost()) {
             $login = (string) $this->context->request->post('login');
             $password = (string) $this->context->request->post('password');
             
             if ($auth instanceof \Damoony\Data\Auth\AuthInterface && $auth->login($login, $password)) {
-                return Response::redirect('/' . $this->context->domain->language . '/profile/');
+                $profileUrl = '/' . $this->context->domain->language . '/profile/';
+                if ($this->isAjax()) {
+                    $m = new \Damoony\UI\Response\MinStruct();
+                    $m->ok()->message('success', 'Вы вошли');
+                    $m->form(false, [], $profileUrl, 1000);
+                    return $m->toResponse();
+                }
+                return Response::redirect($profileUrl);
             }
             // Ошибка через flash → в AJAX прилетит как toast
             $flash = $this->context->service('flash');
@@ -42,7 +50,7 @@ final class algoritm_lang_login extends Page
         $csrf = $this->context->service('csrf');
         if ($csrf instanceof Csrf) { $form->csrf($csrf); }
         
-        $loginInput = new Input('text', 'login');
+        $loginInput = new Input('text', 'login', $login);
         $loginInput->attrs()->add('placeholder', $this->context->lang('auth.login'));
         $form->add($loginInput);
 

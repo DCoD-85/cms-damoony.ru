@@ -22,6 +22,12 @@ final class blockslocal_www_left implements RegionInterface
         $menu->append(Builder::li()->append(Builder::a('/' . $lang . '/')->content($context->lang('menu.home'))));
         $menu->append(Builder::li()->append(Builder::a('/' . $lang . '/about/')->content($context->lang('menu.about'))));
         $menu->append(Builder::li()->append(Builder::a('/' . $lang . '/tests/')->content($context->lang('menu.tests'))));
+        $menu->append(Builder::li()->append(Builder::a('/' . $lang . '/nope/')->content($context->lang('menu.nope'))));
+        $extLink = Builder::a('https://google.com')->content('Google (внешняя)');
+        $extLink->attrs()->add('target', '_blank');
+        $extLink->attrs()->add('rel', 'noopener noreferrer');
+        $menu->append(Builder::li()->append($extLink));
+		
         
         $wrap->append($menu);
         return $wrap;

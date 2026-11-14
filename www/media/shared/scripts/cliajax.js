@@ -36,7 +36,31 @@
     };
     // -----------------------
 
-    function applyMinStruct(data) {
+    function showToast(type, text, timeout) {
+        var toast = document.querySelector('.dt_toast') || document.querySelector('.site-toast');
+        if (!toast) return;
+        var div = document.createElement('div');
+        div.className = type || 'info';
+        div.textContent = text;
+        toast.appendChild(div);
+        toast.style.display = 'block';
+        var ttl = (typeof timeout === 'number') ? timeout : (type === 'error' ? 0 : 3000);
+        if (ttl > 0) {
+            setTimeout(function() {
+                div.remove();
+                if (!toast.children.length) toast.style.display = 'none';
+            }, ttl);
+        }
+    }
+
+    function handleNonJson(res) {
+        var text = (res && res.status === 404) ? 'Страница не найдена'
+                 : (res && res.status >= 500) ? 'Ошибка сервера'
+                 : 'Не удалось загрузить данные';
+        showToast('error', text, 0);
+    }
+
+    function applyMinStruct(data, form) {
         if (data.layout) {
             var currentLayout = document.querySelector('.dt') || document.querySelector('.layout');
             if (currentLayout) {
@@ -77,25 +101,27 @@
 
         if (data.messages && data.messages.length > 0) {
             var toast = document.querySelector('.dt_toast') || document.querySelector('.site-toast');
-            if (toast) {
-                toast.innerHTML = '';
-                data.messages.forEach(function(msg) {
-                    var div = document.createElement('div');
-                    div.className = msg.type || 'info';
-                    div.textContent = msg.text || msg.message || msg;
-                    toast.appendChild(div);
-                });
-                toast.style.display = 'block';
-                setTimeout(function() { toast.style.display = 'none'; }, 3000);
-            }
+            if (toast) { toast.innerHTML = ''; toast.style.display = 'block'; }
+            data.messages.forEach(function(msg) {
+                showToast(msg.type || 'info', msg.text || msg.message || msg, msg.timeout);
+            });
         }
         if (data.form && data.form.redirect) {
-            window.location.href = data.form.redirect;
+            var url = data.form.redirect;
+            var delay = (typeof data.form.redirect_time === 'number') ? data.form.redirect_time : 0;
+            if (delay > 0) {
+                setTimeout(function() { navigateTo(url, true); }, delay);
+            } else {
+                navigateTo(url, true);
+            }
             return true;
         }
         if (data.reload) {
             window.location.reload();
             return true;
+        }
+        if (form && data.form && data.form.reset) {
+            form.reset();
         }
         return false;
     }
@@ -104,7 +130,7 @@
         fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
         .then(function(res) {
             var ct = res.headers.get('Content-Type');
-            if (!ct || ct.indexOf('application/json') === -1) { window.location.href = url; return null; }
+            if (!ct || ct.indexOf('application/json') === -1) { handleNonJson(res); return null; }
             return res.json();
         })
         .then(function(data) {
@@ -114,7 +140,7 @@
                 window.history.pushState({ url: url }, '', url);
             }
         })
-        .catch(function() { window.location.href = url; });
+        .catch(function() { showToast('error', 'Нет связи с сервером', 0); });
     }
 
     // Перехват ссылок
@@ -143,15 +169,14 @@
         })
         .then(function(res) {
             var ct = res.headers.get('Content-Type');
-            if (!ct || ct.indexOf('application/json') === -1) { form.submit(); return null; }
+            if (!ct || ct.indexOf('application/json') === -1) { handleNonJson(res); return null; }
             return res.json();
         })
         .then(function(data) {
             if (!data) return;
-            applyMinStruct(data);
-            form.reset(); 
+            applyMinStruct(data, form);
         })
-        .catch(function() { form.submit(); });
+        .catch(function() { showToast('error', 'Нет связи с сервером', 0); });
     });
 
     // Кнопки назад/вперед (теперь без перезагрузки)
