@@ -82,7 +82,7 @@
                 data.messages.forEach(function(msg) {
                     var div = document.createElement('div');
                     div.className = msg.type || 'info';
-                    div.textContent = msg.message || msg;
+                    div.textContent = msg.text || msg.message || msg;
                     toast.appendChild(div);
                 });
                 toast.style.display = 'block';
