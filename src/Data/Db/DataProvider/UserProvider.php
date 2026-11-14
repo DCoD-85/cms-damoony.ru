@@ -54,10 +54,10 @@ class UserProvider extends AbstractProvider
         string $passwordHash,
         string $email,
         string $role = 'user',
-        string $status = 'active'
+        string $status = 'active',
     ): int {
         $this->query(
-            'INSERT INTO ' . $this->physicalTable() 
+            'INSERT INTO ' . $this->physicalTable()
             . ' (login, password_hash, email, role, status)'
             . ' VALUES (:login, :password_hash, :email, :role, :status)',
             [
@@ -89,8 +89,8 @@ class UserProvider extends AbstractProvider
             return;
         }
 
-        $sql = 'UPDATE ' . $this->physicalTable() 
-             . ' SET ' . implode(', ', $sets) 
+        $sql = 'UPDATE ' . $this->physicalTable()
+             . ' SET ' . implode(', ', $sets)
              . ' WHERE login = :login';
 
         $this->query($sql, $params);

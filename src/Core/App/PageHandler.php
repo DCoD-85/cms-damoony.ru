@@ -217,7 +217,7 @@ final class PageHandler implements PageHandlerInterface
         $doc->lang($domain->language);
         $doc->body()->append($result);
 
-		// Debug benchmark
+        // Debug benchmark
         $benchmark = new \Damoony\UI\Element('div');
         $benchmark->attrs()->add('id', 'dt_benchmark');
         $benchmark->attrs()->add('class', 'dt_benchmark');
