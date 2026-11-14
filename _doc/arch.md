@@ -58,7 +58,6 @@
 **Правило:** если код нужен и сайту, и админке, и CLI — он живёт в `Core` или `UI`. Если только CLI — в `Cli`.
 
 ### 3.2. Правило 3 файлов
-### 3.2. Правило 3 файлов
 - **Страница:** `algoritm_[name].{php,rules.json,editor.json}` (все три в одной папке). Root: `algoritm/algoritm.{php,rules.json,editor.json}`.
 - **Блок / Схема:** `[name].{php,rules.json,editor.json}` в `.blocksglobal/` (глобальные) или `.blockslocal/` (локальные). Схемы: `.schemesglobal/` или `.schemeslocal/`.
 - **Приоритет:** `.blockslocal/{name}/{name}.php` перекрывает `.blocksglobal/{name}/{name}.php`. Локальный класс: `blockslocal_{alias}_{name}`, глобальный: `blocksglobal_{name}`.
@@ -101,7 +100,6 @@
 
 ---
 
-## 5. Инварианты (что всегда должно быть истинным)
 ## 5. Инварианты (что всегда должно быть истинным)
 - Домен ≠ Алиас.
 - **FS-пути — только от `realDomain`.** `Paths` принимает realDomain. CLI-команды резолвят через `ResolvesRealDomain`.

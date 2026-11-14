@@ -28,8 +28,6 @@
 
 ## 3. DataProvider
 
-## 3. DataProvider
-
 ### 3.1. Структура
 
     src/Data/Db/DataProvider/                    ← ЯДРО (owner-only, git)
