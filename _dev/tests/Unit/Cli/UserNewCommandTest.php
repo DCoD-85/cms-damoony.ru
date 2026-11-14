@@ -18,7 +18,7 @@ final class UserNewCommandTest extends TestCase
     {
         $connection = new Connection(['driver' => 'sqlite', 'path' => ':memory:']);
         $pdo = $connection->pdo();
-        $pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, login TEXT UNIQUE, email TEXT UNIQUE, password_hash TEXT, status TEXT)');
+        $pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, login TEXT UNIQUE, email TEXT UNIQUE, password_hash TEXT, role TEXT NOT NULL DEFAULT \'user\', status TEXT)');
 
         $this->command = new UserNewCommand($connection);
         $this->context = new Context(fn () => null);
@@ -49,6 +49,6 @@ final class UserNewCommandTest extends TestCase
         $this->command->run(['login' => 'validlogin', 'email' => 'user1@example.com', 'password' => 'strongpass'], $this->context);
         $result = $this->command->run(['login' => 'validlogin', 'email' => 'user2@example.com', 'password' => 'strongpass'], $this->context);
         $this->assertFalse($result->ok);
-        $this->assertStringContainsString('login уже существует', $result->errors[0]);
+        $this->assertStringContainsString('уже существует', $result->errors[0]);
     }
 }

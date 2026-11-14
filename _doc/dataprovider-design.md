@@ -36,7 +36,11 @@
     ├── AbstractProvider.php                 — query(), physicalTable()
     ├── ProviderInterface.php                 — table(), physicalTable()
     ├── ProviderRegistry.php                 — резолвит (domain, alias, provider): core → custom
-    ├── {User,News,Doc,Files,Stats,Audit}Provider.php
+    ├── ProviderResolver.php                 — 3-уровневый поиск (alias → domain → core)
+    ├── BasicCrudProvider.php                — generic CRUD по JSON-схеме
+    ├── DynamicProvider.php                  — динамический провайдер
+    ├── FormSubmissionProvider.php           — form_submissions (www/forms.php)
+    ├── UserProvider.php, NewsProvider.php, FilesProvider.php, AuditProvider.php
     └── Template/
         ├── TemplateInterface.php
         └── SelectWhereTemplate.php, InsertTemplate.php

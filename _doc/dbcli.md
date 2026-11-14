@@ -8,12 +8,13 @@ db:schema:init --domain=[d] --table=[t] — создать JSON-схему та�
 
 db:schema:add-column --domain=[d] --table=[t] --name=[n] --type=[varchar|int|text|timestamp|decimal] [--length=255] [--null=1] — добавить колонку в схему.
 
-db:schema:generate-sql --domain=[d] — сгенерировать SQL-миграцию из app/[d]/.db/schema.json.
+db:schema:generate-sql --domain=[d] — сгенерировать SQL-миграцию из `app/[d]/.dbglobal/schema.json` (v4).
 
 db:schema:generate-provider --domain=[d] --table=[t] [--alias=www] — сгенерировать PHP-класс провайдера в app/[d]/[alias]/.dbprovider/.
 
 2. Структура JSON-схемы
-Файл: app/[domain]/.db/schema.json
+Файл: app/[domain]/.dbglobal/schema.json (домен, v4) или app/[domain]/[allias]/.dblocal/schema.json (алиас, v4).
+Легаси-домены (v3) могут иметь app/[domain]/.db/schema.json — поддерживается для чтения, для новых таблиц используйте `.dbglobal/`.
 
 json
 {

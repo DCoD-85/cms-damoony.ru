@@ -90,7 +90,7 @@ Read-only снимок окружения до вызова LLM. Через Aicl
   "roles": {
     "reporter": "gemma4:e4b",
     "architect": "deepseek-coder:6.7b",
-    "designer": "deepseek-coder:6.7b"
+    "designer": "gemma4:e4b"
   }
 }
 ```
@@ -145,7 +145,7 @@ Read-only снимок окружения до вызова LLM. Через Aicl
 
 Правила: name — snake_case, path — без слэша на старте, parent — null или имя родителя.
 
-### 4.3. CoderAgent (роль designer, deepseek-coder:6.7b)
+### 4.3. CoderAgent (роль designer, gemma4:e4b)
 
 **Задача**: сгенерировать JSON-блоки для **одной** страницы.
 

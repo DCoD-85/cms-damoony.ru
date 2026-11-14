@@ -57,7 +57,7 @@ AI не имеет прямого доступа к терминалу. Отпр
 **Запрещено всем:** `user:new`, `db:migrate`, `admin:passwd`, destructive (`*:remove`, `trash:clear`, `content:remove`).
 
 **Известные полуреализации:**
-- `wizard:abort` — в `Roles.php` есть (architect, `*`), `case` в `WizardManager::handle()` нет → `Unknown wizard action`.
+- `wizard:abort` — нет ни в whitelist `Roles.php`, ни в `WizardManager::handle()` (match-case). Вызов отклоняется на валидации роли.
 - `wizard:widgets` — реализован в `WizardManager`, но отсутствует в `Roles.php` → недоступен через aicli.
 
 **DataProvider-инвариант:** `db:*` — только через `bin/aicli.php`/`brain.py`, не через Orchestrator/AIUI (см. `arch.md` §5).

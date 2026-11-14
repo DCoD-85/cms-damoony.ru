@@ -104,6 +104,6 @@ final class DbMethodsCommandTest extends TestCase
         $r = $this->cmd()->run(['domain' => 'example.ru', 'provider' => 'user'], $this->ctx());
         $this->assertTrue($r->ok);
         $names = array_column($r->data['methods'], 'name');
-        $this->assertSame(['by_id', 'by_login', 'create', 'exists'], $names);
+        $this->assertSame(['by_id', 'by_login', 'create', 'exists', 'update'], $names);
     }
 }

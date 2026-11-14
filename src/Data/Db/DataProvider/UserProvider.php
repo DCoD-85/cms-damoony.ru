@@ -25,6 +25,30 @@ class UserProvider extends AbstractProvider
         return $row !== false;
     }
 
+    /**
+     * @return array<string, mixed>|array{}
+     */
+    public function by_login(string $login): array
+    {
+        $row = $this->query(
+            'SELECT * FROM ' . $this->physicalTable() . ' WHERE login = :login LIMIT 1',
+            ['login' => $login],
+        )->fetch();
+        return $row === false ? [] : $row;
+    }
+
+    /**
+     * @return array<string, mixed>|array{}
+     */
+    public function by_id(int $id): array
+    {
+        $row = $this->query(
+            'SELECT * FROM ' . $this->physicalTable() . ' WHERE id = :id LIMIT 1',
+            ['id' => $id],
+        )->fetch();
+        return $row === false ? [] : $row;
+    }
+
     public function create(
         string $login,
         string $passwordHash,

@@ -78,7 +78,7 @@
 - **Управление языками:** `/admin/{lang}/domains/langs` — список доменов, `/admin/{lang}/domains/langs/{domain}` — языки домена и алиасы, `/admin/{lang}/domains/langs/{domain}/{alias}` — языки алиаса. Все действия — через `lang:list`, `lang:add`, `lang:remove`, `lang:repair`.
 - **Роутинг:** `FileRouter` + `FrontController` обрабатывают пути `/admin/{lang}/{role}/...`. `DomainContext` для admin — `resolve('.admin')->withAllias($role)`. Роль валидируется regex `^[a-z][a-z0-9_]*$`.
 
-**CI/CD:** `.github/workflows/ci.yml`. PHP 8.5, `www/router.php` для эмуляции Nginx-роутинга, прогон 794 тестов.
+**CI/CD:** `.github/workflows/ci.yml`. PHP 8.5, `www/router.php` для эмуляции Nginx-роутинга; полный прогон — `composer test` (актуальное число тестов не документируется).
 
 ## 6. AIUI (AI-редактор страниц)
 

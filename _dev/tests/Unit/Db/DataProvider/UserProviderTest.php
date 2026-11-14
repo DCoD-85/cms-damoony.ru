@@ -25,6 +25,7 @@ final class UserProviderTest extends TestCase
                 login TEXT NOT NULL UNIQUE,
                 email TEXT NOT NULL,
                 password_hash TEXT NOT NULL,
+                role TEXT NOT NULL DEFAULT "user",
                 status TEXT NOT NULL DEFAULT "active",
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             )',
@@ -56,7 +57,7 @@ final class UserProviderTest extends TestCase
     public function testByLoginFindsExisting(): void
     {
         $p = $this->provider();
-        $p->create('bob', 'hash_bob', 'bob@example.ru', 'active');
+        $p->create('bob', 'hash_bob', 'bob@example.ru', 'user', 'active');
 
         $row = $p->by_login('bob');
         $this->assertNotEmpty($row);

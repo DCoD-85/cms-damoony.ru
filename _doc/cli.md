@@ -51,9 +51,7 @@
 - `block:remove --domain=[d] --name=[n] --force` — в карантин.
 - `block:list --domain=[d]` — список глобальных блоков.
 
-⚠️ **Локальные блоки** (`.blockslocal/`) перекрывают глобальные. Они создаются из сборок (`new --assembly`) или вручную по правилу 3 файлов. Команда `filler:*` устарела и больше не используется.
-
-## 5. Схемы (Scheme)
+⚠️ **Локальные блоки** (`.blockslocal/`) перекрывают глобальные. Они создаются из сборок (`new --assembly`) или вручную по правилу 3 файлов. Команды `filler:*` (new/toggle/edit/list/write) сохранены для совместимости с `aicli`/`brain.py` и для админ-переключателя `filler:toggle`; для новых сборок предпочтительны `.blockslocal/`.
 
 ## 5. Схемы (Scheme)
 
@@ -134,7 +132,7 @@
 
 **Известные полуреализации** (заявлены в `Roles.php`, но `case` отсутствует / нет в whitelist):
 
-- `wizard:abort` — в `Roles.php` есть (architect, `*`), `case` в `WizardManager::handle()` нет → `Unknown wizard action`.
+- `wizard:abort` — нет ни в whitelist `Roles.php`, ни в `WizardManager::handle()` (match-case). Вызов отклоняется на валидации роли, до `handle()` не доходит.
 - `wizard:widgets` — реализован (`WizardManager.php:45`, `setWidgets`), но отсутствует в `Roles.php` → недоступен через aicli.
 - `--session` для `block:write`, `filler:write`, `skin:edit`, `scheme:save` — не реализован (см. §9).
 
@@ -148,8 +146,6 @@
 - `db:schema:generate-provider --domain=[d] --table=[t] [--alias=www]` — сгенерировать PHP-класс провайдера в `.dbprovider/`.
 
 После генерации провайдера его методы доступны через `db:call` и `db:mutate`.
-
-## 14. Языки (`bin/cli.php lang:*`)
 
 ## 14. Языки (`bin/cli.php lang:*`)
 
