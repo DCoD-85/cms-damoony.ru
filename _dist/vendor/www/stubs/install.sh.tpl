@@ -64,6 +64,7 @@ if [ "$UPDATE" -eq 0 ]; then
         if MYSQL_PWD="$MYSQL_ROOT_PASS" mysql -u "$MYSQL_ROOT" -e "
             CREATE DATABASE IF NOT EXISTS $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
             CREATE USER IF NOT EXISTS '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASS';
+            ALTER USER '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASS';
             GRANT ALL PRIVILEGES ON $DB_NAME.* TO '$DB_USER'@'localhost';
             FLUSH PRIVILEGES;
         " >/dev/null 2>&1; then
