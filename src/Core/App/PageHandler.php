@@ -38,12 +38,22 @@ final class PageHandler implements PageHandlerInterface
         $sessionIdRaw = $context->service('session_id');
         $sessionId = is_string($sessionIdRaw) && $sessionIdRaw !== '' ? $sessionIdRaw : null;
         if ($match->classChain === null || $match->pathRel === null) {
+            if ($context->request->isAjax()) {
+                $m = new MinStruct();
+                $m->error()->message('error', $context->lang('error.404'));
+                return $m->toResponse(404);
+            }
             return Response::notFound();
         }
 
         $domain = $context->domain;
         $file = $this->path($domain, $match->pathRel, $match->classChain, $sessionId, $adminRole);
         if (!is_file($file)) {
+            if ($context->request->isAjax()) {
+                $m = new MinStruct();
+                $m->error()->message('error', $context->lang('error.404'));
+                return $m->toResponse(404);
+            }
             return Response::notFound();
         }
 

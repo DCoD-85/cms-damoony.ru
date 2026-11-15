@@ -1,0 +1,12 @@
+{
+    "menu": {
+        "nope": "Test 404",
+        "google": "Google (external)"
+    },
+    "block": {
+        "toast": ""
+    },
+    "error": {
+        "404": "Page not found"
+    }
+}

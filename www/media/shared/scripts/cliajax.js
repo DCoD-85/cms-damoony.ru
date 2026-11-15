@@ -37,26 +37,43 @@
     // -----------------------
 
     function showToast(type, text, timeout) {
-        var toast = document.querySelector('.dt_toast') || document.querySelector('.site-toast');
-        if (!toast) return;
-        var div = document.createElement('div');
-        div.className = type || 'info';
-        div.textContent = text;
-        toast.appendChild(div);
-        toast.style.display = 'block';
+        var container = document.querySelector('.dt_toast') || document.querySelector('#toast-container');
+        if (!container) return;
+        
+        var item = document.createElement('div');
+        item.className = 'toast-item ' + (type || 'info');
+        item.textContent = text;
+        container.appendChild(item);
+        
+        // Даем браузеру отрисовать начальное состояние (opacity: 0), затем включаем анимацию
+        requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+                item.classList.add('show');
+            });
+        });
+
         var ttl = (typeof timeout === 'number') ? timeout : (type === 'error' ? 0 : 3000);
-        if (ttl > 0) {
+        
+        function removeToast() {
+            item.classList.remove('show'); // Запускаем анимацию исчезновения
             setTimeout(function() {
-                div.remove();
-                if (!toast.children.length) toast.style.display = 'none';
-            }, ttl);
+                item.remove(); // Удаляем из DOM после завершения CSS-перехода (0.3s)
+            }, 300);
         }
+
+        if (ttl > 0) {
+            setTimeout(removeToast, ttl);
+        }
+        
+        // Опционально: можно добавить клик по тосту для его закрытия
+        item.addEventListener('click', removeToast);
     }
 
     function handleNonJson(res) {
-        var text = (res && res.status === 404) ? 'Страница не найдена'
-                 : (res && res.status >= 500) ? 'Ошибка сервера'
-                 : 'Не удалось загрузить данные';
+        var lang = document.documentElement.lang || 'en';
+        var text = (res && res.status >= 500) 
+                 ? (lang === 'ru' ? 'Ошибка сервера' : 'Server error')
+                 : (lang === 'ru' ? 'Не удалось загрузить данные' : 'Failed to load data');
         showToast('error', text, 0);
     }
 
@@ -100,8 +117,6 @@
         }
 
         if (data.messages && data.messages.length > 0) {
-            var toast = document.querySelector('.dt_toast') || document.querySelector('.site-toast');
-            if (toast) { toast.innerHTML = ''; toast.style.display = 'block'; }
             data.messages.forEach(function(msg) {
                 showToast(msg.type || 'info', msg.text || msg.message || msg, msg.timeout);
             });
