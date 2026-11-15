@@ -19,30 +19,25 @@ final class DomainNewFullTest extends TestCase
         $this->root = sys_get_temp_dir() . '/damoony_dnfull_' . bin2hex(random_bytes(6));
         mkdir($this->root . '/config', 0o775, true);
         mkdir($this->root . '/www/media', 0o775, true);
-        mkdir($this->root . '/stubs', 0o775, true);
-        $this->paths = new Paths($this->root);
-        // Копируем сборку в тестовое окружение, чтобы AssemblyBuilder её нашел
-        $stubsSrc = dirname(__DIR__, 5) . '/stubs/assemblies/developer';
-        $stubsDst = $this->root . '/stubs/assemblies/developer';
+
+        $stubsSrc = dirname(__DIR__, 5) . '/stubs';
         if (is_dir($stubsSrc)) {
-            mkdir(dirname($stubsDst), 0o777, true);
             $it = new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($stubsSrc, \FilesystemIterator::SKIP_DOTS),
-                \RecursiveIteratorIterator::SELF_FIRST,
+                new \RecursiveDirectoryIterator($stubsSrc, \RecursiveDirectoryIterator::SKIP_DOTS),
+                \RecursiveIteratorIterator::SELF_FIRST
             );
             foreach ($it as $item) {
-                $target = $stubsDst . '/' . $it->getSubPathname();
+                $dest = $this->root . '/stubs/' . $it->getSubPathname();
                 if ($item->isDir()) {
-                    @mkdir($target, 0o777, true);
+                    mkdir($dest, 0o777, true);
                 } else {
-                    @copy($item->getPathname(), $target);
+                    copy($item->getPathname(), $dest);
                 }
             }
         }
 
-
+        $this->paths = new Paths($this->root);
         file_put_contents($this->root . '/config/site.config', json_encode([], JSON_THROW_ON_ERROR));
-        file_put_contents($this->root . '/stubs/cliajax.js', '// cliajax stub');
     }
 
     protected function tearDown(): void

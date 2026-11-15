@@ -19,8 +19,7 @@ final class DomainNewProfileTest extends TestCase
         $this->root = sys_get_temp_dir() . '/damoony_dnp_' . bin2hex(random_bytes(6));
         mkdir($this->root . '/config', 0o775, true);
         mkdir($this->root . '/www/media', 0o775, true);
-        
-        // Копируем stubs для работы AssemblyBuilder
+
         $stubsSrc = dirname(__DIR__, 5) . '/stubs';
         if (is_dir($stubsSrc)) {
             $it = new \RecursiveIteratorIterator(
@@ -36,13 +35,9 @@ final class DomainNewProfileTest extends TestCase
                 }
             }
         }
-        
-        $this->paths = new Paths($this->root);
 
-        file_put_contents(
-            $this->root . '/config/site.config',
-            json_encode([], JSON_THROW_ON_ERROR),
-        );
+        $this->paths = new Paths($this->root);
+        file_put_contents($this->root . '/config/site.config', json_encode([], JSON_THROW_ON_ERROR));
     }
 
     protected function tearDown(): void
