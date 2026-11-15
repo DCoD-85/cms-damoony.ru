@@ -5,7 +5,7 @@ return [
         ['tag' => 'main', 'class' => 'dt_center', 'slot' => 'center'],
     ],
     'meta' => [
-        'css' => ['/media/{{real}}/{{alias}}/css/main.css'],
+        'css' => ['/media/{{domain}}/www/css/main.css'],
         'js' => ['/media/shared/scripts/cliajax.js'],
     ],
 ];

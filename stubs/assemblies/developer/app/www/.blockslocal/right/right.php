@@ -6,7 +6,7 @@ use Damoony\UI\Region\RegionInterface;
 use Damoony\UI\Builder;
 use Damoony\UI\Node;
 
-final class blockslocal_{{alias}}_right implements RegionInterface
+final class blockslocal_www_right implements RegionInterface
 {
     public function name(): string { return 'right'; }
     public function enabled(): bool { return true; }

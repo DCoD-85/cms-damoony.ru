@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace {{namespace}}\{{alias}};
+namespace {{namespace}}\www;
 use Damoony\Core\Http\Response;
 use Damoony\UI\Algoritm\Page;
 use Damoony\UI\Builder;
@@ -20,7 +20,7 @@ final class algoritm_lang_tests_first extends Page
         $providerFile = $paths->allias($this->context->domain->real, $this->context->domain->allias) . '/.dbprovider/Test_itemsProvider.php';
         if (!is_file($providerFile)) { return Builder::div()->content('Provider not found'); }
         require_once $providerFile;
-        $className = '\\{{namespace}}\\{{alias}}\\Test_itemsProvider';
+        $className = '\\{{namespace}}\\www\\Test_itemsProvider';
         $provider = new $className($db, $site, $this->context->domain->real, $this->context->domain->allias);
 
         if ($this->isPost()) {

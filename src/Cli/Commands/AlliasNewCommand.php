@@ -58,11 +58,13 @@ final class AlliasNewCommand implements CommandInterface
         }
         $site = Config::fromFile($siteFile)->all();
 
-        if (!isset($site['domains_real'][$domain])) {
+        // Резолвим физический домен через зеркала (или берем сам домен, если он реальный)
+        $realDomain = (string) ($site['domains_mirrors'][$domain] ?? $domain);
+        
+        if (!isset($site['domains_real'][$realDomain])) {
             $r->error('Домен не найден');
             return $r;
         }
-        $realDomain = (string) $site['domains_real'][$domain];
 
         $alliasDir = $this->paths->allias($realDomain, $name);
         if (Fs::isDir($alliasDir)) {

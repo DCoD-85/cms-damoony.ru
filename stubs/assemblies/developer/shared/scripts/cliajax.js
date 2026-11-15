@@ -76,17 +76,23 @@
         }
 
         if (data.messages && data.messages.length > 0) {
-            var toast = document.querySelector('.site-toast') || document.querySelector('.dt_toast');
+            var toast = document.querySelector('.dt_toast') || document.querySelector('.site-toast');
             if (toast) {
                 toast.innerHTML = '';
                 data.messages.forEach(function(msg) {
                     var div = document.createElement('div');
                     div.className = msg.type || 'info';
-                    div.textContent = msg.message || msg;
+                    // Берем msg.text, если его нет - msg.message, иначе сам msg
+                    div.textContent = msg.text || msg.message || msg;
                     toast.appendChild(div);
                 });
                 toast.style.display = 'block';
-                setTimeout(function() { toast.style.display = 'none'; }, 3000);
+                
+                // Ошибки не скрываем автоматически
+                var hasError = data.messages.some(function(m) { return m.type === 'error'; });
+                if (!hasError) {
+                    setTimeout(function() { toast.style.display = 'none'; }, 3000);
+                }
             }
         }
         if (data.form && data.form.redirect) {

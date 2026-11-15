@@ -59,7 +59,7 @@ final class DomainListCommand implements CommandInterface
         foreach ($realDomains as $domain) {
             $dir = $this->paths->domain($domain);
             $exists = Fs::isDir($dir);
-            $available = (bool) ($site['domains_available'][$domain] ?? false);
+            $available = (bool) ($site['domains_mirrors_available'][$domain] ?? true);
             $aliasesMap = (array) ($site['alliases_real'][$domain] ?? []);
             $realAliases = [];
             foreach ($aliasesMap as $key => $real) {

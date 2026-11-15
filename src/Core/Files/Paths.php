@@ -98,37 +98,9 @@ final class Paths
     // v4 structure (per-domain)
     // ============================================================
 
-    /**
-     * Structure version for a real domain: 'v3' (legacy) or 'v4' (new).
-     * Stored in site.config.domains_structure[real]. Default: 'v3'.
-     */
-    public function structureOf(string $real): string
-    {
-        if (isset($this->structureCache[$real])) {
-            return $this->structureCache[$real];
-        }
-
-        $siteFile = $this->siteConfig();
-        if (!is_file($siteFile)) {
-            return $this->structureCache[$real] = 'v3';
-        }
-        $raw = @file_get_contents($siteFile);
-        if ($raw === false) {
-            return $this->structureCache[$real] = 'v3';
-        }
-        $site = json_decode($raw, true);
-        if (!is_array($site)) {
-            return $this->structureCache[$real] = 'v3';
-        }
-        $map = $site['domains_structure'] ?? [];
-        $v = is_array($map) ? ($map[$real] ?? 'v3') : 'v3';
-
-        return $this->structureCache[$real] = in_array($v, ['v3', 'v4'], true) ? $v : 'v3';
-    }
-
     public function isV4(string $real): bool
     {
-        return $this->structureOf($real) === 'v4';
+        return true; // Структура v4 теперь единственная и безальтернативная
     }
 
     /**

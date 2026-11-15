@@ -14,24 +14,22 @@ $children = [
 $blockCss = [];
 foreach ($children as $child) {
     if (isset($child['slot'])) {
-        $blockCss[] = '/media/{{real}}/{{alias}}/css/' . $child['slot'] . '.css';
+        $blockCss[] = '/media/{real}/{alias}/skin/{skin}/css/' . $child['slot'] . '.css';
     }
 }
 
 $baseCss = [
-    '/media/{{real}}/{{alias}}/css/main.css',
-    '/media/{{real}}/{{alias}}/css/blocks.css',
-    '/media/{{real}}/{{alias}}/css/components.css',
+    '/media/{real}/{alias}/skin/{skin}/css/main.css',
+    '/media/{real}/{alias}/skin/{skin}/css/blocks.css',
+    '/media/{real}/{alias}/skin/{skin}/css/components.css',
 ];
 
 // Скин подключается после базы, но перед компактным
-$skinCss = [
-    '/media/{{real}}/{{alias}}/skin/{skin}/css/main.css',
-];
+$skinCss = [];
 
 // Compact всегда в самом конце
 $compactCss = [
-    '/media/{{real}}/{{alias}}/skin/mobile/css/main.css',
+    '/media/{real}/{alias}/skin/{skin}/css/mobile.css',
 ];
 
 return [

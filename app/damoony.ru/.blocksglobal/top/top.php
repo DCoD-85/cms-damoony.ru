@@ -1,72 +1,90 @@
 <?php
-
 declare(strict_types=1);
-
 namespace damoony_ru;
-
 use Damoony\UI\Region\RegionContext;
 use Damoony\UI\Region\RegionInterface;
 use Damoony\UI\Builder;
 use Damoony\UI\Node;
-use Damoony\UI\Components\Button;
-use Damoony\UI\Components\Img;
-use Damoony\UI\Components\Link;
-use Damoony\UI\Components\Input;
-use Damoony\UI\Components\Textarea;
-use Damoony\UI\Components\Select;
-use Damoony\UI\Components\Option;
-use Damoony\UI\Components\Label;
-use Damoony\UI\Components\Form;
-use Damoony\UI\Components\Table;
-use Damoony\UI\Components\Thead;
-use Damoony\UI\Components\Tbody;
-use Damoony\UI\Components\Tr;
-use Damoony\UI\Components\Th;
-use Damoony\UI\Components\Td;
-use Damoony\UI\Text;
-use Damoony\UI\UrlSanitizer;
 
 final class blocksglobal_top implements RegionInterface
 {
-    public function name(): string
-    {
-        return 'top';
-    }
-
-    public function enabled(): bool
-    {
-        return true;
-    }
+    public function name(): string { return 'top'; }
+    public function enabled(): bool { return true; }
 
     public function render(RegionContext $context): Node
     {
-        $cssUrl = '/media/' . $context->domain->real . '/' . $context->domain->allias . '/skin/default/css/top.css';
-        $context->meta->addCss($cssUrl);
+        $wrap = Builder::div('dt_inner');
+        $wrap->append(Builder::p()->content($context->lang('block.top')));
 
-        $content = Builder::div('dt_' . 'top');
+        $site = $context->service('site');
+        $langs = ['ru', 'en'];
+        if ($site instanceof \Damoony\Core\Config) {
+            $configured = $site->getByKey(['alliases_langs', $context->domain->real, $context->domain->allias], []);
+            if (is_array($configured) && $configured !== []) { $langs = $configured; }
+        }
+        
+        $t = $context->service('i18n');
+        $currentLang = $t instanceof \Damoony\Core\I18n\Translator ? $t->current() : $context->domain->language;
+        $currentPath = $context->request->path;
+        $pathWithoutLang = $currentPath;
+        if (str_starts_with($currentPath, '/' . $currentLang)) {
+            $pathWithoutLang = substr($currentPath, strlen('/' . $currentLang));
+        }
+        if ($pathWithoutLang === '') { $pathWithoutLang = '/'; }
 
-        $el1 = new Img('/media/damoony.ru/visuo/skin/default/img/logo.png', 'Iskra Dog');
-        $el1->attrs()->classAdd('logo-img');
-        $content->append($el1);
+        // 1. ВОССТАНОВЛЕННОЕ НАВИГАЦИОННОЕ МЕНЮ
+        $nav = Builder::div('dt_top_nav');
+        $nav->append(Builder::div('dt_logo')->content('Damoony'));
+        
+        $mainMenu = Builder::ul('dt_main_menu');
+        $mainMenu->append(Builder::li()->append(Builder::a('/' . $currentLang . '/')->content($context->lang('menu.home'))));
+        $mainMenu->append(Builder::li()->append(Builder::a('/' . $currentLang . '/about/')->content($context->lang('menu.about'))));
+        $mainMenu->append(Builder::li()->append(Builder::a('/' . $currentLang . '/tests/')->content($context->lang('menu.tests'))));
+        $nav->append($mainMenu);
 
-        $el2 = Builder::ul('menu');
-        $el3 = new Link('/ru/', 'Главная');
-        $el2->append(Builder::li()->append($el3));
-        $el4 = new Link('/ru/ui_kit', 'Лакомства');
-        $el2->append(Builder::li()->append($el4));
-        $el5 = new Link('/ru/dashboard', 'Кабинет');
-        $el2->append(Builder::li()->append($el5));
-        $content->append($el2);
+        $authMenu = Builder::ul('dt_auth_menu');
+        $authMenu->append(Builder::li()->append(Builder::a('/' . $currentLang . '/login/')->content($context->lang('menu.login'))));
+        $nav->append($authMenu);
+        
+        $wrap->append($nav);
 
-        $el6 = Builder::ul('menu');
-        $el7 = new Link('/ru/', 'RU');
-        $el6->append(Builder::li()->append($el7));
-        $el8 = new Link('/en/', 'EN');
-        $el6->append(Builder::li()->append($el8));
-        $el9 = new Link('/zh/', 'ZH');
-        $el6->append(Builder::li()->append($el9));
-        $content->append($el6);
+        // 2. ПЕРЕКЛЮЧАТЕЛИ
+        $switchers = Builder::div('dt_switchers');
 
-        return $content;
+        // Языки
+        $langSwitcher = Builder::div('lang-switcher');
+        $langSwitcher->append(Builder::span('label')->content('Lang: '));
+        foreach ($langs as $l) {
+            $url = '/' . $l . ($pathWithoutLang === '/' ? '/' : $pathWithoutLang);
+            $a = Builder::a($url)->content(strtoupper($l));
+            if ($l === $currentLang) { $a->attrs()->classAdd('active'); }
+            $langSwitcher->append($a);
+        }
+        $switchers->append($langSwitcher);
+
+        // Скины
+        $allowedSkins = ['light', 'dark'];
+        if ($site instanceof \Damoony\Core\Config) {
+            $confSkins = $site->getByKey(['alliases_skins_allowed', $context->domain->real, $context->domain->allias], []);
+            if (is_array($confSkins) && $confSkins !== []) {
+                $allowedSkins = $confSkins;
+            }
+        }
+        
+        $currentSkin = $context->domain->skin;
+        if (count($allowedSkins) > 1) {
+            $skinSwitcher = Builder::div('skin-switcher');
+            $skinSwitcher->append(Builder::span('label')->content('Skin: '));
+            foreach ($allowedSkins as $s) {
+                $url = '/' . $currentLang . '/skin/' . $s . ($pathWithoutLang === '/' ? '/' : $pathWithoutLang);
+                $a = Builder::a($url)->content(ucfirst($s));
+                if ($s === $currentSkin) { $a->attrs()->classAdd('active'); }
+                $skinSwitcher->append($a);
+            }
+            $switchers->append($skinSwitcher);
+        }
+
+        $wrap->append($switchers);
+        return $wrap;
     }
 }

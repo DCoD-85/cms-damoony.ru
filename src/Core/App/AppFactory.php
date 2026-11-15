@@ -81,7 +81,7 @@ final class AppFactory
 
         $container->set(
             DomainResolverInterface::class,
-            fn (): DomainResolverInterface => new ConfigDomainResolver($site),
+            fn (): DomainResolverInterface => new ConfigDomainResolver($site, $container->get(Paths::class)),
         );
 
         $container->set(

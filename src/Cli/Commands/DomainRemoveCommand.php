@@ -16,10 +16,9 @@ final class DomainRemoveCommand implements CommandInterface
     /** Ключи site.config, где данные скоупятся по домену. */
     private const DOMAIN_KEYS = [
         'domains_real',
-        'domains_available',
-        'domains_namespace',
+        'domains_mirrors',
+        'domains_mirrors_available',
         'domains_langs',
-        'domains_structure',
         'domains_titles',
         'domains_skins',
         'domains_skins_allowed',
@@ -46,7 +45,7 @@ final class DomainRemoveCommand implements CommandInterface
 
     public function description(): string
     {
-        return 'Удалить домен (в карантин) и вычистить конфиг';
+        return 'Удалить домен в карантин (--cascade для очистки привязок)';
     }
 
     public function run(array $args, Context $context): Result
@@ -72,23 +71,34 @@ final class DomainRemoveCommand implements CommandInterface
         }
         $site = Config::fromFile($siteFile)->all();
 
-        $realDomain = (string) ($site['domains_real'][$domain] ?? '');
+        $realDomain = (string) ($site['domains_mirrors'][$domain] ?? '');
         $isMapped = ($realDomain !== '' && $realDomain !== $domain);
-        $domainInConfig = isset($site['domains_real'][$domain]);
+        $domainInConfig = isset($site['domains_real'][$domain]) || isset($site['domains_mirrors'][$domain]);
 
         if ($isMapped) {
             $context->step("Домен {$domain} является привязкой к {$realDomain}. Удаляем только конфиг.", true);
         } else {
             $mappedDomains = [];
-            foreach ($site['domains_real'] ?? [] as $d => $real) {
+            foreach ($site['domains_mirrors'] ?? [] as $d => $real) {
                 if ($d !== $domain && $real === $domain) {
                     $mappedDomains[] = $d;
                 }
             }
 
             if (count($mappedDomains) > 0) {
-                $r->error("Нельзя удалить реальный домен '{$domain}', так как к нему привязаны: " . implode(', ', $mappedDomains) . '. Сначала удалите привязки.');
-                return $r;
+                if (isset($args['cascade'])) {
+                    $context->step("Принудительная отвязка доменов: " . implode(', ', $mappedDomains), true);
+                    foreach ($mappedDomains as $mappedDomain) {
+                        foreach (self::DOMAIN_KEYS as $k) {
+                            if (isset($site[$k][$mappedDomain])) {
+                                unset($site[$k][$mappedDomain]);
+                            }
+                        }
+                    }
+                } else {
+                    $r->error("Нельзя удалить реальный домен '{$domain}', так как к нему привязаны: " . implode(', ', $mappedDomains) . '. Используйте флаг --cascade для принудительной отвязки.');
+                    return $r;
+                }
             }
 
             $domainDir = $this->paths->domain($domain);

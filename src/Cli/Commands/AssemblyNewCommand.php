@@ -62,7 +62,6 @@ final class AssemblyNewCommand implements CommandInterface
         $site['domains_real'][$domain] = $realDomain;
         $site['domains_available'][$domain] = true;
         $site['domains_namespace'][$realDomain] = $namespace;
-        $site['domains_structure'][$realDomain] = 'v4';
         $site['alliases_real'][$realDomain] ??= [$alias => $alias];
         $site['alliases_available'][$realDomain][$alias] = true;
         $site['alliases_langs'][$realDomain][$alias] = ['ru', 'en'];

@@ -1,0 +1,6 @@
+{
+    "available": {
+        "": "^([a-z]+)$"
+    },
+    "auth": false
+}

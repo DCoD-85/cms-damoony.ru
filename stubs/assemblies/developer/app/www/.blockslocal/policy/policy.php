@@ -6,7 +6,7 @@ use Damoony\UI\Region\RegionInterface;
 use Damoony\UI\Builder;
 use Damoony\UI\Node;
 
-final class blockslocal_{{alias}}_policy implements RegionInterface
+final class blockslocal_www_policy implements RegionInterface
 {
     public function name(): string { return 'policy'; }
     public function enabled(): bool { return true; }

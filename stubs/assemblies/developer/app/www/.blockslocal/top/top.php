@@ -6,7 +6,7 @@ use Damoony\UI\Region\RegionInterface;
 use Damoony\UI\Builder;
 use Damoony\UI\Node;
 
-final class blockslocal_{{alias}}_top implements RegionInterface
+final class blockslocal_www_top implements RegionInterface
 {
     public function name(): string { return 'top'; }
     public function enabled(): bool { return true; }

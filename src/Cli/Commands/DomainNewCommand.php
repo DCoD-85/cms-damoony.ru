@@ -168,10 +168,9 @@ final class DomainNewCommand implements CommandInterface
         }
 
         // 5. Конфиг (все ключи)
-        $site['domains_real'][$domain] = $domain;
-        $site['domains_available'][$domain] = true;
-        $site['domains_namespace'][$domain] = $namespace;
-        $site['domains_structure'][$domain] = 'v4';
+        $site['domains_real'][$domain] = $namespace;
+        $site['domains_mirrors'][$domain] = $domain;
+        $site['domains_mirrors_available'][$domain] = true;
         $site['alliases_real'][$domain] ??= ['www' => 'www'];
         $site['alliases_available'][$domain][$allias] = true;
 

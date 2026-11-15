@@ -36,48 +36,7 @@
     };
     // -----------------------
 
-    function showToast(type, text, timeout) {
-        var container = document.querySelector('.dt_toast') || document.querySelector('#toast-container');
-        if (!container) return;
-        
-        var item = document.createElement('div');
-        item.className = 'toast-item ' + (type || 'info');
-        item.textContent = text;
-        container.appendChild(item);
-        
-        // Даем браузеру отрисовать начальное состояние (opacity: 0), затем включаем анимацию
-        requestAnimationFrame(function() {
-            requestAnimationFrame(function() {
-                item.classList.add('show');
-            });
-        });
-
-        var ttl = (typeof timeout === 'number') ? timeout : (type === 'error' ? 0 : 3000);
-        
-        function removeToast() {
-            item.classList.remove('show'); // Запускаем анимацию исчезновения
-            setTimeout(function() {
-                item.remove(); // Удаляем из DOM после завершения CSS-перехода (0.3s)
-            }, 300);
-        }
-
-        if (ttl > 0) {
-            setTimeout(removeToast, ttl);
-        }
-        
-        // Опционально: можно добавить клик по тосту для его закрытия
-        item.addEventListener('click', removeToast);
-    }
-
-    function handleNonJson(res) {
-        var lang = document.documentElement.lang || 'en';
-        var text = (res && res.status >= 500) 
-                 ? (lang === 'ru' ? 'Ошибка сервера' : 'Server error')
-                 : (lang === 'ru' ? 'Не удалось загрузить данные' : 'Failed to load data');
-        showToast('error', text, 0);
-    }
-
-    function applyMinStruct(data, form) {
+    function applyMinStruct(data) {
         if (data.layout) {
             var currentLayout = document.querySelector('.dt') || document.querySelector('.layout');
             if (currentLayout) {
@@ -117,26 +76,32 @@
         }
 
         if (data.messages && data.messages.length > 0) {
-            data.messages.forEach(function(msg) {
-                showToast(msg.type || 'info', msg.text || msg.message || msg, msg.timeout);
-            });
+            var toast = document.querySelector('.dt_toast') || document.querySelector('.site-toast');
+            if (toast) {
+                toast.innerHTML = '';
+                data.messages.forEach(function(msg) {
+                    var div = document.createElement('div');
+                    div.className = msg.type || 'info';
+                    // Берем msg.text, если его нет - msg.message, иначе сам msg
+                    div.textContent = msg.text || msg.message || msg;
+                    toast.appendChild(div);
+                });
+                toast.style.display = 'block';
+                
+                // Ошибки не скрываем автоматически
+                var hasError = data.messages.some(function(m) { return m.type === 'error'; });
+                if (!hasError) {
+                    setTimeout(function() { toast.style.display = 'none'; }, 3000);
+                }
+            }
         }
         if (data.form && data.form.redirect) {
-            var url = data.form.redirect;
-            var delay = (typeof data.form.redirect_time === 'number') ? data.form.redirect_time : 0;
-            if (delay > 0) {
-                setTimeout(function() { navigateTo(url, true); }, delay);
-            } else {
-                navigateTo(url, true);
-            }
+            window.location.href = data.form.redirect;
             return true;
         }
         if (data.reload) {
             window.location.reload();
             return true;
-        }
-        if (form && data.form && data.form.reset) {
-            form.reset();
         }
         return false;
     }
@@ -145,7 +110,7 @@
         fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
         .then(function(res) {
             var ct = res.headers.get('Content-Type');
-            if (!ct || ct.indexOf('application/json') === -1) { handleNonJson(res); return null; }
+            if (!ct || ct.indexOf('application/json') === -1) { window.location.href = url; return null; }
             return res.json();
         })
         .then(function(data) {
@@ -155,7 +120,7 @@
                 window.history.pushState({ url: url }, '', url);
             }
         })
-        .catch(function() { showToast('error', 'Нет связи с сервером', 0); });
+        .catch(function() { window.location.href = url; });
     }
 
     // Перехват ссылок
@@ -184,14 +149,15 @@
         })
         .then(function(res) {
             var ct = res.headers.get('Content-Type');
-            if (!ct || ct.indexOf('application/json') === -1) { handleNonJson(res); return null; }
+            if (!ct || ct.indexOf('application/json') === -1) { form.submit(); return null; }
             return res.json();
         })
         .then(function(data) {
             if (!data) return;
-            applyMinStruct(data, form);
+            applyMinStruct(data);
+            form.reset(); 
         })
-        .catch(function() { showToast('error', 'Нет связи с сервером', 0); });
+        .catch(function() { form.submit(); });
     });
 
     // Кнопки назад/вперед (теперь без перезагрузки)

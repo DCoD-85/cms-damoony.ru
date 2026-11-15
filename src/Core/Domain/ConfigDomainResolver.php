@@ -10,7 +10,7 @@ final class ConfigDomainResolver implements DomainResolverInterface
 {
     public function __construct(
         private readonly Config $site,
-        private readonly string $defaultSkin = 'default',
+        private readonly \Damoony\Core\Files\Paths $paths,
         private readonly string $defaultLanguage = 'ru',
     ) {
     }
@@ -53,7 +53,9 @@ final class ConfigDomainResolver implements DomainResolverInterface
             );
         }
 
-        $available = (bool) $this->site->getByKey(['domains_available', $real], false);
+        // Если зашли по реальному домену — он по умолчанию доступен (если не отключен явно).
+        // Если зашли по зеркалу (привязке) — смотрим его флаг в domains_available.
+        $available = (bool) $this->site->getByKey(['domains_mirrors_available', $host], true);
         $aliasAvailable = (bool) $this->site->getByKey(['alliases_available', $real, $allias], true);
 
         $stub = null;
@@ -89,7 +91,7 @@ final class ConfigDomainResolver implements DomainResolverInterface
             language: $lang,
             available: $available,
             stub: $stub,
-            namespace: (string) $this->site->getByKey(['domains_namespace', $real], str_replace('.', '_', $real)),
+            namespace: (string) $this->site->getByKey(['domains_real', $real], str_replace(['.', '-'], '_', $real)),
             scheme: (string) $this->site->getByKey(['domains_scheme', $real], 'www'),
             supportedLanguages: $langs,
         );
@@ -109,15 +111,15 @@ final class ConfigDomainResolver implements DomainResolverInterface
     {
         $real = $this->real($domain);
         return (string) $this->site->getByKey(
-            ['domains_namespace', $real],
-            str_replace('.', '_', $real),
+            ['domains_real', $real],
+            str_replace(['.', '-'], '_', $real),
         );
     }
 
     /** @return array<string, string> */
     private function domainsMap(): array
     {
-        $domains = $this->site->getByKey(['domains_real'], []);
+        $domains = $this->site->getByKey(['domains_mirrors'], []);
         if (!is_array($domains)) {
             return [];
         }
@@ -140,12 +142,25 @@ final class ConfigDomainResolver implements DomainResolverInterface
     {
         $default = (string) $this->site->getByKey(['alliases_skins', $real, $allias], '');
         if ($default === '') {
-            $default = (string) $this->site->getByKey(['domains_skins', $real], $this->defaultSkin);
+            $default = (string) $this->site->getByKey(['domains_skins', $real], '');
         }
+
+        $skinDir = $this->paths->media($real, $allias) . '/skin/';
+        $skins = [];
+        if (is_dir($skinDir)) {
+            $skins = array_values(array_filter(scandir($skinDir), fn($d) => is_dir($skinDir . $d) && !in_array($d, ['.', '..'])));
+        }
+
+        // Если в конфиге ничего нет или скин не существует — берем первый доступный (не хардкор)
+        if ($default === '' || !in_array($default, $skins, true)) {
+            $default = $skins[0] ?? 'light';
+        }
+
         $allowed = $this->site->getByKey(['alliases_skins_allowed', $real, $allias], []);
-        if (!is_array($allowed)) {
-            $allowed = [];
+        if (!is_array($allowed) || $allowed === []) {
+            $allowed = $skins;
         }
+
         $cookie = $_COOKIE['skin'] ?? '';
         if (is_string($cookie) && in_array($cookie, $allowed, true)) {
             return $cookie;

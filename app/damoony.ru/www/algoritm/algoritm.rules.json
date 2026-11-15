@@ -1,8 +1,1 @@
-{
-    "available": {
-        "": "^$",
-        "about": "^about$",
-        "ui": "^ui$"
-    },
-    "auth": false
-}
+{"available": {"": "^$", "lang": "^([a-z]{2})$"}, "auth": false}

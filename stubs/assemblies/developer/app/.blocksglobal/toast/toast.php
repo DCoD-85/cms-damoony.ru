@@ -12,8 +12,6 @@ final class blocksglobal_toast implements RegionInterface
     public function enabled(): bool { return true; }
     public function render(RegionContext $context): Node
     {
-        $wrap = Builder::div('dt_inner');
-        $wrap->append(Builder::p()->content($context->lang('block.toast')));
-        return $wrap;
+        return Builder::div();
     }
 }
