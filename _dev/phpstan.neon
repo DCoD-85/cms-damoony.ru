@@ -4,6 +4,8 @@ parameters:
         - ../src
         - ../bin
         - ../www
+    excludePaths:
+        - ../www/stubs/*
     tmpDir: ../var/phpstan
     reportUnmatchedIgnoredErrors: true
     treatPhpDocTypesAsCertain: true

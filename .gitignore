@@ -112,3 +112,5 @@ app/**/.*_trash_*
 /app/_trash_sess_*/
 /www/media/_trash_sess_*/
 _dev/api.stub.php
+www/stubs/assemblies/
+www/stubs/*.php
