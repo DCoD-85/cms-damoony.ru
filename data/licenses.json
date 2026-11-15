@@ -1,18 +1,10 @@
 [
     {
-        "key": "KEY-78210DE63DA14B7F",
+        "key": "KEY-BCEA04AEEFBC124A",
         "domain": "idoam.ru",
-        "name": "wawd",
-        "email": "awdawd@awdwa.aw",
+        "name": "adwad",
+        "email": "awdwad@wad.wd",
         "status": "active",
-        "created_at": "2026-11-15 16:22:44"
-    },
-    {
-        "key": "KEY-15D53804AEFFD1AC",
-        "domain": "idoam.ru",
-        "name": "wawd",
-        "email": "awdawd@awdwa.aw",
-        "status": "active",
-        "created_at": "2026-11-15 16:22:51"
+        "created_at": "2026-11-15 17:07:30"
     }
 ]

@@ -1,21 +1,28 @@
 <?php
 declare(strict_types=1);
 
-// packager.php кладется в корень проекта вендора (рядом с src/, bin/)
-$sourceDir = __DIR__;
-$zipFile = __DIR__ . '/www/downloads/core-v4.zip';
+// Ищем корень проекта (поднимаемся вверх, пока не найдем bin/cli.php)
+$dir = __DIR__;
+while (!is_file($dir . '/bin/cli.php') && dirname($dir) !== $dir) {
+    $dir = dirname($dir);
+}
+$sourceDir = $dir;
+
+$zipFile = $sourceDir . '/www/downloads/core-v4.zip';
 
 $downloadsDir = dirname($zipFile);
 if (!is_dir($downloadsDir)) {
     mkdir($downloadsDir, 0755, true);
 }
 
-// Исключаем всё, что не должно попасть клиенту (база, конфиги, локальные данные, дистрибутив)
 $exclude = [
-    '.git', 'app', 'config', 'var', 'content',
+    '.git', '.github', '.gitignore', '.gitattributes',
+    'app', 'config', 'var', 'content', 'data',
+    '_dev', '_doc', '_dist', '_trash_v3', '_old_backup',
+    'ai_agent', 'a.py',
     'www/downloads', 'www/api', 'www/request.php', 'www/packager.php',
-    'data', '_dist', 'packager.php', '.env', '.idea', 'node_modules',
-    'install.php', '.github', '.gitignore', '.gitattributes',
+    'api', 'request.php',
+    'packager.php', 'install.php', '.env', '.idea', 'node_modules',
     'CREDENTIALS.txt', 'INSTALL_INSTRUCTION.txt', 
     '.phpunit.cache', '.php-cs-fixer.cache', '.phpunit.result.cache'
 ];
