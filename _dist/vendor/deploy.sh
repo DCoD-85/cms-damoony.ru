@@ -2,17 +2,18 @@
 # Деплой vendor-файлов на сервер damoony.ru (запускать на сервере из корня проекта)
 set -e
 
-cd /var/www/damoony.ru/www
+cd /var/www/damoony.ru
 
-# Копируем vendor-файлы из _dist/vendor/www/
-cp _dist/vendor/www/request.php ./request.php
-cp _dist/vendor/www/api/activate.php ./api/activate.php
-mkdir -p ./stubs
-cp _dist/vendor/www/stubs/install.sh.tpl ./stubs/install.sh.tpl
+# Копируем vendor-файлы из _dist/
+cp _dist/vendor/www/request.php ./www/request.php
+mkdir -p ./www/api
+cp _dist/vendor-api/activate.php ./www/api/activate.php
+mkdir -p ./www/stubs
+cp _dist/vendor/www/stubs/install.sh.tpl ./www/stubs/install.sh.tpl
 
 # Папка с лицензиями
 mkdir -p ./data
-chown -R www-data:www-data ./request.php ./api ./stubs ./data
+chown -R www-data:www-data ./www/request.php ./www/api ./www/stubs ./data
 
 echo "OK: Vendor deployed."
 echo "Откройте https://damoony.ru/request.php"

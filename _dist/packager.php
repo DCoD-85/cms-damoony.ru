@@ -1,19 +1,15 @@
 <?php
-// packager.php лежит в www/
-// Сканируем корень проекта, ZIP кладем в www/downloads/
-$sourceDir = __DIR__;								              // /var/www/damoony.ru/
-$zipFile = __DIR__ . '/downloads/core-v4.zip'; // /var/www/damoony.ru/www/downloads/
+// packager.php кладется в корень проекта (рядом с src/, bin/)
+$sourceDir = __DIR__;
+$zipFile = __DIR__ . '/www/downloads/core-v4.zip';
 
 $downloadsDir = dirname($zipFile);
-if (!is_dir($downloadsDir)) {
-    mkdir($downloadsDir, 0777, true);
-}
+if (!is_dir($downloadsDir)) mkdir($downloadsDir, 0755, true);
 
 $exclude = [
     '.git', 'app', 'config', 'var', 'content',
     'www/downloads', 'www/api', 'www/request.php', 'www/packager.php',
-    'data', '_dist',
-    'packager.php', '.env', '.idea', 'node_modules',
+    'data', '_dist', 'packager.php', '.env', '.idea', 'node_modules',
     'install.php', '.github', '.gitignore', '.gitattributes',
     'CREDENTIALS.txt', 'INSTALL_INSTRUCTION.txt',
 ];

@@ -51,9 +51,9 @@ fi
 if [ "$UPDATE" -eq 0 ]; then
     echo ""
     echo -e "${YELLOW}[2/9] Настройки БД${NC}"
-    DB_NAME="idoam_db"
-    DB_USER="idoam_user"
-    DB_PASS="StrongPass123"
+    DB_NAME="damoony_$(echo $DOMAIN | tr . _)"
+    DB_USER="damoony_$(echo $DOMAIN | tr . _)"
+    DB_PASS=$(php -r 'echo bin2hex(random_bytes(8));')"
 
     DB_OK=0
     for attempt in 1 2 3; do
@@ -88,7 +88,7 @@ fi
 
 # 4. Активация
 echo -e "${YELLOW}[4/9] Активация лицензии...${NC}"
-ACTIVATE=$(curl -sk -X POST "$VENDOR/api/activate.php" -H "Content-Type: application/json" -d "{\"key\":\"$LICENSE_KEY\",\"domain\":\"$DOMAIN\"}")
+ACTIVATE=$(curl -sSL -X POST "$VENDOR/api/activate.php" -H "Content-Type: application/json" -d "{\"key\":\"$LICENSE_KEY\",\"domain\":\"$DOMAIN\"}")
 if ! echo "$ACTIVATE" | grep -q '"ok":true'; then
     echo -e "${RED}ОШИБКА активации: $ACTIVATE${NC}"
     exit 1
@@ -98,7 +98,7 @@ ZIP_URL=$(echo "$ACTIVATE" | php -r 'echo json_decode(stream_get_contents(STDIN)
 # 5. Скачивание
 echo -e "${YELLOW}[5/9] Скачивание ядра...${NC}"
 TMP=$(mktemp -d)
-curl -sk "$ZIP_URL" -o "$TMP/core.zip"
+curl -sSL "$ZIP_URL" -o "$TMP/core.zip"
 unzip -o -q "$TMP/core.zip" -d "$(pwd)"
 rm -rf "$TMP"
 
@@ -129,10 +129,13 @@ echo -e "${YELLOW}[7/9] Миграции БД...${NC}"
 php bin/cli.php db:migrate
 
 # 8. Сборка / пересборка проекта
-echo -e "${YELLOW}[8/9] Сборка проекта (developer assembly)...${NC}"
-rm -f config/site.config
-php bin/cli.php new --domain="$DOMAIN" --assembly=developer
-php bin/dbcli.php db:schema:generate-provider --domain="$DOMAIN" --table=test_items
+if [ "$UPDATE" -eq 0 ]; then
+    echo -e "${YELLOW}[8/9] Сборка проекта (developer assembly)...${NC}"
+    rm -f config/site.config
+    php bin/cli.php new --domain="$DOMAIN" --assembly=developer
+else
+    echo -e "${YELLOW}[8/9] Пропуск сборки (режим обновления)${NC}"
+fi
 
 # Обновление/создание админа (только при установке)
 if [ "$UPDATE" -eq 0 ]; then
@@ -154,8 +157,8 @@ fi
 
 # 9. Финализация
 echo -e "${YELLOW}[9/9] Финализация...${NC}"
-chown -R www-data:www-data "$(pwd)" || true
-chmod -R 775 var www/media 2>/dev/null || true
+chown -R www-data:www-data app content var www/media || true
+chmod -R 775 app content var www/media 2>/dev/null || true
 
 if [ "$UPDATE" -eq 0 ]; then
     cat > INSTALL_INSTRUCTION.txt << TXT
