@@ -166,7 +166,7 @@ final class LangRepairCommand implements CommandInterface
                 }
                 if (!in_array($d['lang'], $domainLangs, true)) {
                     $domainLangs[] = $d['lang'];
-                    $site['alliases'][$real]['www']['langs'] ?? ['ru', 'en'] = $domainLangs;
+                    $site['alliases'][$real]['www']['langs'] = $domainLangs;
                     $applied[] = ['kind' => 'promoted_to_domain', 'lang' => $d['lang']];
                     $configChanged = true;
                 }
@@ -176,7 +176,7 @@ final class LangRepairCommand implements CommandInterface
         if ($allias !== '' && $configChanged) {
             $site['alliases'][$real][$allias]['langs'] = $newConfigLangs;
         } elseif ($allias === '' && $configChanged) {
-            $site['alliases'][$real]['www']['langs'] ?? ['ru', 'en'] = $newConfigLangs;
+            $site['alliases'][$real]['www']['langs'] = $newConfigLangs;
         }
 
         if ($configChanged) {

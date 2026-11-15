@@ -90,7 +90,7 @@ final class LangRemoveCommand implements CommandInterface
                 $r->error('Нельзя удалить последний язык домена');
                 return $r;
             }
-            $site['alliases'][$real]['www']['langs'] ?? ['ru', 'en'] = array_values(array_filter(
+            $site['alliases'][$real]['www']['langs'] = array_values(array_filter(
                 $domainLangs,
                 static fn ($l): bool => $l !== $lang,
             ));

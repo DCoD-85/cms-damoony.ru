@@ -89,7 +89,7 @@ final class LangAddCommand implements CommandInterface
                 $r->warn(sprintf('Язык %s уже объявлен для домена %s', $lang, $real));
             } else {
                 $domainLangs[] = $lang;
-                $site['alliases'][$real]['www']['langs'] ?? ['ru', 'en'] = $domainLangs;
+                $site['alliases'][$real]['www']['langs'] = $domainLangs;
             }
         }
 
