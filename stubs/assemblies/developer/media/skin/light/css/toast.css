@@ -1,7 +1,7 @@
 /* Toast Notifications */
 .dt_toast {
     position: fixed;
-    top: 20px;
+    bottom: 50px;
     right: 20px;
     z-index: 100000;
     display: flex;

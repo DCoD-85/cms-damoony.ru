@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace damoony_ru\www;
+namespace {{namespace}}\www;
 use Damoony\Core\Http\Response;
 use Damoony\UI\Algoritm\Page;
 use Damoony\UI\Builder;
