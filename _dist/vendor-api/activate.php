@@ -13,7 +13,7 @@ if ($key === '' || $domain === '') {
 }
 
 // activate.php лежит в www/api/, а request.php в www/.
-// Нам нужно подняться на 2 уровня вверх, чтобы попасть в root/data
+// data/licenses.json лежит в корне проекта (www/../data)
 $dataDir = dirname(__DIR__) . '/../data';
 $licFile = $dataDir . '/licenses.json';
 
@@ -25,13 +25,13 @@ if (!is_file($licFile)) {
 $licenses = json_decode(file_get_contents($licFile), true) ?: [];
 $match = null;
 foreach ($licenses as $lic) {
-    if ($lic['key'] === $key && $lic['domain'] === $domain && $lic['status'] === 'active') {
+    if (($lic['key'] ?? '') === $key && ($lic['domain'] ?? '') === $domain && ($lic['status'] ?? '') === 'active') {
         $match = $lic;
         break;
     }
 }
 
-// Логируем попытку
+// Логируем попытку активации
 file_put_contents($dataDir . '/activations.log', date('Y-m-d H:i:s') . " key=$key domain=$domain result=" . ($match ? 'ok' : 'fail') . "\n", FILE_APPEND);
 
 if (!$match) {

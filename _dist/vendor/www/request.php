@@ -31,7 +31,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         die('Шаблон install.sh.tpl не найден');
     }
     $tpl = file_get_contents($tplFile);
-    $install = str_replace(['{{DOMAIN}}', '{{KEY}}'], [$domain, $key], $tpl);
+    $updateFlag = $isUpdate ? '1' : '0';
+	$install = str_replace(['{{DOMAIN}}', '{{KEY}}', '{{UPDATE}}'], [$domain, $key, $updateFlag], $tpl);
 
     $filename = ($isUpdate ? 'update-' : 'install-') . $domain . '.sh';
 
