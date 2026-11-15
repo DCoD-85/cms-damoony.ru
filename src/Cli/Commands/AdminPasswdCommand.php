@@ -50,8 +50,10 @@ final class AdminPasswdCommand implements CommandInterface
         $cfg['login'] = $login;
         $cfg['password_hash'] = $hash;
         
+        if (!isset($cfg['default_lang'])) {
             $cfg['default_lang'] = 'ru';
         }
+        if (!isset($cfg['default_role'])) {
             $cfg['default_role'] = 'superadmin';
         }
 
