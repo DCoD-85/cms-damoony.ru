@@ -38,24 +38,14 @@ final class Paths
         return $this->root . '/lang';
     }
 
-    public function i18nDomain(string $real): string
-    {
-        return $this->domain($real) . '/.i18n';
-    }
-
-    public function i18nAllias(string $real, string $allias): string
-    {
-        return $this->allias($real, $allias) . '/.i18n';
-    }
-
     public function i18nAdmin(): string
     {
-        return $this->appRoot() . '/.admin/.i18n';
+        return $this->appRoot() . '/.admin/.i18nglobal';
     }
 
     public function i18nAdminRole(string $role): string
     {
-        return $this->appRoot() . '/.admin/.' . $role . '/.i18n';
+        return $this->appRoot() . '/.admin/.' . $role . '/.i18nlocal';
     }
 
     public function sessionDir(string $tabId, string $real): string
@@ -142,36 +132,19 @@ final class Paths
     }
 
     /**
-     * i18n global (domain-level). v3: .i18n ; v4: .i18nglobal (fallback .i18n if exists).
+     * i18n global (domain-level). v4: .i18nglobal
      */
     public function i18nGlobal(string $real): string
     {
-        $v4 = $this->domain($real) . '/.i18nglobal';
-        if ($this->isV4($real)) {
-            return $v4;
-        }
-        // v3: legacy .i18n, но если есть .i18nglobal и нет .i18n — читаем v4
-        $v3 = $this->domain($real) . '/.i18n';
-        if (!is_dir($v3) && is_dir($v4)) {
-            return $v4;
-        }
-        return $v3;
+        return $this->domain($real) . '/.i18nglobal';
     }
 
     /**
-     * i18n local (alias-level). v3: {a}/.i18n ; v4: {a}/.i18nlocal (fallback .i18n if exists).
+     * i18n local (alias-level). v4: {a}/.i18nlocal
      */
     public function i18nLocal(string $real, string $allias): string
     {
-        $v4 = $this->allias($real, $allias) . '/.i18nlocal';
-        if ($this->isV4($real)) {
-            return $v4;
-        }
-        $v3 = $this->allias($real, $allias) . '/.i18n';
-        if (!is_dir($v3) && is_dir($v4)) {
-            return $v4;
-        }
-        return $v3;
+        return $this->allias($real, $allias) . '/.i18nlocal';
     }
 
     /**

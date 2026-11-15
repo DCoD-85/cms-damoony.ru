@@ -24,7 +24,7 @@ final class LangRepairCommand implements CommandInterface
 
     public function description(): string
     {
-        return 'Починить drift между config и .i18n/*.json (без --fix — dry-run)';
+        return 'Починить drift между config и .i18nglobal/*.json (без --fix — dry-run)';
     }
 
     public function run(array $args, Context $context): Result

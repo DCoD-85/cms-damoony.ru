@@ -24,7 +24,7 @@ final class LangListCommand implements CommandInterface
 
     public function description(): string
     {
-        return 'Список языков: файлы .i18n/{lang}.json + (--with-config) config';
+        return 'Список языков: файлы .i18nglobal/{lang}.json + (--with-config) config';
     }
 
     public function run(array $args, Context $context): Result

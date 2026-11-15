@@ -1,4 +1,14 @@
 {
+    "menu": {
+        "nope": "Test 404",
+        "google": "Google (external)"
+    },
+    "block": {
+        "toast": ""
+    },
+    "error": {
+        "404": "Page not found"
+    },
     "site.block.top": "Top block",
     "site.block.left": "Left block",
     "site.block.center": "Center block",

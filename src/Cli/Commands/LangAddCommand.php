@@ -24,7 +24,7 @@ final class LangAddCommand implements CommandInterface
 
     public function description(): string
     {
-        return 'Добавить язык: .i18n/{lang}.json + регистрация в site.config';
+        return 'Добавить язык: .i18nglobal/{lang}.json + регистрация в site.config';
     }
 
     public function run(array $args, Context $context): Result

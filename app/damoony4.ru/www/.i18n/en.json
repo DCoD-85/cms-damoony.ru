@@ -1,9 +1,0 @@
-{
-    "menu": {
-        "google": "Google (external)",
-        "nope": "Test 404"
-    },
-    "error": {
-        "404": "Page not found"
-    }
-}

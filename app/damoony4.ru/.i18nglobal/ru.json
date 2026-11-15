@@ -1,4 +1,14 @@
 {
+    "menu": {
+        "nope": "Тест 404",
+        "google": "Google (внешняя)"
+    },
+    "block": {
+        "toast": ""
+    },
+    "error": {
+        "404": "Страница не найдена"
+    },
     "site.block.top": "Верхний блок",
     "site.block.left": "Левый блок",
     "site.block.center": "Центральный блок",
