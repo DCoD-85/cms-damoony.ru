@@ -18,7 +18,6 @@ final class blocksglobal_top implements RegionInterface
 
         $site = $context->service('site');
         
-        // 1. Языки (v4)
         $langs = ['ru', 'en'];
         if ($site instanceof \Damoony\Core\Config) {
             $configured = $site->getByKey(['alliases', $context->domain->real, $context->domain->allias, 'langs'], []);
@@ -34,7 +33,6 @@ final class blocksglobal_top implements RegionInterface
         }
         if ($pathWithoutLang === '') { $pathWithoutLang = '/'; }
 
-        // 2. Навигация
         $nav = Builder::div('dt_top_nav');
         $nav->append(Builder::div('dt_logo')->content('Damoony'));
         
@@ -44,7 +42,6 @@ final class blocksglobal_top implements RegionInterface
         $mainMenu->append(Builder::li()->append(Builder::a('/' . $currentLang . '/tests/')->content($context->lang('menu.tests'))));
         $nav->append($mainMenu);
 
-        // 3. Auth Menu (Проверка авторизации!)
         $authMenu = Builder::ul('dt_auth_menu');
         $auth = $context->service('auth');
         if ($auth instanceof \Damoony\Data\Auth\AuthInterface && $auth->isAuthenticated()) {
@@ -59,7 +56,6 @@ final class blocksglobal_top implements RegionInterface
         
         $wrap->append($nav);
 
-        // 4. Переключатели
         $switchers = Builder::div('dt_switchers');
 
         // Языки
@@ -73,7 +69,7 @@ final class blocksglobal_top implements RegionInterface
         }
         $switchers->append($langSwitcher);
 
-        // Скины (v4: сканируем папку)
+        // Скины (ЧИСТЫЕ ссылки, без ?return=)
         $paths = $context->service('paths');
         $aliasSkinDir = $paths instanceof \Damoony\Core\Files\Paths ? $paths->media($context->domain->real, $context->domain->allias) . '/skin/' : '';
         $allowedSkins = is_dir($aliasSkinDir) ? array_values(array_diff(scandir($aliasSkinDir), ['.', '..'])) : [];

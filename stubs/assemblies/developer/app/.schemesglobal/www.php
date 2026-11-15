@@ -37,7 +37,7 @@ return [
     'children' => $children,
     'meta' => [
         'css' => array_merge($baseCss, $blockCss, $skinCss, $compactCss),
-        'js' => ['/media/shared/scripts/cliajax.js?v=2'],
+        'js' => ['/media/shared/scripts/cliajax.js?v=3'],
         'favicon' => '/media/{{domain}}/shared/ico.ico',
     ],
 ];

@@ -12,13 +12,19 @@ final class algoritm_lang_skin extends Page
         $skin = (string) ($this->args['skin'] ?? 'light');
         setcookie('skin', $skin, time() + 60 * 60 * 24 * 30, '/');
         
+        // Берем предыдущую страницу из Referer (без хардкода)
+        $referer = $_SERVER['HTTP_REFERER'] ?? '';
+        $return = parse_url($referer, PHP_URL_PATH) ?: '/' . $this->context->domain->language . '/';
+        
+        // Защита: если в referer затесался текущий путь скина, отрезаем его
+        $return = preg_replace('#/skin/[a-z]+/?#', '/', $return);
+
         if ($this->isAjax()) {
             $m = new \Damoony\UI\Response\MinStruct();
-            // Передаем имя скина и URL, куда вернуться (на текущий язык)
-            $m->skin($skin, '/' . $this->context->domain->language . '/');
+            $m->skin($skin, $return);
             return $m->toResponse();
         }
         
-        return Response::redirect('/' . $this->context->domain->language . '/');
+        return Response::redirect($return);
     }
 }

@@ -55,7 +55,7 @@ return array (
     'js' => 
     array (
       0 => '/media/{{domain}}/login/skin/{skin}/js/main.js',
-      1 => '/media/shared/scripts/cliajax.js?v=2',
+      1 => '/media/shared/scripts/cliajax.js?v=3',
     ),
   ),
 );

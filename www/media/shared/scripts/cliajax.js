@@ -36,29 +36,78 @@
     };
     // -----------------------
 
-    function showToast(type, text, timeout) {
-        var toast = document.querySelector('.dt_toast') || document.querySelector('.site-toast');
-        if (!toast) return;
-        var div = document.createElement('div');
-        div.className = type || 'info';
-        div.textContent = text;
-        toast.appendChild(div);
-        toast.style.display = 'block';
-        var ttl = (typeof timeout === 'number') ? timeout : (type === 'error' ? 0 : 3000);
-        if (ttl > 0) {
-            setTimeout(function() {
-                div.remove();
-                if (!toast.children.length) toast.style.display = 'none';
-            }, ttl);
+    function ensureToastContainer() {
+        var toast = document.querySelector('.dt_toast');
+        if (toast && toast.parentNode !== document.body) {
+            document.body.appendChild(toast);
         }
     }
 
+    function ensureToastContainer() {
+        var toast = document.querySelector('.dt_toast');
+        if (toast && toast.parentNode !== document.body) {
+            document.body.appendChild(toast);
+        }
+    }
+
+    function showToast(type, text, timeout) {
+        ensureToastContainer();
+        var toast = document.querySelector('.dt_toast');
+        if (!toast) return;
+        
+        var item = document.createElement('div');
+        item.className = 'toast-item ' + (type || 'info');
+        item.textContent = text;
+        toast.appendChild(item);
+        
+        requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+                item.classList.add('show');
+            });
+        });
+
+        // Ошибки живут 5 секунд, остальные 3 секунды
+        var ttl = (typeof timeout === 'number') ? timeout : (type === 'error' ? 5000 : 3000);
+        
+        function removeToast() {
+            item.classList.remove('show');
+            setTimeout(function() {
+                item.remove();
+            }, 300);
+        }
+
+        if (ttl > 0) {
+            setTimeout(removeToast, ttl);
+        }
+        
+        item.addEventListener('click', removeToast);
+    }
+
     function applyMinStruct(data) {
+        // 1. Сохраняем текущие тосты перед заменой layout
+        var oldToastContainer = document.querySelector('.dt_toast');
+        
         if (data.layout) {
             var currentLayout = document.querySelector('.dt') || document.querySelector('.layout');
             if (currentLayout) {
                 currentLayout.outerHTML = data.layout;
-                // Обновляем title из нового layout
+                
+                // Находим новый контейнер тостов (он пришел в новом layout)
+                var newToastContainer = document.querySelector('.dt_toast');
+                
+                // Переносим старые тосты в новый контейнер (если они были)
+                if (oldToastContainer && newToastContainer) {
+                    while (oldToastContainer.firstChild) {
+                        newToastContainer.appendChild(oldToastContainer.firstChild);
+                    }
+                    oldToastContainer.remove();
+                }
+                
+                // Переносим новый контейнер на body, чтобы он выживал при следующих переходах
+                if (newToastContainer && newToastContainer.parentNode !== document.body) {
+                    document.body.appendChild(newToastContainer);
+                }
+
                 var tempDiv = document.createElement('div');
                 tempDiv.innerHTML = data.layout;
                 var newTitle = tempDiv.querySelector('title');
@@ -78,7 +127,7 @@
             if (main) main.innerHTML = data.release;
         }
         
-        // Смена скина без перезагрузки
+        // 2. Смена скина
         if (data.skin_updated) {
             document.querySelectorAll('link[rel="stylesheet"]').forEach(function(link) {
                 var href = link.getAttribute('href');
@@ -92,26 +141,14 @@
             return true;
         }
 
+        // 3. Показ сообщений через showToast (с накоплением)
         if (data.messages && data.messages.length > 0) {
-            var toast = document.querySelector('.dt_toast') || document.querySelector('.site-toast');
-            if (toast) {
-                toast.innerHTML = '';
-                data.messages.forEach(function(msg) {
-                    var div = document.createElement('div');
-                    div.className = msg.type || 'info';
-                    // Берем msg.text, если его нет - msg.message, иначе сам msg
-                    div.textContent = msg.text || msg.message || msg;
-                    toast.appendChild(div);
-                });
-                toast.style.display = 'block';
-                
-                // Ошибки не скрываем автоматически
-                var hasError = data.messages.some(function(m) { return m.type === 'error'; });
-                if (!hasError) {
-                    setTimeout(function() { toast.style.display = 'none'; }, 3000);
-                }
-            }
+            data.messages.forEach(function(msg) {
+                showToast(msg.type || 'info', msg.text || msg.message || msg);
+            });
         }
+
+        // 4. Редирект (без перезагрузки)
         if (data.form && data.form.redirect) {
             var delay = data.form.redirect_time || 0;
             if (delay > 0) {
