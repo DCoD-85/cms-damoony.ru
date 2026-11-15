@@ -9,7 +9,7 @@
 .dt_menu a { text-decoration: none; font-weight: bold; }
 .dt_menu a:hover { text-decoration: underline; }
 
-.skin-switcher { display: flex; gap: 10px; margin-top: 10px; font-size: 0.9em; align-items: center; }
+.skin-switcher { display: flex; gap: 10px; font-size: 0.9em; align-items: center; }
 .skin-switcher .label { color: #888; }
 .skin-switcher a { color: #007bff; text-decoration: none; }
 .skin-switcher a:hover { text-decoration: underline; }
@@ -21,7 +21,7 @@ body.dark-theme .skin-switcher a.active { color: #fff; }
 .dt_logo { font-size: 1.4em; font-weight: bold; }
 .dt_main_menu, .dt_auth_menu { display: flex; list-style: none; margin: 0; padding: 0; gap: 20px; }
 .dt_main_menu a, .dt_auth_menu a { text-decoration: none; font-weight: 500; }
-.dt_switchers { display: flex; gap: 20px; font-size: 0.85em; color: #888; }
+.dt_switchers { display: flex; gap: 20px; color: #888; }
 .lang-switcher, .skin-switcher { display: flex; gap: 8px; align-items: center; }
 .lang-switcher a, .skin-switcher a { text-decoration: none; color: inherit; }
 .lang-switcher a.active, .skin-switcher a.active { font-weight: bold; pointer-events: none; }

@@ -59,15 +59,10 @@ final class AssemblyNewCommand implements CommandInterface
         }
 
         // Записываем в site.config
-        $site['domains_real'][$domain] = $realDomain;
-        
-        
-        $site['alliases_real'][$realDomain] ??= [$alias => $alias];
-        
-        
-        $site['domains_langs'][$realDomain] = ['ru', 'en'];
-        $site['alliases_skins'][$realDomain][$alias] = 'light';
-        $site['alliases_skins_allowed'][$realDomain][$alias] = ['light', 'dark'];
+        $site['domains_real'][$realDomain] = $namespace;
+        $site['domains_mirrors'][$domain] = $realDomain;
+        $site['domains_mirrors_available'][$domain] = true;
+        $site['alliases'][$realDomain][$alias] = ['available' => true, 'langs' => ['ru', 'en']];
 
         Fs::writeAtomic($siteFile, json_encode($site, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
 

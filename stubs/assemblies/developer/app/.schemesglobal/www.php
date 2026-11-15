@@ -38,5 +38,6 @@ return [
     'meta' => [
         'css' => array_merge($baseCss, $blockCss, $skinCss, $compactCss),
         'js' => ['/media/shared/scripts/cliajax.js'],
+        'favicon' => '/media/{{domain}}/shared/ico.ico',
     ],
 ];

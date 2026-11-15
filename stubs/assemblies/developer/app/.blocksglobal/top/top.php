@@ -76,7 +76,7 @@ final class blocksglobal_top implements RegionInterface
             $skinSwitcher = Builder::div('skin-switcher');
             $skinSwitcher->append(Builder::span('label')->content('Skin: '));
             foreach ($allowedSkins as $s) {
-                $url = '/' . $currentLang . '/skin/' . $s . ($pathWithoutLang === '/' ? '/' : $pathWithoutLang);
+                $url = '/' . $currentLang . '/skin/' . $s . '/';
                 $a = Builder::a($url)->content(ucfirst($s));
                 if ($s === $currentSkin) { $a->attrs()->classAdd('active'); }
                 $skinSwitcher->append($a);

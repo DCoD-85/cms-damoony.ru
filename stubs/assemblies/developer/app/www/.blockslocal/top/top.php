@@ -13,44 +13,18 @@ final class blockslocal_www_top implements RegionInterface
 
     public function render(RegionContext $context): Node
     {
-        $site = $context->service('site');
-        $t = $context->service('i18n');
-        $currentLang = $t instanceof \Damoony\Core\I18n\Translator ? $t->current() : $context->domain->language;
-        
-        $auth = $context->service('auth');
-        $isAuth = $auth instanceof \Damoony\Data\Auth\AuthInterface && $auth->isAuthenticated();
-
         $wrap = Builder::div('dt_inner');
         $wrap->append(Builder::p()->content($context->lang('block.top')));
 
-        $nav = Builder::div('dt_top_nav');
-        $nav->append(Builder::div('dt_logo')->content('Damoony'));
-
-        $menu = Builder::ul('dt_main_menu');
-        $menu->append(Builder::li()->append(Builder::a('/' . $currentLang . '/')->content($context->lang('menu.home'))));
-        $menu->append(Builder::li()->append(Builder::a('/' . $currentLang . '/about/')->content($context->lang('menu.about'))));
-        $menu->append(Builder::li()->append(Builder::a('/' . $currentLang . '/tests/')->content($context->lang('menu.tests'))));
-        $nav->append($menu);
-
-        $authMenu = Builder::ul('dt_auth_menu');
-        if (!$isAuth) {
-            $authMenu->append(Builder::li()->append(Builder::a('/' . $currentLang . '/login/')->content($context->lang('menu.login'))));
-        } else {
-            $user = $auth->user();
-            $login = $user['login'] ?? '';
-            $authMenu->append(Builder::li()->append(Builder::a('/' . $currentLang . '/profile/')->content($login ?: $context->lang('menu.profile'))));
-            $authMenu->append(Builder::li()->append(Builder::a('/' . $currentLang . '/logout/')->content($context->lang('menu.logout'))));
-        }
-        $nav->append($authMenu);
-        $wrap->append($nav);
-
-        $switchers = Builder::div('dt_switchers');
-
+        $site = $context->service('site');
         $langs = ['ru', 'en'];
         if ($site instanceof \Damoony\Core\Config) {
             $configured = $site->getByKey(['alliases_langs', $context->domain->real, $context->domain->allias], []);
             if (is_array($configured) && $configured !== []) { $langs = $configured; }
         }
+        
+        $t = $context->service('i18n');
+        $currentLang = $t instanceof \Damoony\Core\I18n\Translator ? $t->current() : $context->domain->language;
         $currentPath = $context->request->path;
         $pathWithoutLang = $currentPath;
         if (str_starts_with($currentPath, '/' . $currentLang)) {
@@ -58,6 +32,26 @@ final class blockslocal_www_top implements RegionInterface
         }
         if ($pathWithoutLang === '') { $pathWithoutLang = '/'; }
 
+        // 1. ВОССТАНОВЛЕННОЕ НАВИГАЦИОННОЕ МЕНЮ
+        $nav = Builder::div('dt_top_nav');
+        $nav->append(Builder::div('dt_logo')->content('Damoony'));
+        
+        $mainMenu = Builder::ul('dt_main_menu');
+        $mainMenu->append(Builder::li()->append(Builder::a('/' . $currentLang . '/')->content($context->lang('menu.home'))));
+        $mainMenu->append(Builder::li()->append(Builder::a('/' . $currentLang . '/about/')->content($context->lang('menu.about'))));
+        $mainMenu->append(Builder::li()->append(Builder::a('/' . $currentLang . '/tests/')->content($context->lang('menu.tests'))));
+        $nav->append($mainMenu);
+
+        $authMenu = Builder::ul('dt_auth_menu');
+        $authMenu->append(Builder::li()->append(Builder::a('/' . $currentLang . '/login/')->content($context->lang('menu.login'))));
+        $nav->append($authMenu);
+        
+        $wrap->append($nav);
+
+        // 2. ПЕРЕКЛЮЧАТЕЛИ
+        $switchers = Builder::div('dt_switchers');
+
+        // Языки
         $langSwitcher = Builder::div('lang-switcher');
         $langSwitcher->append(Builder::span('label')->content('Lang: '));
         foreach ($langs as $l) {
@@ -68,19 +62,23 @@ final class blockslocal_www_top implements RegionInterface
         }
         $switchers->append($langSwitcher);
 
-        $skins = [];
-        $activeSkin = $context->domain->skin;
+        // Скины
+        $allowedSkins = ['light', 'dark'];
         if ($site instanceof \Damoony\Core\Config) {
-            $skins = $site->getByKey(['alliases_skins_allowed', $context->domain->real, $context->domain->allias], []);
-            if (!is_array($skins)) $skins = [];
+            $confSkins = $site->getByKey(['alliases_skins_allowed', $context->domain->real, $context->domain->allias], []);
+            if (is_array($confSkins) && $confSkins !== []) {
+                $allowedSkins = $confSkins;
+            }
         }
-        if ($skins !== []) {
+        
+        $currentSkin = $context->domain->skin;
+        if (count($allowedSkins) > 1) {
             $skinSwitcher = Builder::div('skin-switcher');
             $skinSwitcher->append(Builder::span('label')->content('Skin: '));
-            foreach ($skins as $s) {
+            foreach ($allowedSkins as $s) {
                 $url = '/' . $currentLang . '/skin/' . $s . '/';
                 $a = Builder::a($url)->content(ucfirst($s));
-                if ($s === $activeSkin) { $a->attrs()->classAdd('active'); }
+                if ($s === $currentSkin) { $a->attrs()->classAdd('active'); }
                 $skinSwitcher->append($a);
             }
             $switchers->append($skinSwitcher);

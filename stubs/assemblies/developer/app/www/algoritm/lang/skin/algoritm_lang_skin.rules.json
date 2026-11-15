@@ -1,6 +1,6 @@
 {
     "available": {
-        "skin": "^([a-z0-9_]+)$"
+        "skin": "^([a-z]+)$"
     },
     "auth": false
 }

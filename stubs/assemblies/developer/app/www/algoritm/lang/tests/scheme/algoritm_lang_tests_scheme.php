@@ -9,7 +9,7 @@ final class algoritm_lang_tests_scheme extends Page
 {
     protected function content(): Node|null
     {
-        $this->context->meta->addCss('/media/{{domain}}/www/css/custom.css');
+        $this->context->meta->addCss('/media/{{domain}}/{{alias}}/css/custom.css');
         $this->useScheme('custom_scheme');
         return Builder::div()->content('Эта страница использует кастомную схему без сайдбаров!');
     }
