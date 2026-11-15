@@ -20,9 +20,9 @@ final class DomainNewCommandTest extends TestCase
         mkdir($this->root . '/config', 0o777, true);
         file_put_contents($this->root . '/config/site.config', json_encode([
             'domains_real' => [],
-            'domains_available' => [],
-            'domains_namespace' => [],
-            'alliases_real' => [],
+            'domains_mirrors' => [],
+            'domains_mirrors_available' => [],
+            'alliases' => [],
         ]));
     }
 
@@ -101,11 +101,10 @@ final class DomainNewCommandTest extends TestCase
         // Конфиг
         $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
         self::assertIsArray($site);
-        self::assertSame('example.ru', $site['domains_real']['example.ru']);
-        self::assertTrue($site['domains_available']['example.ru']);
-        self::assertSame('example', $site['domains_namespace']['example.ru']);
-        self::assertSame(['www' => 'www'], $site['alliases_real']['example.ru']);
-        self::assertTrue($site['alliases_available']['example.ru']['www']);
+        self::assertSame('example', $site['domains_real']['example.ru']);
+        self::assertTrue($site['domains_mirrors_available']['example.ru']);
+        self::assertArrayHasKey('www', $site['alliases']['example.ru']);
+        self::assertTrue($site['alliases']['example.ru']['www']['available']);
     }
 
     public function testRejectsInvalidDomain(): void
@@ -133,6 +132,6 @@ final class DomainNewCommandTest extends TestCase
         $r = $this->execute(['domain' => 'foo-bar.test']);
         self::assertTrue($r->ok, implode('; ', $r->errors));
         $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
-        self::assertSame('foo_bar_test', $site['domains_namespace']['foo-bar.test']);
+        self::assertSame('foo_bar_test', $site['domains_real']['foo-bar.test']);
     }
 }

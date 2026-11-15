@@ -28,6 +28,10 @@ final class MinStruct
 
     private ?string $layout = null;
 
+    private ?string $skinUpdated = null;
+
+    private ?string $redirectUrl = null;
+
     private bool $reload = false;
 
     public function layout(?string $html): self
@@ -85,6 +89,13 @@ final class MinStruct
         return $this;
     }
 
+    public function skin(string $skinName, ?string $redirectUrl = null): self
+    {
+        $this->skinUpdated = $skinName;
+        $this->redirectUrl = $redirectUrl;
+        return $this;
+    }
+
     public function reload(bool $value = true): self
     {
         $this->reload = $value;
@@ -99,6 +110,8 @@ final class MinStruct
             'messages' => $this->messages,
             'blocks' => $this->blocks,
             'layout' => $this->layout,
+            'skin_updated' => $this->skinUpdated,
+            'redirect_url' => $this->redirectUrl,
             'form' => [
                 'reset' => $this->formReset,
                 'keep' => $this->formKeep,

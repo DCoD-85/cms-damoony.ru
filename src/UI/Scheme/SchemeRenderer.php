@@ -71,8 +71,8 @@ final class SchemeRenderer
     private function substituteTokens(string $url, RegionContext $context, string $skin): string
     {
         return str_replace(
-            ['{skin}', '{real}', '{alias}'],
-            [$skin, $context->domain->real, $context->domain->allias],
+            ['{skin_path}', '{skin}', '{real}', '{alias}'],
+            [($skin === '.skin' ? '.skin' : $context->domain->allias . '/skin/' . $skin), $skin, $context->domain->real, $context->domain->allias],
             $url,
         );
     }

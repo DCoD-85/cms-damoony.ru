@@ -68,9 +68,9 @@ final class StructureRepairCommandTest extends TestCase
     public function testRestoresMissingAlias(): void
     {
         $this->writeSiteConfig([
-            'domains_real' => ['example.ru' => 'example.ru'],
-            'domains_namespace' => ['example.ru' => 'example_ru'],
-            'alliases_real' => ['example.ru' => ['www' => 'www']],
+            'domains_real' => ['example.ru' => 'example_ru'],
+            'domains_mirrors' => ['example.ru' => 'example.ru'],
+            'alliases' => ['example.ru' => ['www' => ['available' => true, 'langs' => ['ru']]]],
         ]);
 
         $cmd = new StructureRepairCommand($this->paths);
@@ -107,9 +107,9 @@ final class StructureRepairCommandTest extends TestCase
     public function testRestoresMissingSchemeRecord(): void
     {
         $this->writeSiteConfig([
-            'domains_real' => ['example.ru' => 'example.ru'],
-            'domains_namespace' => ['example.ru' => 'example_ru'],
-            'alliases_real' => ['example.ru' => ['www' => 'www']],
+            'domains_real' => ['example.ru' => 'example_ru'],
+            'domains_mirrors' => ['example.ru' => 'example.ru'],
+            'alliases' => ['example.ru' => ['www' => ['available' => true, 'langs' => ['ru']]]],
         ]);
         mkdir($this->tmpDir . '/app/example.ru/.schemesglobal', 0o777, true);
         file_put_contents($this->tmpDir . '/app/example.ru/.schemesglobal/test.php', '<?php');
@@ -124,9 +124,9 @@ final class StructureRepairCommandTest extends TestCase
     public function testRestoresMissingBlockRecord(): void
     {
         $this->writeSiteConfig([
-            'domains_real' => ['example.ru' => 'example.ru'],
-            'domains_namespace' => ['example.ru' => 'example_ru'],
-            'alliases_real' => ['example.ru' => ['www' => 'www']],
+            'domains_real' => ['example.ru' => 'example_ru'],
+            'domains_mirrors' => ['example.ru' => 'example.ru'],
+            'alliases' => ['example.ru' => ['www' => ['available' => true, 'langs' => ['ru']]]],
         ]);
         mkdir($this->tmpDir . '/app/example.ru/.blocksglobal/top', 0o777, true);
 
@@ -141,9 +141,9 @@ final class StructureRepairCommandTest extends TestCase
     public function testStructureOk(): void
     {
         $this->writeSiteConfig([
-            'domains_real' => ['example.ru' => 'example.ru'],
-            'domains_namespace' => ['example.ru' => 'example_ru'],
-            'alliases_real' => ['example.ru' => ['www' => 'www']],
+            'domains_real' => ['example.ru' => 'example_ru'],
+            'domains_mirrors' => ['example.ru' => 'example.ru'],
+            'alliases' => ['example.ru' => ['www' => ['available' => true, 'langs' => ['ru']]]],
         ]);
 
         $dir = $this->tmpDir . '/app/example.ru/www/algoritm';
@@ -167,9 +167,9 @@ final class StructureRepairCommandTest extends TestCase
     public function testIdempotentOnSecondRun(): void
     {
         $this->writeSiteConfig([
-            'domains_real' => ['example.ru' => 'example.ru'],
-            'domains_namespace' => ['example.ru' => 'example_ru'],
-            'alliases_real' => ['example.ru' => ['www' => 'www']],
+            'domains_real' => ['example.ru' => 'example_ru'],
+            'domains_mirrors' => ['example.ru' => 'example.ru'],
+            'alliases' => ['example.ru' => ['www' => ['available' => true, 'langs' => ['ru']]]],
         ]);
 
         $cmd = new StructureRepairCommand($this->paths);

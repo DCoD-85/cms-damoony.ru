@@ -111,11 +111,11 @@ final class SkinEditCommand implements CommandInterface
             return $r;
         }
         $site = Config::fromFile($siteFile)->all();
-        if (!isset($site['domains_real'][$domain])) {
+        $realDomain = (string) ($site['domains_mirrors'][$domain] ?? $domain);
+        if (!isset($site['domains_real'][$realDomain])) {
             $r->error('Домен не найден');
             return $r;
         }
-        $realDomain = (string) $site['domains_real'][$domain];
 
         try {
             $this->ensureSessionPermission($this->paths, $sessionId, $realDomain, 'skin:edit');

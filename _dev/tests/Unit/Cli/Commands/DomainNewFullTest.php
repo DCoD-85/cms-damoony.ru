@@ -85,7 +85,7 @@ final class DomainNewFullTest extends TestCase
 
         // Media
         $this->assertFileExists($this->root . '/www/media/shared/scripts/cliajax.js');
-        $this->assertDirectoryExists($this->root . '/www/media/full.ru/www/css');
+        $this->assertDirectoryExists($this->root . '/www/media/full.ru/www/skin/light/css');
 
         // Tests
         $this->assertFileExists($this->root . '/app/full.ru/www/algoritm/lang/tests/first/algoritm_lang_tests_first.php');

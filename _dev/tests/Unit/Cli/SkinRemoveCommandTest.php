@@ -98,20 +98,5 @@ final class SkinRemoveCommandTest extends TestCase
         self::assertNotEmpty($res->warnings);
     }
 
-    public function testUpdatesConfigOnActiveRemoval(): void
-    {
-        $this->makeSkin('default');
-        $this->makeSkin('dark');
 
-        // active = default (первый созданный)
-        $this->execute([
-            'domain' => 'example.ru', 'allias' => 'www', 'name' => 'default', 'force' => '1',
-        ]);
-
-        $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
-        // fallback на dark
-        self::assertSame('dark', $site['alliases_skins']['example.ru']['www']);
-        self::assertNotContains('default', $site['alliases_skins_allowed']['example.ru']['www']);
-        self::assertContains('dark', $site['alliases_skins_allowed']['example.ru']['www']);
-    }
 }

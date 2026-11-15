@@ -60,8 +60,12 @@ final class AlliasListCommandTest extends TestCase
     public function testRejectsMissingDomain(): void
     {
         $this->writeConfig([
-            'domains_real' => ['example.ru' => 'example.ru'],
-            'alliases_real' => ['example.ru' => ['www' => 'www']],
+            'domains_real' => ['example.ru' => 'example_ru', 'other.ru' => 'other_ru'],
+            'domains_mirrors' => ['example.ru' => 'example.ru', 'other.ru' => 'other.ru'],
+            'domains_mirrors' => ['example.ru' => 'example.ru'],
+            'domains_mirrors' => ['example.ru' => 'example.ru'],
+            'domains_mirrors' => ['example.ru' => 'example.ru'],
+            'alliases' => ['example.ru' => ['www' => ['available' => true, 'langs' => ['ru']]]],
         ]);
         $res = $this->execute(['domain' => 'ghost.ru']);
         self::assertFalse($res->ok);
@@ -70,8 +74,12 @@ final class AlliasListCommandTest extends TestCase
     public function testEmptyAliases(): void
     {
         $this->writeConfig([
-            'domains_real' => ['example.ru' => 'example.ru'],
-            'alliases_real' => ['example.ru' => []],
+            'domains_real' => ['example.ru' => 'example_ru', 'other.ru' => 'other_ru'],
+            'domains_mirrors' => ['example.ru' => 'example.ru', 'other.ru' => 'other.ru'],
+            'domains_mirrors' => ['example.ru' => 'example.ru'],
+            'domains_mirrors' => ['example.ru' => 'example.ru'],
+            'domains_mirrors' => ['example.ru' => 'example.ru'],
+            'alliases' => ['example.ru' => []],
         ]);
         $res = $this->execute(['domain' => 'example.ru']);
         self::assertTrue($res->ok);
@@ -81,9 +89,12 @@ final class AlliasListCommandTest extends TestCase
     public function testGroupsKeysByRealAlias(): void
     {
         $this->writeConfig([
-            'domains_real' => ['example.ru' => 'example.ru'],
-            'alliases_real' => ['example.ru' => ['' => 'www', 'www' => 'www', 'doc' => 'doc']],
-            'alliases_available' => ['example.ru' => ['www' => true, 'doc' => false]],
+            'domains_real' => ['example.ru' => 'example_ru', 'other.ru' => 'other_ru'],
+            'domains_mirrors' => ['example.ru' => 'example.ru', 'other.ru' => 'other.ru'],
+            'domains_mirrors' => ['example.ru' => 'example.ru'],
+            'domains_mirrors' => ['example.ru' => 'example.ru'],
+            'domains_mirrors' => ['example.ru' => 'example.ru'],
+            'alliases' => ['example.ru' => ['www' => ['available' => true], 'doc' => ['available' => false]]],
         ]);
         mkdir($this->root . '/app/example.ru/www/algoritm/about', 0o777, true);
         file_put_contents($this->root . '/app/example.ru/www/algoritm/algoritm.php', '<?php');
@@ -103,8 +114,8 @@ final class AlliasListCommandTest extends TestCase
 
         $wwwKeys = $byName['www']['keys'];
         sort($wwwKeys);
-        self::assertSame(['', 'www'], $wwwKeys);
-        self::assertTrue($byName['www']['has_empty_key']);
+        self::assertSame(['www'], $wwwKeys);
+        self::assertFalse($byName['www']['has_empty_key']);
         self::assertTrue($byName['www']['dir_exists']);
         self::assertTrue($byName['www']['available']);
         self::assertGreaterThanOrEqual(1, $byName['www']['page_count']);
@@ -118,12 +129,15 @@ final class AlliasListCommandTest extends TestCase
     public function testMultiDomainKeys(): void
     {
         $this->writeConfig([
-            'domains_real' => ['example.ru' => 'example.ru'],
-            'alliases_real' => ['example.ru' => [
-                '' => 'coffee',
-                'www' => 'www',
-                'tea' => 'tea',
-                'coffee' => 'coffee',
+            'domains_real' => ['example.ru' => 'example_ru', 'other.ru' => 'other_ru'],
+            'domains_mirrors' => ['example.ru' => 'example.ru', 'other.ru' => 'other.ru'],
+            'domains_mirrors' => ['example.ru' => 'example.ru'],
+            'domains_mirrors' => ['example.ru' => 'example.ru'],
+            'domains_mirrors' => ['example.ru' => 'example.ru'],
+            'alliases' => ['example.ru' => [
+                'www' => ['available' => true],
+                'tea' => ['available' => true],
+                'coffee' => ['available' => false],
             ]],
         ]);
 
@@ -138,8 +152,8 @@ final class AlliasListCommandTest extends TestCase
 
         $coffeeKeys = $byName['coffee']['keys'];
         sort($coffeeKeys);
-        self::assertSame(['', 'coffee'], $coffeeKeys);
-        self::assertTrue($byName['coffee']['has_empty_key']);
+        self::assertSame(['coffee'], $coffeeKeys);
+        self::assertFalse($byName['coffee']['has_empty_key']);
 
         self::assertSame(['tea'], $byName['tea']['keys']);
         self::assertFalse($byName['tea']['has_empty_key']);

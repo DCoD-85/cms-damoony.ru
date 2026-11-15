@@ -24,7 +24,7 @@ final class LangSyncCommand implements CommandInterface
 
     public function description(): string
     {
-        return 'Синхронизировать alliases_langs[domain][alias] ← domains_langs[domain]';
+        return "Синхронизировать alliases[domain][alias]['langs'] ← alliases[domain]['www']['langs']";
     }
 
     public function run(array $args, Context $context): Result
@@ -49,13 +49,13 @@ final class LangSyncCommand implements CommandInterface
             return $r;
         }
         $site = Config::fromFile($siteFile)->all();
-        if (!isset($site['domains_real'][$domain])) {
+        $real = (string) ($site['domains_mirrors'][$domain] ?? $domain);
+        if (!isset($site['domains_real'][$real])) {
             $r->error('Домен не найден');
             return $r;
         }
-        $real = (string) $site['domains_real'][$domain];
 
-        $domainLangs = $site['domains_langs'][$real] ?? [];
+        $domainLangs = $site['alliases'][$real]['www']['langs'] ?? [];
         if (!is_array($domainLangs)) {
             $domainLangs = [];
         }
@@ -69,14 +69,14 @@ final class LangSyncCommand implements CommandInterface
             return $r;
         }
 
-        $current = $site['alliases_langs'][$real][$allias] ?? [];
+        $current = $site['alliases'][$real][$allias]['langs'] ?? [];
         if (!is_array($current)) {
             $current = [];
         }
 
-        $site['alliases_langs'][$real][$allias] = $domainLangs;
+        $site['alliases'][$real][$allias]['langs'] = $domainLangs;
 
-        $dir = $this->paths->i18nAllias($real, $allias);
+        $dir = $this->paths->i18nLocal($real, $allias);
         if (!Fs::isDir($dir)) {
             Fs::mkdir($dir);
             $r->file(Fs::rel($dir, $this->paths->root()));

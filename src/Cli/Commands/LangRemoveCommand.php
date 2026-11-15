@@ -60,15 +60,15 @@ final class LangRemoveCommand implements CommandInterface
         }
         $site = Config::fromFile($siteFile)->all();
 
-        if (!isset($site['domains_real'][$domain])) {
+        $real = (string) ($site['domains_mirrors'][$domain] ?? $domain);
+        if (!isset($site['domains_real'][$real])) {
             $r->error('Домен не найден');
             return $r;
         }
-        $real = (string) $site['domains_real'][$domain];
 
         if ($allias !== '') {
-            $dir = $this->paths->i18nAllias($real, $allias);
-            $alliasLangs = $site['alliases_langs'][$real][$allias] ?? [];
+            $dir = $this->paths->i18nLocal($real, $allias);
+            $alliasLangs = $site['alliases'][$real][$allias]['langs'] ?? [];
             if (!is_array($alliasLangs)) {
                 $alliasLangs = [];
             }
@@ -76,13 +76,13 @@ final class LangRemoveCommand implements CommandInterface
                 $r->error('Нельзя удалить последний язык алиаса');
                 return $r;
             }
-            $site['alliases_langs'][$real][$allias] = array_values(array_filter(
+            $site['alliases'][$real][$allias]['langs'] = array_values(array_filter(
                 $alliasLangs,
                 static fn ($l): bool => $l !== $lang,
             ));
         } else {
-            $dir = $this->paths->i18nDomain($real);
-            $domainLangs = $site['domains_langs'][$real] ?? [];
+            $dir = $this->paths->i18nGlobal($real);
+            $domainLangs = $site['alliases'][$real]['www']['langs'] ?? [];
             if (!is_array($domainLangs)) {
                 $domainLangs = [];
             }
@@ -90,7 +90,7 @@ final class LangRemoveCommand implements CommandInterface
                 $r->error('Нельзя удалить последний язык домена');
                 return $r;
             }
-            $site['domains_langs'][$real] = array_values(array_filter(
+            $site['alliases'][$real]['www']['langs'] ?? ['ru', 'en'] = array_values(array_filter(
                 $domainLangs,
                 static fn ($l): bool => $l !== $lang,
             ));

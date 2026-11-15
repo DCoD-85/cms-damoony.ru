@@ -21,7 +21,7 @@ final class FillerEditCommandTest extends TestCase
         mkdir($this->root . '/config', 0o777, true);
         file_put_contents($this->root . '/config/site.config', json_encode([
             'domains_real' => ['example.ru' => 'example.ru'],
-            'domains_available' => ['example.ru' => true],
+            'domains_mirrors_available' => ['example.ru' => true],
             'domains_namespace' => ['example.ru' => 'example'],
             'alliases_real' => ['example.ru' => ['www' => 'www']],
         ]));

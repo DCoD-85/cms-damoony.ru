@@ -171,8 +171,7 @@ final class DomainNewCommand implements CommandInterface
         $site['domains_real'][$domain] = $namespace;
         $site['domains_mirrors'][$domain] = $domain;
         $site['domains_mirrors_available'][$domain] = true;
-        $site['alliases_real'][$domain] ??= ['www' => 'www'];
-        $site['alliases_available'][$domain][$allias] = true;
+        $site['alliases'][$domain][$allias] = ['available' => true, 'langs' => ['ru', 'en']];
 
         Fs::writeAtomic(
             $siteFile,
@@ -290,7 +289,7 @@ final class DomainNewCommand implements CommandInterface
                     $extra = "\n        \$site = \$context->service('site');\n"
                         . "        \$langs = ['ru', 'en'];\n"
                         . "        if (\$site instanceof \\Damoony\\Core\\Config) {\n"
-                        . "            \$configured = \$site->getByKey(['alliases_langs', \$context->domain->real, \$context->domain->allias], []);\n"
+                        . "            \$configured = \$site->getByKey(['alliases', \$context->domain->real, \$context->domain->allias], []);\n"
                         . "            if (is_array(\$configured) && \$configured !== []) { \$langs = \$configured; }\n"
                         . "            else { \$configured = \$site->getByKey(['domains_langs', \$context->domain->real], ['ru', 'en']); if (is_array(\$configured) && \$configured !== []) { \$langs = \$configured; } }\n"
                         . "        }\n"
@@ -330,7 +329,7 @@ final class DomainNewCommand implements CommandInterface
                     $extra = "\n        \$site = \$context->service('site');\n"
                         . "        \$langs = ['ru', 'en'];\n"
                         . "        if (\$site instanceof \\Damoony\\Core\\Config) {\n"
-                        . "            \$configured = \$site->getByKey(['alliases_langs', \$context->domain->real, \$context->domain->allias], []);\n"
+                        . "            \$configured = \$site->getByKey(['alliases', \$context->domain->real, \$context->domain->allias], []);\n"
                         . "            if (is_array(\$configured) && \$configured !== []) { \$langs = \$configured; }\n"
                         . "            else { \$configured = \$site->getByKey(['domains_langs', \$context->domain->real], ['ru', 'en']); if (is_array(\$configured) && \$configured !== []) { \$langs = \$configured; } }\n"
                         . "        }\n"

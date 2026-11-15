@@ -40,11 +40,11 @@ final class BlockListCommand implements CommandInterface
             return $r;
         }
         $site = Config::fromFile($siteFile)->all();
-        if (!isset($site['domains_real'][$domain])) {
+        $realDomain = (string) ($site['domains_mirrors'][$domain] ?? $domain);
+        if (!isset($site['domains_real'][$realDomain])) {
             $r->error('Домен не найден');
             return $r;
         }
-        $realDomain = (string) $site['domains_real'][$domain];
         $dir = $this->paths->domain($realDomain) . '/.blocksglobal';
         if (!is_dir($dir)) {
             $r->data = ['domain' => $domain, 'rows' => []];

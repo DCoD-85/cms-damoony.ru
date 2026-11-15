@@ -55,13 +55,13 @@ final class LangAddCommand implements CommandInterface
         }
         $site = Config::fromFile($siteFile)->all();
 
-        if (!isset($site['domains_real'][$domain])) {
+        $real = (string) ($site['domains_mirrors'][$domain] ?? $domain);
+        if (!isset($site['domains_real'][$real])) {
             $r->error('Домен не найден');
             return $r;
         }
-        $real = (string) $site['domains_real'][$domain];
 
-        $domainLangs = $site['domains_langs'][$real] ?? [];
+        $domainLangs = $site['alliases'][$real]['www']['langs'] ?? [];
         if (!is_array($domainLangs)) {
             $domainLangs = [];
         }
@@ -72,8 +72,8 @@ final class LangAddCommand implements CommandInterface
                 return $r;
             }
 
-            $dir = $this->paths->i18nAllias($real, $allias);
-            $alliasLangs = $site['alliases_langs'][$real][$allias] ?? [];
+            $dir = $this->paths->i18nLocal($real, $allias);
+            $alliasLangs = $site['alliases'][$real][$allias]['langs'] ?? [];
             if (!is_array($alliasLangs)) {
                 $alliasLangs = [];
             }
@@ -81,15 +81,15 @@ final class LangAddCommand implements CommandInterface
                 $r->warn(sprintf('Язык %s уже объявлен для алиаса %s', $lang, $allias));
             } else {
                 $alliasLangs[] = $lang;
-                $site['alliases_langs'][$real][$allias] = $alliasLangs;
+                $site['alliases'][$real][$allias]['langs'] = $alliasLangs;
             }
         } else {
-            $dir = $this->paths->i18nDomain($real);
+            $dir = $this->paths->i18nGlobal($real);
             if (in_array($lang, $domainLangs, true)) {
                 $r->warn(sprintf('Язык %s уже объявлен для домена %s', $lang, $real));
             } else {
                 $domainLangs[] = $lang;
-                $site['domains_langs'][$real] = $domainLangs;
+                $site['alliases'][$real]['www']['langs'] ?? ['ru', 'en'] = $domainLangs;
             }
         }
 

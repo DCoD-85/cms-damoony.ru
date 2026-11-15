@@ -9,12 +9,16 @@ final class algoritm_lang_skin extends Page
 {
     protected function content(): Node|Response|null
     {
-        // Берем первый аргумент из регулярки ^([a-z]+)$
-        $skin = (string) ($this->args[0] ?? $this->args['skin'] ?? 'light');
-        
+        $skin = (string) ($this->args['skin'] ?? 'light');
         setcookie('skin', $skin, time() + 60 * 60 * 24 * 30, '/');
         
-        // Возвращаем на главную языка
+        if ($this->isAjax()) {
+            $m = new \Damoony\UI\Response\MinStruct();
+            // Передаем имя скина и URL, куда вернуться (на текущий язык)
+            $m->skin($skin, '/' . $this->context->domain->language . '/');
+            return $m->toResponse();
+        }
+        
         return Response::redirect('/' . $this->context->domain->language . '/');
     }
 }

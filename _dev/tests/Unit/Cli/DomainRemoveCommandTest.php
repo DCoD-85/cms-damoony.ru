@@ -22,7 +22,7 @@ final class DomainRemoveCommandTest extends TestCase
 
         file_put_contents($this->root . '/config/site.config', json_encode([
             'domains_real' => ['example.ru' => 'example.ru'],
-            'domains_available' => ['example.ru' => true],
+            'domains_mirrors_available' => ['example.ru' => true],
             'domains_namespace' => ['example.ru' => 'example_ru'],
             'domains_titles' => ['example.ru' => 'Example'],
             'domains_skins' => ['example.ru' => 'default'],
@@ -70,10 +70,8 @@ final class DomainRemoveCommandTest extends TestCase
         $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
 
         $keys = [
-            'domains_real', 'domains_available', 'domains_namespace',
-            'domains_titles', 'domains_skins', 'domains_skins_allowed', 'domains_stub', 'domains_scheme',
-            'alliases_real', 'alliases_available', 'alliases_langs', 'alliases_titles',
-            'alliases_stubs', 'alliases_skins', 'alliases_skins_allowed', 'fillers',
+            'domains_real', 'domains_mirrors', 'domains_mirrors_available',
+            'domains_stub', 'domains_scheme', 'alliases', 'fillers',
         ];
         foreach ($keys as $k) {
             self::assertArrayNotHasKey('example.ru', $site[$k] ?? [], "Ключ {$k} не очищен");

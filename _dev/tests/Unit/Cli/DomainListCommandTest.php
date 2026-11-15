@@ -74,7 +74,7 @@ final class DomainListCommandTest extends TestCase
                 'damoony.online' => 'damoony.ru',
                 'damoony3test.ru' => 'damoony3test.ru',
             ],
-            'domains_available' => ['damoony.ru' => true, 'damoony3test.ru' => true],
+            'domains_mirrors_available' => ['damoony.ru' => true, 'damoony3test.ru' => true],
             'alliases_real' => [
                 'damoony.ru' => ['www' => 'www', 'doc' => 'doc'],
                 'damoony3test.ru' => ['www' => 'www'],
@@ -98,7 +98,7 @@ final class DomainListCommandTest extends TestCase
     {
         $this->writeConfig([
             'domains_real' => ['example.ru' => 'example.ru'],
-            'domains_available' => ['example.ru' => true],
+            'domains_mirrors_available' => ['example.ru' => true],
             'alliases_real' => ['example.ru' => ['www' => 'www']],
         ]);
         $res = $this->execute();
@@ -109,7 +109,7 @@ final class DomainListCommandTest extends TestCase
     {
         $this->writeConfig([
             'domains_real' => ['example.ru' => 'example.ru'],
-            'domains_available' => ['example.ru' => true],
+            'domains_mirrors_available' => ['example.ru' => true],
             'alliases_real' => ['example.ru' => ['www' => 'www']],
         ]);
         mkdir($this->root . '/app/example.ru', 0o777, true);
@@ -125,7 +125,7 @@ final class DomainListCommandTest extends TestCase
                 'on.ru' => 'on.ru',
                 'off.ru' => 'off.ru',
             ],
-            'domains_available' => ['on.ru' => true, 'off.ru' => false],
+            'domains_mirrors_available' => ['on.ru' => true, 'off.ru' => false],
             'alliases_real' => ['on.ru' => [], 'off.ru' => []],
         ]);
 
@@ -142,7 +142,7 @@ final class DomainListCommandTest extends TestCase
     {
         $this->writeConfig([
             'domains_real' => ['example.ru' => 'example.ru'],
-            'domains_available' => ['example.ru' => true],
+            'domains_mirrors_available' => ['example.ru' => true],
             'alliases_real' => ['example.ru' => [
                 '' => 'coffee',
                 'coffee' => 'coffee',

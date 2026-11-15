@@ -125,11 +125,11 @@ final class FillerEditCommand implements CommandInterface
             return $r;
         }
         $site = Config::fromFile($siteFile)->all();
-        if (!isset($site['domains_real'][$domain])) {
+        $realDomain = (string) ($site['domains_mirrors'][$domain] ?? $domain);
+        if (!isset($site['domains_real'][$realDomain])) {
             $r->error('Домен не найден');
             return $r;
         }
-        $realDomain = (string) $site['domains_real'][$domain];
 
         // 1. Проверка базового блока: должен быть хоть где-то (.blocksglobal или .blockslocal)
         $globalBlockDir = $this->paths->domain($realDomain) . '/.blocksglobal/' . $block;

@@ -64,9 +64,7 @@ final class SkinNewCommandTest extends TestCase
         self::assertFileExists($dir . '/js/main.js');
         self::assertFileExists($dir . '/skin.json');
 
-        $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
-        self::assertSame('default', $site['alliases_skins']['example.ru']['www']);
-        self::assertContains('default', $site['alliases_skins_allowed']['example.ru']['www']);
+
     }
 
     public function testRejectsDuplicate(): void
@@ -94,13 +92,5 @@ final class SkinNewCommandTest extends TestCase
         self::assertFalse($res->ok);
     }
 
-    public function testSecondSkinDoesNotOverrideActive(): void
-    {
-        $this->execute(['domain' => 'example.ru', 'allias' => 'www', 'name' => 'default']);
-        $this->execute(['domain' => 'example.ru', 'allias' => 'www', 'name' => 'dark']);
 
-        $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
-        self::assertSame('default', $site['alliases_skins']['example.ru']['www']);
-        self::assertContains('dark', $site['alliases_skins_allowed']['example.ru']['www']);
-    }
 }

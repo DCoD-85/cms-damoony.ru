@@ -39,16 +39,16 @@ final class ConfigTest extends TestCase
     public function testGetByKeySupportsDottedKeys(): void
     {
         $c = Config::fromArray([
-            'domains_available' => ['example.ru' => true],
+            'domains_mirrors_available' => ['example.ru' => true],
             'domains_real' => ['example.ru' => 'example.ru'],
         ]);
 
-        self::assertTrue($c->getByKey(['domains_available', 'example.ru']));
+        self::assertTrue($c->getByKey(['domains_mirrors_available', 'example.ru']));
         self::assertSame('example.ru', $c->getByKey(['domains_real', 'example.ru']));
 
         self::assertNull($c->get('domains_available.example.ru'));
-        self::assertTrue($c->hasByKey(['domains_available', 'example.ru']));
-        self::assertFalse($c->hasByKey(['domains_available', 'nope.ru']));
+        self::assertTrue($c->hasByKey(['domains_mirrors_available', 'example.ru']));
+        self::assertFalse($c->hasByKey(['domains_mirrors_available', 'nope.ru']));
     }
 
     public function testFromFileThrowsOnMissing(): void

@@ -13,11 +13,13 @@ use Damoony\Core\Files\Paths;
 final class DomainUnbindCommand implements CommandInterface
 {
     private const ALL_KEYS = [
-        'domains_real', 'domains_mirrors', 'domains_mirrors_available', 'domains_titles',
-        'domains_skins', 'domains_skins_allowed', 'domains_stub', 'domains_scheme',
-        'alliases_real', 'alliases_available', 'alliases_langs', 'alliases_titles',
-        'alliases_stubs', 'alliases_skins', 'alliases_skins_allowed', 'fillers',
-        'domains_langs'
+        'domains_real',
+        'domains_mirrors',
+        'domains_mirrors_available',
+        'domains_stub',
+        'domains_scheme',
+        'alliases',
+        'fillers',
     ];
 
     public function __construct(private readonly Paths $paths)

@@ -50,15 +50,15 @@ final class LangListCommand implements CommandInterface
             return $r;
         }
         $site = Config::fromFile($siteFile)->all();
-        if (!isset($site['domains_real'][$domain])) {
+        $real = (string) ($site['domains_mirrors'][$domain] ?? $domain);
+        if (!isset($site['domains_real'][$real])) {
             $r->error('Домен не найден');
             return $r;
         }
-        $real = (string) $site['domains_real'][$domain];
 
         $dir = $allias !== ''
-            ? $this->paths->i18nAllias($real, $allias)
-            : $this->paths->i18nDomain($real);
+            ? $this->paths->i18nLocal($real, $allias)
+            : $this->paths->i18nGlobal($real);
 
         $fileLangs = [];
         if (Fs::isDir($dir)) {
@@ -74,9 +74,9 @@ final class LangListCommand implements CommandInterface
         $configLangs = [];
         if ($withConfig) {
             if ($allias !== '') {
-                $raw = $site['alliases_langs'][$real][$allias] ?? [];
+                $raw = $site['alliases'][$real][$allias]['langs'] ?? [];
             } else {
-                $raw = $site['domains_langs'][$real] ?? [];
+                $raw = $site['alliases'][$real]['www']['langs'] ?? [];
             }
             if (is_array($raw)) {
                 foreach ($raw as $l) {

@@ -31,7 +31,7 @@ final class ConfigDomainResolver implements DomainResolverInterface
             $suffix = '.' . $incoming;
             if (str_ends_with($host, $suffix)) {
                 $prefix = substr($host, 0, -strlen($suffix));
-                $alliases = $this->site->getByKey(['alliases_real', $mapped], []);
+                $alliases = $this->site->getByKey(['alliases', $mapped], []);
                 if (is_array($alliases) && array_key_exists($prefix, $alliases)) {
                     $real = $mapped;
                     $allias = $prefix === '' ? 'www' : $prefix;
@@ -46,7 +46,7 @@ final class ConfigDomainResolver implements DomainResolverInterface
                 domain: $host,
                 real: $host,
                 allias: '',
-                skin: $this->defaultSkin,
+                skin: '.skin',
                 language: $this->defaultLanguage,
                 available: false,
                 supportedLanguages: [$this->defaultLanguage],
@@ -54,9 +54,9 @@ final class ConfigDomainResolver implements DomainResolverInterface
         }
 
         // Если зашли по реальному домену — он по умолчанию доступен (если не отключен явно).
-        // Если зашли по зеркалу (привязке) — смотрим его флаг в domains_available.
+        // Если зашли по зеркалу (привязке) — смотрим его флаг в domains_mirrors_available.
         $available = (bool) $this->site->getByKey(['domains_mirrors_available', $host], true);
-        $aliasAvailable = (bool) $this->site->getByKey(['alliases_available', $real, $allias], true);
+        $aliasAvailable = (bool) $this->site->getByKey(['alliases', $real, $allias, 'available'], true);
 
         $stub = null;
         if (!$available) {
@@ -70,9 +70,9 @@ final class ConfigDomainResolver implements DomainResolverInterface
         }
 
         // Определяем язык по умолчанию для этого алиаса (или домена)
-        $langs = $this->site->getByKey(['alliases_langs', $real, $allias]);
+        $langs = $this->site->getByKey(['alliases', $real, $allias, 'langs'], [$this->defaultLanguage]);
         if (!is_array($langs) || $langs === []) {
-            $langs = $this->site->getByKey(['domains_langs', $real], [$this->defaultLanguage]);
+            $langs = [$this->defaultLanguage];
         }
         $langs = is_array($langs) ? array_values(array_filter(
             $langs,
@@ -140,31 +140,20 @@ final class ConfigDomainResolver implements DomainResolverInterface
 
     private function resolveSkin(string $real, string $allias): string
     {
-        $default = (string) $this->site->getByKey(['alliases_skins', $real, $allias], '');
-        if ($default === '') {
-            $default = (string) $this->site->getByKey(['domains_skins', $real], '');
-        }
-
-        $skinDir = $this->paths->media($real, $allias) . '/skin/';
-        $skins = [];
-        if (is_dir($skinDir)) {
-            $skins = array_values(array_filter(scandir($skinDir), fn($d) => is_dir($skinDir . $d) && !in_array($d, ['.', '..'])));
-        }
-
-        // Если в конфиге ничего нет или скин не существует — берем первый доступный (не хардкор)
-        if ($default === '' || !in_array($default, $skins, true)) {
-            $default = $skins[0] ?? 'light';
-        }
-
-        $allowed = $this->site->getByKey(['alliases_skins_allowed', $real, $allias], []);
-        if (!is_array($allowed) || $allowed === []) {
-            $allowed = $skins;
-        }
+        $aliasSkinDir = $this->paths->media($real, $allias) . '/skin/';
+        $aliasSkins = is_dir($aliasSkinDir) ? array_values(array_diff(scandir($aliasSkinDir), ['.', '..'])) : [];
+        $aliasSkins = array_filter($aliasSkins, fn($d) => is_dir($aliasSkinDir . $d));
 
         $cookie = $_COOKIE['skin'] ?? '';
-        if (is_string($cookie) && in_array($cookie, $allowed, true)) {
+        if (is_string($cookie) && in_array($cookie, $aliasSkins, true)) {
             return $cookie;
         }
-        return $default;
+
+        if (!empty($aliasSkins)) {
+            return (string) reset($aliasSkins);
+        }
+
+        // Если у алиаса нет своих скинов, отдаем базовый каркас
+        return '.skin';
     }
 }

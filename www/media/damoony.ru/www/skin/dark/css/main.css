@@ -1,4 +1,8 @@
 /* main.css */
+html , body {
+	background : #333 ;
+}
+
 .dt {
     display: grid;
     grid-template-areas: "top top top" "left center right" "bottom bottom bottom" "footer footer footer";

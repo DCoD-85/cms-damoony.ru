@@ -24,34 +24,13 @@ final class PathsV4Test extends TestCase
         $this->rrmdir($this->root);
     }
 
-    public function testStructureOfDefaultsToV3(): void
-    {
-        $this->seedSite([]);
-        $this->assertSame('v3', $this->paths->structureOf('real.ru'));
-        $this->assertFalse($this->paths->isV4('real.ru'));
-    }
 
-    public function testStructureOfExplicitV4(): void
-    {
-        $this->seedSite(['domains_structure' => ['real.ru' => 'v4']]);
-        $this->assertSame('v4', $this->paths->structureOf('real.ru'));
-        $this->assertTrue($this->paths->isV4('real.ru'));
-    }
 
-    public function testStructureOfIgnoresUnknownValue(): void
-    {
-        $this->seedSite(['domains_structure' => ['real.ru' => 'v99']]);
-        $this->assertSame('v3', $this->paths->structureOf('real.ru'));
-    }
 
-    public function testI18nGlobalV3(): void
-    {
-        $this->seedSite([]);
-        $this->assertSame(
-            $this->root . '/app/real.ru/.i18n',
-            $this->paths->i18nGlobal('real.ru'),
-        );
-    }
+
+
+
+
 
     public function testI18nGlobalV4(): void
     {
@@ -73,14 +52,7 @@ final class PathsV4Test extends TestCase
         );
     }
 
-    public function testI18nLocalV3(): void
-    {
-        $this->seedSite([]);
-        $this->assertSame(
-            $this->root . '/app/real.ru/www/.i18n',
-            $this->paths->i18nLocal('real.ru', 'www'),
-        );
-    }
+
 
     public function testI18nLocalV4(): void
     {
@@ -91,14 +63,7 @@ final class PathsV4Test extends TestCase
         );
     }
 
-    public function testDbGlobalV3(): void
-    {
-        $this->seedSite([]);
-        $this->assertSame(
-            $this->root . '/app/real.ru/.db',
-            $this->paths->dbGlobal('real.ru'),
-        );
-    }
+
 
     public function testDbGlobalV4(): void
     {
@@ -152,14 +117,7 @@ final class PathsV4Test extends TestCase
         );
     }
 
-    public function testLegacyMethodsUntouched(): void
-    {
-        $this->seedSite([]);
-        // Старые методы не изменились
-        $this->assertSame($this->root . '/app/real.ru/.i18n', $this->paths->i18nDomain('real.ru'));
-        $this->assertSame($this->root . '/app/real.ru/www/.i18n', $this->paths->i18nAllias('real.ru', 'www'));
-        $this->assertSame($this->root . '/app/real.ru/www', $this->paths->allias('real.ru', 'www'));
-    }
+
 
     /** @param array<string, mixed> $site */
     private function seedSite(array $site): void

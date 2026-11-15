@@ -15,30 +15,29 @@ final class ConfigDomainResolverTest extends TestCase
         $site = Config::fromArray([
             'language' => 'ru-ru',
             'domains_real' => [
+                'example.ru' => 'example_ru',
+                'other.ru' => 'other_ru',
+            ],
+            'domains_mirrors' => [
                 'example.ru' => 'example.ru',
                 'other.ru' => 'other.ru',
             ],
-            'domains_available' => [
+            'domains_mirrors_available' => [
                 'example.ru' => true,
                 'other.ru' => false,
             ],
-            'domains_namespace' => [
-                'example.ru' => 'example',
-                'other.ru' => 'other',
-            ],
-            'domains_skins' => [
-                'example.ru' => 'dark',
-            ],
+            
+            
             'domains_stub' => [
                 'other.ru' => ['current' => 'maintenance'],
             ],
-            'alliases_real' => [
-                'example.ru' => ['www' => 'www', 'admin' => 'admin'],
-                'other.ru' => ['www' => 'www'],
+            'alliases' => [
+                'example.ru' => ['www' => ['available' => true, 'langs' => ['ru']], 'admin' => ['available' => true, 'langs' => ['ru']]],
+                'other.ru' => ['www' => ['available' => true, 'langs' => ['ru']]],
             ],
         ]);
 
-        return new ConfigDomainResolver($site);
+        return new ConfigDomainResolver($site, new \Damoony\Core\Files\Paths(sys_get_temp_dir()));
     }
 
     public function testExactDomain(): void
@@ -47,7 +46,7 @@ final class ConfigDomainResolverTest extends TestCase
         self::assertSame('example.ru', $ctx->real);
         self::assertSame('www', $ctx->allias);
         self::assertTrue($ctx->available);
-        self::assertSame('dark', $ctx->skin);
+        // Скин теперь берется из FS
         self::assertNull($ctx->stub);
     }
 
@@ -91,25 +90,30 @@ final class ConfigDomainResolverTest extends TestCase
     public function testNamespace(): void
     {
         $r = $this->resolver();
-        self::assertSame('example', $r->namespace('example.ru'));
-        self::assertSame('other', $r->namespace('other.ru'));
+        self::assertSame('example_ru', $r->namespace('example.ru'));
+        self::assertSame('other_ru', $r->namespace('other.ru'));
     }
     private function mappedResolver(): ConfigDomainResolver
     {
         $site = Config::fromArray([
             'language' => 'ru-ru',
             'domains_real' => [
+                'example.ru' => 'example_ru',
+                'other.ru' => 'other_ru',
+                'damoony.ru' => 'damoony_ru',
+            ],
+            'domains_mirrors' => [
                 'damoony.ru' => 'damoony.ru',
                 'damoony.online' => 'damoony.ru',
                 'damoony.shop' => 'damoony.ru',
                 'damoony3.ru' => 'damoony.ru',
             ],
-            'domains_available' => ['damoony.ru' => true],
-            'domains_namespace' => ['damoony.ru' => 'damoony_ru'],
-            'alliases_real' => ['damoony.ru' => ['www' => 'www', 'admin' => 'admin']],
+            'domains_mirrors_available' => ['damoony.ru' => true, 'damoony.online' => true, 'damoony3.ru' => true],
+            
+            'alliases' => ['damoony.ru' => ['www' => ['available' => true], 'admin' => ['available' => true]]],
         ]);
 
-        return new ConfigDomainResolver($site);
+        return new ConfigDomainResolver($site, new \Damoony\Core\Files\Paths(sys_get_temp_dir()));
     }
 
     public function testMappedDomainExact(): void
@@ -122,7 +126,7 @@ final class ConfigDomainResolverTest extends TestCase
 
     public function testMappedDomainAllias(): void
     {
-        $ctx = $this->mappedResolver()->resolve('admin.damoony.shop');
+        $ctx = $this->mappedResolver()->resolve('admin.damoony3.ru');
         self::assertSame('damoony.ru', $ctx->real);
         self::assertSame('admin', $ctx->allias);
     }

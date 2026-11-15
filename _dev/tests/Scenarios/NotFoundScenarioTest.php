@@ -55,13 +55,16 @@ final class NotFoundScenarioTest extends TestCase
     {
         $site = Config::fromArray([
             'language' => 'ru-ru',
-            'domains_real' => ['example.ru' => 'example.ru'],
-            'domains_available' => ['example.ru' => true],
-            'alliases_real' => ['example.ru' => ['www' => 'www']],
+            'domains_real' => [
+                'example.ru' => 'example_ru',
+            ],
+            'domains_mirrors' => ['example.ru' => 'example.ru'],
+            'domains_mirrors_available' => ['example.ru' => true],
+            'alliases' => ['example.ru' => ['www' => 'www']],
             'domains_namespace' => ['example.ru' => 'example'],
         ]);
         $c = new Container();
-        $c->setInstance(DomainResolverInterface::class, new ConfigDomainResolver($site));
+        $c->setInstance(DomainResolverInterface::class, new ConfigDomainResolver($site, new \Damoony\Core\Files\Paths(sys_get_temp_dir())));
         $c->setInstance(RouterInterface::class, new FileRouter($this->root, new RulesMatcher()));
         $resolver = $c->get(DomainResolverInterface::class);
         assert($resolver instanceof DomainResolverInterface);

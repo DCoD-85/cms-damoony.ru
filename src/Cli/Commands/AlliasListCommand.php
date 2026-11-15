@@ -49,31 +49,28 @@ final class AlliasListCommand implements CommandInterface
             return $r;
         }
 
-        $realDomain = (string) $site['domains_real'][$domain];
-        $aliasesMap = $site['alliases_real'][$domain] ?? [];
+        $realDomain = (string) ($site['domains_mirrors'][$domain] ?? $domain);
+        if (!isset($site['domains_real'][$realDomain])) {
+            $r->error('Домен не найден в конфиге');
+            return $r;
+        }
+
+        $aliasesMap = $site['alliases'][$realDomain] ?? [];
         if (!is_array($aliasesMap) || $aliasesMap === []) {
             $r->data = ['domain' => $domain, 'rows' => []];
             $context->step('Алиасов нет', true);
             return $r;
         }
 
-        // Группировка по РЕАЛЬНОМУ алиасу (значение), ключи — варианты (включая "")
-        $byReal = [];
-        foreach ($aliasesMap as $key => $real) {
-            if (!is_string($key) || !is_string($real) || $real === '') {
-                continue;
-            }
-            $byReal[$real][] = $key;
-        }
-        ksort($byReal);
-
         $rows = [];
-        foreach ($byReal as $real => $keys) {
-            $dir = $this->paths->allias($realDomain, $real);
+        foreach ($aliasesMap as $aliasName => $aliasData) {
+            if (!is_string($aliasName) || $aliasName === '') continue;
+
+            $dir = $this->paths->allias($realDomain, $aliasName);
             $exists = Fs::isDir($dir);
 
             $pageCount = 0;
-            $alg = $this->paths->algoritm($realDomain, $real);
+            $alg = $this->paths->algoritm($realDomain, $aliasName);
             if (is_dir($alg)) {
                 $iterator = new \RecursiveIteratorIterator(
                     new \RecursiveDirectoryIterator($alg, \FilesystemIterator::SKIP_DOTS),
@@ -85,32 +82,28 @@ final class AlliasListCommand implements CommandInterface
                 }
             }
 
-            $available = (bool) ($site['alliases_available'][$domain][$real] ?? false);
-            $hasEmptyKey = in_array('', $keys, true);
+            $available = (bool) ($aliasData['available'] ?? false);
 
             $row = [
-                'name' => $real,
-                'keys' => $keys,
+                'name' => $aliasName,
+                'keys' => [$aliasName], // Теперь у алиаса только один ключ
                 'dir_exists' => $exists,
                 'available' => $available,
                 'page_count' => $pageCount,
-                'has_empty_key' => $hasEmptyKey,
+                'has_empty_key' => false,
             ];
             $rows[] = $row;
-            $r->file($real);
+            $r->file($aliasName);
 
-            $keysStr = implode(', ', array_map(
-                static fn (string $k): string => $k === '' ? '""' : $k,
-                $keys,
-            ));
             $mark = $exists ? '[ok]' : '[!!]';
             $state = $available ? 'on' : 'off';
             $context->step(
-                sprintf('%s %-15s keys: %-20s %s, pages: %d', $mark, $real, $keysStr, $state, $pageCount),
+                sprintf('%s %-15s %s, pages: %d', $mark, $aliasName, $state, $pageCount),
                 true,
-                $real,
+                $aliasName,
             );
         }
+        ksort($rows);
 
         $r->data = ['domain' => $domain, 'rows' => $rows];
         $context->step(sprintf('Всего: %d', count($rows)), true);

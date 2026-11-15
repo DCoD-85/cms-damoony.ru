@@ -52,21 +52,21 @@ final class LangRepairCommand implements CommandInterface
             return $r;
         }
         $site = Config::fromFile($siteFile)->all();
-        if (!isset($site['domains_real'][$domain])) {
+        $real = (string) ($site['domains_mirrors'][$domain] ?? $domain);
+        if (!isset($site['domains_real'][$real])) {
             $r->error('Домен не найден');
             return $r;
         }
-        $real = (string) $site['domains_real'][$domain];
 
         $dir = $allias !== ''
-            ? $this->paths->i18nAllias($real, $allias)
-            : $this->paths->i18nDomain($real);
+            ? $this->paths->i18nLocal($real, $allias)
+            : $this->paths->i18nGlobal($real);
 
         // 1. Собрать config-языки (домена или алиаса)
         if ($allias !== '') {
-            $configLangs = $site['alliases_langs'][$real][$allias] ?? [];
+            $configLangs = $site['alliases'][$real][$allias]['langs'] ?? [];
         } else {
-            $configLangs = $site['domains_langs'][$real] ?? [];
+            $configLangs = $site['alliases'][$real]['www']['langs'] ?? [];
         }
         if (!is_array($configLangs)) {
             $configLangs = [];
@@ -104,7 +104,7 @@ final class LangRepairCommand implements CommandInterface
 
         // 4. Alias ⊄ domain (только в alias-scope)
         if ($allias !== '') {
-            $domainLangsRaw = $site['domains_langs'][$real] ?? [];
+            $domainLangsRaw = $site['alliases'][$real]['www']['langs'] ?? [];
             $domainLangs = is_array($domainLangsRaw) ? $domainLangsRaw : [];
             foreach ($configLangs as $lang) {
                 if (!in_array($lang, $domainLangs, true)) {
@@ -160,13 +160,13 @@ final class LangRepairCommand implements CommandInterface
                     $configChanged = true;
                 }
             } elseif ($promote) {
-                $domainLangs = $site['domains_langs'][$real] ?? [];
+                $domainLangs = $site['alliases'][$real]['www']['langs'] ?? [];
                 if (!is_array($domainLangs)) {
                     $domainLangs = [];
                 }
                 if (!in_array($d['lang'], $domainLangs, true)) {
                     $domainLangs[] = $d['lang'];
-                    $site['domains_langs'][$real] = $domainLangs;
+                    $site['alliases'][$real]['www']['langs'] ?? ['ru', 'en'] = $domainLangs;
                     $applied[] = ['kind' => 'promoted_to_domain', 'lang' => $d['lang']];
                     $configChanged = true;
                 }
@@ -174,9 +174,9 @@ final class LangRepairCommand implements CommandInterface
         }
 
         if ($allias !== '' && $configChanged) {
-            $site['alliases_langs'][$real][$allias] = $newConfigLangs;
+            $site['alliases'][$real][$allias]['langs'] = $newConfigLangs;
         } elseif ($allias === '' && $configChanged) {
-            $site['domains_langs'][$real] = $newConfigLangs;
+            $site['alliases'][$real]['www']['langs'] ?? ['ru', 'en'] = $newConfigLangs;
         }
 
         if ($configChanged) {

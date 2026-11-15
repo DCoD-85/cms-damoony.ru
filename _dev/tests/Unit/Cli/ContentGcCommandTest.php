@@ -20,7 +20,7 @@ final class ContentGcCommandTest extends TestCase
         mkdir($this->root . '/config', 0o777, true);
         file_put_contents($this->root . '/config/site.config', json_encode([
             'domains_real' => ['example.ru' => 'example.ru', 'other.ru' => 'other.ru'],
-            'domains_available' => ['example.ru' => true, 'other.ru' => true],
+            'domains_mirrors_available' => ['example.ru' => true, 'other.ru' => true],
             'domains_namespace' => ['example.ru' => 'example', 'other.ru' => 'other'],
             'alliases_real' => [
                 'example.ru' => ['www' => 'www'],

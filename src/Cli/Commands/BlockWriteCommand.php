@@ -67,7 +67,7 @@ final class BlockWriteCommand implements CommandInterface
             $r->error('Домен не найден в site.config');
             return $r;
         }
-        $namespace = (string) ($site['domains_namespace'][$realDomain] ?? str_replace(['.', '-'], '_', $realDomain));
+        $namespace = (string) ($site['domains_real'][$realDomain] ?? str_replace(['.', '-'], '_', $realDomain));
 
         try {
             $this->ensureSessionPermission($this->paths, $sessionId, $realDomain, 'block:write');

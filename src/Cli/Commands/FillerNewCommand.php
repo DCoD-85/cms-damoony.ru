@@ -64,7 +64,7 @@ final class FillerNewCommand implements CommandInterface
         }
 
         $realDomain = (string) $site['domains_real'][$domain];
-        $namespace = (string) ($site['domains_namespace'][$realDomain]
+        $namespace = (string) ($site['domains_real'][$realDomain]
             ?? str_replace(['.', '-'], '_', $realDomain));
 
         // Путь по realDomain (папка app/)

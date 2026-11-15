@@ -49,11 +49,11 @@ final class PageListCommand implements CommandInterface
             return $r;
         }
         $site = Config::fromFile($siteFile)->all();
-        if (!isset($site['domains_real'][$domain])) {
+        $realDomain = (string) ($site['domains_mirrors'][$domain] ?? $domain);
+        if (!isset($site['domains_real'][$realDomain])) {
             $r->error('Домен не найден');
             return $r;
         }
-        $realDomain = (string) $site['domains_real'][$domain];
 
         $algDir = $this->paths->algoritm($realDomain, $allias);
         if (!is_dir($algDir)) {

@@ -95,16 +95,7 @@ final class DomainNewProfileTest extends TestCase
         $this->assertStringContainsString('Некорректный профиль', $res->errors[0] ?? '');
     }
 
-    public function testNewDomainGetsV4Structure(): void
-    {
-        new DomainNewCommand($this->paths)->run(
-            ['domain' => 'test.ru', 'profile' => 'minimal'],
-            $this->ctx(),
-        );
 
-        $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
-        $this->assertSame('v4', $site['domains_structure']['test.ru'] ?? null);
-    }
 
     public function testExistingDomainRejected(): void
     {

@@ -201,7 +201,7 @@ final class AlliasNewCommand implements CommandInterface
                     $extra = "\n        \$site = \$context->service('site');\n"
                         . "        \$langs = ['ru', 'en'];\n"
                         . "        if (\$site instanceof \\Damoony\\Core\\Config) {\n"
-                        . "            \$configured = \$site->getByKey(['alliases_langs', \$context->domain->real, \$context->domain->allias], []);\n"
+                        . "            \$configured = \$site->getByKey(['alliases', \$context->domain->real, \$context->domain->allias], []);\n"
                         . "            if (is_array(\$configured) && \$configured !== []) { \$langs = \$configured; }\n"
                         . "            else { \$configured = \$site->getByKey(['domains_langs', \$context->domain->real], ['ru', 'en']); if (is_array(\$configured) && \$configured !== []) { \$langs = \$configured; } }\n"
                         . "        }\n"
@@ -246,12 +246,14 @@ final class AlliasNewCommand implements CommandInterface
         }
 
         // 3. Конфиг (все ключи)
-        $site['alliases_real'][$realDomain][$name] = $name;
-        $site['alliases_available'][$realDomain][$name] = true;
-
-        Fs::writeAtomic(
+        $site['alliases'][$realDomain][$name] = [
+            'available' => true,
+            'langs' => ['ru', 'en']
+        ];
+        
+        file_put_contents(
             $siteFile,
-            json_encode($site, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n",
+            json_encode($site, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n"
         );
         $r->file(Fs::rel($siteFile, $this->paths->root()));
 

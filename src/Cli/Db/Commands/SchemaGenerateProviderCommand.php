@@ -67,7 +67,7 @@ final class SchemaGenerateProviderCommand implements CommandInterface
         }
 
         // Получаем неймспейс домена из конфига (по realDomain)
-        $ns = $this->site->getByKey(['domains_namespace', $realDomain], str_replace(['.', '-'], '_', $realDomain));
+        $ns = $this->site->getByKey(['domains_real', $realDomain], str_replace(['.', '-'], '_', $realDomain));
         if (!is_string($ns)) {
             $ns = str_replace(['.', '-'], '_', $realDomain);
         }

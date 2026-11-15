@@ -45,19 +45,20 @@ final class StructureRepairCommand implements CommandInterface
             return $r;
         }
         $site = Config::fromFile($siteFile)->all();
-        if (!isset($site['domains_real'][$domain])) {
+        $realDomain = (string) ($site['domains_mirrors'][$domain] ?? $domain);
+        
+        if (!isset($site['domains_real'][$realDomain])) {
             $r->error('Домен не найден в конфиге');
             return $r;
         }
 
-        $realDomain = (string) $site['domains_real'][$domain];
-        $namespace = PageNamespace::fromSite($site, $domain);
+        $namespace = PageNamespace::fromSite($site, $realDomain);
         $domainDir = $this->paths->domain($realDomain);
         $fixed = 0;
 
-        // 1. Восстановление алиасов (3 файла root-страницы с единым префиксом)
-        $alliases = $site['alliases_real'][$domain] ?? ['www' => 'www'];
-        $realAliases = array_unique(array_values($alliases));
+        // 1. Восстановление алиасов
+        $alliases = $site['alliases'][$realDomain] ?? ['www' => ['available' => true]];
+        $realAliases = array_keys($alliases);
 
         foreach ($realAliases as $alias) {
             $alias = (string) $alias;

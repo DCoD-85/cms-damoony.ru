@@ -114,9 +114,12 @@ final class IndexRenderScenarioTest extends TestCase
     {
         $site = Config::fromArray([
             'language' => 'ru', // ИЗМЕНЕНО: ru вместо ru-ru
-            'domains_real' => ['damoony.test' => 'damoony.test'],
-            'domains_available' => ['damoony.test' => true],
-            'alliases_real' => ['damoony.test' => ['www' => 'www']],
+            'domains_real' => [
+                'example.ru' => 'example_ru',
+            ],
+            'domains_mirrors' => ['damoony.test' => 'damoony.test'],
+            'domains_mirrors_available' => ['damoony.test' => true],
+            'alliases' => ['damoony.test' => ['www' => 'www']],
             'domains_namespace' => ['damoony.test' => 'damoony_test'],
         ]);
         $c = new Container();
@@ -172,7 +175,7 @@ final class IndexRenderScenarioTest extends TestCase
             }
         });
 
-        $c->setInstance(DomainResolverInterface::class, new ConfigDomainResolver($site));
+        $c->setInstance(DomainResolverInterface::class, new ConfigDomainResolver($site, new \Damoony\Core\Files\Paths(sys_get_temp_dir())));
         $c->setInstance(RouterInterface::class, new FileRouter($this->root, new RulesMatcher()));
 
         $resolver = $c->get(DomainResolverInterface::class);

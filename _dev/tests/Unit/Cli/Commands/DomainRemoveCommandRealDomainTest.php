@@ -34,7 +34,8 @@ final class DomainRemoveCommandRealDomainTest extends TestCase
     public function testMappedAliasRemovedFromConfigOnly(): void
     {
         $this->seedSite([
-            'domains_real' => ['real.ru' => 'real.ru', 'alias.ru' => 'real.ru'],
+            'domains_real' => ['real.ru' => 'real_ru'],
+            'domains_mirrors' => ['real.ru' => 'real.ru', 'alias.ru' => 'real.ru'],
             'alliases_real' => ['real.ru' => ['www' => 'www']],
         ]);
         mkdir($this->root . '/app/real.ru/www/algoritm', 0o775, true);
@@ -57,7 +58,8 @@ final class DomainRemoveCommandRealDomainTest extends TestCase
     public function testRealDomainWithAttachedAliasRejected(): void
     {
         $this->seedSite([
-            'domains_real' => ['real.ru' => 'real.ru', 'alias.ru' => 'real.ru'],
+            'domains_real' => ['real.ru' => 'real_ru'],
+            'domains_mirrors' => ['real.ru' => 'real.ru', 'alias.ru' => 'real.ru'],
         ]);
         mkdir($this->root . '/app/real.ru/www/algoritm', 0o775, true);
         file_put_contents($this->root . '/app/real.ru/www/algoritm/algoritm.php', "<?php // prod\n");
@@ -73,13 +75,13 @@ final class DomainRemoveCommandRealDomainTest extends TestCase
         );
         $site = $this->loadSite();
         $this->assertArrayHasKey('real.ru', $site['domains_real'] ?? []);
-        $this->assertArrayHasKey('alias.ru', $site['domains_real'] ?? []);
+        $this->assertArrayHasKey('alias.ru', $site['domains_mirrors'] ?? []);
     }
 
     public function testRealDomainWithoutAttachedAliasMovedToTrash(): void
     {
         $this->seedSite([
-            'domains_real' => ['real.ru' => 'real.ru'],
+            'domains_real' => ['real.ru' => 'real_ru'], 'domains_mirrors' => ['real.ru' => 'real.ru'],
         ]);
         mkdir($this->root . '/app/real.ru/www/algoritm', 0o775, true);
         file_put_contents($this->root . '/app/real.ru/www/algoritm/algoritm.php', "<?php // prod\n");

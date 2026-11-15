@@ -13,7 +13,7 @@ final class PageNamespace
      */
     public static function fromSite(array $site, string $domain): string
     {
-        $namespaces = $site['domains_namespace'] ?? [];
+        $namespaces = $site['domains_real'] ?? [];
         if (is_array($namespaces) && isset($namespaces[$domain]) && is_string($namespaces[$domain])) {
             return $namespaces[$domain];
         }

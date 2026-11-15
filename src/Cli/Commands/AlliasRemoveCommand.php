@@ -15,13 +15,7 @@ final class AlliasRemoveCommand implements CommandInterface
 {
     /** Ключи site.config, где данные скоупятся по домену+алиасу. */
     private const ALLIAS_KEYS = [
-        'alliases_real',
-        'alliases_available',
-        'alliases_langs',
-        'alliases_titles',
-        'alliases_stubs',
-        'alliases_skins',
-        'alliases_skins_allowed',
+        'alliases',
         'fillers',
     ];
 
@@ -70,23 +64,14 @@ final class AlliasRemoveCommand implements CommandInterface
             return $r;
         }
 
-        if (!isset($site['domains_real'][$domain])) {
+        $realDomain = (string) ($site['domains_mirrors'][$domain] ?? $domain);
+        if (!isset($site['domains_real'][$realDomain])) {
             $r->error('Домен не найден');
             return $r;
         }
 
-        // Reject non-self-mapped: paths->allias() and config use different keys.
-        $realDomain = (string) ($site['domains_real'][$domain] ?? '');
-        if ($realDomain !== '' && $realDomain !== $domain) {
-            $r->error(
-                "Домен '{$domain}' мапится на '{$realDomain}'. "
-                . "Удаление non-self-mapped домена запрещено. Укажите --domain={$realDomain}.",
-            );
-            return $r;
-        }
-
-        $alliasDir = $this->paths->allias($domain, $name);
-        $alliasInConfig = isset($site['alliases_real'][$domain][$name]);
+        $alliasDir = $this->paths->allias($realDomain, $name);
+        $alliasInConfig = isset($site['alliases'][$realDomain][$name]);
 
         if (!is_dir($alliasDir) && !$alliasInConfig) {
             $r->warn("Алиас не найден ни на диске, ни в конфиге: {$domain}/{$name}");

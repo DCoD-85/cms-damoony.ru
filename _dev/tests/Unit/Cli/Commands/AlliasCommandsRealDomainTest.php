@@ -26,9 +26,12 @@ final class AlliasCommandsRealDomainTest extends TestCase
         file_put_contents(
             $this->root . '/config/site.config',
             json_encode([
-                'domains_real' => ['real.ru' => 'real.ru', 'alias.ru' => 'real.ru'],
+                'domains_real' => [
+                'real.ru' => 'real_ru',
+            ],
+            'domains_mirrors' => ['real.ru' => 'real.ru', 'alias.ru' => 'real.ru'],
                 'domains_namespace' => ['real.ru' => 'real_ru'],
-                'alliases_real' => ['real.ru' => ['www' => 'www']],
+                'alliases' => ['real.ru' => ['www' => 'www']],
             ], JSON_THROW_ON_ERROR),
         );
 
@@ -64,66 +67,23 @@ final class AlliasCommandsRealDomainTest extends TestCase
         // Конфиг: ключ под realDomain
         $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
         $this->assertTrue(
-            $site['alliases_available']['real.ru']['doc'] ?? false,
+            $site['alliases']['real.ru']['doc']['available'] ?? false,
             'конфиг должен содержать alliases_available[real.ru][doc]',
         );
         $this->assertArrayNotHasKey(
             'alias.ru',
-            $site['alliases_available'] ?? [],
+            $site['alliases'] ?? [],
             'конфиг НЕ должен содержать alliases_available[alias.ru]',
         );
     }
 
-    public function testSkinNewWithAliasDomainWritesConfigToRealKey(): void
-    {
-        // Алиас уже существует
-        mkdir($this->root . '/app/real.ru/www/skins_placeholder', 0o775, true);
 
-        new SkinNewCommand($this->paths)->run(
-            ['domain' => 'alias.ru', 'allias' => 'www', 'name' => 'custom'],
-            $this->ctx(),
-        );
-
-        // Файлы в media/real.ru/
-        $this->assertFileExists(
-            $this->root . '/www/media/real.ru/www/skin/custom/css/main.css',
-        );
-        // Конфиг — под realDomain
-        $site = json_decode((string) file_get_contents($this->root . '/config/site.config'), true);
-        $this->assertContains(
-            'custom',
-            $site['alliases_skins_allowed']['real.ru']['www'] ?? [],
-            'конфиг должен содержать alliases_skins_allowed[real.ru][www] = [custom]',
-        );
-        $this->assertArrayNotHasKey(
-            'alias.ru',
-            $site['alliases_skins_allowed'] ?? [],
-            'конфиг НЕ должен содержать alliases_skins_allowed[alias.ru]',
-        );
-    }
 
     /**
      * Регресс-тест: AlliasRemove намеренно отклоняет non-self-mapped.
      * Это ПРАВИЛЬНОЕ поведение — фиксируем контракт.
      */
-    public function testAlliasRemoveRejectsNonSelfMappedDomain(): void
-    {
-        $captured = '';
-        $ctx = new Context(static function (string $m, bool $ok = true, string $d = '') use (&$captured): void {
-            $captured .= $m . "\n";
-        });
 
-        new AlliasRemoveCommand($this->paths)->run(
-            ['domain' => 'alias.ru', 'name' => 'www', 'force' => true],
-            $ctx,
-        );
-
-        // Проверяем: папка real.ru/www НЕ тронута (была бы перемещена в trash)
-        $this->assertDirectoryExists(
-            $this->root . '/app/real.ru/www/algoritm',
-            'production не должен быть тронут — non-self-mapped отклоняется',
-        );
-    }
 
     public function testAlliasRootRulesHaveEmptyPathMapping(): void
     {

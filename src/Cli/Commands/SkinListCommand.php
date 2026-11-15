@@ -48,64 +48,35 @@ final class SkinListCommand implements CommandInterface
             return $r;
         }
         $site = Config::fromFile($siteFile)->all();
-        if (!isset($site['domains_real'][$domain])) {
+        $realDomain = (string) ($site['domains_mirrors'][$domain] ?? $domain);
+        if (!isset($site['domains_real'][$realDomain])) {
             $r->error('Домен не найден');
             return $r;
         }
-        $realDomain = (string) $site['domains_real'][$domain];
 
         $skinRoot = $this->paths->media($realDomain, $allias) . '/skin';
         if (!is_dir($skinRoot)) {
-            $r->data = ['domain' => $domain, 'allias' => $allias, 'active' => null, 'rows' => []];
+            $r->data = ['domain' => $domain, 'allias' => $allias, 'rows' => []];
             $context->step('Скинов нет', true);
             return $r;
-        }
-
-        $active = $site['alliases_skins'][$domain][$allias] ?? null;
-        $allowed = $site['alliases_skins_allowed'][$domain][$allias] ?? [];
-        if (!is_array($allowed)) {
-            $allowed = [];
         }
 
         $rows = [];
         foreach (glob($skinRoot . '/*', GLOB_ONLYDIR) ?: [] as $dir) {
             $name = basename($dir);
-            if (str_starts_with($name, '.')) {
-                continue;
-            }
-            $hasCss = is_file($dir . '/css/main.css');
-            $hasJs = is_file($dir . '/js/main.js');
-            $hasMeta = is_file($dir . '/skin.json');
-            $isActive = $active === $name;
-            $isAllowed = in_array($name, $allowed, true);
-
+            if (str_starts_with($name, '.')) continue;
+            
             $rows[] = [
                 'name' => $name,
-                'active' => $isActive,
-                'allowed' => $isAllowed,
-                'has_css' => $hasCss,
-                'has_js' => $hasJs,
-                'has_meta' => $hasMeta,
+                'has_css' => is_file($dir . '/css/main.css'),
+                'has_js' => is_file($dir . '/js/main.js'),
+                'has_meta' => is_file($dir . '/skin.json'),
             ];
             $r->file($name);
-
-            $flags = [];
-            if ($isActive) {
-                $flags[] = 'active';
-            }
-            if ($isAllowed) {
-                $flags[] = 'allowed';
-            }
-            $flagsStr = $flags === [] ? '' : ' [' . implode(',', $flags) . ']';
-            $context->step(
-                sprintf('%-15s css:%s js:%s%s', $name, $hasCss ? 'y' : 'n', $hasJs ? 'y' : 'n', $flagsStr),
-                true,
-                $name,
-            );
+            $context->step(sprintf('%-15s css:%s js:%s', $name, is_file($dir . '/css/main.css') ? 'y' : 'n', is_file($dir . '/js/main.js') ? 'y' : 'n'), true, $name);
         }
         usort($rows, static fn (array $a, array $b): int => strcmp($a['name'], $b['name']));
-
-        $r->data = ['domain' => $domain, 'allias' => $allias, 'active' => $active, 'rows' => $rows];
+        $r->data = ['domain' => $domain, 'allias' => $allias, 'rows' => $rows];
         $context->step(sprintf('Всего: %d', count($rows)), true);
 
         return $r;

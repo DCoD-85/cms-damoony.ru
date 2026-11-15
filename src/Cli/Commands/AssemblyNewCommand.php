@@ -43,7 +43,7 @@ final class AssemblyNewCommand implements CommandInterface
         $siteFile = $this->paths->siteConfig();
         $site = is_file($siteFile) ? Config::fromFile($siteFile)->all() : [];
         $realDomain = (string) ($site['domains_real'][$domain] ?? $domain);
-        $namespace = (string) ($site['domains_namespace'][$realDomain] ?? str_replace(['.', '-'], '_', $realDomain));
+        $namespace = (string) ($site['domains_real'][$realDomain] ?? str_replace(['.', '-'], '_', $realDomain));
 
         $builder = new AssemblyBuilder($this->paths);
 
@@ -60,11 +60,11 @@ final class AssemblyNewCommand implements CommandInterface
 
         // Записываем в site.config
         $site['domains_real'][$domain] = $realDomain;
-        $site['domains_available'][$domain] = true;
-        $site['domains_namespace'][$realDomain] = $namespace;
+        
+        
         $site['alliases_real'][$realDomain] ??= [$alias => $alias];
-        $site['alliases_available'][$realDomain][$alias] = true;
-        $site['alliases_langs'][$realDomain][$alias] = ['ru', 'en'];
+        
+        
         $site['domains_langs'][$realDomain] = ['ru', 'en'];
         $site['alliases_skins'][$realDomain][$alias] = 'light';
         $site['alliases_skins_allowed'][$realDomain][$alias] = ['light', 'dark'];

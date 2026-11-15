@@ -59,10 +59,10 @@ final class FrontControllerTest extends TestCase
     {
         $site = Config::fromArray([
             'language' => 'ru-ru',
-            'domains_real' => ['example.ru' => 'example.ru'],
-            'domains_available' => ['example.ru' => $available],
-            'alliases_real' => ['example.ru' => ['www' => 'www']],
-            'domains_namespace' => ['example.ru' => 'example'],
+            'domains_real' => ['example.ru' => 'example_ru'],
+            'domains_mirrors' => ['example.ru' => 'example.ru'],
+            'domains_mirrors_available' => ['example.ru' => $available],
+            'alliases' => ['example.ru' => ['www' => ['available' => true, 'langs' => ['ru']]]],
         ]);
 
         $c = new Container();
@@ -119,7 +119,7 @@ final class FrontControllerTest extends TestCase
             }
         });
 
-        $c->setInstance(DomainResolverInterface::class, new ConfigDomainResolver($site));
+        $c->setInstance(DomainResolverInterface::class, new ConfigDomainResolver($site, new \Damoony\Core\Files\Paths($this->root)));
         $c->setInstance(RouterInterface::class, new FileRouter($this->root, new RulesMatcher()));
 
         $resolver = $c->get(DomainResolverInterface::class);
@@ -151,7 +151,7 @@ final class FrontControllerTest extends TestCase
         file_put_contents($base . '/fc_home/algoritm_fc_home.rules.json', json_encode(['available' => [], 'auth' => false, 'search' => true, 'default' => false]));
         file_put_contents($base . '/fc_home/algoritm_fc_home.php', <<<'PHP'
             <?php
-            namespace example\www;
+            namespace example_ru\www;
             use Damoony\UI\Algoritm\Page;
             use Damoony\Core\Http\Response;
             use Damoony\UI\Builder;

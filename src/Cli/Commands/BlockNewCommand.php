@@ -62,7 +62,7 @@ final class BlockNewCommand implements CommandInterface
 
         // realDomain — папка app/, не входной хост
         $realDomain = (string) $site['domains_real'][$domain];
-        $namespace = (string) ($site['domains_namespace'][$realDomain]
+        $namespace = (string) ($site['domains_real'][$realDomain]
             ?? str_replace(['.', '-'], '_', $realDomain));
 
         $blocksDir = $this->paths->domain($realDomain) . '/.blocksglobal';
