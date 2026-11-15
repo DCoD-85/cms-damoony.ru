@@ -184,7 +184,7 @@ final class DomainNewCommand implements CommandInterface
             $builder = new \Damoony\Core\Assembly\AssemblyBuilder($this->paths);
             $builder->build('developer', $domain, [
                 'namespace' => $namespace,
-                'real' => $realDomain,
+                'real' => $domain,
                 'alias' => $allias,
             ]);
         }
