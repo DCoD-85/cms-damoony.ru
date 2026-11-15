@@ -6,9 +6,6 @@ namespace Damoony\Core\Files;
 
 final class Paths
 {
-    /** @var array<string, string> */
-    private array $structureCache = [];
-
     public function __construct(private readonly string $root)
     {
     }

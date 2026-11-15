@@ -100,6 +100,9 @@ final class SkinNewCommand implements CommandInterface
     {
         if (!is_dir($dst)) mkdir($dst, 0775, true);
         $dir = opendir($src);
+        if ($dir === false) {
+            return;
+        }
         while (false !== ($file = readdir($dir))) {
             if ($file !== '.' && $file !== '..') {
                 if (is_dir($src . '/' . $file)) {

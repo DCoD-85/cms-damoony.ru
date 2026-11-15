@@ -32,7 +32,7 @@ final class ConfigDomainResolver implements DomainResolverInterface
             if (str_ends_with($host, $suffix)) {
                 $prefix = substr($host, 0, -strlen($suffix));
                 $alliases = $this->site->getByKey(['alliases', $mapped], []);
-                if (is_array($alliases) && array_key_exists($prefix, $alliases)) {
+                if (array_key_exists($prefix, $alliases)) {
                     $real = $mapped;
                     $allias = $prefix === '' ? 'www' : $prefix;
                     break;
@@ -74,10 +74,10 @@ final class ConfigDomainResolver implements DomainResolverInterface
         if (!is_array($langs) || $langs === []) {
             $langs = [$this->defaultLanguage];
         }
-        $langs = is_array($langs) ? array_values(array_filter(
+        $langs = array_values(array_filter(
             $langs,
             static fn ($l): bool => is_string($l) && preg_match('/^[a-z]{2}$/', $l) === 1,
-        )) : [];
+        ));
         if ($langs === []) {
             $langs = [$this->defaultLanguage];
         }
