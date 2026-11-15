@@ -1,0 +1,9 @@
+{
+    "auth": true,
+    "available": {
+        "login": "^login$",
+        "domains": "^domains$",
+        "profile": "^profile$",
+        "": "^$"
+    }
+}

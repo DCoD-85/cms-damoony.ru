@@ -1,0 +1,6 @@
+{
+    "available": {
+        "doc": "^(.*)$"
+    },
+    "auth": false
+}

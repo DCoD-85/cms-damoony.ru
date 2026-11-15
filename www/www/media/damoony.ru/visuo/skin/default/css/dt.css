@@ -1,0 +1,6 @@
+.dt { display: flex; flex-direction: column; min-height: 100vh; }
+.dt_middle { display: flex; flex: 1; max-width: 1200px; margin: 0 auto; width: 100%; background: #fff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 2rem; overflow: hidden; }
+.dt_middle > aside { width: 250px; padding: 2rem 1.5rem; background: #fdfbf7; /* Песочный цвет */ }
+.dt_middle > aside:first-child { border-right: 1px dashed #e0d5c1; }
+.dt_middle > aside:last-child { border-left: 1px dashed #e0d5c1; }
+.dt_middle > main { flex: 1; padding: 3rem; }

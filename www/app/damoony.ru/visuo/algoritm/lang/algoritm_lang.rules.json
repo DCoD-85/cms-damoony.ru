@@ -1,0 +1,14 @@
+{
+    "available": {
+        "ui_kit": "^ui_kit$",
+        "contact": "^contact$",
+        "ajax_test": "^ajax_test$",
+        "": "^$",
+        "about": "^about$",
+        "features": "^features$",
+        "login": "^login$",
+        "logout": "^logout$",
+        "dashboard": "^dashboard$"
+    },
+    "auth": false
+}

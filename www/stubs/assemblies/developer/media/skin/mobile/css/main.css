@@ -1,0 +1,24 @@
+@media (max-width: 768px) {
+    .dt {
+        display: flex !important;
+        flex-direction: column !important;
+        padding: 10px !important;
+        gap: 10px !important;
+    }
+    .dt_left, .dt_right, .dt_policy { 
+        display: none !important; 
+    }
+    .dt_top_nav { 
+        flex-direction: column; 
+        align-items: flex-start; 
+        gap: 10px; 
+    }
+    .dt_main_menu, .dt_auth_menu { 
+        flex-wrap: wrap;
+        gap: 10px; 
+    }
+    .dt_switchers {
+        flex-direction: column;
+        gap: 5px;
+    }
+}

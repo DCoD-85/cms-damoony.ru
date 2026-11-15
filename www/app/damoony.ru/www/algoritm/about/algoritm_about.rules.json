@@ -1,0 +1,6 @@
+{
+    "available": {
+        "about": "^about$"
+    },
+    "auth": false
+}

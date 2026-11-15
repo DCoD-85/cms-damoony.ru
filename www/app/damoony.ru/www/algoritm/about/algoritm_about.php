@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+namespace damoony_ru\www;
+
+use Damoony\UI\Algoritm\Page;
+use Damoony\Core\Http\Response;
+use Damoony\UI\Builder;
+use Damoony\UI\Node;
+use Damoony\Core\Files\Paths;
+use Damoony\UI\Scheme\SchemeLoader;
+use Damoony\UI\Scheme\SchemeRenderer;
+
+final class algoritm_about extends Page
+{
+    protected function content(): Node|Response|null
+    {
+        $this->regions()->useGlobal('top');
+        $this->regions()->useGlobal('test_v');
+        $this->regions()->useGlobal('left');
+        $container_center = Builder::div('page-slot-center');
+        $container_center->append(Builder::h(1)->content('Это CENTER'));
+        $container_center->append(Builder::p()->content('Это текст CENTER'));
+        $container_center->append(Builder::p()->content(''));
+        $this->setContent('center', $container_center);
+        $this->regions()->useGlobal('right');
+        $this->regions()->useGlobal('bottom');
+        $this->regions()->useGlobal('footer');
+        $this->regions()->useGlobal('policy');
+
+        $paths = $this->context->service('paths');
+        if (!$paths instanceof Paths) {
+            $paths = new Paths(dirname(__DIR__, 5));
+        }
+        return $content;
+    }
+}

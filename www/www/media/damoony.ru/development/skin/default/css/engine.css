@@ -1,0 +1,30 @@
+/* Стили для тестового полигона CLIEngine */
+body {
+    background: #f3f4f6;
+    font-family: sans-serif;
+    padding: 20px;
+}
+.engine-test-wrapper h1 {
+    color: #1f2937;
+}
+.test-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.ui-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    background: #3b82f6;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+}
+.ui-btn:hover {
+    opacity: 0.9;
+}
+.btn-success { background: #10b981; }
+.btn-error { background: #ef4444; }
+.btn-warning { background: #f59e0b; }
+.btn-info { background: #3b82f6; }

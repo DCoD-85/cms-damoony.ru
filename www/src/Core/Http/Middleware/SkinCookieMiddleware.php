@@ -1,0 +1,48 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Damoony\Core\Http\Middleware;
+
+use Damoony\Core\Http\MiddlewareInterface;
+use Damoony\Core\Http\Request;
+use Damoony\Core\Http\Response;
+
+final class SkinCookieMiddleware implements MiddlewareInterface
+{
+    /** @param list<string> $allowed */
+    public function __construct(
+        private readonly string $cookieName = 'skin',
+        private readonly array $allowed = ['default', 'dark'],
+    ) {
+    }
+
+    public function process(Request $request, callable $next): Response
+    {
+        $skin = $request->query('skin');
+        if (!is_string($skin) || !in_array($skin, $this->allowed, true)) {
+            return $next($request);
+        }
+
+        if (headers_sent()) {
+            return $next($request);
+        }
+
+        setcookie($this->cookieName, $skin, [
+            'expires' => time() + 86400 * 365,
+            'path' => '/',
+            'secure' => ($_SERVER['HTTPS'] ?? '') === 'on',
+            'httponly' => false,
+            'samesite' => 'Lax',
+        ]);
+
+        $target = $request->query('return') ?? $request->path;
+        $query = $request->query;
+        unset($query['skin'], $query['return']);
+        if ($query !== []) {
+            $target .= '?' . http_build_query($query);
+        }
+
+        return Response::redirect((string) $target, 307);
+    }
+}

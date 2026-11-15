@@ -1,0 +1,6 @@
+.ui-btn { display: inline-block; padding: 8px 16px; border: 1px solid #ccc; border-radius: 4px; background: #f8f9fa; cursor: pointer; text-decoration: none; color: #333; }
+.ui-btn-primary { background: #007bff; color: #fff; border-color: #0056b3; }
+.ui-input { display: block; width: 100%; padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+.ui-table { width: 100%; border-collapse: collapse; }
+.ui-th, .ui-td { padding: 8px; border: 1px solid #ddd; }
+.ui-link { color: #007bff; text-decoration: none; }

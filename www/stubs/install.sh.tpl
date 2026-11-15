@@ -64,6 +64,7 @@ if [ "$UPDATE" -eq 0 ]; then
         if MYSQL_PWD="$MYSQL_ROOT_PASS" mysql -u "$MYSQL_ROOT" -e "
             CREATE DATABASE IF NOT EXISTS $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
             CREATE USER IF NOT EXISTS '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASS';
+            ALTER USER '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASS';
             GRANT ALL PRIVILEGES ON $DB_NAME.* TO '$DB_USER'@'localhost';
             FLUSH PRIVILEGES;
         " >/dev/null 2>&1; then
@@ -84,8 +85,12 @@ fi
 
 # 4. Активация
 echo -e "${YELLOW}[4/9] Активация лицензии...${NC}"
+set +e
 ACTIVATE=$(curl -sSL -X POST "$VENDOR/api/activate.php" -H "Content-Type: application/json" -d "{\"key\":\"$LICENSE_KEY\",\"domain\":\"$DOMAIN\"}" 2>/dev/null)
-if [ $? -ne 0 ]; then
+CURL_EXIT=$?
+set -e
+
+if [ "$CURL_EXIT" -ne 0 ] || [ -z "$ACTIVATE" ]; then
     echo -e "${YELLOW}  ! Проблема с SSL-сертификатом. Пробуем без проверки...${NC}"
     ACTIVATE=$(curl -sSLk -X POST "$VENDOR/api/activate.php" -H "Content-Type: application/json" -d "{\"key\":\"$LICENSE_KEY\",\"domain\":\"$DOMAIN\"}")
 fi
@@ -98,8 +103,12 @@ ZIP_URL=$(echo "$ACTIVATE" | php -r 'echo json_decode(stream_get_contents(STDIN)
 # 5. Скачивание
 echo -e "${YELLOW}[5/9] Скачивание ядра...${NC}"
 TMP=$(mktemp -d)
+set +e
 curl -sSL "$ZIP_URL" -o "$TMP/core.zip" 2>/dev/null
-if [ $? -ne 0 ]; then
+CURL_EXIT=$?
+set -e
+
+if [ "$CURL_EXIT" -ne 0 ]; then
     echo -e "${YELLOW}  ! Проблема с SSL-сертификатом. Скачиваем без проверки...${NC}"
     curl -sSLk "$ZIP_URL" -o "$TMP/core.zip"
 fi

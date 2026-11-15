@@ -1,0 +1,52 @@
+/* Mobile Responsive Adjustments (max-width: 768px) */
+@media (max-width: 768px) {
+    /* Сетка: убираем сайдбары вниз, делаем стек */
+    .dt_middle {
+        flex-direction: column;
+    }
+    
+    .dt_middle > aside {
+        width: 100%;
+        padding: 1.5rem;
+        border-right: none;
+        border-left: none;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .dt_middle > main {
+        padding: 1.5rem;
+    }
+
+    /* Меню: вертикальное */
+    .dt_top {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .dt_top .menu {
+        flex-direction: column;
+        gap: 0.8rem;
+        width: 100%;
+    }
+
+    /* Типографика: уменьшаем размеры */
+    h1 { font-size: 2rem; }
+    h2 { font-size: 1.5rem; }
+    h3 { font-size: 1.2rem; }
+    
+    /* Таблицы: разрешаем скролл */
+    .ui-table { display: block; overflow-x: auto; white-space: nowrap; }
+}
+
+/* Убираем пустые сайдбары на мобилках */
+@media (max-width: 768px) {
+    .dt_middle > aside {
+        min-height: auto;
+        flex: none;
+    }
+    .dt_middle > aside:empty, 
+    .dt_middle > aside:has(p:only-child:empty) {
+        display: none;
+    }
+}

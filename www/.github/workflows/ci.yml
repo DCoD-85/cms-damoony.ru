@@ -1,0 +1,101 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+
+    services:
+      mariadb:
+        image: mariadb:11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: damoony_ci
+        ports:
+          - 3306:3306
+        options: --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.5
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: mbstring, dom, json, libxml, tokenizer, xml, xmlwriter, fileinfo, openssl, pdo_mysql, pdo_sqlite, curl, gd
+          tools: composer:v2
+          ini-values: memory_limit=512M
+
+      - name: Validate composer.json
+        run: composer validate --no-check-publish
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare runtime dirs
+        run: mkdir -p var _dev/var && touch var/.gitkeep
+
+      - name: Configure CI DB
+        run: |
+          cat > config/engine.config <<EOF
+          {
+              "db": {
+                  "driver": "mysql",
+                  "host": "127.0.0.1",
+                  "dbname": "damoony_ci",
+                  "user": "root",
+                  "password": "root"
+              }
+          }
+          EOF
+          cat > config/site.config <<EOF
+          {
+              "domains_real": {"damoony.ru": "damoony.ru"},
+              "domains_available": {"damoony.ru": true},
+              "alliases_real": {"damoony.ru": {"www": "www"}},
+              "alliases_available": {"damoony.ru": {"www": true}},
+              "alliases_langs": {"damoony.ru": {"www": ["ru"]}}
+          }
+          EOF
+          cat > config/agent.config <<EOF
+          {"allowed_domains": ["damoony.ru"]}
+          EOF
+          if [ -f config/ainet.config.example ]; then cp config/ainet.config.example config/ainet.config; fi
+          php bin/cli.php db:migrate
+
+      - name: Structure check
+        run: php bin/cli.php structure:check
+
+      - name: Create Test Admin
+        run: |
+          php bin/cli.php admin:passwd --name=admin --password=secret123
+
+      - name: Start PHP Dev Server
+        run: |
+          php -S 127.0.0.1:8080 -t www/ www/router.php > /tmp/server.log 2>&1 &
+          sleep 2
+
+      - name: PHPUnit
+        run: php vendor/bin/phpunit -c _dev/phpunit.xml
+
+      - name: PHPStan
+        run: php vendor/bin/phpstan analyse -c _dev/phpstan.neon --memory-limit=1G --no-progress
+
+      - name: PHP-CS-Fixer (dry-run)
+        run: php vendor/bin/php-cs-fixer fix --config=_dev/.php-cs-fixer.php --dry-run --diff

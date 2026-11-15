@@ -1,0 +1,1 @@
+.lang-switcher a { margin-right: 10px; text-decoration: none; color: #007bff; font-weight: bold; } .lang-switcher a.active { color: #333; text-decoration: underline; } .test-menu { list-style: none; padding: 0; } .test-menu li { margin-bottom: 8px; } .test-menu a { color: #007bff; }
