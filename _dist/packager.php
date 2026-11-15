@@ -1,17 +1,23 @@
 <?php
-// packager.php кладется в корень проекта (рядом с src/, bin/)
+declare(strict_types=1);
+
+// packager.php кладется в корень проекта вендора (рядом с src/, bin/)
 $sourceDir = __DIR__;
 $zipFile = __DIR__ . '/www/downloads/core-v4.zip';
 
 $downloadsDir = dirname($zipFile);
-if (!is_dir($downloadsDir)) mkdir($downloadsDir, 0755, true);
+if (!is_dir($downloadsDir)) {
+    mkdir($downloadsDir, 0755, true);
+}
 
+// Исключаем всё, что не должно попасть клиенту (база, конфиги, локальные данные, дистрибутив)
 $exclude = [
     '.git', 'app', 'config', 'var', 'content',
     'www/downloads', 'www/api', 'www/request.php', 'www/packager.php',
     'data', '_dist', 'packager.php', '.env', '.idea', 'node_modules',
     'install.php', '.github', '.gitignore', '.gitattributes',
-    'CREDENTIALS.txt', 'INSTALL_INSTRUCTION.txt',
+    'CREDENTIALS.txt', 'INSTALL_INSTRUCTION.txt', 
+    '.phpunit.cache', '.php-cs-fixer.cache', '.phpunit.result.cache'
 ];
 
 $zip = new ZipArchive();

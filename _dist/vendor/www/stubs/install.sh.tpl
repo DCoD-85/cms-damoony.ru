@@ -8,13 +8,10 @@ VENDOR="https://damoony.ru"
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
 
-# Парсим флаг --update
-UPDATE=0
-for arg in "$@"; do
-    if [ "$arg" = "--update" ]; then
-        UPDATE=1
-    fi
-done
+# Режим обновления по умолчанию (из request.php)
+UPDATE="{{UPDATE}}"
+
+# Парсим флаг --update (на случай ручного запуска)
 
 echo -e "${GREEN}=== Damoony Engine $( [ "$UPDATE" -eq 1 ] && echo "Updater" || echo "Installer" ) ===${NC}"
 echo "Домен: $DOMAIN"
@@ -51,9 +48,9 @@ fi
 if [ "$UPDATE" -eq 0 ]; then
     echo ""
     echo -e "${YELLOW}[2/9] Настройки БД${NC}"
-    DB_NAME="damoony_$(echo $DOMAIN | tr . _)"
-    DB_USER="damoony_$(echo $DOMAIN | tr . _)"
-    DB_PASS=$(php -r 'echo bin2hex(random_bytes(8));')"
+    DB_NAME="damoony_$(echo $DOMAIN | tr . _ | cut -c 1-30)"
+    DB_USER="damoony_$(echo $DOMAIN | tr . _ | cut -c 1-30)"
+    DB_PASS=$(php -r 'echo bin2hex(random_bytes(8));')
 
     DB_OK=0
     for attempt in 1 2 3; do
@@ -65,8 +62,7 @@ if [ "$UPDATE" -eq 0 ]; then
 
         echo -e "${YELLOW}[3/9] Создание БД и пользователя...${NC}"
         if MYSQL_PWD="$MYSQL_ROOT_PASS" mysql -u "$MYSQL_ROOT" -e "
-            DROP DATABASE IF EXISTS $DB_NAME; 
-            CREATE DATABASE $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+            CREATE DATABASE IF NOT EXISTS $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
             CREATE USER IF NOT EXISTS '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASS';
             GRANT ALL PRIVILEGES ON $DB_NAME.* TO '$DB_USER'@'localhost';
             FLUSH PRIVILEGES;
