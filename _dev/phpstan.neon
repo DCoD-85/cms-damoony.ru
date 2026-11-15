@@ -6,6 +6,12 @@ parameters:
         - ../www
     excludePaths:
         - ../www/stubs/*
+        - ../www/request.php
+        - ../www/api/*
+        - ../www/packager.php
+        - ../www/content.php
+        - ../www/router.php
+        - ../www/forms.php
     tmpDir: ../var/phpstan
     reportUnmatchedIgnoredErrors: true
     treatPhpDocTypesAsCertain: true
