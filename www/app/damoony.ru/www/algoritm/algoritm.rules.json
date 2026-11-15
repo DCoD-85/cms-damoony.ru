@@ -1,8 +1,0 @@
-{
-    "available": {
-        "": "^$",
-        "about": "^about$",
-        "ui": "^ui$"
-    },
-    "auth": false
-}

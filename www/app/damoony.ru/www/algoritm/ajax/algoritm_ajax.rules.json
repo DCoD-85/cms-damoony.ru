@@ -1,6 +1,0 @@
-{
-    "available": {
-        "mode": "^([a-z]+)$"
-    },
-    "auth": false
-}

@@ -1,1 +1,0 @@
-"""Damoony AI Agent — multi-agent архитектура (Planner → Builder → Content)."""
