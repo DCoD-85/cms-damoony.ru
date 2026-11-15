@@ -36,6 +36,23 @@
     };
     // -----------------------
 
+    function showToast(type, text, timeout) {
+        var toast = document.querySelector('.dt_toast') || document.querySelector('.site-toast');
+        if (!toast) return;
+        var div = document.createElement('div');
+        div.className = type || 'info';
+        div.textContent = text;
+        toast.appendChild(div);
+        toast.style.display = 'block';
+        var ttl = (typeof timeout === 'number') ? timeout : (type === 'error' ? 0 : 3000);
+        if (ttl > 0) {
+            setTimeout(function() {
+                div.remove();
+                if (!toast.children.length) toast.style.display = 'none';
+            }, ttl);
+        }
+    }
+
     function applyMinStruct(data) {
         if (data.layout) {
             var currentLayout = document.querySelector('.dt') || document.querySelector('.layout');
@@ -96,7 +113,12 @@
             }
         }
         if (data.form && data.form.redirect) {
-            window.location.href = data.form.redirect;
+            var delay = data.form.redirect_time || 0;
+            if (delay > 0) {
+                setTimeout(function() { navigateTo(data.form.redirect, true); }, delay);
+            } else {
+                navigateTo(data.form.redirect, true);
+            }
             return true;
         }
         if (data.reload) {
@@ -109,6 +131,10 @@
     function navigateTo(url, pushState) {
         fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
         .then(function(res) {
+            if (res.status === 404) {
+                showToast('error', 'Страница не найдена', 0);
+                return null;
+            }
             var ct = res.headers.get('Content-Type');
             if (!ct || ct.indexOf('application/json') === -1) { window.location.href = url; return null; }
             return res.json();
@@ -148,14 +174,23 @@
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
         .then(function(res) {
+            if (res.status === 404) { showToast('error', 'Страница не найдена', 0); return null; }
             var ct = res.headers.get('Content-Type');
-            if (!ct || ct.indexOf('application/json') === -1) { form.submit(); return null; }
+            if (!ct || ct.indexOf('application/json') === -1) { 
+                if (res.status >= 500) { showToast('error', 'Ошибка сервера', 0); return null; }
+                form.submit(); 
+                return null; 
+            }
             return res.json();
         })
         .then(function(data) {
             if (!data) return;
-            applyMinStruct(data);
-            form.reset(); 
+            var reloaded = applyMinStruct(data);
+            if (!reloaded && (!data.form || !data.form.reset)) {
+                // Не сбрасываем форму, если не было явной команды
+            } else if (data.form && data.form.reset) {
+                form.reset();
+            }
         })
         .catch(function() { form.submit(); });
     });

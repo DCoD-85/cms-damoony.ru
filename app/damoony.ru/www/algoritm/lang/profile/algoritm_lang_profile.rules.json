@@ -1,1 +1,6 @@
-{"available": {"": "^$"}, "auth": true}
+{
+    "available": {
+        "": "^$"
+    },
+    "auth": false
+}

@@ -17,9 +17,11 @@ final class blockslocal_www_top implements RegionInterface
         $wrap->append(Builder::p()->content($context->lang('block.top')));
 
         $site = $context->service('site');
+        
+        // 1. Языки (v4)
         $langs = ['ru', 'en'];
         if ($site instanceof \Damoony\Core\Config) {
-            $configured = $site->getByKey(['alliases_langs', $context->domain->real, $context->domain->allias], []);
+            $configured = $site->getByKey(['alliases', $context->domain->real, $context->domain->allias, 'langs'], []);
             if (is_array($configured) && $configured !== []) { $langs = $configured; }
         }
         
@@ -32,7 +34,7 @@ final class blockslocal_www_top implements RegionInterface
         }
         if ($pathWithoutLang === '') { $pathWithoutLang = '/'; }
 
-        // 1. ВОССТАНОВЛЕННОЕ НАВИГАЦИОННОЕ МЕНЮ
+        // 2. Навигация
         $nav = Builder::div('dt_top_nav');
         $nav->append(Builder::div('dt_logo')->content('Damoony'));
         
@@ -42,13 +44,22 @@ final class blockslocal_www_top implements RegionInterface
         $mainMenu->append(Builder::li()->append(Builder::a('/' . $currentLang . '/tests/')->content($context->lang('menu.tests'))));
         $nav->append($mainMenu);
 
+        // 3. Auth Menu (Проверка авторизации!)
         $authMenu = Builder::ul('dt_auth_menu');
-        $authMenu->append(Builder::li()->append(Builder::a('/' . $currentLang . '/login/')->content($context->lang('menu.login'))));
+        $auth = $context->service('auth');
+        if ($auth instanceof \Damoony\Data\Auth\AuthInterface && $auth->isAuthenticated()) {
+            $user = $auth->user();
+            $name = $user['login'] ?? 'Профиль';
+            $authMenu->append(Builder::li()->append(Builder::a('/' . $currentLang . '/profile/')->content($name)));
+            $authMenu->append(Builder::li()->append(Builder::a('/' . $currentLang . '/logout/')->content('Выйти')));
+        } else {
+            $authMenu->append(Builder::li()->append(Builder::a('/' . $currentLang . '/login/')->content($context->lang('menu.login'))));
+        }
         $nav->append($authMenu);
         
         $wrap->append($nav);
 
-        // 2. ПЕРЕКЛЮЧАТЕЛИ
+        // 4. Переключатели
         $switchers = Builder::div('dt_switchers');
 
         // Языки
@@ -62,13 +73,12 @@ final class blockslocal_www_top implements RegionInterface
         }
         $switchers->append($langSwitcher);
 
-        // Скины
-        $allowedSkins = ['light', 'dark'];
-        if ($site instanceof \Damoony\Core\Config) {
-            $confSkins = $site->getByKey(['alliases_skins_allowed', $context->domain->real, $context->domain->allias], []);
-            if (is_array($confSkins) && $confSkins !== []) {
-                $allowedSkins = $confSkins;
-            }
+        // Скины (v4: сканируем папку)
+        $paths = $context->service('paths');
+        $aliasSkinDir = $paths instanceof \Damoony\Core\Files\Paths ? $paths->media($context->domain->real, $context->domain->allias) . '/skin/' : '';
+        $allowedSkins = is_dir($aliasSkinDir) ? array_values(array_diff(scandir($aliasSkinDir), ['.', '..'])) : [];
+        if (is_array($allowedSkins)) {
+            $allowedSkins = array_filter($allowedSkins, fn($d) => is_dir($aliasSkinDir . $d));
         }
         
         $currentSkin = $context->domain->skin;
