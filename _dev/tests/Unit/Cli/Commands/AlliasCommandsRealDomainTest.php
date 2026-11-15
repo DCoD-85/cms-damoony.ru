@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Damoony\Tests\Unit\Cli\Commands;
 
 use Damoony\Cli\Commands\AlliasNewCommand;
-use Damoony\Cli\Commands\AlliasRemoveCommand;
-use Damoony\Cli\Commands\SkinNewCommand;
 use Damoony\Cli\Context;
 use Damoony\Core\Files\Paths;
 use PHPUnit\Framework\TestCase;

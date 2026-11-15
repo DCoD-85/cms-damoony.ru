@@ -142,7 +142,7 @@ final class ConfigDomainResolver implements DomainResolverInterface
     {
         $aliasSkinDir = $this->paths->media($real, $allias) . '/skin/';
         $aliasSkins = is_dir($aliasSkinDir) ? array_values(array_diff(scandir($aliasSkinDir), ['.', '..'])) : [];
-        $aliasSkins = array_filter($aliasSkins, fn($d) => is_dir($aliasSkinDir . $d));
+        $aliasSkins = array_filter($aliasSkins, fn ($d) => is_dir($aliasSkinDir . $d));
 
         $cookie = $_COOKIE['skin'] ?? '';
         if (is_string($cookie) && in_array($cookie, $aliasSkins, true)) {

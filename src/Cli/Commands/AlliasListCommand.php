@@ -64,7 +64,9 @@ final class AlliasListCommand implements CommandInterface
 
         $rows = [];
         foreach ($aliasesMap as $aliasName => $aliasData) {
-            if (!is_string($aliasName) || $aliasName === '') continue;
+            if (!is_string($aliasName) || $aliasName === '') {
+                continue;
+            }
 
             $dir = $this->paths->allias($realDomain, $aliasName);
             $exists = Fs::isDir($dir);

@@ -60,7 +60,7 @@ final class AlliasNewCommand implements CommandInterface
 
         // Резолвим физический домен через зеркала (или берем сам домен, если он реальный)
         $realDomain = (string) ($site['domains_mirrors'][$domain] ?? $domain);
-        
+
         if (!isset($site['domains_real'][$realDomain])) {
             $r->error('Домен не найден');
             return $r;
@@ -248,12 +248,12 @@ final class AlliasNewCommand implements CommandInterface
         // 3. Конфиг (все ключи)
         $site['alliases'][$realDomain][$name] = [
             'available' => true,
-            'langs' => ['ru', 'en']
+            'langs' => ['ru', 'en'],
         ];
-        
+
         file_put_contents(
             $siteFile,
-            json_encode($site, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n"
+            json_encode($site, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n",
         );
         $r->file(Fs::rel($siteFile, $this->paths->root()));
 

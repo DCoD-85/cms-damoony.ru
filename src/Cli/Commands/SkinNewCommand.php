@@ -47,7 +47,7 @@ final class SkinNewCommand implements CommandInterface
 
         $siteFile = $this->paths->siteConfig();
         $site = is_file($siteFile) ? Config::fromFile($siteFile)->all() : [];
-        
+
         $realDomain = (string) ($site['domains_mirrors'][$domain] ?? $domain);
         if (!isset($site['domains_real'][$realDomain])) {
             $r->error('Домен не найден');
@@ -55,7 +55,7 @@ final class SkinNewCommand implements CommandInterface
         }
 
         $isBase = isset($args['base']);
-        
+
         if ($isBase) {
             $skinDir = $this->paths->mediaRoot() . '/' . $realDomain . '/.skin/' . $name;
         } else {
@@ -98,7 +98,9 @@ final class SkinNewCommand implements CommandInterface
 
     private function copyDir(string $src, string $dst): void
     {
-        if (!is_dir($dst)) mkdir($dst, 0775, true);
+        if (!is_dir($dst)) {
+            mkdir($dst, 0o775, true);
+        }
         $dir = opendir($src);
         if ($dir === false) {
             return;

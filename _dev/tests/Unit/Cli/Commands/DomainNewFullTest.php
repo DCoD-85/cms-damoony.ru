@@ -24,7 +24,7 @@ final class DomainNewFullTest extends TestCase
         if (is_dir($stubsSrc)) {
             $it = new \RecursiveIteratorIterator(
                 new \RecursiveDirectoryIterator($stubsSrc, \RecursiveDirectoryIterator::SKIP_DOTS),
-                \RecursiveIteratorIterator::SELF_FIRST
+                \RecursiveIteratorIterator::SELF_FIRST,
             );
             foreach ($it as $item) {
                 $dest = $this->root . '/stubs/' . $it->getSubPathname();

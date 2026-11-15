@@ -64,8 +64,10 @@ final class SkinListCommand implements CommandInterface
         $rows = [];
         foreach (glob($skinRoot . '/*', GLOB_ONLYDIR) ?: [] as $dir) {
             $name = basename($dir);
-            if (str_starts_with($name, '.')) continue;
-            
+            if (str_starts_with($name, '.')) {
+                continue;
+            }
+
             $rows[] = [
                 'name' => $name,
                 'has_css' => is_file($dir . '/css/main.css'),

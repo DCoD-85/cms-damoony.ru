@@ -78,7 +78,7 @@ final class DomainBindCommand implements CommandInterface
 
         file_put_contents(
             $siteFile,
-            json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n"
+            json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n",
         );
 
         $context->step("Домен '{$domain}' успешно привязан к '{$real}'", true);

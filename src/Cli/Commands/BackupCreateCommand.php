@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Damoony\Cli\Commands;
 
 use Damoony\Cli\CommandInterface;
+use Damoony\Cli\Commands\Concerns\ResolvesRealDomain;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
-use Damoony\Cli\Commands\Concerns\ResolvesRealDomain;
 use Damoony\Core\Config;
 use Damoony\Core\Files\Fs;
 use Damoony\Core\Files\Paths;
@@ -41,18 +41,18 @@ final class BackupCreateCommand implements CommandInterface
 
         $realDomain = $this->resolveRealDomain($this->paths, $domain);
         $root = $this->paths->root();
-        
+
         $backupDir = $root . '/var/backups';
         if (!is_dir($backupDir)) {
-            mkdir($backupDir, 0775, true);
+            mkdir($backupDir, 0o775, true);
         }
 
         $timestamp = date('Y-m-d_H-i-s');
         $zipName = $backupDir . '/backup_' . $realDomain . '_' . $timestamp . '.zip';
         $tmpDir = sys_get_temp_dir() . '/damoony_bak_' . uniqid();
 
-        mkdir($tmpDir . '/app', 0775, true);
-        mkdir($tmpDir . '/www/media', 0775, true);
+        mkdir($tmpDir . '/app', 0o775, true);
+        mkdir($tmpDir . '/www/media', 0o775, true);
 
         // 1. Файлы
         $context->step('Сбор файлов домена...', true);
@@ -90,9 +90,9 @@ final class BackupCreateCommand implements CommandInterface
                 escapeshellarg($host),
                 escapeshellarg($user),
                 $passArg,
-                escapeshellarg($name)
+                escapeshellarg($name),
             );
-            
+
             exec($dumpCmd, $output, $returnCode);
             if ($returnCode !== 0) {
                 $r->error("Ошибка mysqldump (код {$returnCode}):\n" . implode("\n", $output));
@@ -113,7 +113,7 @@ final class BackupCreateCommand implements CommandInterface
             if ($zip->open($zipName, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
                 $files = new \RecursiveIteratorIterator(
                     new \RecursiveDirectoryIterator($tmpDir, \RecursiveDirectoryIterator::SKIP_DOTS),
-                    \RecursiveIteratorIterator::LEAVES_ONLY
+                    \RecursiveIteratorIterator::LEAVES_ONLY,
                 );
                 foreach ($files as $file) {
                     if (!$file->isDir()) {
@@ -131,7 +131,9 @@ final class BackupCreateCommand implements CommandInterface
         } else {
             // Fallback на PharData (встроенный в PHP)
             try {
-                if (file_exists($zipName)) unlink($zipName);
+                if (file_exists($zipName)) {
+                    unlink($zipName);
+                }
                 $phar = new \PharData($zipName, 0, null, \Phar::ZIP);
                 $phar->buildFromDirectory($tmpDir);
             } catch (\Throwable $e) {
@@ -148,9 +150,13 @@ final class BackupCreateCommand implements CommandInterface
 
     private function copyDir(string $src, string $dst): void
     {
-        if (!is_dir($dst)) mkdir($dst, 0775, true);
+        if (!is_dir($dst)) {
+            mkdir($dst, 0o775, true);
+        }
         $dir = opendir($src);
-        if ($dir === false) return;
+        if ($dir === false) {
+            return;
+        }
         while (false !== ($file = readdir($dir))) {
             if ($file !== '.' && $file !== '..') {
                 if (is_dir($src . '/' . $file)) {

@@ -49,7 +49,7 @@ final class AdminPasswdCommand implements CommandInterface
         $cfg = is_file($file) ? Config::fromFile($file)->all() : [];
         $cfg['login'] = $login;
         $cfg['password_hash'] = $hash;
-        
+
         if (!isset($cfg['default_lang'])) {
             $cfg['default_lang'] = 'ru';
         }

@@ -13,7 +13,6 @@ use Damoony\Core\Files\Paths;
 use Damoony\Core\Http\Response;
 use Damoony\Core\Routing\RouteMatch;
 use Damoony\Core\Security\Csrf;
-use Damoony\UI\Response\MinStruct;
 use Damoony\UI\Algoritm\PageInterface;
 use Damoony\UI\Document;
 use Damoony\UI\Node;
@@ -21,6 +20,7 @@ use Damoony\UI\Region\ContentRegion;
 use Damoony\UI\Region\RegionContext;
 use Damoony\UI\Region\RegionLoader;
 use Damoony\UI\Region\RegionRegistry;
+use Damoony\UI\Response\MinStruct;
 use Damoony\UI\Scheme\SchemeLoader;
 use Damoony\UI\Scheme\SchemeRenderer;
 

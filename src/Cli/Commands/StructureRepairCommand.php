@@ -46,7 +46,7 @@ final class StructureRepairCommand implements CommandInterface
         }
         $site = Config::fromFile($siteFile)->all();
         $realDomain = (string) ($site['domains_mirrors'][$domain] ?? $domain);
-        
+
         if (!isset($site['domains_real'][$realDomain])) {
             $r->error('Домен не найден в конфиге');
             return $r;

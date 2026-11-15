@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Damoony\Cli\Commands;
 
 use Damoony\Cli\CommandInterface;
+use Damoony\Cli\Commands\Concerns\ResolvesRealDomain;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
-use Damoony\Cli\Commands\Concerns\ResolvesRealDomain;
 use Damoony\Core\Config;
 use Damoony\Core\Files\Fs;
 use Damoony\Core\Files\Paths;
@@ -60,7 +60,7 @@ final class BackupRestoreCommand implements CommandInterface
 
         // 1. Распаковка
         $context->step('Распаковка архива...', true);
-        mkdir($tmpDir, 0775, true);
+        mkdir($tmpDir, 0o775, true);
         if (class_exists('\ZipArchive')) {
             $zip = new \ZipArchive();
             if ($zip->open($zipPath) === true) {
@@ -114,9 +114,9 @@ final class BackupRestoreCommand implements CommandInterface
                 escapeshellarg($user),
                 $passArg,
                 escapeshellarg($name),
-                $tmpDir
+                $tmpDir,
             );
-            
+
             exec($importCmd, $output, $returnCode);
             if ($returnCode !== 0) {
                 $r->error("Ошибка mysql (код {$returnCode}):\n" . implode("\n", $output));
@@ -131,10 +131,10 @@ final class BackupRestoreCommand implements CommandInterface
 
         // 3. Файлы (с карантином старых)
         $context->step('Восстановление файлов (старые в карантин)...', true);
-        
+
         $appCurrent = $root . '/app/' . $realDomain;
         $mediaCurrent = $root . '/www/media/' . $realDomain;
-        
+
         if (is_dir($appCurrent)) {
             rename($appCurrent, $root . '/app/' . $realDomain . '_trash_restore_' . $timestamp);
         }
@@ -156,9 +156,13 @@ final class BackupRestoreCommand implements CommandInterface
 
     private function copyDir(string $src, string $dst): void
     {
-        if (!is_dir($dst)) mkdir($dst, 0775, true);
+        if (!is_dir($dst)) {
+            mkdir($dst, 0o775, true);
+        }
         $dir = opendir($src);
-        if ($dir === false) return;
+        if ($dir === false) {
+            return;
+        }
         while (false !== ($file = readdir($dir))) {
             if ($file !== '.' && $file !== '..') {
                 if (is_dir($src . '/' . $file)) {

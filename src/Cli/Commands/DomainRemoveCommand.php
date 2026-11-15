@@ -77,7 +77,7 @@ final class DomainRemoveCommand implements CommandInterface
 
             if (count($mappedDomains) > 0) {
                 if (isset($args['cascade'])) {
-                    $context->step("Принудительная отвязка доменов: " . implode(', ', $mappedDomains), true);
+                    $context->step('Принудительная отвязка доменов: ' . implode(', ', $mappedDomains), true);
                     foreach ($mappedDomains as $mappedDomain) {
                         foreach (self::DOMAIN_KEYS as $k) {
                             if (isset($site[$k][$mappedDomain])) {

@@ -26,8 +26,8 @@ final class ConfigDomainResolverTest extends TestCase
                 'example.ru' => true,
                 'other.ru' => false,
             ],
-            
-            
+
+
             'domains_stub' => [
                 'other.ru' => ['current' => 'maintenance'],
             ],
@@ -109,7 +109,7 @@ final class ConfigDomainResolverTest extends TestCase
                 'damoony3.ru' => 'damoony.ru',
             ],
             'domains_mirrors_available' => ['damoony.ru' => true, 'damoony.online' => true, 'damoony3.ru' => true],
-            
+
             'alliases' => ['damoony.ru' => ['www' => ['available' => true], 'admin' => ['available' => true]]],
         ]);
 

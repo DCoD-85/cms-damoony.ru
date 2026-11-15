@@ -62,7 +62,7 @@ final class SkinListCommandTest extends TestCase
             ->run(['domain' => 'example.ru', 'allias' => 'www'], $this->ctx());
         self::assertTrue($res->ok);
         self::assertSame([], $res->data['rows']);
-        
+
     }
 
     public function testListsSkins(): void
@@ -74,15 +74,15 @@ final class SkinListCommandTest extends TestCase
             ->run(['domain' => 'example.ru', 'allias' => 'www'], $this->ctx());
         self::assertTrue($res->ok);
         self::assertCount(2, $res->data['rows']);
-        
+
 
         $byName = [];
         foreach ($res->data['rows'] as $row) {
             $byName[$row['name']] = $row;
         }
-        
+
         self::assertTrue($byName['default']['has_css']);
-        
+
     }
 
     public function testRejectsInvalidAllias(): void

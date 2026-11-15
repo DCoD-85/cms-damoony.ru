@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $key = 'KEY-' . strtoupper(bin2hex(random_bytes(8)));
 
     $dataDir = __DIR__ . '/../data';
-    @mkdir($dataDir, 0755, true);
+    @mkdir($dataDir, 0o755, true);
     $licFile = $dataDir . '/licenses.json';
     $licenses = is_file($licFile) ? json_decode(file_get_contents($licFile), true) : [];
     $licenses[] = [
@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $tpl = file_get_contents($tplFile);
     $updateFlag = $isUpdate ? '1' : '0';
-	$install = str_replace(['{{DOMAIN}}', '{{KEY}}', '{{UPDATE}}'], [$domain, $key, $updateFlag], $tpl);
+    $install = str_replace(['{{DOMAIN}}', '{{KEY}}', '{{UPDATE}}'], [$domain, $key, $updateFlag], $tpl);
 
     $filename = ($isUpdate ? 'update-' : 'install-') . $domain . '.sh';
 
@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <!-- Форма -->
     <div class="box">
         <h1><?= $isUpdate ? 'Обновить Damoony Engine' : 'Получить Damoony Engine' ?></h1>
-        
+
         <?php if ($isUpdate): ?>
             <p class="warn">Режим обновления: ядро и <code>app/</code> будут перегенерированы из свежих шаблонов. <b>База данных не затрагивается.</b></p>
         <?php endif; ?>
@@ -113,7 +113,7 @@ bash install-вашдомен.sh</code></pre>
         <p><b>Шаг 5.</b> После завершения открой <code>https://ваш-домен/ru/</code>.</p>
 
         <div class="info">
-            <b>Данные администратора</b> будут сохранены в файле <code>CREDENTIALS.txt</code> в корне проекта. 
+            <b>Данные администратора</b> будут сохранены в файле <code>CREDENTIALS.txt</code> в корне проекта.
             Пароль генерируется автоматически (12 символов).
         </div>
 
