@@ -49,6 +49,11 @@ final class AdminPasswdCommand implements CommandInterface
         $cfg = is_file($file) ? Config::fromFile($file)->all() : [];
         $cfg['login'] = $login;
         $cfg['password_hash'] = $hash;
+        
+            $cfg['default_lang'] = 'ru';
+        }
+            $cfg['default_role'] = 'superadmin';
+        }
 
         Fs::writeAtomic($file, json_encode($cfg, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
         $r->file(Fs::rel($file, $this->paths->root()));
