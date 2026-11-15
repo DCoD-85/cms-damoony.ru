@@ -103,7 +103,7 @@
 ## 5. Инварианты (что всегда должно быть истинным)
 - Домен ≠ Алиас.
 - **FS-пути — только от `realDomain`.** `Paths` принимает realDomain. CLI-команды резолвят через `ResolvesRealDomain`.
-- **Структура v4 (по умолчанию для новых):** `domains_structure[real] = 'v4'`. Разделение на `global` (домен) и `local` (алиас): `.blocksglobal`/`.blockslocal`, `.dbglobal`/`.dblocal`, `.i18nglobal`/`.i18nlocal`.
+- **Структура v4 (единственная и безальтернативная):** Разделение на `global` (домен) и `local` (алиас): `.blocksglobal`/`.blockslocal`, `.dbglobal`/`.dblocal`, `.i18nglobal`/`.i18nlocal`.
 - **Schema-First.** Если `Page::content()` возвращает `null`, `PageHandler` всё равно рендерит схему (`SchemeRenderer`). Пустая страница (204) отдается только если нет ни схемы, ни контента.
 - **CSRF обязателен для всех POST.** `PageHandler` проверяет токен `_csrf` (через `Csrf::check()`) для любого POST-запроса. При ошибке — 403.
 - **Auth — ответственность страницы.** `AdminPage::guard()` проверяет `AuthInterface::isLoggedIn()`.

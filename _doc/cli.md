@@ -29,10 +29,10 @@
 ## 2. Домены и Алиасы
 
 - `domain:new --domain=[fqdn] [--namespace=...]` — создаёт папку домена, алиас `www`, глобальную схему, root-страницу. `--namespace` опционален (default — `str_replace(['.','-'], '_', domain)`), regex `^[a-z][a-z0-9_]*$`.
-- `domain:remove --domain=[fqdn] --force` — в карантин (`app/[d]_trash_[ts]/`). Очистка **16 ключей** `site.config`: `domains_real`, `domains_available`, `domains_namespace`, `domains_titles`, `domains_skins`, `domains_skins_allowed`, `domains_stubs`, `domains_scheme`, `alliases_real`, `alliases_available`, `alliases_langs`, `alliases_titles`, `alliases_stubs`, `alliases_skins`, `alliases_skins_allowed`, `fillers`. **Non-self-mapped домен удалить нельзя** (`domains_real[d] ≠ d` → `error`, укажите `--domain=<real>`). Idempotent.
+- `domain:remove --domain=[fqdn] --force [--cascade]` — в карантин (`app/[d]_trash_[ts]/`). Очистка `site.config`: `domains_real`, `domains_mirrors`, `domains_mirrors_available`, `domains_stub`, `domains_scheme`, `alliases`, `fillers`. Если к домену привязаны зеркала (`domains_mirrors`), без флага `--cascade` вернёт `error`. Idempotent.
 - `domain:list` — список реальных доменов (без `''`).
 - `allias:new --domain=[fqdn] --name=[allias]` — создаёт алиас (root-страницу через PageCompiler + дефолтную схему). Regex `^[a-z][a-z0-9_]*$`.
-- `allias:remove --domain=[fqdn] --name=[allias] --force` — в карантин. Очистка **8 ключей** `site.config`: `alliases_real`, `alliases_available`, `alliases_langs`, `alliases_titles`, `alliases_stubs`, `alliases_skins`, `alliases_skins_allowed`, `fillers`. **Non-self-mapped домен** → `error` (как `domain:remove`).
+- `allias:remove --domain=[fqdn] --name=[allias] --force` — в карантин. Очистка `site.config`: `alliases`, `fillers`.
 - `allias:list --domain=[fqdn]` — список алиасов (группирует по real).
 
 ## 3. Страницы (Page)
@@ -149,10 +149,10 @@
 
 ## 14. Языки (`bin/cli.php lang:*`)
 
-Управление языками домена и алиаса. Файлы переводов — `app/{real}/.i18n/{lang}.json` (домен) и `app/{real}/{allias}/.i18n/{lang}.json` (алиас). Регистрация — в `site.config` (`domains_langs[real]`, `alliases_langs[real][allias]`).
+Управление языками домена и алиаса. Файлы переводов — `app/{real}/.i18nglobal/{lang}.json` (домен) и `app/{real}/{allias}/.i18nlocal/{lang}.json` (алиас). Регистрация — в `site.config` (`alliases[real][alias]['langs']`).
 
-- `lang:list --domain=[d] [--allias=a] [--with-config=1] [--json=1]` — список языков. Без `--with-config` — только файлы `.i18n/*.json`. С `--with-config=1` — объединение файлов и `site.config`, в `data.rows` поля `lang`, `file`, `has_file`, `in_config`.
+- `lang:list --domain=[d] [--allias=a] [--with-config=1] [--json=1]` — список языков. Без `--with-config` — только файлы `.i18nglobal/*.json`. С `--with-config=1` — объединение файлов и `site.config`, в `data.rows` поля `lang`, `file`, `has_file`, `in_config`.
 - `lang:add --domain=[d] [--allias=a] --lang=[xx]` — создать `{lang}.json` (`{}`) и зарегистрировать в config. Для алиаса язык должен быть сначала объявлен на уровне домена.
 - `lang:remove --domain=[d] [--allias=a] --lang=[xx] --force` — в карантин (`var/trash/lang_*`), удалить из config. Запрет на удаление последнего языка.
 - `lang:repair --domain=[d] [--allias=a] [--fix=1] [--prune=1] [--promote=1]` — найти drift config↔files. Без `--fix` — dry-run. `--prune` — удалять config-языки без файла; без `--prune` — создать файл `{}`. `--promote` — добавлять alias-языки в `domains_langs`, если их там нет.
-- `lang:sync --domain=[d] --allias=[a]` — `alliases_langs[real][allias] ← domains_langs[real]`, создать отсутствующие файлы.
+- `lang:sync --domain=[d] --allias=[a]` — `alliases[real][alias]['langs'] ← alliases[real]['www']['langs']`, создать отсутствующие файлы.

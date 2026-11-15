@@ -58,29 +58,25 @@ php -r "var_dump(function_exists('curl_init'), function_exists('imagecreatetruec
 ```json
 {
   "domains_real": {
-    "damoony.ru": "damoony.ru"
-  },
-  "domains_available": {
-    "damoony.ru": true
-  },
-  "domains_namespace": {
     "damoony.ru": "damoony_ru"
   },
-  "alliases_real": {
-    "damoony.ru": { "www": "www", "doc": "doc", "agent": "agent" }
+  "domains_mirrors": {
+    "damoony.ru": "damoony.ru",
+    "damoony3.ru": "damoony.ru"
   },
-  "alliases_available": {
-    "damoony.ru": { "www": true, "doc": true, "agent": true }
+  "domains_mirrors_available": {
+    "damoony.ru": true,
+    "damoony3.ru": true
   },
-  "alliases_langs": {
-    "damoony.ru": { "www": ["ru"] }
-  },
-  "domains_langs": {
-    "damoony.ru": ["ru", "en", "zh"]
+  "alliases": {
+    "damoony.ru": {
+      "www": { "available": true, "langs": ["ru", "en"] },
+      "doc": { "available": true, "langs": ["ru"] }
+    }
   }
 }
 ```
-⚠️ `domains_langs[real]` — языки домена. `alliases_langs[real][alias]` — override алиаса. Глобальный default — `admin.config.default_lang`.
+⚠️ `domains_real` хранит namespace для папки. `domains_mirrors` — это входные хосты (зеркала). Языки и настройки алиасов живут в дереве `alliases`. Глобальный default — `admin.config.default_lang`.
 ⚠️ **Self-mapping обязателен:** ключ реального домена должен указывать на себя (`"damoony.ru": "damoony.ru"`).
 ⚠️ Если `domains_real["damoony3.ru"] = "damoony.ru"`, то папка создаётся в `app/damoony.ru/` (realDomain). 
 

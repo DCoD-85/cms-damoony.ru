@@ -133,8 +133,8 @@
 | Content (runtime) | `/content/[domain]/[allias]/[category]/[hash].[ext]` + `[hash].meta.json` |
 | DataProvider (alias) | `app/{real}/{alias}/.dbprovider/[Name]Provider.php` |
 | DataProvider (domain) | `app/[domain]/.dbprovider/[Name]Provider.php` |
-| i18n (домен) | `app/[domain]/.i18n/[lang].json` (создаётся `lang:add`) |
-| i18n (алиас) | `app/[domain]/[allias]/.i18n/[lang].json` (создаётся `lang:add --allias`) |
+| i18n (домен) | `app/[domain]/.i18nglobal/[lang].json` (создаётся `lang:add`) |
+| i18n (алиас) | `app/[domain]/[allias]/.i18nlocal/[lang].json` (создаётся `lang:add --allias`) |
 | Skin (git) | `www/media/[domain]/[allias]/skin/[name]/{css,js,img,skin.json}` |
 | Карантин (6 уровней) | `app/[d]_trash_[ts]/`, `app/[d]/[a]_trash_[ts]/`, `.schemesglobal/[n]_trash_[ts]/`, `.blocksglobal/[n]_trash_[ts]/`, `/content/.trash/...`, `www/media/.trash/...` |
 | Конфиги | `config/*.config` (`engine`, `site`, `admin`, `agent`, `ainet`) |
