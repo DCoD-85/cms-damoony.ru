@@ -51,6 +51,18 @@ jobs:
       - name: Prepare runtime dirs
         run: mkdir -p var _dev/var && touch var/.gitkeep
 
+      - name: Configure CI Site
+        run: |
+          mkdir -p config
+          cat > config/site.config <<EOF
+          {
+              "domains_real": {"127.0.0.1": "local_ru"},
+              "domains_mirrors": {"127.0.0.1": "127.0.0.1"},
+              "domains_mirrors_available": {"127.0.0.1": true},
+              "alliases": {"127.0.0.1": {"www": {"available": true, "langs": ["ru"]}}}
+          }
+          EOF
+
       - name: Configure CI DB
         run: |
           cat > config/engine.config <<EOF
