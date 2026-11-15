@@ -84,8 +84,12 @@ fi
 
 # 4. Активация
 echo -e "${YELLOW}[4/9] Активация лицензии...${NC}"
+set +e
 ACTIVATE=$(curl -sSL -X POST "$VENDOR/api/activate.php" -H "Content-Type: application/json" -d "{\"key\":\"$LICENSE_KEY\",\"domain\":\"$DOMAIN\"}" 2>/dev/null)
-if [ $? -ne 0 ]; then
+CURL_EXIT=$?
+set -e
+
+if [ "$CURL_EXIT" -ne 0 ] || [ -z "$ACTIVATE" ]; then
     echo -e "${YELLOW}  ! Проблема с SSL-сертификатом. Пробуем без проверки...${NC}"
     ACTIVATE=$(curl -sSLk -X POST "$VENDOR/api/activate.php" -H "Content-Type: application/json" -d "{\"key\":\"$LICENSE_KEY\",\"domain\":\"$DOMAIN\"}")
 fi
@@ -98,8 +102,12 @@ ZIP_URL=$(echo "$ACTIVATE" | php -r 'echo json_decode(stream_get_contents(STDIN)
 # 5. Скачивание
 echo -e "${YELLOW}[5/9] Скачивание ядра...${NC}"
 TMP=$(mktemp -d)
+set +e
 curl -sSL "$ZIP_URL" -o "$TMP/core.zip" 2>/dev/null
-if [ $? -ne 0 ]; then
+CURL_EXIT=$?
+set -e
+
+if [ "$CURL_EXIT" -ne 0 ]; then
     echo -e "${YELLOW}  ! Проблема с SSL-сертификатом. Скачиваем без проверки...${NC}"
     curl -sSLk "$ZIP_URL" -o "$TMP/core.zip"
 fi
