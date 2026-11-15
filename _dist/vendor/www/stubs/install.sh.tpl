@@ -170,6 +170,10 @@ fi
 
 # 9. Финализация
 echo -e "${YELLOW}[9/9] Финализация...${NC}"
+
+# Создаем папки, если их нет (они пустые и не попадают в ZIP)
+mkdir -p var content www/downloads
+
 chown -R www-data:www-data app content var www/media || true
 chmod -R 775 app content var www/media 2>/dev/null || true
 

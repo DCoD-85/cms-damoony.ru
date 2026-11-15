@@ -80,6 +80,7 @@ python -m ai_agent.brain damoony3test.ru coffee "Сделай лендинг IT-
 | [`ai.md`](_doc/ai.md) | aicli (HATEOAS, роли, Navigator), AINET (SSRF), мультиагент, AI Wizard (Web UI) |
 | [`admin.md`](_doc/admin.md) | UI админки + делегирование CLI |
 | [`install.md`](_doc/install.md) | Установка с нуля, конфиги, веб-сервер |
+| [`deployment_test.md`](_doc/deployment_test.md) | E2E-сценарий развертывания (Vendor -> Client) |
 | [`dbcli.md`](_doc/dbcli.md) | Декларативная работа с БД (JSON-схемы) |
 | [`orchestrator.md`](_doc/orchestrator.md) | Внутренний AI-конвейер (Blackboard) |
 | [`pages_and_rules.md`](_doc/pages_and_rules.md) | FileRouter, `.rules.json`, available/auth |
