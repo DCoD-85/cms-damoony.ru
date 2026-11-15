@@ -18,6 +18,8 @@ final class DomainRemoveCommand implements CommandInterface
         'domains_real',
         'domains_available',
         'domains_namespace',
+        'domains_langs',
+        'domains_structure',
         'domains_titles',
         'domains_skins',
         'domains_skins_allowed',

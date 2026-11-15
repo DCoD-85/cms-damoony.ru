@@ -1,0 +1,9 @@
+{
+    "available": {
+        "": "^$",
+        "lang": "^([a-z]{2})$"
+    },
+    "auth": false,
+    "search": true,
+    "default": false
+}
