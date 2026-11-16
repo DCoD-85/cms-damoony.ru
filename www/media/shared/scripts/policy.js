@@ -24,7 +24,11 @@
     }
 
     function enhance(banner) {
-        if (isClosedInSession || !banner || banner.classList.contains('is-hidden')) {
+        if (!banner || banner.classList.contains('is-hidden')) {
+            return;
+        }
+        if (isClosedInSession) {
+            banner.classList.add('is-hidden');
             return;
         }
 

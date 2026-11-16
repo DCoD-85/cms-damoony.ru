@@ -162,6 +162,12 @@
             window.location.reload();
             return true;
         }
+
+        // M7: re-init cookie-banner after AJAX content replacement (layout/blocks/release)
+        if (window.__damoonyPolicy && typeof window.__damoonyPolicy.init === 'function') {
+            window.__damoonyPolicy.init();
+        }
+
         return false;
     }
 
