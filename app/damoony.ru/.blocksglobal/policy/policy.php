@@ -5,6 +5,7 @@ use Damoony\UI\Region\RegionContext;
 use Damoony\UI\Region\RegionInterface;
 use Damoony\UI\Builder;
 use Damoony\UI\Node;
+use Damoony\UI\Text;
 
 final class blocksglobal_policy implements RegionInterface
 {
@@ -19,7 +20,7 @@ final class blocksglobal_policy implements RegionInterface
         if (($_COOKIE['damoony_policy'] ?? '') === 'accepted') {
             $hidden = Builder::div('cookie-banner');
             $hidden->attrs()->add('id', 'cookie-banner');
-            $hidden->attrs()->add('style', 'display: none;');
+            $hidden->attrs()->classAdd('is-hidden');
             return $hidden;
         }
 
@@ -29,9 +30,11 @@ final class blocksglobal_policy implements RegionInterface
         // JS (M6c) добавит .enhanced (модалка по размеру окна).
 
         $text = Builder::div('cookie-text');
-        $text->append(Builder::p()->content(
-            $context->lang('block.policy.text', ['url' => '/' . $lang . '/policy/'])
-        ));
+        $rawText = strip_tags(
+            $context->lang('block.policy.text', ['url' => '/' . $lang . '/policy/']),
+            '<a><strong>'
+        );
+        $text->append(Builder::p()->append(Text::raw($rawText)));
         $wrap->append($text);
 
         $buttons = Builder::div('cookie-buttons');
