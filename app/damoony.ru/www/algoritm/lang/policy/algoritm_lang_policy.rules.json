@@ -1,4 +1,6 @@
 {
-    "available": [],
+    "available": {
+        "accept": "^accept$"
+    },
     "auth": false
 }
