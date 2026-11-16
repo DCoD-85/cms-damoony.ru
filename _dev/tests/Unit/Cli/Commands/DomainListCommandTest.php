@@ -34,7 +34,7 @@ final class DomainListCommandTest extends TestCase
             'domains_mirrors_available' => ['damoony.ru' => true],
             'alliases' => ['damoony.ru' => ['www' => ['available' => true], 'doc' => ['available' => false]]],
         ]));
-        mkdir($this->root . '/app/damoony_ru', 0o777, true);
+        mkdir($this->root . '/app/damoony.ru', 0o777, true);
 
         $res = new DomainListCommand($this->paths)->run([], $this->ctx());
 
