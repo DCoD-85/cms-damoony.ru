@@ -84,7 +84,13 @@
     }
 
     function init() {
-        var banner = getBanner();
+        // Удаляем баннеры, которые остались на body от прошлых AJAX-переходов
+        var orphans = document.querySelectorAll('body > #cookie-banner');
+        for (var i = 0; i < orphans.length; i++) {
+            orphans[i].remove();
+        }
+
+        var banner = document.getElementById('cookie-banner');
         if (banner) {
             enhance(banner);
         }
