@@ -39,7 +39,7 @@
 | `install.md` | Требования, конфиги, веб-сервер, первый запуск, проверка | How-to разработчика, историю миграций |
 | `deployment_test.md` | Полный E2E-сценарий развертывания (Local Vendor -> Prod Vendor -> Client) | Установку в dev-окружении |
 | `admin.md` | UI админки + делегирование CLI | Per-command флаги (ссылка в CLI) |
-| `progressive_enhancement.md` | AJAX-логика app.js, Toasts и MinStruct | Установку, UI-дизайн |
+| `progressive_enhancement.md` | AJAX-логика cliajax.js, Toasts и MinStruct | Установку, UI-дизайн |
 | `visuo_showcase.md` | Эталонный пример мультиязычного сайта на движке | Архитектуру ядра, установку |
 | `dbcli.md` | Декларативная работа с БД (JSON-схемы, генерация SQL и PHP) | SQL-инъекции, ручное написание миграций |
 | `dataprovider-design.md` | DataProvider: структура, ProviderResolver, шаблоны, роли db:* | SQL-инъекции, ручные миграции |
