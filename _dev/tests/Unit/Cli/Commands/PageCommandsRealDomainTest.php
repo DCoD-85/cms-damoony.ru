@@ -25,11 +25,9 @@ final class PageCommandsRealDomainTest extends TestCase
             $this->root . '/config/site.config',
             json_encode([
                 'domains_real' => ['real.ru' => 'real.ru', 'alias.ru' => 'real.ru'],
+                'domains_mirrors' => ['real.ru' => 'real.ru', 'alias.ru' => 'real.ru'],
                 'domains_namespace' => ['real.ru' => 'real_ru'],
-                'alliases_real' => [
-                    'real.ru' => ['www' => 'www'],
-                    'alias.ru' => ['www' => 'www'],
-                ],
+                'alliases' => ['real.ru' => ['www' => ['available' => true]]],
             ], JSON_THROW_ON_ERROR),
         );
 

@@ -83,19 +83,15 @@ final class PageNewCommand implements CommandInterface
         }
         $site = Config::fromFile($siteFile)->all();
 
-        if (!isset($site['domains_real'][$domain])) {
+        // 2b. realDomain (host) через зеркала — единый паттерн с AlliasNewCommand/AlliasListCommand.
+        // FS-пути (app/, .sess_*) строятся от host; namespace (damoony_ru) резолвится через domains_real.
+        $realDomain = (string) ($site['domains_mirrors'][$domain] ?? $domain);
+        if (!isset($site['domains_real'][$realDomain])) {
             $r->error('Домен не найден в конфиге');
             return $r;
         }
-        if (!isset($site['alliases_real'][$domain][$allias])) {
+        if (!isset($site['alliases'][$realDomain][$allias])) {
             $r->error('Алиас не найден в конфиге');
-            return $r;
-        }
-
-        // 2b. realDomain: FS-пути строятся только от него.
-        $realDomain = (string) ($site['domains_real'][$domain] ?? '');
-        if ($realDomain === '') {
-            $r->error('Домен не найден в site.config');
             return $r;
         }
 

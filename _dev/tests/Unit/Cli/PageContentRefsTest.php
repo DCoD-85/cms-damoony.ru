@@ -25,8 +25,9 @@ final class PageContentRefsTest extends TestCase
 
         file_put_contents($this->root . '/config/site.config', json_encode([
             'domains_real' => ['example.ru' => 'example.ru'],
+            'domains_mirrors' => ['example.ru' => 'example.ru'],
             'domains_namespace' => ['example.ru' => 'example_ru'],
-            'alliases_real' => ['example.ru' => ['www' => 'www']],
+            'alliases' => ['example.ru' => ['www' => ['available' => true]]],
         ]));
         file_put_contents($this->root . '/config/agent.config', json_encode([
             'allowed_domains' => ['example.ru'],
