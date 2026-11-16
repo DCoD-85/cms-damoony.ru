@@ -38,8 +38,8 @@ return [
     'meta' => [
         'css' => array_merge($baseCss, $blockCss, $skinCss, $compactCss),
         'js' => [
-            '/media/shared/scripts/cliajax.js?v=3',
-            '/media/shared/scripts/policy.js?v=1',
+            '/media/shared/scripts/cliajax.js',
+            '/media/shared/scripts/policy.js',
         ],
         'favicon' => '/media/damoony.ru/shared/ico.ico',
     ],
