@@ -33,6 +33,10 @@ final class DomainListCommandTest extends TestCase
                 'damoony.ru' => 'damoony_ru',
                 'damoony3.ru' => 'damoony_ru',
             ],
+            'domains_mirrors' => [
+                'damoony.ru' => 'damoony.ru',
+                'damoony3.ru' => 'damoony.ru',
+            ],
             'domains_mirrors_available' => ['damoony.ru' => true],
             'alliases' => [
                 'damoony.ru' => ['www' => ['available' => true], 'doc' => ['available' => true]],
@@ -51,6 +55,7 @@ final class DomainListCommandTest extends TestCase
     {
         file_put_contents($this->root . '/config/site.config', json_encode([
             'domains_real' => ['example.ru' => 'example_ru'],
+            'domains_mirrors' => ['example.ru' => 'example.ru'],
             'domains_mirrors_available' => ['example.ru' => true],
             'alliases' => [
                 'example.ru' => ['www' => ['available' => true], 'tea' => ['available' => true], 'coffee' => ['available' => true]],
