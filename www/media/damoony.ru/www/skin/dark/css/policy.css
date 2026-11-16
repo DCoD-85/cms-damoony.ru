@@ -1,2 +1,55 @@
+/* policy.css — cookie-banner (dark skin) */
+/* z-index 10000 — выше #dt_benchmark (9999) */
+.cookie-banner {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    padding: 16px 24px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    background: #444;
+    color: #eee;
+    border-top: 1px solid #555;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
+    font-size: 14px;
+    line-height: 1.5;
+}
 
-/* Базовые настройки для всех блоков, специфичные для скина */
+.cookie-text { flex: 1; }
+.cookie-text p { margin: 0; }
+.cookie-text a { color: #6cb4ee; text-decoration: underline; }
+.cookie-text a:hover { color: #90c8f4; }
+
+.cookie-buttons {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.cookie-buttons button {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.15s ease;
+}
+
+.btn-accept { background: #4a90e2; color: #fff; }
+.btn-accept:hover { background: #3a7bc8; }
+
+.btn-decline { background: #666; color: #eee; }
+.btn-decline:hover { background: #777; }
+
+@media (max-width: 768px) {
+    .cookie-banner {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 16px;
+    }
+    .cookie-buttons { justify-content: flex-end; }
+}
