@@ -45,17 +45,19 @@ final class algoritm_lang_policy extends Page
             $content->append(Builder::p()->append(Text::raw($rawText)));
         }
 
-        // No-JS fallback: форма «Принять» (POST → /{lang}/policy/accept → cookie → 302).
-        $lang = $this->context->domain->language;
-        $form = new Form('policy-accept-form');
-        $form->action('/' . $lang . '/policy/accept');
-        $form->method('POST');
-        $csrf = $this->context->service('csrf');
-        if ($csrf instanceof \Damoony\Core\Security\Csrf) {
-            $form->csrf($csrf);
+        // No-JS fallback: форма «Принять» (только если куки ещё нет).
+        if ((($_COOKIE['damoony_policy'] ?? '') !== 'accepted')) {
+            $lang = $this->context->domain->language;
+            $form = new Form('policy-accept-form');
+            $form->action('/' . $lang . '/policy/accept');
+            $form->method('POST');
+            $csrf = $this->context->service('csrf');
+            if ($csrf instanceof \Damoony\Core\Security\Csrf) {
+                $form->csrf($csrf);
+            }
+            $form->add(new Button($this->context->lang('policy.accept'), 'submit'));
+            $content->append($form);
         }
-        $form->add(new Button($this->context->lang('policy.accept'), 'submit'));
-        $content->append($form);
 
         return $content;
     }
