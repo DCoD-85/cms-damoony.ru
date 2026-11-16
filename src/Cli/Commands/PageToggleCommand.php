@@ -78,8 +78,8 @@ final class PageToggleCommand implements CommandInterface
             return $r;
         }
         $site = Config::fromFile($siteFile)->all();
-        $realDomain = (string) ($site['domains_real'][$domain] ?? '');
-        if ($realDomain === '') {
+        $realDomain = (string) ($site['domains_mirrors'][$domain] ?? $domain);
+        if (!isset($site['domains_real'][$realDomain])) {
             $r->error('Домен не найден в site.config');
             return $r;
         }
@@ -92,13 +92,32 @@ final class PageToggleCommand implements CommandInterface
             return $r;
         }
 
+        if ($context->isDryRun()) {
+            $context->step('Dry-run: флаг ' . $key . '=' . ($value ? '1' : '0') . ' для ' . ($name !== '' ? $name : '__root__') . ' будет обновлён');
+            $r->data = [
+                'page' => $name !== '' ? $name : '__root__',
+                'key' => $key,
+                'value' => $value,
+                'dry_run' => true,
+            ];
+            return $r;
+        }
+
         // 4. Обновление rules.json (единый источник — algoritm_{name}.rules.json)
         $current = PageRules::load($page->rulesFile);
         $merged = PageRules::withDefaults($current);
         $merged[$key] = $value;
 
         PageRules::save($page->rulesFile, $merged);
-        $r->file(Fs::rel($page->rulesFile, $this->paths->root()));
+        $relPath = Fs::rel($page->rulesFile, $this->paths->root());
+        $r->file($relPath);
+
+        $r->data = [
+            'page' => $name !== '' ? $name : '__root__',
+            'key' => $key,
+            'value' => $value,
+            'file' => $relPath,
+        ];
 
         $context->step('Флаг обновлён', true, "{$key}=" . ($value ? '1' : '0'));
 
