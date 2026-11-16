@@ -39,5 +39,14 @@
     "site.profile.guest": "Гость",
     "site.menu.login": "Вход",
     "site.menu.profile": "Профиль",
-    "site.menu.logout": "Выход"
+    "site.menu.logout": "Выход",
+    "site.privacy.title": "Политика конфиденциальности",
+    "site.privacy.intro.title": "Введение",
+    "site.privacy.intro.text": "Настоящая политика описывает, какие данные мы собираем и как их используем. Последнее обновление: 16 ноября 2026 г.",
+    "site.privacy.cookies.title": "Файлы cookie",
+    "site.privacy.cookies.text": "Мы используем технические cookie для работы сайта и запоминания вашего выбора в отношении cookie (damoony_policy). Вы можете удалить cookie в настройках браузера в любой момент.",
+    "site.privacy.data.title": "Какие данные мы собираем",
+    "site.privacy.data.text": "Мы можем сохранять данные, которые вы отправляете через формы (например, при входе или обратной связи). Данные хранятся на сервере и не передаются третьим лицам без вашего согласия.",
+    "site.privacy.rights.title": "Ваши права",
+    "site.privacy.rights.text": "Вы имеете право запросить удаление своих данных или отозвать согласие. Для этого свяжитесь с нами: <a href=\"mailto:privacy@damoony.ru\">privacy@damoony.ru</a>."
 }

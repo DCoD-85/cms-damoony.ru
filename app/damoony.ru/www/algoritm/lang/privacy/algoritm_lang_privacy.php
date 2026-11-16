@@ -33,6 +33,12 @@ final class algoritm_lang_privacy extends Page
     protected function content(): Node|Response|null
     {
         $content = Builder::div('page-content');
+        $content->append(Builder::h(1)->content($this->context->lang('privacy.title')));
+
+        foreach (['intro', 'cookies', 'data', 'rights'] as $section) {
+            $content->append(Builder::h(2)->content($this->context->lang('privacy.' . $section . '.title')));
+            $content->append(Builder::p()->content($this->context->lang('privacy.' . $section . '.text')));
+        }
 
         return $content;
     }
