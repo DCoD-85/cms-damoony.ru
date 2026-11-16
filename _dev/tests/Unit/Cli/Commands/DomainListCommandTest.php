@@ -40,7 +40,8 @@ final class DomainListCommandTest extends TestCase
         self::assertTrue($res->ok);
         self::assertCount(1, $res->data['rows']);
         $row = $res->data['rows'][0];
-        self::assertSame('damoony_ru', $row['domain']);
+        self::assertSame('damoony.ru', $row['domain']);
+        self::assertSame('damoony_ru', $row['namespace']);
         self::assertSame(['damoony.ru', 'damoony3.ru'], $row['hosts']);
         self::assertTrue($row['dir_exists']);
         self::assertSame(['doc', 'www'], $row['aliases']);

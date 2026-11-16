@@ -45,42 +45,55 @@ final class DomainListCommand implements CommandInterface
             return $r;
         }
 
-        $realToHosts = [];
-        foreach ($domainsReal as $host => $real) {
-            if (is_string($real) && $real !== '') {
-                $realToHosts[$real][] = $host;
-            }
+        $primaryHosts = [];
+        foreach ($site['domains_mirrors'] ?? [] as $mHost => $mPrimary) {
+            $primaryHosts[$mPrimary] = true;
         }
-        ksort($realToHosts);
+        foreach (array_keys($domainsReal) as $host) {
+            $primaryHosts[$host] = true;
+        }
+        $primaryHosts = array_keys($primaryHosts);
+        sort($primaryHosts);
 
         $rows = [];
-        foreach ($realToHosts as $realDomain => $hosts) {
-            $dir = $this->paths->domain($realDomain);
+        foreach ($primaryHosts as $host) {
+            $dir = $this->paths->domain($host);
             $exists = Fs::isDir($dir);
+            
+            $context->debug("Checking domain: $host -> $dir");
 
-            // Берем primary host для available и alliases
-            $primaryHost = $hosts[0];
-            $available = (bool) ($site['domains_mirrors_available'][$primaryHost] ?? true);
-            $aliasesMap = (array) ($site['alliases'][$primaryHost] ?? []);
+            $namespace = (string) ($domainsReal[$host] ?? $host);
+            
+            $mirrors = [];
+            foreach ($site['domains_mirrors'] ?? [] as $mHost => $mPrimary) {
+                if ($mPrimary === $host) {
+                    $mirrors[] = $mHost;
+                }
+            }
+            sort($mirrors);
+
+            $available = (bool) ($site['domains_mirrors_available'][$host] ?? true);
+            $aliasesMap = (array) ($site['alliases'][$host] ?? []);
             $aliases = array_keys($aliasesMap);
             sort($aliases);
 
             $row = [
-                'domain' => $realDomain,
-                'hosts' => $hosts,
+                'domain' => $host,
+                'namespace' => $namespace,
+                'mirrors' => $mirrors,
                 'dir_exists' => $exists,
                 'available' => $available,
                 'aliases' => $aliases,
             ];
             $rows[] = $row;
-            $r->file($realDomain);
+            $r->file($host);
 
             $mark = $exists ? '[ok]' : '[missing]';
             $state = $available ? 'on' : 'off';
             $context->step(
-                sprintf('%s %-25s %s, aliases: %d', $mark, $realDomain, $state, count($aliases)),
+                sprintf('%s %-25s %s, aliases: %d', $mark, $host, $state, count($aliases)),
                 true,
-                $realDomain,
+                $host,
             );
         }
 

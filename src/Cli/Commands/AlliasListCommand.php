@@ -54,6 +54,7 @@ final class AlliasListCommand implements CommandInterface
             $r->error('Домен не найден в конфиге');
             return $r;
         }
+        $context->debug("Resolved realDomain (host): $realDomain");
 
         $aliasesMap = $site['alliases'][$realDomain] ?? [];
         if (!is_array($aliasesMap) || $aliasesMap === []) {
