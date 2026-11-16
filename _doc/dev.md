@@ -274,7 +274,7 @@ python _dev/smoketests/test_brain_safety.py
 - **Детерминированные функции:** `validate_plan`, `_safe_href`, `_sanitize_name`.
 - **Web UI:** `app/[domain]/agent/algoritm/ajax/algoritm_ajax.php` (4 action: chat/generate/status/cancel).
 
-Детали — `ai.md` §6–§7.
+Детали — `ai.md` §6.
 
 ### 10.3. Инварианты
 

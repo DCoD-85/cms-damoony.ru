@@ -6,7 +6,7 @@
 
 1. **aicli** (`bin/aicli.php`) — внешний JSON-in/out, 9 ролей, HATEOAS, AINET. Этот документ.
 2. **Orchestrator** (`src/Ai/Orchestrator/`) — внутренний AIUI (Interviewer → Architect → Coder, Blackboard). Описан в `orchestrator.md`, `aiui.md`.
-3. **brain.py** (`ai_agent/brain.py`) — Python-оркестратор Wizard (генерация «с нуля»). Описан в §6–§7.
+3. **brain.py** (`ai_agent/brain.py`) — Python-оркестратор Wizard (генерация «с нуля»). Описан в §6.
 
 ## 1. Архитектура и Контракт (HATEOAS)
 
@@ -122,7 +122,7 @@ URL whitelist независим от domain whitelist (`agent.config`).
 
 ## 6. Мультиагентная генерация (brain.py)
 
-`ai_agent/brain.py` — Python-оркестратор Wizard. **Запуск — CLI или через Web UI (§7):**
+`ai_agent/brain.py` — Python-оркестратор Wizard. **Запуск — только из консоли:**
 ```
 python -m ai_agent.brain <domain> <allias> "<brief|@file>" <model> [--session=ID]
 ```
@@ -140,65 +140,6 @@ python -m ai_agent.brain <domain> <allias> "<brief|@file>" <model> [--session=ID
 - `_sanitize_name(name)` — санитизация имени страницы (path traversal guard).
 
 **Проверка без LLM:** `python _dev/smoketests/test_brain_safety.py` (23 теста).
-
-## 7. AI Wizard Web UI (алиас `agent`)
-
-Web UI — `app/[domain]/agent/algoritm/ajax/algoritm_ajax.php` (наследник `Damoony\UI\Algoritm\Page`). 4 action:
-
-### `action=chat`
-```
-POST {action: "chat", history: "[...]"}
-→ bin/aicli.php {command: "agent:chat", role: "*", args: {history}}
-→ JSON
-```
-Интервьюер. История — JS-массив `chatHistory` (браузер).
-
-### `action=generate`
-```
-POST {action: "generate", history: "[...]"}
-→ PHP: brief = "Клиент: ...\nДизайнер: ..." из history
-→ var/{session_id}_brief.txt
-→ Windows: var/{session_id}_run.bat + cmd /c start /B "..." 
-  Linux: nohup {python} -u -m ai_agent.brain {domain} auto @{brief_file} --session={session_id} > {log} 2>&1 &
-→ JSON {ok: true, session_id: "gen_XXXX"}
-```
-- `domain` — из `config/agent.config` (`target_domain`) или из `HTTP_HOST` (без `agent.`).
-- `allias=auto` — Python сам придумает.
-- `python` — из `config/agent.config` (`python_path`) или `python`.
-- Домен добавляется в `agent.config.allowed_domains` (авто).
-
-### `action=status`
-```
-POST {action: "status", session_id: "gen_XXXX"}
-→ читает var/{session_id}_brain.log
-→ парсит последнюю строку из [1/5]... [=>], -> Writing:
-→ JSON {ok, done: bool, status_text | link}
-```
-Маппинг → UI-статус:
-- `[1/5] Wizard started` → «Инициализация...»
-- `[2/5] Architect is planning...` → «Проектирование структуры...»
-- `[*] Generating global widgets...` → «Генерация виджетов...»
-- `[3/5] Generating content...` → «Генерация контента...»
-- `[4/5] Designer is creating main.css...` → «Создание стилей (main.css)...»
-- `[5/5] Designer is styling top.css...` → «Настройка навигации (top.css)...»
-- `[=>] All drafts collected...` → «Сборка файлов на диске...»
-- `-> Writing:` → «Написание текста для:»
-
-**Финал:** `Done! Total time:` + `SITE_URL: http...` → `{done: true, link: ...}`.
-
-**Ошибки:** `Fatal error` / `Aborting session` / «уже занят» → `{ok: false, error: "..."}`. Таймаут: лог 0 байт > 180 сек → «Модель не отвечает».
-
-### `action=cancel`
-```
-POST {action: "cancel", session_id: "gen_XXXX"}
-→ file_put_contents(var/{session_id}.cancel, "1")
-→ JSON {ok: true}
-```
-`brain.py` проверяет `.cancel` между задачами, при нахождении — `Aborting session` → status покажет `Отменено пользователем`.
-
-**Таймауты:** 600s (`php.ini max_execution_time`, `nginx.conf fastcgi_read_timeout`).
-
-**JS:** встроен в `algoritm_ajax.php` (не отдельный файл). `aiui.js` — это для AIUI (`/admin/aiui.php`), не для Wizard.
 
 ## 8. ModelRouter и Orchestrator
 
