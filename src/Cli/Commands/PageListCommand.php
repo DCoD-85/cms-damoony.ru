@@ -104,7 +104,7 @@ final class PageListCommand implements CommandInterface
             $r->data['rows'][] = $this->row($rel, '/' . $rel, $php, $rulesData);
         }
 
-        $rows = $r->data['rows'] ?? [];
+        $rows = $r->data['rows'];
         foreach ($rows as $row) {
             $flags = [];
             if ($row['auth']) {
