@@ -25,6 +25,7 @@ final class PageReadToggleRealDomainTest extends TestCase
             $this->root . '/config/site.config',
             json_encode([
                 'domains_real' => ['real.ru' => 'real.ru', 'alias.ru' => 'real.ru'],
+                'domains_mirrors' => ['real.ru' => 'real.ru', 'alias.ru' => 'real.ru'],
             ], JSON_THROW_ON_ERROR),
         );
     }
@@ -47,12 +48,14 @@ final class PageReadToggleRealDomainTest extends TestCase
             $captured = $m;
         });
 
-        new PageReadCommand($this->paths)->run(
+        $res = new PageReadCommand($this->paths)->run(
             ['domain' => 'alias.ru', 'allias' => 'www', 'name' => 'about'],
             $ctx,
         );
 
-        $this->assertStringContainsString('marker-from-real', $captured, 'должен прочитать файл из real.ru');
+        $this->assertTrue($res->ok);
+        $this->assertArrayHasKey('code', $res->data);
+        $this->assertStringContainsString('marker-from-real', $res->data['code'], 'должен прочитать файл из real.ru');
     }
 
     public function testPageReadUnknownDomainRejected(): void
