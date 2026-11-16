@@ -37,7 +37,10 @@ return [
     'children' => $children,
     'meta' => [
         'css' => array_merge($baseCss, $blockCss, $skinCss, $compactCss),
-        'js' => ['/media/shared/scripts/cliajax.js?v=3'],
+        'js' => [
+            '/media/shared/scripts/cliajax.js?v=3',
+            '/media/shared/scripts/policy.js?v=1',
+        ],
         'favicon' => '/media/damoony.ru/shared/ico.ico',
     ],
 ];
