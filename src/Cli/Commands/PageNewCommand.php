@@ -137,6 +137,25 @@ final class PageNewCommand implements CommandInterface
         $compiler = new PageCompiler();
         $php = $compiler->compile($namespace . '\\' . $allias, $page->classChain, []);
 
+        $relFiles = [
+            Fs::rel($page->phpFile, $this->paths->root()),
+            Fs::rel($page->rulesFile, $this->paths->root()),
+            Fs::rel($page->editorFile, $this->paths->root()),
+            Fs::rel($page->parentRulesFile, $this->paths->root()),
+        ];
+
+        if ($context->isDryRun()) {
+            $context->step('Dry-run: страница ' . $name . ' будет создана');
+            $r->data = [
+                'page' => $name,
+                'parent' => $parent,
+                'target' => $page->targetRelPath,
+                'files' => $relFiles,
+                'dry_run' => true,
+            ];
+            return $r;
+        }
+
         Fs::writeAtomic($page->phpFile, $php);
         $r->file(Fs::rel($page->phpFile, $this->paths->root()));
 
@@ -153,6 +172,13 @@ final class PageNewCommand implements CommandInterface
         $parentRules = PageRules::withChild($parentRules, $name);
         PageRules::save($page->parentRulesFile, $parentRules);
         $r->file(Fs::rel($page->parentRulesFile, $this->paths->root()));
+
+        $r->data = [
+            'page' => $name,
+            'parent' => $parent,
+            'target' => $page->targetRelPath,
+            'files' => $relFiles,
+        ];
 
         $context->step('Страница создана', true, $page->targetRelPath);
 

@@ -77,8 +77,8 @@ final class PageWriteCommand implements CommandInterface
             return $r;
         }
         $site = Config::fromFile($siteFile)->all();
-        $realDomain = (string) ($site['domains_real'][$domain] ?? '');
-        if ($realDomain === '') {
+        $realDomain = (string) ($site['domains_mirrors'][$domain] ?? $domain);
+        if (!isset($site['domains_real'][$realDomain])) {
             $r->error('Домен не найден в site.config');
             return $r;
         }
@@ -142,6 +142,17 @@ final class PageWriteCommand implements CommandInterface
         $compiler = new PageCompiler();
         $php = $compiler->compile($namespace . '\\' . $allias, $page->classChain, array_values($blocks), $withSchema);
 
+        if ($context->isDryRun()) {
+            $context->step('Dry-run: контент страницы ' . ($name !== '' ? $name : '__root__') . ' будет перезаписан');
+            $r->data = [
+                'page' => $name !== '' ? $name : '__root__',
+                'blocks' => count($blocks),
+                'file' => Fs::rel($page->phpFile, $this->paths->root()),
+                'dry_run' => true,
+            ];
+            return $r;
+        }
+
         // 7. Читаем старый .php ДО перезаписи (для diff page_refs)
         $oldPhp = (string) @file_get_contents($page->phpFile);
 
@@ -150,11 +161,19 @@ final class PageWriteCommand implements CommandInterface
             $page->editorFile,
             json_encode($blocks, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . "\n",
         );
-        $r->file(Fs::rel($page->phpFile, $this->paths->root()));
+        $relPath = Fs::rel($page->phpFile, $this->paths->root());
+        $r->file($relPath);
 
         // 8. Обновить page_refs в meta.json всех /content/... картинок (add new, remove stale)
         $pageKey = $name !== '' ? $name : '__root__';
         $this->updateContentRefs($realDomain, $allias, $pageKey, $oldPhp, $php);
+
+        $r->data = [
+            'page' => $pageKey,
+            'blocks' => count($blocks),
+            'file' => $relPath,
+            'editor_file' => Fs::rel($page->editorFile, $this->paths->root()),
+        ];
 
         $context->step('Контент страницы обновлен', true, $pageKey);
 
