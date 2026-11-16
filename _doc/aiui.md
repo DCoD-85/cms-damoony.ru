@@ -1,5 +1,7 @@
 > ⚠️ **СТАТУС: ЗАМОРОЖЕНО (FROZEN).** Интеграция ИИ отложена до перестройки ядра (UI Elements / Админка / БД). Не вносить изменения без разморозки.
 
+> ℹ️ **ФАКТИЧЕСКОЕ СОСТОЯНИЕ (2026-11-16):** HTTP-путь AIUI **не реализован**. Файлов `www/admin/aiui.php`, `www/admin/ai_edit.php`, `www/admin/aipreview.php`, `www/media/damoony.ru/agent/skin/default/js/aiui.js` нет в git. Реально существует только CLI-команда `ai:edit-page` (`src/Cli/Commands/AiEditPageCommand.php`), которая пишет в production напрямую, без `--session` и без `countBlocks`-защиты. Backend `Orchestrator` (`run()`/`build()`) существует, но HTTP-обёртки к нему нет.
+
 # AIUI (AI User Interface)
 
 AIUI — интерфейс для редактирования страниц с помощью естественного языка (промптов). 
@@ -9,13 +11,19 @@ AIUI — интерфейс для редактирования страниц �
 
 ---
 
-## 1. Архитектура
+## 1. Архитектура (фактическое состояние)
 
-1. **Frontend (`www/admin/aiui.php`)**: Split-screen интерфейс. Слева — iframe с предпросмотром, справа — чат. Собирается через `Builder`.
-2. **JS (`www/media/damoony.ru/agent/skin/default/js/aiui.js`)**: Логика чата, кнопки «Создать», отправки промптов.
-3. **AJAX Endpoint (`www/admin/ai_edit.php`)**: Принимает POST с JSON `{action, domain, alias, page, tab, prompt}`.
-4. **Backend (Orchestrator)**: `Orchestrator::run()` (для чата) или `Orchestrator::build()` (для генерации по кнопке).
-5. **Preview (`www/admin/aipreview.php`)**: Рендерит HTML из изолированной сессии (`.sess_*`).
+**HTTP-путь AIUI не реализован.** Следующих файлов нет в git:
+- `www/admin/aiui.php` — frontend (split-screen с чатом и превью)
+- `www/admin/ai_edit.php` — AJAX endpoint (4 action)
+- `www/admin/aipreview.php` — preview-рендерер из `.sess_*`
+- `www/media/damoony.ru/agent/skin/default/js/aiui.js` — клиентский JS
+
+**Что реально существует:**
+
+1. **CLI (`ai:edit-page`)**: `src/Cli/Commands/AiEditPageCommand.php`. Читает `editor.json` страницы, формирует LLM-промпт, вызывает `AgentChatHandler::handle('agent:chat', ..., 'designer')`, парсит JSON, при `--force=1` пишет `editor.json` и вызывает `page:write`. **Пишет в production напрямую, без `--session` и без `countBlocks`-защиты.**
+2. **Backend (Orchestrator)**: `src/Ai/Orchestrator/Orchestrator.php` содержит `run()` (стр. 28) и `build()` (стр. 121) — но они не имеют HTTP-обёртки.
+3. **Session-инфраструктура**: `session:start/apply/discard/list` (`bin/cli.php`), `PageHandler` читает из `.sess_*` (`src/Core/App/PageHandler.php:126–127`). Готова к использованию, но HTTP-путь AIUI её не использует.
 
 ---
 
@@ -28,16 +36,15 @@ AIUI — интерфейс для редактирования страниц �
 
 ---
 
-## 3. API Endpoint — 4 action
+## 3. API Endpoint — НЕ РЕАЛИЗОВАН
 
-`POST /admin/ai_edit.php`
+`POST /admin/ai_edit.php` — **файл не существует в git**. 4 action (`start`/`preview`/`build`/`apply`), описанные ниже, — дизайн без реализации.
 
-- **`start`**: Создать сессию (копия домена в `.sess_*`). Возвращает `{ok, tab, preview_url}`. Если сессия уже есть, она уходит в карантин и создается новая.
-- **`preview`**: Интерактивный шаг (`Orchestrator::run()`).
-  - Если ИИ просто общается: `{ok, chat_only: true, reply, brief}`. Превью НЕ обновляется.
-  - Если ИИ сгенерировал страницу (по команде в чате): `{ok, preview_url, pages_total, pages_ok, progress}`.
-- **`build`**: Явная генерация по кнопке (`Orchestrator::build()`). Возвращает прогресс по страницам.
-- **`apply`**: Применить сессию к production (`SessionApplyCommand`). Заблокировано, если блоков меньше 5 (защита от пустых страниц).
+Если/когда endpoint будет создан, предполагаемые контракты (на существующих классах):
+- **`start`**: `SessionStartCommand` (`bin/cli.php`) — **существует**.
+- **`preview`**: `Orchestrator::run()` — метод **существует** (`Orchestrator.php:28`).
+- **`build`**: `Orchestrator::build()` — метод **существует** (`Orchestrator.php:121`).
+- **`apply`**: `SessionApplyCommand` — **существует**; `countBlocks < 5` защита — в нём, не в `ai:edit-page`.
 
 **Пример ответа `action=preview` (chat_only):**
 
