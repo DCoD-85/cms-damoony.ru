@@ -73,8 +73,8 @@ final class PageReadCommand implements CommandInterface
             return $r;
         }
         $site = Config::fromFile($siteFile)->all();
-        $realDomain = (string) ($site['domains_real'][$domain] ?? '');
-        if ($realDomain === '') {
+        $realDomain = (string) ($site['domains_mirrors'][$domain] ?? $domain);
+        if (!isset($site['domains_real'][$realDomain])) {
             $r->error('Домен не найден в site.config');
             return $r;
         }
@@ -93,7 +93,13 @@ final class PageReadCommand implements CommandInterface
             return $r;
         }
 
-        $context->step($code, true, $name !== '' ? $name : '__root__');
+        $r->data = [
+            'name' => $name !== '' ? $name : '__root__',
+            'path' => $page->phpFile,
+            'code' => $code,
+        ];
+
+        $context->step('Страница прочитана: ' . $page->phpFile, true, $name !== '' ? $name : '__root__');
 
         return $r;
     }

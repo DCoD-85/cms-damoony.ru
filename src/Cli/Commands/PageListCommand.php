@@ -61,6 +61,8 @@ final class PageListCommand implements CommandInterface
             return $r;
         }
 
+        $r->data = ['rows' => []];
+
         // Корневая страница (algoritm/algoritm.php)
         $rootPhp = $algDir . '/algoritm.php';
         $rootRules = $algDir . '/algoritm.rules.json';
