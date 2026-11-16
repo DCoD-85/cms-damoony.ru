@@ -46,7 +46,7 @@ final class PageToggleCommandTest extends TestCase
 
         self::assertTrue($res->ok, implode('; ', $res->errors));
         self::assertTrue($res->data['value']);
-        
+
         $rules = json_decode((string) file_get_contents($this->root . '/app/damoony.ru/www/algoritm/about/algoritm_about.rules.json'), true);
         self::assertTrue($rules['auth']);
     }
@@ -70,7 +70,7 @@ final class PageToggleCommandTest extends TestCase
 
         self::assertTrue($res->ok);
         self::assertTrue($res->data['dry_run']);
-        
+
         $rules = json_decode((string) file_get_contents($this->root . '/app/damoony.ru/www/algoritm/about/algoritm_about.rules.json'), true);
         self::assertFalse($rules['auth']); // still false
     }

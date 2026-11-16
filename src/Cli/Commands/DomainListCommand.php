@@ -63,11 +63,11 @@ final class DomainListCommand implements CommandInterface
         foreach ($primaryHosts as $host) {
             $dir = $this->paths->domain($host);
             $exists = Fs::isDir($dir);
-            
+
             $context->debug("Checking domain: $host -> $dir");
 
             $namespace = (string) ($domainsReal[$host] ?? $host);
-            
+
             $mirrors = [];
             foreach ($site['domains_mirrors'] ?? [] as $mHost => $mPrimary) {
                 if ($mPrimary === $host) {
