@@ -10,11 +10,15 @@ use Damoony\Core\Files\Paths;
 
 final class RegionLoader
 {
+    private readonly FillerState $fillerState;
+
     public function __construct(
         private readonly Paths $paths,
         private readonly ?Config $site = null,
         private readonly ?string $adminRole = null,
+        ?FillerState $fillerState = null,
     ) {
+        $this->fillerState = $fillerState ?? new FillerState($paths);
     }
 
     public function load(DomainContext $domain): RegionRegistry
@@ -95,10 +99,8 @@ final class RegionLoader
                 $legacyClass = $namespace . '\\blocksglobal_' . $item . '_' . $domain->allias;
             }
 
-            $isFillerEnabled = true;
-            if ($this->site !== null) {
-                $isFillerEnabled = (bool) $this->site->getByKey(['fillers', $domain->real, $domain->allias, $item], true);
-            }
+            // Источник истины — .blockslocal/{item}/{item}.rules.json (FillerState).
+            $isFillerEnabled = $this->fillerState->isEnabled($domain->real, $domain->allias, $item);
 
             if ($baseFile !== null) {
                 $baseClass = $namespace . '\\blocksglobal_' . $item;
