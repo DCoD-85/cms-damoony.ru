@@ -68,6 +68,12 @@ final class DomainNewCommand implements CommandInterface
             return $r;
         }
 
+        if ($context->isDryRun()) {
+            $context->step('Dry-run: домен ' . $domain . ' (namespace: ' . $namespace . ') будет создан');
+            $r->data = ['domain' => $domain, 'namespace' => $namespace, 'dry_run' => true];
+            return $r;
+        }
+
         // 2. Папки и файлы алиаса www
         Fs::mkdir($domainDir);
         $r->file(Fs::rel($domainDir, $this->paths->root()));
@@ -145,7 +151,7 @@ final class DomainNewCommand implements CommandInterface
             $jsUrl = '/media/' . $domain . '/www/skin/{skin}/js/main.js';
             $blockCssList = [];
             foreach (['top', 'left', 'center', 'right', 'bottom', 'footer', 'policy', 'toast'] as $b) {
-                $blockCssList[] = '/media/' . $domain . '/' . $allias . '/css/' . $b . '.css';
+                $blockCssList[] = '/media/' . $domain . '/' . $allias . '/skin/{skin}/css/' . $b . '.css';
             }
             $blockCssExport = var_export($blockCssList, true);
             $mainCssUrl = '/media/' . $domain . '/' . $allias . '/css/main.css';
@@ -178,6 +184,30 @@ final class DomainNewCommand implements CommandInterface
             json_encode($site, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n",
         );
         $r->file(Fs::rel($siteFile, $this->paths->root()));
+
+        // 4a. Скин по умолчанию для www (если не clean)
+        if ($profile !== 'clean') {
+            $skinCmd = new SkinNewCommand($this->paths);
+            $skinResult = $skinCmd->run(
+                ['domain' => $domain, 'allias' => 'www', 'name' => 'default'],
+                $context,
+            );
+            foreach ($skinResult->steps as $s) {
+                $r->steps[] = $s;
+            }
+            foreach ($skinResult->created as $f) {
+                $r->file($f);
+            }
+            foreach ($skinResult->warnings as $w) {
+                $r->warn($w);
+            }
+            foreach ($skinResult->errors as $e) {
+                $r->error($e);
+            }
+            if (!$skinResult->ok) {
+                $r->ok = false;
+            }
+        }
 
         // 4b. FULL: используем AssemblyBuilder для полной структуры
         if ($profile === 'full') {

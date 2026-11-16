@@ -72,6 +72,12 @@ final class AlliasNewCommand implements CommandInterface
             return $r;
         }
 
+        if ($context->isDryRun()) {
+            $context->step('Dry-run: алиас ' . $name . ' для ' . $realDomain . ' будет создан');
+            $r->data = ['domain' => $realDomain, 'alias' => $name, 'dry_run' => true];
+            return $r;
+        }
+
         // 2. Папки и файлы
         Fs::mkdir($alliasDir);
         $r->file(Fs::rel($alliasDir, $this->paths->root()));
