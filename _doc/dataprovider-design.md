@@ -21,7 +21,7 @@
 - `.dbprovider/` — PHP-классы провайдеров (генерируются `dbcli`).
 
 ### 2.2. Инварианты
-1. Всё взаимодействие с БД — только через `DataProvider`.
+1. Всё взаимодействие с БД — только через `DataProvider` (кроме introspection `db:schema` и миграций `db:migrate`).
 2. Запись — только через `db:mutate` (с `--force`). Read-only — `db:call`.
 3. Миграции — `db:migrate`. Никаких `ALTER TABLE` через AI.
 4. Cross-alias FK — запрещены.
@@ -65,7 +65,7 @@
 |---|---|---|
 | Базовые CRUD (шаблоны) | AI (`dataprovider:add-method`) или dev | `app/.../.dbprovider/` |
 | Сложная логика | только dev, руками PHP | `app/.../.dbprovider/` |
-| 6 базовых провайдеров | только owner | `src/Data/Db/DataProvider/` |
+| 7 базовых провайдеров | только owner | `src/Data/Db/DataProvider/` |
 
 AI не пишет PHP: вызывает готовые методы (`db:call`, `db:mutate`), генерирует новые из шаблонов (`dataprovider:add-method`).
 
@@ -88,6 +88,8 @@ Pending (Phase 4.8): `select_by`, `select_all`, `update`, `delete`, `count`, `ex
 
 Per-command флаги — `_doc/cli.md` §10.
 
+Design-time команды (schema/generate): `bin/dbcli.php` — см. `_doc/dbcli.md`.
+
 ### 5.2. Роли (`bin/aicli.php`)
 
 | Команда | Роль |
@@ -109,7 +111,7 @@ Per-command флаги — `_doc/cli.md` §10.
 ## 6. Статус фаз
 | Phase | Что | Статус |
 |---|---|---|
-| 1 | 6 DataProviders | done |
+| 1 | 7 DataProviders | done |
 | 2 | Introspection | done |
 | 3 | `db:call`, `db:mutate`, audit_log | done |
 | 4.1–4.2 | `select_where`, `insert`, `BlockCodegen` | done |
