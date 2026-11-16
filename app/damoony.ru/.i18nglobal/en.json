@@ -48,5 +48,6 @@
     "site.policy.data.title": "What data we collect",
     "site.policy.data.text": "We may store data you submit through forms (e.g., login or feedback). Data is stored on the server and is not shared with third parties without your consent.",
     "site.policy.rights.title": "Your rights",
-    "site.policy.rights.text": "You have the right to request deletion of your data or withdraw consent. Contact us: <a href=\"mailto:privacy@damoony.ru\">privacy@damoony.ru</a>."
+    "site.policy.rights.text": "You have the right to request deletion of your data or withdraw consent. Contact us: <a href=\"mailto:privacy@damoony.ru\">privacy@damoony.ru</a>.",
+    "site.policy.accept": "Accept and continue"
 }

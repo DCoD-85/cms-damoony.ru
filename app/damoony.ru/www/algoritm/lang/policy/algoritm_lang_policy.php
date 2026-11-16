@@ -40,6 +40,18 @@ final class algoritm_lang_policy extends Page
             $content->append(Builder::p()->content($this->context->lang('policy.' . $section . '.text')));
         }
 
+        // No-JS fallback: форма «Принять» (POST → /{lang}/policy/accept → cookie → 302).
+        $lang = $this->context->domain->language;
+        $form = new Form('policy-accept-form');
+        $form->action('/' . $lang . '/policy/accept');
+        $form->method('POST');
+        $csrf = $this->context->service('csrf');
+        if ($csrf instanceof \Damoony\Core\Security\Csrf) {
+            $form->csrf($csrf);
+        }
+        $form->add(new Button($this->context->lang('policy.accept'), 'submit'));
+        $content->append($form);
+
         return $content;
     }
 }
