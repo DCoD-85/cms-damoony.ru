@@ -45,47 +45,42 @@ final class DomainListCommand implements CommandInterface
             return $r;
         }
 
-        $realSet = [];
+        $realToHosts = [];
         foreach ($domainsReal as $host => $real) {
             if (is_string($real) && $real !== '') {
-                $realSet[$real] = true;
+                $realToHosts[$real][] = $host;
             }
         }
-
-        $realDomains = array_keys($realSet);
-        sort($realDomains);
+        ksort($realToHosts);
 
         $rows = [];
-        foreach ($realDomains as $domain) {
-            $dir = $this->paths->domain($domain);
+        foreach ($realToHosts as $realDomain => $hosts) {
+            $dir = $this->paths->domain($realDomain);
             $exists = Fs::isDir($dir);
-            $available = (bool) ($site['domains_mirrors_available'][$domain] ?? true);
-            $aliasesMap = (array) ($site['alliases_real'][$domain] ?? []);
-            $realAliases = [];
-            foreach ($aliasesMap as $key => $real) {
-                if (!is_string($real) || $real === '') {
-                    continue;
-                }
-                $realAliases[$real] = true;
-            }
-            $aliases = array_keys($realAliases);
+
+            // Берем primary host для available и alliases
+            $primaryHost = $hosts[0];
+            $available = (bool) ($site['domains_mirrors_available'][$primaryHost] ?? true);
+            $aliasesMap = (array) ($site['alliases'][$primaryHost] ?? []);
+            $aliases = array_keys($aliasesMap);
             sort($aliases);
 
             $row = [
-                'domain' => $domain,
+                'domain' => $realDomain,
+                'hosts' => $hosts,
                 'dir_exists' => $exists,
                 'available' => $available,
                 'aliases' => $aliases,
             ];
             $rows[] = $row;
-            $r->file($domain);
+            $r->file($realDomain);
 
             $mark = $exists ? '[ok]' : '[missing]';
             $state = $available ? 'on' : 'off';
             $context->step(
-                sprintf('%s %-25s %s, aliases: %d', $mark, $domain, $state, count($aliases)),
+                sprintf('%s %-25s %s, aliases: %d', $mark, $realDomain, $state, count($aliases)),
                 true,
-                $domain,
+                $realDomain,
             );
         }
 

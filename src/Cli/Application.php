@@ -34,10 +34,13 @@ final class Application
             return 1;
         }
 
+        $isVerbose = isset($parsed['args']['verbose']) || in_array('v', $parsed['flags'], true) || in_array('verbose', $parsed['flags'], true);
+        $isDryRun = isset($parsed['args']['dry-run']) || in_array('dry-run', $parsed['flags'], true);
+
         $contextResult = new Result();
         $context = new Context(static function (string $m, bool $ok = true, string $d = '') use ($contextResult): void {
             $contextResult->step($m, $ok, $d);
-        });
+        }, $isVerbose, $isDryRun);
 
         try {
             $result = $handler->run($parsed['args'], $context);
