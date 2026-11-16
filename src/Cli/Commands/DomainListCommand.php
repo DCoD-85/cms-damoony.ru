@@ -46,11 +46,15 @@ final class DomainListCommand implements CommandInterface
         }
 
         $primaryHosts = [];
+        // 1. Все значения в domains_mirrors — это реальные (primary) хосты
         foreach ($site['domains_mirrors'] ?? [] as $mHost => $mPrimary) {
             $primaryHosts[$mPrimary] = true;
         }
+        // 2. Добавляем хосты из domains_real, у которых нет зеркал (их нет в ключах domains_mirrors)
         foreach (array_keys($domainsReal) as $host) {
-            $primaryHosts[$host] = true;
+            if (!isset($site['domains_mirrors'][$host])) {
+                $primaryHosts[$host] = true;
+            }
         }
         $primaryHosts = array_keys($primaryHosts);
         sort($primaryHosts);
