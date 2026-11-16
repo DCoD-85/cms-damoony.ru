@@ -18,6 +18,12 @@ final class Application
     {
         $parsed = $this->parser->parse($argv);
         $command = $parsed['command'] === '' ? 'help' : $parsed['command'];
+
+        // help <cmd>: первый positional — имя команды
+        if ($command === 'help' && !isset($parsed['args']['command']) && $parsed['positional'] !== []) {
+            $parsed['args']['command'] = $parsed['positional'][0];
+        }
+
         $jsonMode = isset($parsed['args']['json']) || in_array('--json', $argv, true);
 
         $handler = $this->registry->get($command);

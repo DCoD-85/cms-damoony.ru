@@ -23,11 +23,35 @@ final class HelpCommand implements CommandInterface
     public function run(array $args, Context $context): Result
     {
         $r = new Result();
-        $r->step('Damoony CLI');
+        $commandName = (string) ($args['command'] ?? '');
 
-        foreach ($this->registry->all() as $command) {
-            $r->step(sprintf('  %-20s %s', $command->name(), $command->description()));
+        if ($commandName !== '') {
+            $command = $this->registry->get($commandName);
+            if ($command === null) {
+                $r->error('Команда не найдена: ' . $commandName);
+                return $r;
+            }
+            $r->step(sprintf('%-20s %s', $command->name(), $command->description()));
+            $r->data = [
+                'command' => $command->name(),
+                'description' => $command->description(),
+            ];
+            return $r;
         }
+
+        $r->step('Damoony CLI');
+        $commands = $this->registry->all();
+        usort($commands, static fn (CommandInterface $a, CommandInterface $b): int => strcmp($a->name(), $b->name()));
+
+        $data = [];
+        foreach ($commands as $command) {
+            $r->step(sprintf('  %-20s %s', $command->name(), $command->description()));
+            $data[] = [
+                'name' => $command->name(),
+                'description' => $command->description(),
+            ];
+        }
+        $r->data = ['commands' => $data];
 
         return $r;
     }
