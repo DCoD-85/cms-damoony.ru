@@ -50,7 +50,7 @@ AI не имеет прямого доступа к терминалу. Отпр
 | `corrector` | Исправления: `page:write`, `structure:repair`, `structure:check` |
 | `reporter` | Отчёт: `*:list`, `structure:check`, `db:call` |
 
-**`wizard:*`:** start/domain/allias/plan/abort → architect; content/finish → executor; skin → designer.
+**`wizard:*`:** start/domain/allias/plan → architect; content/finish → executor; skin → designer.
 
 **Роль `*`:** объединяет все 9 + специфичные: `wizard:*`, `agent:chat`, `ai:start`, `done`, `engine_status`, `net:*`, `image:search/download`, `fetch`, `block:write`, `filler:write`.
 
@@ -58,7 +58,7 @@ AI не имеет прямого доступа к терминалу. Отпр
 
 **Известные полуреализации:**
 - `wizard:abort` — нет ни в whitelist `Roles.php`, ни в `WizardManager::handle()` (match-case). Вызов отклоняется на валидации роли.
-- `wizard:widgets` — реализован в `WizardManager`, но отсутствует в `Roles.php` → недоступен через aicli.
+- `wizard:widgets` — не реализован нигде: нет ни в `WizardManager::handle()`, ни в `Roles.php`.
 
 **DataProvider-инвариант:** `db:*` — только через `bin/aicli.php`/`brain.py`, не через Orchestrator/AIUI (см. `arch.md` §5).
 
