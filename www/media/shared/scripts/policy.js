@@ -1,76 +1,88 @@
 /**
- * policy.js — cookie consent banner (accept/decline).
+ * policy.js — cookie consent banner progressive enhancement.
  *
- * Логика:
- *   - Первый визит: баннер показан (fixed, снизу).
- *   - «Принять»: cookie damoony_policy=accepted (1 год), баннер скрыт навсегда.
- *   - «Отклонить»: баннер скрыт на текущей странице, без cookie;
- *     при перезагрузке / навигации — появится снова.
- *
- * .cookie-banner по умолчанию лежит внутри .dt_policy (display: none в main.css),
- * поэтому переносим на body — как .dt_toast в cliajax.js.
- *
- * Re-init после AJAX: cliajax.js вызывает window.__damoonyPolicy.init().
+ * - Без JS: работает форма POST /{lang}/policy/accept + is-hidden от сервера.
+ * - С JS: добавляет .enhanced (модалка), перехватывает submit,
+ *   отправляет fetch POST на /{lang}/policy/ajax.
+ * - "Закрыть" (btn-decline) скрывает баннер без cookie (запоминается в памяти JS).
  */
 (function () {
     'use strict';
 
-    var COOKIE_NAME = 'damoony_policy';
-    var COOKIE_VALUE = 'accepted';
-    var COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 год
-    var BANNER_SELECTOR = '.cookie-banner';
+    var BANNER_ID = 'cookie-banner';
+    var isClosedInSession = false;
 
-    function hasConsent() {
-        return document.cookie.split(';').some(function (pair) {
-            return pair.trim() === COOKIE_NAME + '=' + COOKIE_VALUE;
-        });
+    function getBanner() {
+        return document.getElementById(BANNER_ID);
     }
 
-    function setConsent() {
-        document.cookie = COOKIE_NAME + '=' + COOKIE_VALUE
-            + '; max-age=' + COOKIE_MAX_AGE
-            + '; path=/'
-            + '; SameSite=Lax';
-    }
-
-    function init() {
-        // Убираем body-attached banner от прошлой инициализации (AJAX-навигация).
-        var orphans = document.querySelectorAll('body > ' + BANNER_SELECTOR);
-        for (var i = 0; i < orphans.length; i++) {
-            orphans[i].parentNode.removeChild(orphans[i]);
+    function hideBanner(banner) {
+        if (banner) {
+            banner.classList.add('is-hidden');
+            banner.classList.remove('enhanced');
         }
+    }
 
-        var banner = document.querySelector(BANNER_SELECTOR);
-        if (!banner) return;
-
-        // Согласие уже дано — держим скрытым (inline display:none в policy.php).
-        if (hasConsent()) {
-            banner.style.display = 'none';
+    function enhance(banner) {
+        if (isClosedInSession || !banner || banner.classList.contains('is-hidden')) {
             return;
         }
 
-        // Переносим на body, чтобы .dt_policy { display: none } не скрывал баннер.
+        // 1. Добавляем .enhanced (модалка по центру)
+        banner.classList.add('enhanced');
+
+        // 2. Переносим на body (чтобы вырвать из контекста .dt_policy)
         if (banner.parentNode !== document.body) {
             document.body.appendChild(banner);
         }
-        banner.style.display = 'flex';
 
-        var accept = banner.querySelector('.btn-accept');
-        var decline = banner.querySelector('.btn-decline');
+        // 3. Перехват формы приёма
+        var form = banner.querySelector('.cookie-accept-form');
+        if (form && !form.hasAttribute('data-bound')) {
+            form.setAttribute('data-bound', '1');
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                var action = form.getAttribute('action') || '';
+                var ajaxUrl = action.replace(/\/accept$/, '/ajax');
 
-        if (accept && !accept.hasAttribute('data-bound')) {
-            accept.setAttribute('data-bound', '1');
-            accept.addEventListener('click', function () {
-                setConsent();
-                banner.style.display = 'none';
+                var formData = new FormData(form);
+                fetch(ajaxUrl, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(function (res) {
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    return res.json();
+                })
+                .then(function (data) {
+                    if (data.ok) {
+                        hideBanner(banner);
+                    } else {
+                        alert('Ошибка сохранения. Пожалуйста, обновите страницу.');
+                    }
+                })
+                .catch(function () {
+                    alert('Ошибка сети. Пожалуйста, обновите страницу.');
+                });
             });
         }
 
-        if (decline && !decline.hasAttribute('data-bound')) {
-            decline.setAttribute('data-bound', '1');
-            decline.addEventListener('click', function () {
-                banner.style.display = 'none';
+        // 4. Перехват кнопки "Закрыть" (без cookie)
+        var closeBtn = banner.querySelector('.btn-decline');
+        if (closeBtn && !closeBtn.hasAttribute('data-bound')) {
+            closeBtn.setAttribute('data-bound', '1');
+            closeBtn.addEventListener('click', function () {
+                isClosedInSession = true;
+                hideBanner(banner);
             });
+        }
+    }
+
+    function init() {
+        var banner = getBanner();
+        if (banner) {
+            enhance(banner);
         }
     }
 
@@ -80,6 +92,6 @@
         init();
     }
 
-    // Публичный API для re-init после AJAX (Step 5).
+    // Экспорт для cliajax.js (реинициализация после AJAX)
     window.__damoonyPolicy = { init: init };
 })();
