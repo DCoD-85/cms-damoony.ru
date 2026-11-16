@@ -6,7 +6,8 @@
         "login": "^login$",
         "logout": "^logout$",
         "profile": "^profile$",
-        "skin": "^skin$"
+        "skin": "^skin$",
+        "privacy": "^privacy$"
     },
     "auth": false
 }
