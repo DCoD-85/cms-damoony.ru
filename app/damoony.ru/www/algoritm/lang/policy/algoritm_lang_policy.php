@@ -37,7 +37,12 @@ final class algoritm_lang_policy extends Page
 
         foreach (['intro', 'cookies', 'data', 'rights'] as $section) {
             $content->append(Builder::h(2)->content($this->context->lang('policy.' . $section . '.title')));
-            $content->append(Builder::p()->content($this->context->lang('policy.' . $section . '.text')));
+            
+            $rawText = strip_tags(
+                $this->context->lang('policy.' . $section . '.text'),
+                '<a><strong>'
+            );
+            $content->append(Builder::p()->append(Text::raw($rawText)));
         }
 
         // No-JS fallback: форма «Принять» (POST → /{lang}/policy/accept → cookie → 302).
