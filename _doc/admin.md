@@ -82,7 +82,9 @@
 
 ## 6. AIUI (AI-редактор страниц)
 
-Встроенный `/admin/aiui.php` (split-screen: превью + чат). Описание — `_doc/aiui.md` (полное), `_doc/orchestrator.md` (внутренний конвейер). Модели — `config/models.config` (`ModelRouter`).
+⚠️ HTTP-путь AIUI не реализован — файлов `www/admin/aiui.php`, `ai_edit.php`, `aipreview.php` нет в git (см. `_doc/aiui.md`). Реально доступен только CLI `ai:edit-page` и backend `Orchestrator` без HTTP-обёртки.
+
+Описание — `_doc/aiui.md` (полное), `_doc/orchestrator.md` (внутренний конвейер). Модели — `config/models.config` (`ModelRouter`).
 
 ## 7. Ограничения UI (что осталось только через CLI)
 

@@ -120,7 +120,7 @@ cp config/ainet.config.example config/ainet.config
       "roles": {
         "reporter":  "gemma4:e4b",
         "architect": "deepseek-coder:6.7b",
-        "designer":  "deepseek-coder:6.7b"
+        "designer":  "gemma4:e4b"
       }
     }
 
@@ -167,7 +167,7 @@ server {
         try_files $uri $uri/ /content.php?$query_string;
     }
 
-    # AIUI preview (изолированная сессия)
+    # AIUI preview (изолированная сессия). ⚠️ /admin/aipreview.php не реализован — правило на будущее (см. _doc/aiui.md).
     location /admin/preview/ {
         rewrite ^/admin/preview/([a-f0-9]+)/([a-z0-9_]+)/?(.*)$ /admin/aipreview.php?tab=$1&alias=$2&path=/$3 last;
     }

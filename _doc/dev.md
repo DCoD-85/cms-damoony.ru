@@ -260,7 +260,7 @@ python _dev/smoketests/test_brain_safety.py
 - **Blackboard:** `app/.sess_{tab}.{domain}/context.json` (мета, вход, `tools_context`, `agent_outputs`).
 - **Агенты:** `InterviewerAgent` (`gemma4:e4b`) → `ArchitectAgent` (`deepseek-coder:6.7b`) → `CoderAgent` (`gemma4:e4b`).
 - **Модели:** `ModelRouter::resolve($role)` из `config/models.config`.
-- **Вход:** `POST /admin/ai_edit.php` (4 action: `start` / `preview` / `build` / `apply`).
+- **Вход (проект):** `POST /admin/ai_edit.php` (4 action: `start` / `preview` / `build` / `apply`). ⚠️ HTTP-путь не реализован — `ai_edit.php` и `aiui.php` отсутствуют в git; реально доступен только CLI `ai:edit-page` (см. `aiui.md`).
 - **Выход:** страницы в `.sess_*` (изолированы), при `apply` — в production.
 
 Детали — `orchestrator.md`.

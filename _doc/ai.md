@@ -58,7 +58,7 @@ AI не имеет прямого доступа к терминалу. Отпр
 
 **Известные полуреализации:**
 - `wizard:abort` — нет ни в whitelist `Roles.php`, ни в `WizardManager::handle()` (match-case). Вызов отклоняется на валидации роли.
-- `wizard:widgets` — не реализован нигде: нет ни в `WizardManager::handle()`, ни в `Roles.php`.
+- `wizard:widgets` — реализован в `WizardManager::handle()` (`WizardManager.php:45`, `setWidgets`), но отсутствует в whitelist `Roles.php` → недоступен через aicli.
 
 **DataProvider-инвариант:** `db:*` — только через `bin/aicli.php`/`brain.py`, не через Orchestrator/AIUI (см. `arch.md` §5).
 
@@ -112,7 +112,7 @@ AI не имеет прямого доступа к терминалу. Отпр
 
 ### Конфиг (`config/ainet.config`)
 
-- **Whitelist (11 доменов):** openverse, unsplash, pexels, wikimedia, wikipedia, github.
+- **Whitelist (12 хостов):** openverse, unsplash, pexels, wikimedia, wikipedia, github.
 - **Providers:** `default=wikimedia`, `keys.unsplash=""`, `keys.pexels=""`.
 - **Limits:** `max_size=25MB`, `max_redirects=3`, `rate_per_min=30`, `min_image_dimension=200`.
 - **Cache:** `cache_ttl_days=7`.
@@ -140,6 +140,31 @@ python -m ai_agent.brain <domain> <allias> "<brief|@file>" <model> [--session=ID
 - `_sanitize_name(name)` — санитизация имени страницы (path traversal guard).
 
 **Проверка без LLM:** `python _dev/smoketests/test_brain_safety.py` (23 теста).
+
+## 7. Wizard State Machine (`wizard:*`)
+
+`bin/aicli.php` → `WizardHandler` (`commands() = ['wizard:*']`) → `WizardManager::handle()`.
+
+**Стадии** (`WizardSession::STAGE_*`): `init → domain → allias → plan → content → skin → ready → committed`. Состояние — JSON в `var/wizard/{session_id}.json` (session_id = 32 hex, `WizardSession` — чистый DTO).
+
+**9 действий** (`start` — в `WizardHandler`; остальные — match-case в `WizardManager::handle()`):
+
+| action | Стадия (до) | Эффект | После |
+|---|---|---|---|
+| `start` | — | создать сессию, вернуть `session_id` | `init` |
+| `domain` | `init` | FQDN (`DOMAIN_RE`, без `..`) | `domain` |
+| `allias` | `domain` | `NAME_RE`; проверка занятости (папка + `alliases_real`) | `allias` |
+| `plan` | `allias` | массив `pages`; ровно один `__root__`; parent-ссылки | `plan` |
+| `content` | `plan`/`content` | `page` ∈ plan; накопить `content[page]` | `content` |
+| `widgets` | `plan`/`content` | накопить `widgets` (stage не меняется) | — |
+| `skin` | `content`/`skin` | `file` ∈ `css/*.css`/`js/main.js`; накопить `skin[file]` | `skin` |
+| `finish` | `content`/`skin` | все страницы плана имеют content | `ready` |
+| `commit` | `ready` | развернуть через CLI (см. ниже) | `committed` |
+
+**`commit`** (идемпотентный, с откатом `$undo` при ошибке):
+1. `domain:new` (если нет) → 2. `allias:remove --force` + `allias:new` → 3. `skin:new default` → 4. `block:new` + `filler:new` для `top/left/right/bottom/policy` → 5. `filler:write top` (меню `nav`) → 6. `filler:write` виджетов → 7. `scheme:new` + `scheme:save` (слоты + meta) → 8. `page:new` (по depth) → 9. `page:write --with_schema=1` → 10. `skin:edit` каждого файла + пустые css-заглушки. При `Throwable` — rollback по `$undo` в обратном порядке.
+
+**Роли** (`Roles.php`): `start/domain/allias/plan` → `architect`; `content/finish` → `executor`; `skin` → `designer`; `commit` → только `*`. `widgets` — реализован (`WizardManager.php:45`), но отсутствует в whitelist (недоступен через aicli). `abort` — не реализован.
 
 ## 8. ModelRouter и Orchestrator
 

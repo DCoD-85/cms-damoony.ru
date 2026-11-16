@@ -126,7 +126,7 @@
 
 Следующие команды **не зарегистрированы** в `bin/cli.php` — они живут только в `bin/aicli.php` (JSON-in/out, role-gated). Описание — `ai.md`:
 
-- `wizard:*` (9 actions: `start`, `domain`, `allias`, `plan`, `content`, `skin`, `finish`, `commit`, `abort` — см. `ai.md` §7)
+- `wizard:*` (9 actions: `start`, `domain`, `allias`, `plan`, `content`, `skin`, `widgets`, `finish`, `commit` — см. `ai.md` §7)
 - `agent:chat`, `ai:start`, `done`
 - `net:status`, `image:search`, `image:download`, `fetch` (AINET — `ai.md` §5)
 

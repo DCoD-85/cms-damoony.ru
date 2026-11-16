@@ -217,6 +217,8 @@ Read-only снимок окружения до вызова LLM. Через Aicl
 
 ## 8. AIUI endpoint (www/admin/ai_edit.php) — 4 action
 
+⚠️ `www/admin/ai_edit.php` **не существует в git** (HTTP-путь AIUI не реализован). Ниже — проектный контракт на существующих классах; фактически доступен только CLI `ai:edit-page`.
+
 - **start**: SessionStartCommand (или discard + start). Возврат: ok, tab, preview_url.
 - **preview**: Orchestrator::run(). Возврат: chat_only (reply, brief) или preview_url, pages_total, pages_ok, progress.
 - **build**: Orchestrator::build(). Возврат: preview_url, pages_total, pages_ok, progress.
