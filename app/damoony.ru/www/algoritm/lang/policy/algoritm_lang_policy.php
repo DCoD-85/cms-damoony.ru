@@ -26,18 +26,18 @@ use Damoony\UI\Text;
 use Damoony\UI\UrlSanitizer;
 use Damoony\Core\Http\Response;
 
-final class algoritm_lang_privacy extends Page
+final class algoritm_lang_policy extends Page
 {
     protected array $ajaxBlocks = ['top', 'center'];
 
     protected function content(): Node|Response|null
     {
         $content = Builder::div('page-content');
-        $content->append(Builder::h(1)->content($this->context->lang('privacy.title')));
+        $content->append(Builder::h(1)->content($this->context->lang('policy.title')));
 
         foreach (['intro', 'cookies', 'data', 'rights'] as $section) {
-            $content->append(Builder::h(2)->content($this->context->lang('privacy.' . $section . '.title')));
-            $content->append(Builder::p()->content($this->context->lang('privacy.' . $section . '.text')));
+            $content->append(Builder::h(2)->content($this->context->lang('policy.' . $section . '.title')));
+            $content->append(Builder::p()->content($this->context->lang('policy.' . $section . '.text')));
         }
 
         return $content;

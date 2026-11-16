@@ -19,7 +19,7 @@ final class blocksglobal_policy implements RegionInterface
 
         $text = Builder::div('cookie-text');
         $text->append(Builder::p()->content(
-            $context->lang('block.policy.text', ['url' => '/' . $context->domain->language . '/privacy/'])
+            $context->lang('block.policy.text', ['url' => '/' . $context->domain->language . '/policy/'])
         ));
         $wrap->append($text);
 

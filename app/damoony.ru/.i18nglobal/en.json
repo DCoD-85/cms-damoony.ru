@@ -40,13 +40,13 @@
     "site.block.policy.text": "We use cookies to improve the site. By continuing to use the site, you agree to our <a href=\"{url}\">privacy policy</a>.",
     "site.block.policy.accept": "Accept",
     "site.block.policy.decline": "Decline",
-    "site.privacy.title": "Privacy Policy",
-    "site.privacy.intro.title": "Introduction",
-    "site.privacy.intro.text": "This policy describes what data we collect and how we use it. Last updated: November 16, 2026.",
-    "site.privacy.cookies.title": "Cookies",
-    "site.privacy.cookies.text": "We use technical cookies to operate the site and to remember your cookie choice (damoony_policy). You can delete cookies in your browser settings at any time.",
-    "site.privacy.data.title": "What data we collect",
-    "site.privacy.data.text": "We may store data you submit through forms (e.g., login or feedback). Data is stored on the server and is not shared with third parties without your consent.",
-    "site.privacy.rights.title": "Your rights",
-    "site.privacy.rights.text": "You have the right to request deletion of your data or withdraw consent. Contact us: <a href=\"mailto:privacy@damoony.ru\">privacy@damoony.ru</a>."
+    "site.policy.title": "Privacy Policy",
+    "site.policy.intro.title": "Introduction",
+    "site.policy.intro.text": "This policy describes what data we collect and how we use it. Last updated: November 16, 2026.",
+    "site.policy.cookies.title": "Cookies",
+    "site.policy.cookies.text": "We use technical cookies to operate the site and to remember your cookie choice (damoony_policy). You can delete cookies in your browser settings at any time.",
+    "site.policy.data.title": "What data we collect",
+    "site.policy.data.text": "We may store data you submit through forms (e.g., login or feedback). Data is stored on the server and is not shared with third parties without your consent.",
+    "site.policy.rights.title": "Your rights",
+    "site.policy.rights.text": "You have the right to request deletion of your data or withdraw consent. Contact us: <a href=\"mailto:privacy@damoony.ru\">privacy@damoony.ru</a>."
 }

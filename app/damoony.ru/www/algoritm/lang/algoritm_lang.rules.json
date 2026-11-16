@@ -7,7 +7,7 @@
         "logout": "^logout$",
         "profile": "^profile$",
         "skin": "^skin$",
-        "privacy": "^privacy$"
+        "policy": "^policy$"
     },
     "auth": false
 }
