@@ -79,6 +79,28 @@ final class AlliasRemoveCommand implements CommandInterface
             return $r;
         }
 
+        if ($context->isDryRun()) {
+            $configKeys = [];
+            foreach (self::ALLIAS_KEYS as $key) {
+                if (isset($site[$key][$realDomain][$name])) {
+                    $configKeys[] = $key;
+                }
+            }
+            $planMediaDir = $this->paths->media($realDomain, $name);
+
+            $context->step('Dry-run: алиас ' . $realDomain . '/' . $name . ' будет удалён в карантин');
+            $r->data = [
+                'domain' => $domain,
+                'real_domain' => $realDomain,
+                'allias' => $name,
+                'allias_dir' => is_dir($alliasDir) ? Fs::rel($alliasDir, $this->paths->root()) : null,
+                'media_dir' => is_dir($planMediaDir) ? Fs::rel($planMediaDir, $this->paths->root()) : null,
+                'config_keys' => $configKeys,
+                'dry_run' => true,
+            ];
+            return $r;
+        }
+
         // 2. Карантин
         if (is_dir($alliasDir)) {
             $trash = $alliasDir . '_trash_' . time();
@@ -107,13 +129,14 @@ final class AlliasRemoveCommand implements CommandInterface
         }
 
         // 4. Полная очистка конфига (все ключи по домену+алиасу)
-        $removed = 0;
+        $removedKeys = [];
         foreach (self::ALLIAS_KEYS as $key) {
             if (isset($site[$key][$realDomain][$name])) {
                 unset($site[$key][$realDomain][$name]);
-                $removed++;
+                $removedKeys[] = $key;
             }
         }
+        $removed = count($removedKeys);
 
         if ($removed > 0) {
             Fs::writeAtomic(
@@ -125,6 +148,13 @@ final class AlliasRemoveCommand implements CommandInterface
         } else {
             $context->step('В конфиге не было', true);
         }
+
+        $r->data = [
+            'domain' => $domain,
+            'real_domain' => $realDomain,
+            'allias' => $name,
+            'removed_keys' => $removedKeys,
+        ];
 
         return $r;
     }
