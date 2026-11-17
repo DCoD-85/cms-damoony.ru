@@ -189,6 +189,19 @@ final class SiteConfigWriter
         $this->save($data);
     }
 
+    /**
+     * @param list<string> $langs
+     */
+    public function setProjectLangs(string $key, array $langs): void
+    {
+        $data = $this->load();
+        $apps = $this->apps($data);
+        $this->projectApp($apps, $key);
+
+        $data['domains_app'][$key]['langs'] = $langs;
+        $this->save($data);
+    }
+
     public function removeAlias(string $key, string $alias): bool
     {
         $data = $this->load();

@@ -24,6 +24,11 @@ use Damoony\Cli\Next\Commands\FillerListCommand;
 use Damoony\Cli\Next\Commands\FillerNewCommand;
 use Damoony\Cli\Next\Commands\FillerToggleCommand;
 use Damoony\Cli\Next\Commands\FillerWriteCommand;
+use Damoony\Cli\Next\Commands\LangAddCommand;
+use Damoony\Cli\Next\Commands\LangListCommand;
+use Damoony\Cli\Next\Commands\LangRemoveCommand;
+use Damoony\Cli\Next\Commands\LangRepairCommand;
+use Damoony\Cli\Next\Commands\LangSyncCommand;
 use Damoony\Cli\Next\Commands\PageListCommand;
 use Damoony\Cli\Next\Commands\PageNewCommand;
 use Damoony\Cli\Next\Commands\PageReadCommand;
@@ -115,6 +120,11 @@ final class Registry
         $registry->add(new SkinNewCommand($paths, $resolver));
         $registry->add(new SkinEditCommand($paths, $resolver, $sessionGuard));
         $registry->add(new SkinRemoveCommand($paths, $resolver, $quarantine));
+        $registry->add(new LangListCommand($paths, $site));
+        $registry->add(new LangAddCommand($paths, $site, $writer));
+        $registry->add(new LangRemoveCommand($paths, $site, $writer, $quarantine));
+        $registry->add(new LangRepairCommand($paths, $site, $writer));
+        $registry->add(new LangSyncCommand($paths, $site, $writer));
 
         return $registry;
     }

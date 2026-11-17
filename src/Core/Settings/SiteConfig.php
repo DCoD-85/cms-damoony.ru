@@ -130,6 +130,7 @@ final class SiteConfig
         }
 
         self::assertUniqueHosts($descriptors);
+        self::assertAliasLangsWithinProject($descriptors, $declaredAliases);
 
         $projects = [];
         foreach ($descriptors as $key => $descriptor) {
@@ -491,6 +492,11 @@ final class SiteConfig
     }
 
     /**
+     * Языки алиаса обязаны быть подмножеством языков проекта.
+     *
+     * Проверяем только если у проекта языки объявлены: конфиги, где языки заданы
+     * лишь на алиасах, остаются валидными (обратная совместимость данных).
+     *
      * @param array<string, array{
      *     folder: string,
      *     namespace: string,
@@ -501,6 +507,33 @@ final class SiteConfig
      *     aliases_storage: array<string, array{db: string, prefix: string}>,
      *     mirrors: array<string, bool>
      * }> $descriptors
+     * @param array<string, array<string, AliasSettings>> $declaredAliases
+     */
+    private static function assertAliasLangsWithinProject(array $descriptors, array $declaredAliases): void
+    {
+        foreach ($descriptors as $key => $descriptor) {
+            $projectLangs = $descriptor['langs'];
+            if ($projectLangs === []) {
+                continue;
+            }
+
+            foreach ($declaredAliases[$key] ?? [] as $alias => $settings) {
+                $extra = array_diff($settings->langs, $projectLangs);
+                if ($extra !== []) {
+                    throw new RuntimeException(sprintf(
+                        'site.config: языки алиаса "%s.%s" (%s) не объявлены у проекта (%s)',
+                        $key,
+                        $alias,
+                        implode(', ', $extra),
+                        implode(', ', $projectLangs),
+                    ));
+                }
+            }
+        }
+    }
+
+    /**
+     * @param array<string, array{mirrors: array<string, bool>}> $descriptors
      */
     private static function assertUniqueHosts(array $descriptors): void
     {

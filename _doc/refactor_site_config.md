@@ -79,7 +79,7 @@
 | blocks | `block:new`, `block:write`, `block:edit`, `block:remove`, `block:list` | готово |
 | fillers | `filler:new`, `filler:write`, `filler:edit`, `filler:toggle`, `filler:list` | — |
 | skins | `skin:new`, `skin:edit`, `skin:remove`, `skin:list` | готово |
-| langs | `lang:list`, `lang:add`, `lang:remove`, `lang:repair`, `lang:sync` | — |
+| langs | `lang:list`, `lang:add`, `lang:remove`, `lang:repair`, `lang:sync` | готово |
 | sessions | `session:start`, `session:apply`, `session:discard`, `session:list` | — |
 | content | `content:store`, `content:remove`, `content:list`, `content:gc` | — |
 | structure | `structure:check`, `structure:repair` | — |
