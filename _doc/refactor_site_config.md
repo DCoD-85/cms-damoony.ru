@@ -20,15 +20,42 @@
 Тесты ядра, не зависящие от конфига (`PageCompiler`, `BlockCompiler`, `UrlSanitizer`,
 `Fs`, `Paths`, `FileRouter`, `Translator`), не удаляются вообще.
 
-## Критерий готовности (swap-point)
+## Фазы
 
-1. Все команды из `bin/cli.old.php` (65) реализованы в новом стеке.
+1. **CLI** (текущая) — все команды CLI на `domains_app`, старый CLI-код удалён.
+   Сайт/админка локально могут не работать.
+2. **Движок** — `ConfigDomainResolver`, `PageNamespace`, `ContentResponder`, `AppFactory`,
+   `StructureChecker` на `SiteConfig`; удаление старых чтений конфига.
+3. **Фиксация** — гейты + фиксация рабочего состояния.
+4. **Живой тест локально.**
+5. **Боевой** — миграция `site.config` на проде, деплой, проверка.
+
+## Backlog фазы 2 (готовим сейчас, не рефакторим)
+
+Точки, которые остаются на старом формате до фазы 2. В фазе 1 их **не портируем**
+целиком — только явный fail вместо тихой деградации:
+
+| Файл | Что читает | Статус в фазе 1 |
+|---|---|---|
+| `src/Cli/Db/Commands/SchemaGenerateProviderCommand.php:70` | `domains_real` → namespace провайдера | fail-fast при схеме `domains_app` |
+| `src/Cli/Ai/Handler/AiStartHandler.php:43,48` | перебор `domains_real` | fail-fast при схеме `domains_app` |
+| `src/Diagnostics/StructureChecker.php:22,39` | `domains_real`, `domains_scheme` | `structure:*` переносятся в фазу 2 |
+| `src/Core/Domain/ConfigDomainResolver.php:28..114` | `domains_mirrors`, `domains_real`, `domains_stub`, `domains_scheme`, `alliases_real` | фаза 2 |
+| `src/Core/Content/ContentResponder.php:75` | `domains_real` | фаза 2 |
+| `src/UI/Page/PageNamespace.php` | `domains_real` | удаляется в фазе 2 |
+| `src/Core/App/AppFactory.php:32` | загрузка `site.config` | фаза 2 |
+
+## Критерий готовности фазы 1 (swap-point)
+
+1. Все команды из `bin/cli.old.php` (65) реализованы в новом стеке — кроме тех,
+   что явно отнесены к backlog фазы 2 (`structure:check`, `structure:repair`).
 2. `site:config:migrate` переносит `site.config.old` → `site.config` без потерь.
 3. Паритет-прогон read-only команд на реальном `app/` совпадает.
 4. `phpunit` + `phpstan` + `php-cs-fixer` зелёные.
-5. `_doc/*` описывают новую схему.
+5. `_doc/cli.md` + раздел конфига в `install.md` описывают новую схему.
 6. Только после этого: `src/Cli/Commands` → `src/Cli/CommandsOld`, `src/Cli/Next/*` → канонические пути,
    затем удаление `*Old` и `config/site.config.old`.
+7. `aicli.php` и `dbcli.php` падают с внятной ошибкой (а не молча «нет доменов»).
 
 ## Статус
 

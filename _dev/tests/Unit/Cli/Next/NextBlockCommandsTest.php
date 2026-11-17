@@ -10,6 +10,7 @@ use Damoony\Cli\Next\Commands\BlockListCommand;
 use Damoony\Cli\Next\Commands\BlockNewCommand;
 use Damoony\Cli\Next\Commands\BlockRemoveCommand;
 use Damoony\Cli\Next\Commands\BlockWriteCommand;
+use Damoony\Cli\Next\Support\BlockFileEditor;
 use Damoony\Cli\Next\Support\Quarantine;
 use Damoony\Cli\Next\Support\SessionGuard;
 use Damoony\Core\Files\Paths;
@@ -242,7 +243,9 @@ final class NextBlockCommandsTest extends TestCase
 
     private function blockEdit(): BlockEditCommand
     {
-        return new BlockEditCommand(new Paths($this->root), $this->site());
+        $paths = new Paths($this->root);
+
+        return new BlockEditCommand($paths, $this->site(), new BlockFileEditor($paths));
     }
 
     private function blockRemove(): BlockRemoveCommand

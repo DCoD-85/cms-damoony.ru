@@ -19,6 +19,11 @@ use Damoony\Cli\Next\Commands\DomainListCommand;
 use Damoony\Cli\Next\Commands\DomainNewCommand;
 use Damoony\Cli\Next\Commands\DomainRemoveCommand;
 use Damoony\Cli\Next\Commands\DomainUnbindCommand;
+use Damoony\Cli\Next\Commands\FillerEditCommand;
+use Damoony\Cli\Next\Commands\FillerListCommand;
+use Damoony\Cli\Next\Commands\FillerNewCommand;
+use Damoony\Cli\Next\Commands\FillerToggleCommand;
+use Damoony\Cli\Next\Commands\FillerWriteCommand;
 use Damoony\Cli\Next\Commands\PageListCommand;
 use Damoony\Cli\Next\Commands\PageNewCommand;
 use Damoony\Cli\Next\Commands\PageReadCommand;
@@ -30,6 +35,7 @@ use Damoony\Cli\Next\Commands\SchemeNewCommand;
 use Damoony\Cli\Next\Commands\SchemeRemoveCommand;
 use Damoony\Cli\Next\Commands\SchemeSaveCommand;
 use Damoony\Cli\Next\Scaffold\Scaffolder;
+use Damoony\Cli\Next\Support\BlockFileEditor;
 use Damoony\Cli\Next\Support\ContentRefs;
 use Damoony\Cli\Next\Support\Quarantine;
 use Damoony\Cli\Next\Support\SessionGuard;
@@ -69,6 +75,7 @@ final class Registry
         $resolver = new TargetResolver($site);
         $contentRefs = new ContentRefs($paths);
         $sessionGuard = new SessionGuard($paths);
+        $blockEditor = new BlockFileEditor($paths);
 
         $registry = new CommandRegistry();
         $registry->add(new HelpCommand($registry));
@@ -93,8 +100,13 @@ final class Registry
         $registry->add(new BlockListCommand($paths, $site));
         $registry->add(new BlockNewCommand($paths, $site));
         $registry->add(new BlockWriteCommand($paths, $site, $sessionGuard));
-        $registry->add(new BlockEditCommand($paths, $site));
+        $registry->add(new BlockEditCommand($paths, $site, $blockEditor));
         $registry->add(new BlockRemoveCommand($paths, $site, $quarantine));
+        $registry->add(new FillerListCommand($paths, $resolver));
+        $registry->add(new FillerNewCommand($paths, $resolver));
+        $registry->add(new FillerWriteCommand($paths, $resolver, $sessionGuard));
+        $registry->add(new FillerEditCommand($paths, $resolver, $blockEditor));
+        $registry->add(new FillerToggleCommand($paths, $resolver));
 
         return $registry;
     }
