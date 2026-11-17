@@ -40,14 +40,20 @@ final class CommandsTest extends TestCase
         $this->rrmdir($this->root);
     }
 
-    public function testRegistryThrowsWhenConfigMissing(): void
+    public function testRegistryBuildsForFreshInstall(): void
     {
         $root = sys_get_temp_dir() . '/damoony_cli_next_empty_' . bin2hex(random_bytes(6));
         mkdir($root . '/config', 0o775, true);
 
+        $registry = Registry::build($root);
+
+        self::assertNotNull($registry->get('new'));
+        self::assertNotNull($registry->get('cli:init'));
+        self::assertFileDoesNotExist($root . '/config/site.config');
+
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('не найден');
-        Registry::build($root);
+        SiteConfig::fromFile($root . '/config/site.config');
     }
 
     public function testRegistryBuildsCommands(): void

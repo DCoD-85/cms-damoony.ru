@@ -112,14 +112,10 @@ final class Registry
     public static function build(string $root, ?Connection $db = null): CommandRegistry
     {
         $configPath = self::configPath($root);
-        if (!is_file($configPath)) {
-            throw new RuntimeException(
-                'Новый стек: не найден ' . $configPath . ' (ожидается схема domains_app)',
-            );
-        }
 
         $paths = new Paths($root);
-        $site = SiteConfig::fromFile($configPath);
+        // Свежая установка: конфига ещё нет — работаем с пустым, writer создаст файл.
+        $site = is_file($configPath) ? SiteConfig::fromFile($configPath) : SiteConfig::empty();
         $maintenance = MaintenanceConfig::fromFile($root . '/config/maintenance.config');
         $observability = ObservabilityConfig::fromFile($root . '/config/observability.config');
         $writer = new SiteConfigWriter($configPath);

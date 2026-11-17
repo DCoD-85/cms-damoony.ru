@@ -36,6 +36,14 @@ final class SiteConfig
     {
     }
 
+    /**
+     * Пустой конфиг для свежей установки (файла ещё нет).
+     */
+    public static function empty(): self
+    {
+        return new self([]);
+    }
+
     public static function fromFile(string $path): self
     {
         if (!is_file($path)) {
