@@ -114,3 +114,11 @@ app/**/.*_trash_*
 _dev/api.stub.php
 www/stubs/assemblies/
 www/stubs/*.php
+
+# --- Артефакты AI-аудитора: одноразовые патчи и отчёты (не трекаются) ---
+/_dev/patch_*.py
+/_dev/verify_*.py
+/_dev/probe_*.py
+/_dev/normalize_*.py
+/_dev/cs.json
+/_dev/cs_diffs.txt
