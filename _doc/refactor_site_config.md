@@ -78,7 +78,7 @@
 | schemes | `scheme:new`, `scheme:copy`, `scheme:save`, `scheme:remove`, `scheme:list` | готово |
 | blocks | `block:new`, `block:write`, `block:edit`, `block:remove`, `block:list` | готово |
 | fillers | `filler:new`, `filler:write`, `filler:edit`, `filler:toggle`, `filler:list` | — |
-| skins | `skin:new`, `skin:edit`, `skin:remove`, `skin:list` | — |
+| skins | `skin:new`, `skin:edit`, `skin:remove`, `skin:list` | готово |
 | langs | `lang:list`, `lang:add`, `lang:remove`, `lang:repair`, `lang:sync` | — |
 | sessions | `session:start`, `session:apply`, `session:discard`, `session:list` | — |
 | content | `content:store`, `content:remove`, `content:list`, `content:gc` | — |

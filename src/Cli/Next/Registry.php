@@ -34,6 +34,10 @@ use Damoony\Cli\Next\Commands\SchemeListCommand;
 use Damoony\Cli\Next\Commands\SchemeNewCommand;
 use Damoony\Cli\Next\Commands\SchemeRemoveCommand;
 use Damoony\Cli\Next\Commands\SchemeSaveCommand;
+use Damoony\Cli\Next\Commands\SkinEditCommand;
+use Damoony\Cli\Next\Commands\SkinListCommand;
+use Damoony\Cli\Next\Commands\SkinNewCommand;
+use Damoony\Cli\Next\Commands\SkinRemoveCommand;
 use Damoony\Cli\Next\Scaffold\Scaffolder;
 use Damoony\Cli\Next\Support\BlockFileEditor;
 use Damoony\Cli\Next\Support\ContentRefs;
@@ -107,6 +111,10 @@ final class Registry
         $registry->add(new FillerWriteCommand($paths, $resolver, $sessionGuard));
         $registry->add(new FillerEditCommand($paths, $resolver, $blockEditor));
         $registry->add(new FillerToggleCommand($paths, $resolver));
+        $registry->add(new SkinListCommand($paths, $resolver));
+        $registry->add(new SkinNewCommand($paths, $resolver));
+        $registry->add(new SkinEditCommand($paths, $resolver, $sessionGuard));
+        $registry->add(new SkinRemoveCommand($paths, $resolver, $quarantine));
 
         return $registry;
     }
