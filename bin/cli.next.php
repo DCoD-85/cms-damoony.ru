@@ -7,8 +7,8 @@ declare(strict_types=1);
  * Новый CLI-стек (схема domains_app).
  *
  * Параллельный запуск со старым bin/cli.php:
- *   php bin/cli.php ...        — legacy, config/site.config
- *   php bin/cli.next.php ...   — новый, config/site.config.new
+ *   php bin/cli.php ...        — legacy-код (схема domains_real, файл site.config.old)
+ *   php bin/cli.next.php ...   — новый стек (схема domains_app, файл config/site.config)
  */
 
 use Damoony\Cli\Application;

@@ -370,11 +370,11 @@ final class SiteConfigTest extends TestCase
         self::assertSame(['damoony.ru'], $site->projectKeys());
     }
 
-    public function testRepoConfigNewIsValid(): void
+    public function testRepoConfigIsValid(): void
     {
-        $path = dirname(__DIR__, 5) . '/config/site.config.new';
+        $path = dirname(__DIR__, 5) . '/config/site.config';
         if (!is_file($path)) {
-            self::markTestSkipped('config/site.config.new отсутствует');
+            self::markTestSkipped('config/site.config отсутствует (локальный конфиг не в git)');
         }
 
         $site = SiteConfig::fromFile($path);

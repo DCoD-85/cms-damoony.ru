@@ -7,6 +7,7 @@ namespace Damoony\Tests\Unit\Cli\Next;
 use Damoony\Cli\Context;
 use Damoony\Cli\Next\Commands\PageNewCommand;
 use Damoony\Cli\Next\Commands\PageWriteCommand;
+use Damoony\Cli\Next\Registry;
 use Damoony\Cli\Next\Support\ContentRefs;
 use Damoony\Cli\Next\Support\TargetResolver;
 use Damoony\Core\Files\Paths;
@@ -229,7 +230,7 @@ final class NextPageEditCommandsTest extends TestCase
 
     private function resolver(): TargetResolver
     {
-        return new TargetResolver(SiteConfig::fromFile($this->root . '/config/site.config.new'));
+        return new TargetResolver(SiteConfig::fromFile(Registry::configPath($this->root)));
     }
 
     private function pageNew(): PageNewCommand

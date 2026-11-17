@@ -23,7 +23,7 @@ final class SiteConfigWriter
 
     public static function forRoot(string $root): self
     {
-        return new self($root . '/config/site.config.new');
+        return new self($root . '/config/site.config');
     }
 
     public function path(): string

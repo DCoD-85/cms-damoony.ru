@@ -31,14 +31,14 @@ use RuntimeException;
 /**
  * Реестр нового CLI-стека (схема domains_app).
  *
- * Живёт параллельно со старым Damoony\Cli\Commands до switchover:
- * старый стек читает config/site.config, новый — config/site.config.new.
+ * Читает config/site.config. Старый формат (domains_real/domains_mirrors)
+ * больше не поддерживается — файл называется site.config.old.
  */
 final class Registry
 {
     public static function configPath(string $root): string
     {
-        return $root . '/config/site.config.new';
+        return $root . '/config/site.config';
     }
 
     public static function build(string $root): CommandRegistry

@@ -19,7 +19,7 @@ use Throwable;
  *
  * Создаёт папку проекта в app/, алиас www (3 файла страницы + язык), глобальную
  * схему, глобальный блок center и скин по умолчанию. Конфиг пишется в
- * config/site.config.new; legacy config/site.config не трогается.
+ * config/site.config (схема domains_app).
  */
 final class DomainNewCommand implements CommandInterface
 {

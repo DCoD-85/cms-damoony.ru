@@ -8,6 +8,7 @@ use Damoony\Cli\Context;
 use Damoony\Cli\Next\Commands\PageListCommand;
 use Damoony\Cli\Next\Commands\PageReadCommand;
 use Damoony\Cli\Next\Commands\PageToggleCommand;
+use Damoony\Cli\Next\Registry;
 use Damoony\Cli\Next\Support\TargetResolver;
 use Damoony\Core\Files\Paths;
 use Damoony\Core\Settings\SiteConfig;
@@ -193,7 +194,7 @@ final class NextPageCommandsTest extends TestCase
 
     private function resolver(): TargetResolver
     {
-        return new TargetResolver(SiteConfig::fromFile($this->root . '/config/site.config.new'));
+        return new TargetResolver(SiteConfig::fromFile(Registry::configPath($this->root)));
     }
 
     private function pageList(): PageListCommand

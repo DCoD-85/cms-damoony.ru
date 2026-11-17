@@ -44,6 +44,7 @@ env.php
 # --- Prod configs (содержат секреты) ---
 /config/admin.config
 /config/site.config
+/config/site.config.old
 /config/engine.config
 /config/agent.config
 /config/ainet.config
