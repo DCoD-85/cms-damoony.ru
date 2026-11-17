@@ -7,6 +7,7 @@ namespace Damoony\Ai;
 use Damoony\Cli\Result;
 use Damoony\Core\Files\Fs;
 use Damoony\Core\Files\Paths;
+use Damoony\Core\Settings\SiteConfig;
 
 final class WizardManager
 {
@@ -91,19 +92,18 @@ final class WizardManager
         $alliasDir = $this->paths->algoritm($domain, $allias);
 
         $siteFile = $this->paths->siteConfig();
-        $site = [];
+        $existing = [];
         if (is_file($siteFile)) {
-            $raw = file_get_contents($siteFile);
-            if ($raw === false) {
-                $r->error('Не удалось прочитать ' . $siteFile);
+            try {
+                $existing = SiteConfig::fromFile($siteFile)->project($domain)?->aliasNames() ?? [];
+            } catch (\Throwable $e) {
+                $r->error('site.config не читается: ' . $e->getMessage());
+
                 return;
             }
-            $decoded = json_decode($raw, true);
-            $site = is_array($decoded) ? $decoded : [];
         }
-        $existing = $site['alliases'][$domain] ?? [];
 
-        if (is_dir($alliasDir) || isset($existing[$allias])) {
+        if (is_dir($alliasDir) || in_array($allias, $existing, true)) {
             $r->error("Алиас '{$allias}' уже занят. Выберите другое имя для сайта (или попросите администратора освободить его).");
             return;
         }
