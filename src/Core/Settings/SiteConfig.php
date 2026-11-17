@@ -18,9 +18,9 @@ use RuntimeException;
  *   (папка = key)              -> domains_app[key].folder
  *   domains_mirrors[host]      -> domains_app[?].mirrors[host]
  *   domains_mirrors_available  -> domains_app[?].mirrors[host].available
- *   alliases[key]              -> alliases[key] (ключ = ключ domains_app)
+ *   alliases[key]              -> domains_app[key].aliases (алиасы внутри проекта)
  *
- * Строгая валидация при загрузке: неизвестный проект в alliases, дубликат
+ * Строгая валидация при загрузке: дубликат
  * хоста между проектами, кривой folder/namespace ловятся сразу, а не в рантайме.
  */
 final class SiteConfig
@@ -74,27 +74,14 @@ final class SiteConfig
             throw new RuntimeException('site.config: отсутствует domains_app (ожидается схема domains_app)');
         }
 
-        $aliasesAll = $data['alliases'] ?? [];
-        if (!is_array($aliasesAll)) {
-            throw new RuntimeException('site.config: alliases должен быть объектом');
+        if (isset($data['alliases'])) {
+            throw new RuntimeException(
+                'site.config: устаревший ключ alliases — алиасы живут в domains_app.{project}.aliases (запустите site:config:migrate)',
+            );
         }
 
-        /** @var array<string, array<string, AliasSettings>> $declaredAliases */
-        $declaredAliases = [];
-
-        /**
-         * @var array<string, array{
-         *     folder: string,
-         *     namespace: string,
-         *     scheme: string,
-         *     stub: string,
-         *     default_alias: string,
-         *     langs: list<string>,
-         *     aliases_storage: array<string, array{db: string, prefix: string}>,
-         *     mirrors: array<string, bool>
-         * }> $descriptors
-         */
-        $descriptors = [];
+        /** @var array<string, ProjectSettings> $projects */
+        $projects = [];
 
         foreach ($apps as $key => $spec) {
             if (!is_string($key)) {
@@ -107,33 +94,11 @@ final class SiteConfig
                 throw new RuntimeException("site.config: domains_app.{$key} должен быть объектом");
             }
 
-            $descriptors[$key] = self::parseProject($key, $spec);
-        }
+            $descriptor = self::parseProject($key, $spec);
+            $aliases = self::parseAliases($key, $spec['aliases'] ?? []);
 
-        foreach ($aliasesAll as $key => $list) {
-            if (!is_string($key)) {
-                throw new RuntimeException('site.config: ключ alliases должен быть строкой');
-            }
-            if (str_starts_with($key, '_')) {
-                continue;
-            }
-            if (!isset($descriptors[$key])) {
-                throw new RuntimeException(
-                    "site.config: alliases для неизвестного проекта \"{$key}\" — нет такого ключа в domains_app",
-                );
-            }
-            if (!is_array($list)) {
-                throw new RuntimeException("site.config: alliases.{$key} должен быть объектом");
-            }
+            self::assertAliasLangsWithinProject($key, $descriptor['langs'], $aliases);
 
-            $declaredAliases[$key] = self::parseAliases($key, $list);
-        }
-
-        self::assertUniqueHosts($descriptors);
-        self::assertAliasLangsWithinProject($descriptors, $declaredAliases);
-
-        $projects = [];
-        foreach ($descriptors as $key => $descriptor) {
             $projects[$key] = new ProjectSettings(
                 key: $key,
                 folder: $descriptor['folder'],
@@ -144,9 +109,11 @@ final class SiteConfig
                 langs: $descriptor['langs'],
                 aliasesStorage: $descriptor['aliases_storage'],
                 mirrors: $descriptor['mirrors'],
-                aliases: $declaredAliases[$key] ?? [],
+                aliases: $aliases,
             );
         }
+
+        self::assertUniqueHosts($projects);
 
         return new self($projects);
     }
@@ -440,24 +407,28 @@ final class SiteConfig
 
         foreach ($list as $name => $options) {
             if (!is_string($name) || preg_match(self::ALIAS_RE, $name) !== 1) {
-                throw new RuntimeException("site.config: alliases.{$projectKey} — недопустимое имя алиаса");
+                if (is_string($name) && str_starts_with($name, '_')) {
+                    continue; // служебный ключ
+                }
+
+                throw new RuntimeException("site.config: domains_app.{$projectKey}.aliases — недопустимое имя алиаса");
             }
             if (!is_array($options)) {
-                throw new RuntimeException("site.config: alliases.{$projectKey}.{$name} должен быть объектом");
+                throw new RuntimeException("site.config: domains_app.{$projectKey}.aliases.{$name} должен быть объектом");
             }
 
             $available = $options['available'] ?? true;
             $langsRaw = $options['langs'] ?? [];
 
             if (!is_array($langsRaw)) {
-                throw new RuntimeException("site.config: alliases.{$projectKey}.{$name}.langs должен быть массивом");
+                throw new RuntimeException("site.config: domains_app.{$projectKey}.aliases.{$name}.langs должен быть массивом");
             }
 
             /** @var list<string> $langs */
             $langs = [];
             foreach ($langsRaw as $lang) {
                 if (!is_string($lang) || preg_match(self::LANG_RE, $lang) !== 1) {
-                    throw new RuntimeException("site.config: alliases.{$projectKey}.{$name}.langs — недопустимый код языка");
+                    throw new RuntimeException("site.config: domains_app.{$projectKey}.aliases.{$name}.langs — недопустимый код языка");
                 }
                 $langs[] = $lang;
             }
@@ -484,7 +455,7 @@ final class SiteConfig
         }
         if (!is_string($stub) || preg_match(self::ALIAS_RE, $stub) !== 1) {
             throw new RuntimeException(
-                "site.config: alliases.{$projectKey}.{$alias}.stub недопустим",
+                "site.config: domains_app.{$projectKey}.aliases.{$alias}.stub недопустим",
             );
         }
 
@@ -497,51 +468,39 @@ final class SiteConfig
      * Проверяем только если у проекта языки объявлены: конфиги, где языки заданы
      * лишь на алиасах, остаются валидными (обратная совместимость данных).
      *
-     * @param array<string, array{
-     *     folder: string,
-     *     namespace: string,
-     *     scheme: string,
-     *     stub: string,
-     *     default_alias: string,
-     *     langs: list<string>,
-     *     aliases_storage: array<string, array{db: string, prefix: string}>,
-     *     mirrors: array<string, bool>
-     * }> $descriptors
-     * @param array<string, array<string, AliasSettings>> $declaredAliases
+     * @param list<string> $projectLangs
+     * @param array<string, AliasSettings> $aliases
      */
-    private static function assertAliasLangsWithinProject(array $descriptors, array $declaredAliases): void
+    private static function assertAliasLangsWithinProject(string $key, array $projectLangs, array $aliases): void
     {
-        foreach ($descriptors as $key => $descriptor) {
-            $projectLangs = $descriptor['langs'];
-            if ($projectLangs === []) {
-                continue;
-            }
+        if ($projectLangs === []) {
+            return;
+        }
 
-            foreach ($declaredAliases[$key] ?? [] as $alias => $settings) {
-                $extra = array_diff($settings->langs, $projectLangs);
-                if ($extra !== []) {
-                    throw new RuntimeException(sprintf(
-                        'site.config: языки алиаса "%s.%s" (%s) не объявлены у проекта (%s)',
-                        $key,
-                        $alias,
-                        implode(', ', $extra),
-                        implode(', ', $projectLangs),
-                    ));
-                }
+        foreach ($aliases as $alias => $settings) {
+            $extra = array_diff($settings->langs, $projectLangs);
+            if ($extra !== []) {
+                throw new RuntimeException(sprintf(
+                    'site.config: языки алиаса "%s.%s" (%s) не объявлены у проекта (%s)',
+                    $key,
+                    $alias,
+                    implode(', ', $extra),
+                    implode(', ', $projectLangs),
+                ));
             }
         }
     }
 
     /**
-     * @param array<string, array{mirrors: array<string, bool>}> $descriptors
+     * @param array<string, ProjectSettings> $projects
      */
-    private static function assertUniqueHosts(array $descriptors): void
+    private static function assertUniqueHosts(array $projects): void
     {
         /** @var array<string, string> $seen */
         $seen = [];
 
-        foreach ($descriptors as $key => $descriptor) {
-            foreach (array_keys($descriptor['mirrors']) as $host) {
+        foreach ($projects as $key => $project) {
+            foreach ($project->hostNames() as $host) {
                 if (isset($seen[$host])) {
                     throw new RuntimeException(
                         "site.config: хост \"{$host}\" уже принадлежит проекту \"{$seen[$host]}\"",

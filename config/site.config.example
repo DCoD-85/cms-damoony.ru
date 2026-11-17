@@ -14,45 +14,43 @@
             "langs": [
                 "ru",
                 "en"
-            ]
-        }
-    },
-    "alliases": {
-        "damoony.ru": {
-            "www": {
-                "available": true,
-                "langs": [
-                    "ru",
-                    "en"
-                ]
-            },
-            "login": {
-                "available": true,
-                "langs": [
-                    "ru",
-                    "en"
-                ]
-            },
-            "profile": {
-                "available": true,
-                "langs": [
-                    "ru",
-                    "en"
-                ]
-            },
-            "registration": {
-                "available": true,
-                "langs": [
-                    "ru",
-                    "en"
-                ]
-            },
-            "docs": {
-                "available": true,
-                "langs": [
-                    "ru",
-                    "en"
-                ]
+            ],
+            "aliases": {
+                "www": {
+                    "available": true,
+                    "langs": [
+                        "ru",
+                        "en"
+                    ]
+                },
+                "login": {
+                    "available": true,
+                    "langs": [
+                        "ru",
+                        "en"
+                    ]
+                },
+                "profile": {
+                    "available": true,
+                    "langs": [
+                        "ru",
+                        "en"
+                    ]
+                },
+                "registration": {
+                    "available": true,
+                    "langs": [
+                        "ru",
+                        "en"
+                    ]
+                },
+                "docs": {
+                    "available": true,
+                    "langs": [
+                        "ru",
+                        "en"
+                    ]
+                }
             }
         }
     }

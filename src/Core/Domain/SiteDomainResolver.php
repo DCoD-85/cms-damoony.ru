@@ -91,6 +91,34 @@ final class SiteDomainResolver implements DomainResolverInterface
     }
 
     /**
+     * Скины, доступные алиасу текущего хоста (для cookie-allowlist).
+     *
+     * @return list<string>
+     */
+    public function availableSkins(string $host): array
+    {
+        $matched = $this->match(SiteConfig::normalizeHost($host));
+        if ($matched === null) {
+            return [];
+        }
+
+        [$project, $alias] = $matched;
+        $skinDir = $this->paths->media($project->folder, $alias) . '/skin/';
+        if (!is_dir($skinDir)) {
+            return [];
+        }
+
+        $skins = array_values(array_filter(
+            array_diff(scandir($skinDir) ?: [], ['.', '..']),
+            static fn (string $entry): bool => is_dir($skinDir . $entry),
+        ));
+
+        sort($skins);
+
+        return $skins;
+    }
+
+    /**
      * @return array{0: ProjectSettings, 1: string, 2: bool}|null проект, алиас, доступность миррора
      */
     private function match(string $host): ?array

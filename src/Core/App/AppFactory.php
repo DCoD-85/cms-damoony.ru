@@ -33,10 +33,9 @@ final class AppFactory
         $siteFile = $root . '/config/site.config';
 
         $config = is_file($configFile) ? Config::fromFile($configFile) : Config::fromArray([]);
-        $site = is_file($siteFile) ? Config::fromFile($siteFile) : Config::fromArray([]);
         $siteConfig = is_file($siteFile)
             ? SiteConfig::fromFile($siteFile)
-            : SiteConfig::fromArray(['domains_app' => [], 'alliases' => []]);
+            : SiteConfig::fromArray(['domains_app' => []]);
 
         $container = new Container();
         $logger = new Logger(null, $env);
@@ -44,7 +43,6 @@ final class AppFactory
 
         $container->setInstance(Env::class, $env);
         $container->setInstance(Config::class, $config);
-        $container->setInstance('site', $site);
         $container->setInstance(SiteConfig::class, $siteConfig);
 
         $adminConfigFile = $root . '/config/admin.config';

@@ -127,7 +127,7 @@ final class SiteConfigWriterTest extends TestCase
 
         $raw = $this->writer->load();
         self::assertSame([], $raw['domains_app']);
-        self::assertSame([], $raw['alliases']);
+        self::assertArrayNotHasKey('alliases', $raw);
     }
 
     public function testSaveRejectsInvalidData(): void
@@ -136,13 +136,13 @@ final class SiteConfigWriterTest extends TestCase
         $before = file_get_contents($this->writer->path());
 
         $data = $this->writer->load();
-        $data['alliases'] = ['typo.ru' => ['www' => ['available' => true]]];
+        $data['domains_app']['damoony.ru']['folder'] = '../etc';
 
         try {
             $this->writer->save($data);
             self::fail('Ожидалось исключение валидации');
         } catch (RuntimeException $e) {
-            self::assertStringContainsString('неизвестного проекта', $e->getMessage());
+            self::assertStringContainsString('folder недопустим', $e->getMessage());
         }
 
         self::assertSame($before, file_get_contents($this->writer->path()));
@@ -159,7 +159,6 @@ final class SiteConfigWriterTest extends TestCase
                     'scheme' => 'www',
                 ],
             ],
-            'alliases' => [],
             '_readme' => 'служебный ключ',
         ];
         $this->writer->save($data);

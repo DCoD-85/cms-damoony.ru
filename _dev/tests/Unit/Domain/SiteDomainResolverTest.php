@@ -73,11 +73,9 @@ final class SiteDomainResolverTest extends TestCase
                     'namespace' => 'example_ru',
                     'stub' => 'maintenance',
                     'mirrors' => ['example.ru' => ['available' => false]],
-                ],
-            ],
-            'alliases' => [
-                'example.ru' => [
-                    'www' => ['available' => true, 'langs' => ['ru'], 'stub' => 'policy'],
+                    'aliases' => [
+                        'www' => ['available' => true, 'langs' => ['ru'], 'stub' => 'policy'],
+                    ],
                 ],
             ],
         ]);
@@ -105,9 +103,9 @@ final class SiteDomainResolverTest extends TestCase
                     'namespace' => 'example_ru',
                     'langs' => ['de'],
                     'mirrors' => ['example.ru' => ['available' => true]],
+                    'aliases' => ['www' => ['available' => true]],
                 ],
             ],
-            'alliases' => ['example.ru' => ['www' => ['available' => true]]],
         ]);
 
         $ctx = new SiteDomainResolver($site, new Paths(sys_get_temp_dir()))->resolve('example.ru');

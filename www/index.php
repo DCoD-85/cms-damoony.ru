@@ -53,22 +53,12 @@ $stack->add(new RateLimitMiddleware(
     whitelist: $rlWhitelist,
 ));
 
-$siteCfg = $container->get('site');
-assert($siteCfg instanceof \Damoony\Core\Config);
-$skinsAllowedMap = $siteCfg->getByKey(['domains_skins_allowed'], []);
+$resolver = $container->get(\Damoony\Core\Domain\DomainResolverInterface::class);
 $skinsFlat = [];
-if (is_array($skinsAllowedMap)) {
-    foreach ($skinsAllowedMap as $list) {
-        if (is_array($list)) {
-            foreach ($list as $s) {
-                if (is_string($s) && $s !== '') {
-                    $skinsFlat[$s] = true;
-                }
-            }
-        }
-    }
+if ($resolver instanceof \Damoony\Core\Domain\SiteDomainResolver) {
+    $skinsFlat = $resolver->availableSkins((string) ($_SERVER['HTTP_HOST'] ?? ''));
 }
-$skinsFlat = array_keys($skinsFlat) ?: ['default'];
+$skinsFlat = $skinsFlat ?: ['default'];
 
 $session = $container->get(SessionInterface::class);
 if ($session instanceof SessionInterface) {

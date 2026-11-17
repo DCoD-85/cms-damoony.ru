@@ -6,7 +6,6 @@ namespace Damoony\Tests\Scenarios;
 
 use Damoony\Core\App\FrontController;
 use Damoony\Core\App\PageHandler;
-use Damoony\Core\Config;
 use Damoony\Core\Container;
 use Damoony\Core\Domain\DomainResolverInterface;
 use Damoony\Core\Domain\SiteDomainResolver;
@@ -114,10 +113,9 @@ final class IndexRenderScenarioTest extends TestCase
     private function fc(): FrontController
     {
         $siteConfig = SiteConfigFixture::single('damoony.test');
-        $site = Config::fromArray(SiteConfigFixture::legacyView('damoony.test'));
         $c = new Container();
         $c->setInstance(Paths::class, new Paths($this->root));
-        $c->setInstance('site', $site);
+
 
         $session = new class () implements \Damoony\Core\Session\SessionInterface {
             public array $data = [];

@@ -68,13 +68,11 @@ php -r "var_dump(function_exists('curl_init'), function_exists('imagecreatetruec
       "mirrors": {
         "damoony.ru":  { "available": true },
         "damoony3.ru": { "available": true }
+      },
+      "aliases": {
+        "www":  { "available": true, "langs": ["ru", "en"] },
+        "docs": { "available": true, "langs": ["ru"] }
       }
-    }
-  },
-  "alliases": {
-    "damoony.ru": {
-      "www":  { "available": true, "langs": ["ru", "en"] },
-      "docs": { "available": true, "langs": ["ru"] }
     }
   }
 }
@@ -83,6 +81,7 @@ php -r "var_dump(function_exists('curl_init'), function_exists('imagecreatetruec
 ⚠️ `folder` — папка в `app/` (FS-пути), `namespace` — PHP-namespace домена. Это разные поля, и
 путать их нельзя: старая схема `domains_real` смешивала оба смысла.
 ⚠️ `mirrors` — входные хосты проекта; один хост не может принадлежать двум проектам.
+⚠️ `aliases` лежит **внутри проекта**: алиас вне проекта структурно невозможен.
 ⚠️ Языки алиаса обязаны быть подмножеством языков проекта.
 ⚠️ Правки — только через CLI (`domain:*`, `allias:*`, `lang:*`, `new`): конфиг валидируется
 до записи. Старый формат переносится командой `site:config:migrate`.

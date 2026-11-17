@@ -37,7 +37,7 @@ final class SiteConfigWriter
     public function load(): array
     {
         if (!is_file($this->path)) {
-            return ['domains_app' => [], 'alliases' => []];
+            return ['domains_app' => []];
         }
 
         $raw = Fs::read($this->path);
@@ -149,14 +149,16 @@ final class SiteConfigWriter
     ): bool {
         $data = $this->load();
         $apps = $this->apps($data);
-        $this->projectApp($apps, $key);
+        $project = $this->projectApp($apps, $key);
 
-        if (!isset($data['alliases']) || !is_array($data['alliases'])) {
-            $data['alliases'] = [];
+        $aliases = $project['aliases'] ?? [];
+        if (!is_array($aliases)) {
+            throw new RuntimeException("site.config: domains_app.{$key}.aliases испорчен");
         }
 
-        $exists = isset($data['alliases'][$key][$alias]);
-        $data['alliases'][$key][$alias] = ['available' => $available, 'langs' => $langs];
+        $exists = isset($aliases[$alias]);
+        $aliases[$alias] = ['available' => $available, 'langs' => $langs];
+        $data['domains_app'][$key]['aliases'] = $aliases;
         $this->save($data);
 
         return !$exists;
@@ -165,12 +167,15 @@ final class SiteConfigWriter
     public function setAliasAvailable(string $key, string $alias, bool $available): void
     {
         $data = $this->load();
+        $apps = $this->apps($data);
+        $project = $this->projectApp($apps, $key);
 
-        if (!isset($data['alliases'][$key][$alias])) {
+        $aliases = $project['aliases'] ?? [];
+        if (!is_array($aliases) || !isset($aliases[$alias])) {
             throw new RuntimeException("site.config: алиас \"{$key}.{$alias}\" не найден");
         }
 
-        $data['alliases'][$key][$alias]['available'] = $available;
+        $data['domains_app'][$key]['aliases'][$alias]['available'] = $available;
         $this->save($data);
     }
 
@@ -180,12 +185,15 @@ final class SiteConfigWriter
     public function setAliasLangs(string $key, string $alias, array $langs): void
     {
         $data = $this->load();
+        $apps = $this->apps($data);
+        $project = $this->projectApp($apps, $key);
 
-        if (!isset($data['alliases'][$key][$alias])) {
+        $aliases = $project['aliases'] ?? [];
+        if (!is_array($aliases) || !isset($aliases[$alias])) {
             throw new RuntimeException("site.config: алиас \"{$key}.{$alias}\" не найден");
         }
 
-        $data['alliases'][$key][$alias]['langs'] = $langs;
+        $data['domains_app'][$key]['aliases'][$alias]['langs'] = $langs;
         $this->save($data);
     }
 
@@ -205,12 +213,16 @@ final class SiteConfigWriter
     public function removeAlias(string $key, string $alias): bool
     {
         $data = $this->load();
+        $apps = $this->apps($data);
+        $project = $this->projectApp($apps, $key);
 
-        if (!isset($data['alliases'][$key][$alias])) {
+        $aliases = $project['aliases'] ?? [];
+        if (!is_array($aliases) || !isset($aliases[$alias])) {
             return false;
         }
 
-        unset($data['alliases'][$key][$alias]);
+        unset($aliases[$alias]);
+        $data['domains_app'][$key]['aliases'] = $aliases;
         $this->save($data);
 
         return true;
@@ -243,7 +255,7 @@ final class SiteConfigWriter
             return false;
         }
 
-        unset($data['domains_app'][$key], $data['alliases'][$key]);
+        unset($data['domains_app'][$key]);
         $this->save($data);
 
         return true;

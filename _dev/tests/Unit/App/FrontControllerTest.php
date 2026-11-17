@@ -6,7 +6,6 @@ namespace Damoony\Tests\Unit\App;
 
 use Damoony\Core\App\FrontController;
 use Damoony\Core\App\PageHandler;
-use Damoony\Core\Config;
 use Damoony\Core\Container;
 use Damoony\Core\Domain\DomainResolverInterface;
 use Damoony\Core\Domain\SiteDomainResolver;
@@ -59,11 +58,10 @@ final class FrontControllerTest extends TestCase
     private function fc(bool $available): FrontController
     {
         $siteConfig = SiteConfigFixture::single('example.ru', available: $available);
-        $site = Config::fromArray(SiteConfigFixture::legacyView('example.ru'));
 
         $c = new Container();
         $c->setInstance(Paths::class, new Paths($this->root));
-        $c->setInstance('site', $site);
+
 
         $session = new class () implements SessionInterface {
             public array $data = [];

@@ -50,10 +50,8 @@ final class StructureCheckerTest extends TestCase
                     'folder' => 'example.ru',
                     'namespace' => 'example_ru',
                     'mirrors' => ['example.ru' => ['available' => true]],
+                    'aliases' => ['www' => ['available' => true, 'langs' => ['ru']]],
                 ],
-            ],
-            'alliases' => [
-                'example.ru' => ['www' => ['available' => true, 'langs' => ['ru']]],
             ],
         ]);
 

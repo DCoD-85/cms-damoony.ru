@@ -6,7 +6,6 @@ namespace Damoony\Tests\Scenarios;
 
 use Damoony\Core\App\FrontController;
 use Damoony\Core\App\PageHandler;
-use Damoony\Core\Config;
 use Damoony\Core\Container;
 use Damoony\Core\Domain\DomainResolverInterface;
 use Damoony\Core\Domain\SiteDomainResolver;
@@ -55,7 +54,6 @@ final class NotFoundScenarioTest extends TestCase
     private function fc(): FrontController
     {
         $siteConfig = SiteConfigFixture::single('example.ru');
-        $site = Config::fromArray(SiteConfigFixture::legacyView('example.ru'));
         $c = new Container();
         $c->setInstance(DomainResolverInterface::class, new SiteDomainResolver($siteConfig, new \Damoony\Core\Files\Paths(sys_get_temp_dir())));
         $c->setInstance(RouterInterface::class, new FileRouter($this->root, new RulesMatcher()));

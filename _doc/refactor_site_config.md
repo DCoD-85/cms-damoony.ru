@@ -76,10 +76,11 @@
 | `aicli` fail-fast | `SiteConfig::projectKeys()` |
 | `dbcli` (`ResolvesRealDomain` trait) | `ResolvesProject` + `project->folder/namespace/storagePrefix()` |
 | `ProviderInvoker::providerConfig()` (мост) | `AbstractProvider` принимает готовый префикс таблиц |
+| `alliases` — отдельный ключ верхнего уровня | `domains_app.{key}.aliases` — алиасы внутри проекта |
 | `src/Cli/Commands/*` (65 файлов) | каталог удалён целиком |
 
-`FrontController` дополнительно отдаёт страницам `site_config` (SiteConfig); `site` (Config)
-оставлен ради `alliases` в существующем контенте.
+`FrontController` отдаёт страницам `site_config` (SiteConfig); сервис `site` (Config) **удалён** —
+страниц, читающих старый конфиг, не осталось (два блока `top` переписаны на `site_config`).
 
 ## Проверка в фазе 3 (не покрыто юнит-тестами)
 
@@ -90,6 +91,10 @@
 
 ## Решения (журнал)
 
+- **Алиасы живут внутри проекта** (`domains_app.{key}.aliases`): алиас вне проекта структурно
+  невозможен, удаление проекта не оставляет сирот. Плоский `alliases` удалён.
+- Конфиг в `app/{folder}/` отклонён: маршрутизация host→folder всё равно требует центрального
+  индекса, а уникальность хостов — глобальной валидации.
 - `admin` — не проект в `domains_app`; каркас админки ставится **сборкой** на уровне домена/алиаса.
 - `ai:edit-page` не переносится: она писала в production в обход контура `aicli`.
 - CLI идентифицирует владельца (`cli:init`), роли и токены — отдельный шаг.

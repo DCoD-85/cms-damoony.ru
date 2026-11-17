@@ -88,7 +88,7 @@ final class MigrateSiteConfigTest extends TestCase
 
     public function testRefusesExistingTargetWithoutForce(): void
     {
-        SiteConfigWriter::forRoot($this->root)->save(['domains_app' => [], 'alliases' => []]);
+        SiteConfigWriter::forRoot($this->root)->save(['domains_app' => []]);
 
         $result = $this->command()->run([], $this->context());
 
@@ -98,7 +98,7 @@ final class MigrateSiteConfigTest extends TestCase
 
     public function testForceQuarantinesExistingTarget(): void
     {
-        SiteConfigWriter::forRoot($this->root)->save(['domains_app' => [], 'alliases' => []]);
+        SiteConfigWriter::forRoot($this->root)->save(['domains_app' => []]);
 
         $result = $this->command()->run(['force' => '1'], $this->context());
 

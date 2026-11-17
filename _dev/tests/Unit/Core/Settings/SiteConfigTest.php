@@ -23,12 +23,10 @@ final class SiteConfigTest extends TestCase
                         'damoony.ru' => ['available' => true],
                         'damoony3.ru' => ['available' => true],
                     ],
-                ],
-            ],
-            'alliases' => [
-                'damoony.ru' => [
-                    'www' => ['available' => true, 'langs' => ['ru', 'en']],
-                    'docs' => ['available' => false, 'langs' => ['ru']],
+                    'aliases' => [
+                        'www' => ['available' => true, 'langs' => ['ru', 'en']],
+                        'docs' => ['available' => false, 'langs' => ['ru']],
+                    ],
                 ],
             ],
         ];
@@ -80,7 +78,7 @@ final class SiteConfigTest extends TestCase
         $data['domains_app']['damoony.ru']['aliases_storage'] = [
             'www' => ['db' => 'main', 'prefix' => 'd1_www__'],
         ];
-        $data['alliases']['damoony.ru']['www']['stub'] = 'coffee';
+        $data['domains_app']['damoony.ru']['aliases']['www']['stub'] = 'coffee';
 
         $project = SiteConfig::fromArray($data)->requireProject('damoony.ru');
 
@@ -129,7 +127,7 @@ final class SiteConfigTest extends TestCase
     public function testRejectsInvalidAliasStub(): void
     {
         $data = self::validConfig();
-        $data['alliases']['damoony.ru']['www']['stub'] = 'bad stub';
+        $data['domains_app']['damoony.ru']['aliases']['www']['stub'] = 'bad stub';
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('stub недопустим');
@@ -239,13 +237,13 @@ final class SiteConfigTest extends TestCase
         self::assertTrue(SiteConfig::isValidHost('187.188.1.1'));
     }
 
-    public function testRejectsAliasesForUnknownProject(): void
+    public function testRejectsLegacyTopLevelAlliases(): void
     {
         $data = self::validConfig();
-        $data['alliases']['typo.ru'] = ['www' => ['available' => true]];
+        $data['alliases'] = ['damoony.ru' => ['www' => ['available' => true]]];
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('alliases для неизвестного проекта');
+        $this->expectExceptionMessage('устаревший ключ alliases');
         SiteConfig::fromArray($data);
     }
 
@@ -313,7 +311,7 @@ final class SiteConfigTest extends TestCase
 
     public function testAllowsEmptyDomainsApp(): void
     {
-        $site = SiteConfig::fromArray(['domains_app' => [], 'alliases' => []]);
+        $site = SiteConfig::fromArray(['domains_app' => []]);
 
         self::assertSame([], $site->projectKeys());
         self::assertSame([], $site->hostMap());
@@ -324,7 +322,7 @@ final class SiteConfigTest extends TestCase
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('отсутствует domains_app');
-        SiteConfig::fromArray(['alliases' => []]);
+        SiteConfig::fromArray([]);
     }
 
     public function testRejectsOldSchema(): void
@@ -363,7 +361,7 @@ final class SiteConfigTest extends TestCase
         $data = self::validConfig();
         $data['_readme'] = 'документация';
         $data['domains_app']['_note'] = 'служебный ключ';
-        $data['alliases']['_note'] = 'служебный ключ';
+        $data['domains_app']['damoony.ru']['aliases']['_note'] = 'служебный ключ';
 
         $site = SiteConfig::fromArray($data);
 

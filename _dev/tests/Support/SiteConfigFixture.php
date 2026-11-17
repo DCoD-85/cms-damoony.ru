@@ -7,7 +7,7 @@ namespace Damoony\Tests\Support;
 use Damoony\Core\Settings\SiteConfig;
 
 /**
- * Фикстуры site.config для тестов движка (схема domains_app).
+ * Фикстуры site.config для тестов движка (схема domains_app, алиасы внутри проекта).
  */
 final class SiteConfigFixture
 {
@@ -40,27 +40,9 @@ final class SiteConfigFixture
                     'stub' => $stub,
                     'langs' => $langs,
                     'mirrors' => [$domain => ['available' => $available]],
+                    'aliases' => $aliasMap,
                 ],
             ],
-            'alliases' => [$domain => $aliasMap],
         ]);
-    }
-
-    /**
-     * Legacy-представление для контейнера ('site'): страницы читают только alliases.
-     *
-     * @param list<string> $aliases
-     * @param list<string> $langs
-     *
-     * @return array<string, mixed>
-     */
-    public static function legacyView(string $domain = 'example.ru', array $aliases = ['www'], array $langs = ['ru']): array
-    {
-        $aliasMap = [];
-        foreach ($aliases as $alias) {
-            $aliasMap[$alias] = ['available' => true, 'langs' => $langs];
-        }
-
-        return ['alliases' => [$domain => $aliasMap]];
     }
 }

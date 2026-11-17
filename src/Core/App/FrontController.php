@@ -101,11 +101,6 @@ final class FrontController
             throw new \RuntimeException('Paths expected');
         }
 
-        $site = $this->container->get('site');
-        if (!$site instanceof Config) {
-            throw new \RuntimeException('Config expected');
-        }
-
         $siteConfig = $this->container->has(\Damoony\Core\Settings\SiteConfig::class)
             ? $this->container->get(\Damoony\Core\Settings\SiteConfig::class) : null;
 
@@ -181,7 +176,6 @@ final class FrontController
 
         $context = new RegionContext($request, $domain, $meta, [
             'paths' => $paths,
-            'site' => $site,
             'site_config' => $siteConfig,
             'auth' => $auth,
             'csrf' => $csrf,

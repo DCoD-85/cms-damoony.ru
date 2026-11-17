@@ -16,12 +16,13 @@ final class blocksglobal_top implements RegionInterface
         $wrap = Builder::div('dt_inner');
         $wrap->append(Builder::p()->content($context->lang('block.top')));
 
-        $site = $context->service('site');
-        
+        $siteConfig = $context->service('site_config');
+
         $langs = ['ru', 'en'];
-        if ($site instanceof \Damoony\Core\Config) {
-            $configured = $site->getByKey(['alliases', $context->domain->real, $context->domain->allias, 'langs'], []);
-            if (is_array($configured) && $configured !== []) { $langs = $configured; }
+        if ($siteConfig instanceof \Damoony\Core\Settings\SiteConfig) {
+            $alias = $siteConfig->project($context->domain->real)?->alias($context->domain->allias);
+            $configured = $alias?->langs ?? [];
+            if ($configured !== []) { $langs = $configured; }
         }
         
         $t = $context->service('i18n');

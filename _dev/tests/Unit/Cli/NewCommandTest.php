@@ -20,7 +20,7 @@ final class NewCommandTest extends TestCase
         $this->root = sys_get_temp_dir() . '/damoony_cli_new_' . bin2hex(random_bytes(6));
         mkdir($this->root . '/config', 0o775, true);
 
-        SiteConfigWriter::forRoot($this->root)->save(['domains_app' => [], 'alliases' => []]);
+        SiteConfigWriter::forRoot($this->root)->save(['domains_app' => []]);
 
         // Мини-сборка: app/ + media/ + shared/ с плейсхолдерами.
         $asm = $this->root . '/stubs/assemblies/demo';

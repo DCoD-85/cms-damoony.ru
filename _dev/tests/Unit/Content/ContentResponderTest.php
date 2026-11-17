@@ -132,7 +132,6 @@ final class ContentResponderTest extends TestCase
                     'mirrors' => ['other.ru' => ['available' => true]],
                 ],
             ],
-            'alliases' => [],
         ]);
 
         // Миррор того же проекта — контент проекта разрешён.

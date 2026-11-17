@@ -74,13 +74,12 @@ final class MigrateSiteConfigCommand implements CommandInterface
         }
 
         $projects = $migrated['domains_app'] ?? [];
-        $aliases = $migrated['alliases'] ?? [];
 
         $context->step(sprintf(
             'Проектов: %d, хостов: %d, алиасов: %d',
             count($projects),
             $this->hostsCount($projects),
-            $this->aliasesCount($aliases),
+            $this->aliasesCount($projects),
         ));
 
         if ($dry) {
@@ -129,7 +128,7 @@ final class MigrateSiteConfigCommand implements CommandInterface
         $r->data = [
             'projects' => array_keys($projects),
             'hosts' => $this->hostsCount($projects),
-            'aliases' => $this->aliasesCount($aliases),
+            'aliases' => $this->aliasesCount($projects),
             'file' => Fs::rel($target, $this->paths->root()),
         ];
 
@@ -162,7 +161,7 @@ final class MigrateSiteConfigCommand implements CommandInterface
 
         $warnings = [];
         $projects = [];
-        $newAliases = [];
+
         $usedHosts = [];
 
         foreach ($realMap as $real => $namespaceValue) {
@@ -257,10 +256,11 @@ final class MigrateSiteConfigCommand implements CommandInterface
                 }
             }
 
-            $projects[$real] = $project;
             if ($projectAliases !== []) {
-                $newAliases[$real] = $projectAliases;
+                $project['aliases'] = $projectAliases;
             }
+
+            $projects[$real] = $project;
         }
 
         foreach ($aliases as $real => $list) {
@@ -270,7 +270,7 @@ final class MigrateSiteConfigCommand implements CommandInterface
             $warnings[] = sprintf('Алиасы для неизвестного проекта %s пропущены', $real);
         }
 
-        return [['domains_app' => $projects, 'alliases' => $newAliases], $warnings];
+        return [['domains_app' => $projects], $warnings];
     }
 
     /**
@@ -288,13 +288,14 @@ final class MigrateSiteConfigCommand implements CommandInterface
     }
 
     /**
-     * @param array<string, mixed> $aliases
+     * @param array<string, mixed> $projects
      */
-    private function aliasesCount(array $aliases): int
+    private function aliasesCount(array $projects): int
     {
         $count = 0;
-        foreach ($aliases as $list) {
-            $count += is_array($list) ? count($list) : 0;
+        foreach ($projects as $project) {
+            $aliases = is_array($project['aliases'] ?? null) ? $project['aliases'] : [];
+            $count += count($aliases);
         }
 
         return $count;

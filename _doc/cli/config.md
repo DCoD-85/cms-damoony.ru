@@ -22,13 +22,11 @@
             "mirrors": {
                 "damoony.ru":  { "available": true },
                 "damoony3.ru": { "available": true }
+            },
+            "aliases": {
+                "www":  { "available": true, "langs": ["ru", "en"], "stub": "maintenance" },
+                "docs": { "available": true, "langs": ["ru"] }
             }
-        }
-    },
-    "alliases": {
-        "damoony.ru": {
-            "www":  { "available": true, "langs": ["ru", "en"], "stub": "maintenance" },
-            "docs": { "available": true, "langs": ["ru"] }
         }
     }
 }
@@ -38,7 +36,7 @@
 
 | Поле | Обяз. | Смысл | Валидация / умолчание |
 |---|---|---|---|
-| `key` | да | идентификатор проекта; он же ключ в `alliases` | строка |
+| `key` | да | идентификатор проекта (доступен как `--domain`) | строка |
 | `folder` | да | папка в `app/` → `app/{folder}/` | без `..`, `/`, `\`; допускается ведущая точка (`.admin`) |
 | `namespace` | да | PHP-namespace домена (`namespace damoony_ru\www;`) | `^[a-z][a-z0-9_]*$` |
 | `scheme` | нет | схема проекта по умолчанию | `www` |
@@ -46,9 +44,10 @@
 | `default_alias` | нет | алиас по умолчанию | `www` |
 | `langs` | нет | языки проекта (надмножество языков алиасов) | `[]` |
 | `aliases_storage` | нет | префикс таблиц алиаса | `prefix: ^[a-z0-9_]*$` |
-| `mirrors` | нет | входные хосты проекта (host → `available`) | hostname или IPv4; хост уникален между проектами |
+| `mirrors` | да | входные хосты проекта (host → `available`) | hostname или IPv4; хост уникален между проектами; ≥ 1 |
+| `aliases` | нет | алиасы проекта | имена `^[a-z][a-z0-9_]*$` |
 
-## 3. Поля алиаса (`alliases.{key}.{alias}`)
+## 3. Поля алиаса (`domains_app.{key}.aliases.{alias}`)
 
 | Поле | Обяз. | Смысл | Валидация / умолчание |
 |---|---|---|---|
@@ -59,7 +58,7 @@
 
 ## 4. Инварианты (проверяются при загрузке)
 
-1. `alliases.{key}` ссылается только на существующий проект в `domains_app`.
+1. Алиасы физически не могут существовать вне проекта: `aliases` лежит внутри `domains_app.{key}`.
 2. Один хост не может принадлежать двум проектам.
 3. Языки алиаса ⊆ языки проекта (если `project.langs` не пуст).
 4. `domains_app` может быть пустым (свежая установка), но ключ обязан существовать.
@@ -85,7 +84,7 @@
 | ключ `D` (папка) | `domains_app[D].folder` |
 | `domains_mirrors[H] == D` | `domains_app[D].mirrors[H]` |
 | `domains_mirrors_available[H]` | `domains_app[D].mirrors[H].available` |
-| `alliases[D]` | `alliases[D]` без изменений |
+| `alliases[D]` | `domains_app[D].aliases` (вложено в проект) |
 | `domains_scheme[D]`, `domains_stub[D]`, `domains_langs[D]`, `domains_aliases_storage[D]` | одноимённые поля проекта |
 | `fillers` | не переносится: состояние филлеров живёт в `.blockslocal/{block}/{block}.rules.json` |
 
