@@ -44,11 +44,6 @@ final class AlliasListCommand implements CommandInterface
         }
         $site = Config::fromFile($siteFile)->all();
 
-        if (!isset($site['domains_real'][$domain])) {
-            $r->error('Домен не найден в конфиге');
-            return $r;
-        }
-
         $realDomain = (string) ($site['domains_mirrors'][$domain] ?? $domain);
         if (!isset($site['domains_real'][$realDomain])) {
             $r->error('Домен не найден в конфиге');
@@ -62,6 +57,8 @@ final class AlliasListCommand implements CommandInterface
             $context->step('Алиасов нет', true);
             return $r;
         }
+
+        ksort($aliasesMap, SORT_STRING);
 
         $rows = [];
         foreach ($aliasesMap as $aliasName => $aliasData) {
@@ -106,7 +103,6 @@ final class AlliasListCommand implements CommandInterface
                 $aliasName,
             );
         }
-        ksort($rows);
 
         $r->data = ['domain' => $domain, 'rows' => $rows];
         $context->step(sprintf('Всего: %d', count($rows)), true);

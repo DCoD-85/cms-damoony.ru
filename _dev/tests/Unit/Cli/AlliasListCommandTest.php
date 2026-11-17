@@ -161,4 +161,53 @@ final class AlliasListCommandTest extends TestCase
         self::assertSame(['www'], $byName['www']['keys']);
         self::assertFalse($byName['www']['has_empty_key']);
     }
+
+    public function testAcceptsPureMirrorDomain(): void
+    {
+        $this->writeConfig([
+            'domains_real' => ['real.ru' => 'real_ru'],
+            'domains_mirrors' => ['real.ru' => 'real.ru', 'mirror.ru' => 'real.ru'],
+            'alliases' => ['real.ru' => [
+                'www' => ['available' => true],
+                'doc' => ['available' => false],
+            ]],
+        ]);
+        mkdir($this->root . '/app/real.ru/www/algoritm', 0o777, true);
+        file_put_contents($this->root . '/app/real.ru/www/algoritm/algoritm.php', '<?php');
+
+        $res = $this->execute(['domain' => 'mirror.ru']);
+
+        self::assertTrue($res->ok, implode('; ', $res->errors));
+        self::assertCount(2, $res->data['rows']);
+
+        $byName = [];
+        foreach ($res->data['rows'] as $row) {
+            $byName[$row['name']] = $row;
+        }
+        self::assertTrue($byName['www']['dir_exists'], 'FS-путь должен резолвиться от real.ru');
+        self::assertDirectoryDoesNotExist($this->root . '/app/mirror.ru');
+    }
+
+    public function testRowsSortedByName(): void
+    {
+        $this->writeConfig([
+            'domains_real' => ['example.ru' => 'example_ru'],
+            'domains_mirrors' => ['example.ru' => 'example.ru'],
+            'alliases' => ['example.ru' => [
+                'www' => ['available' => true],
+                'tea' => ['available' => true],
+                'coffee' => ['available' => false],
+            ]],
+        ]);
+
+        $res = $this->execute(['domain' => 'example.ru']);
+
+        self::assertTrue($res->ok, implode('; ', $res->errors));
+
+        $names = [];
+        foreach ($res->data['rows'] as $row) {
+            $names[] = $row['name'];
+        }
+        self::assertSame(['coffee', 'tea', 'www'], $names);
+    }
 }
