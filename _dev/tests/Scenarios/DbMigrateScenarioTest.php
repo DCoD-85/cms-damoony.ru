@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Scenarios;
 
+use Damoony\Cli\Commands\DbMigrateCommand;
 use Damoony\Cli\Context;
-use Damoony\Cli\Next\Commands\DbMigrateCommand;
 use Damoony\Cli\Result;
 use Damoony\Core\Files\Paths;
 use Damoony\Data\Db\Connection;

@@ -11,7 +11,7 @@ use Damoony\Cli\Application;
 use Damoony\Cli\ArgvParser;
 use Damoony\Cli\Identity\CliLogger;
 use Damoony\Cli\Identity\IdentityStore;
-use Damoony\Cli\Next\Registry;
+use Damoony\Cli\Registry;
 use Damoony\Cli\Renderer;
 use Damoony\Core\Config;
 use Damoony\Data\Db\Connection;
