@@ -72,14 +72,15 @@ final class AlliasNewCommand implements CommandInterface
             return $r;
         }
 
-        if ($project->hasAlias($name)) {
-            $r->error('Алиас уже существует в конфиге');
+        $aliasDeclared = $project->hasAlias($name);
+        $alliasDir = $this->paths->allias($project->folder, $name);
+
+        if ($aliasDeclared && Fs::isDir($alliasDir)) {
+            $r->error('Алиас уже существует');
 
             return $r;
         }
-
-        $alliasDir = $this->paths->allias($project->folder, $name);
-        if (Fs::isDir($alliasDir)) {
+        if (!$aliasDeclared && Fs::isDir($alliasDir)) {
             $r->error('Папка алиаса уже существует');
 
             return $r;
@@ -111,17 +112,25 @@ final class AlliasNewCommand implements CommandInterface
             }
         }
 
-        try {
-            $this->writer->ensureAlias($project->key, $name);
-        } catch (Throwable $e) {
-            $r->error('Конфиг не обновлён: ' . $e->getMessage());
+        if (!$aliasDeclared) {
+            try {
+                $this->writer->ensureAlias($project->key, $name);
+            } catch (Throwable $e) {
+                $r->error('Конфиг не обновлён: ' . $e->getMessage());
 
-            return $r;
+                return $r;
+            }
         }
 
-        $r->data = ['project' => $project->key, 'alias' => $name];
+        $r->data = ['project' => $project->key, 'alias' => $name, 'config_updated' => !$aliasDeclared];
 
-        $context->step('Алиас создан (профиль: ' . $profile . ')', true, $project->key . '/' . $name);
+        $context->step(
+            $aliasDeclared
+                ? 'Структура алиаса восстановлена (запись в конфиге уже была)'
+                : 'Алиас создан (профиль: ' . $profile . ')',
+            true,
+            $project->key . '/' . $name,
+        );
 
         return $r;
     }

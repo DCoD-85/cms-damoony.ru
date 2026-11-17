@@ -211,7 +211,21 @@ final class CommandsTest extends TestCase
         $result = $this->alliasNew()->run(['domain' => 'damoony.ru', 'name' => 'www'], $this->context());
 
         self::assertFalse($result->ok);
-        self::assertSame(['Алиас уже существует в конфиге'], $result->errors);
+        self::assertSame(['Алиас уже существует'], $result->errors);
+    }
+
+    public function testAlliasNewRestoresDeclaredAliasWithoutFolder(): void
+    {
+        // docs объявлен в конфиге (langs: ru), но папки нет — структура досоздаётся,
+        // языки в конфиге не перетираются.
+        $result = $this->alliasNew()->run(['domain' => 'damoony.ru', 'name' => 'docs'], $this->context());
+
+        self::assertTrue($result->ok, implode('; ', $result->errors));
+        self::assertFalse($result->data['config_updated']);
+        self::assertFileExists($this->root . '/app/damoony.ru/docs/algoritm/algoritm.php');
+
+        $project = SiteConfig::fromFile(Registry::configPath($this->root))->requireProject('damoony.ru');
+        self::assertSame(['ru'], $project->aliasLangs('docs'));
     }
 
     public function testAlliasNewRejectsUnknownProject(): void
