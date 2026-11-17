@@ -1,7 +1,0 @@
-{
-    "available": {
-        "accept": "^accept$",
-        "ajax": "^ajax$"
-    },
-    "auth": false
-}

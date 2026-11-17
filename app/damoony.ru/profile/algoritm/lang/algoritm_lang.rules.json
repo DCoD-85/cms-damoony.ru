@@ -1,7 +1,0 @@
-{
-    "available": {
-        "": "^$",
-        "tests": "^tests$"
-    },
-    "auth": false
-}

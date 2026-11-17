@@ -114,3 +114,7 @@ www/stubs/*.php
 /_dev/normalize_*.py
 /_dev/cs.json
 /_dev/cs_diffs.txt
+
+# Демо-проект: только локально, в репозиторий не входит
+/app/damoony.ru/
+/www/media/damoony.ru/
