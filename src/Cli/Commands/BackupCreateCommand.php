@@ -7,6 +7,7 @@ namespace Damoony\Cli\Commands;
 use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
+use Damoony\Cli\Support\BackupArchive;
 use Damoony\Core\Config;
 use Damoony\Core\Files\Fs;
 use Damoony\Core\Files\Paths;
@@ -15,10 +16,10 @@ use RuntimeException;
 use ZipArchive;
 
 /**
- * backup:create — файлы проекта + дамп БД в один ZIP в var/backups/.
+ * backup:create — файлы проекта (app/content/media) + дамп БД в один ZIP.
  *
- * Поддерживается только MySQL/MariaDB (как и раньше): дамп делается mysqldump.
- * При любой ошибке временный каталог удаляется, ZIP не остаётся.
+ * `--only=app,content,media,db` — частичный бэкап, `--keep=N` — retention.
+ * Манифест внутри архива фиксирует состав и размеры.
  */
 final class BackupCreateCommand implements CommandInterface
 {
@@ -35,7 +36,7 @@ final class BackupCreateCommand implements CommandInterface
 
     public function description(): string
     {
-        return 'Создать бэкап проекта (файлы + БД) в var/backups/';
+        return 'Создать бэкап проекта (--only=app,content,media,db, --keep=N)';
     }
 
     public function run(array $args, Context $context): Result
@@ -53,11 +54,6 @@ final class BackupCreateCommand implements CommandInterface
         $root = $this->paths->root();
 
         $db = $this->dbConfig();
-        if (($db['driver'] ?? '') !== 'mysql') {
-            $r->error('Только MySQL/MariaDB: driver=' . (string) ($db['driver'] ?? 'не задан'));
-
-            return $r;
-        }
 
         if (!class_exists(ZipArchive::class) && !class_exists(\PharData::class)) {
             $r->error('Нет ни zip (ZipArchive), ни PharData для упаковки');
@@ -68,25 +64,51 @@ final class BackupCreateCommand implements CommandInterface
         $backupDir = $root . '/var/backups';
         Fs::mkdir($backupDir);
 
+        $archive = new BackupArchive();
+
+        try {
+            $parts = $archive->parseParts((string) ($args['only'] ?? ''));
+        } catch (RuntimeException $e) {
+            $r->error($e->getMessage());
+
+            return $r;
+        }
+
+        if (in_array('db', $parts, true) && ($db['driver'] ?? '') !== 'mysql') {
+            $r->error('Только MySQL/MariaDB: driver=' . (string) ($db['driver'] ?? 'не задан'));
+
+            return $r;
+        }
+
         $stamp = date('Y-m-d_H-i-s');
         $zipPath = $backupDir . '/backup_' . $project->folder . '_' . $stamp . '.zip';
         $tmpDir = sys_get_temp_dir() . '/damoony_bak_' . bin2hex(random_bytes(6));
 
         try {
-            Fs::mkdir($tmpDir . '/app');
-            Fs::mkdir($tmpDir . '/www/media');
-            Fs::mkdir($tmpDir . '/content');
+            if (in_array('app', $parts, true)) {
+                Fs::mkdir($tmpDir . '/app');
+                $this->copyTree($this->paths->domain($project->folder), $tmpDir . '/app/' . $project->folder);
+            }
+            if (in_array('content', $parts, true)) {
+                Fs::mkdir($tmpDir . '/content');
+                $this->copyTree($this->paths->contentRoot() . '/' . $project->folder, $tmpDir . '/content/' . $project->folder);
+            }
+            if (in_array('media', $parts, true)) {
+                Fs::mkdir($tmpDir . '/media');
+                $this->copyTree($this->paths->mediaRoot() . '/' . $project->folder, $tmpDir . '/media/' . $project->folder);
+            }
 
-            $this->copyTree($this->paths->domain($project->folder), $tmpDir . '/app/' . $project->folder);
-            $this->copyTree($this->paths->mediaRoot() . '/' . $project->folder, $tmpDir . '/www/media/' . $project->folder);
-            $this->copyTree($this->paths->contentRoot() . '/' . $project->folder, $tmpDir . '/content/' . $project->folder);
+            if (in_array('db', $parts, true)) {
+                $context->step('Дамп БД...', true);
+                Fs::writeAtomic($tmpDir . '/db.sql', $this->dumpDatabase($db));
+            }
 
-            $context->step('Дамп БД...', true);
-            $sql = $this->dumpDatabase($db);
-            Fs::writeAtomic($tmpDir . '/db.sql', $sql);
-
-            $context->step('Упаковка ZIP...', true);
-            $this->zip($tmpDir, $zipPath);
+            $context->step('Упаковка ZIP (' . implode(', ', $parts) . ')...', true);
+            $manifest = $archive->pack($tmpDir, $zipPath, $parts, [
+                'project' => $project->key,
+                'folder' => $project->folder,
+                'db' => ['driver' => (string) ($db['driver'] ?? ''), 'dbname' => (string) ($db['dbname'] ?? '')],
+            ]);
         } catch (RuntimeException $e) {
             Fs::rmrf($tmpDir);
             @unlink($zipPath);
@@ -98,10 +120,22 @@ final class BackupCreateCommand implements CommandInterface
         Fs::rmrf($tmpDir);
         $r->file(Fs::rel($zipPath, $root));
 
+        $pruned = [];
+        $keep = (int) ($args['keep'] ?? 0);
+        if ($keep > 0) {
+            $pruned = $archive->prune($backupDir, 'backup_' . $project->folder . '_', $keep);
+            foreach ($pruned as $path) {
+                $r->warn('Удалён старый бэкап: ' . Fs::rel($path, $root));
+            }
+        }
+
         $r->data = [
             'project' => $project->key,
             'file' => Fs::rel($zipPath, $root),
             'size' => (int) @filesize($zipPath),
+            'parts' => $parts,
+            'parts_stats' => $manifest['parts'] ?? [],
+            'pruned' => array_map(static fn (string $p): string => Fs::rel($p, $root), $pruned),
         ];
 
         $context->step('Бэкап создан', true, Fs::rel($zipPath, $root));
@@ -178,45 +212,6 @@ final class BackupCreateCommand implements CommandInterface
             } elseif (is_file($from) && !copy($from, $to)) {
                 throw new RuntimeException('Не удалось скопировать: ' . $from);
             }
-        }
-    }
-
-    private function zip(string $tmpDir, string $zipPath): void
-    {
-        if (class_exists(ZipArchive::class)) {
-            $zip = new ZipArchive();
-            if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-                throw new RuntimeException('Не удалось создать ZIP: ' . $zipPath);
-            }
-
-            $iterator = new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($tmpDir, \FilesystemIterator::SKIP_DOTS),
-                \RecursiveIteratorIterator::LEAVES_ONLY,
-            );
-
-            foreach ($iterator as $file) {
-                if (!$file instanceof \SplFileInfo || $file->isDir()) {
-                    continue;
-                }
-                $path = $file->getPathname();
-                $zip->addFile($path, substr($path, strlen($tmpDir) + 1));
-            }
-
-            $zip->close();
-
-            return;
-        }
-
-        // Fallback: PharData (встроен в PHP, расширение zip не требуется).
-        if (is_file($zipPath)) {
-            @unlink($zipPath);
-        }
-
-        try {
-            $phar = new \PharData($zipPath, 0, null, \Phar::ZIP);
-            $phar->buildFromDirectory($tmpDir);
-        } catch (\Throwable $e) {
-            throw new RuntimeException('Не удалось создать ZIP (PharData): ' . $e->getMessage());
         }
     }
 }

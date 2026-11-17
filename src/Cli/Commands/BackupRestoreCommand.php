@@ -7,6 +7,7 @@ namespace Damoony\Cli\Commands;
 use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
+use Damoony\Cli\Support\BackupArchive;
 use Damoony\Core\Config;
 use Damoony\Core\Files\Fs;
 use Damoony\Core\Files\Paths;
@@ -19,6 +20,7 @@ use ZipArchive;
  * backup:restore — восстановление проекта из ZIP (файлы + БД).
  *
  * Требует --force: текущие файлы уходят в карантин с маркером `_trash_restore_`.
+ * `--only=app,content,media,db` — восстановить только выбранные части.
  */
 final class BackupRestoreCommand implements CommandInterface
 {
@@ -35,7 +37,7 @@ final class BackupRestoreCommand implements CommandInterface
 
     public function description(): string
     {
-        return 'Восстановить проект из ZIP-бэкапа (--force)';
+        return 'Восстановить проект из ZIP-бэкапа (--force, --only=app,content,media,db)';
     }
 
     public function run(array $args, Context $context): Result
@@ -75,27 +77,62 @@ final class BackupRestoreCommand implements CommandInterface
             return $r;
         }
 
-        $db = $this->dbConfig();
-        if (($db['driver'] ?? '') !== 'mysql') {
-            $r->error('Только MySQL/MariaDB: driver=' . (string) ($db['driver'] ?? 'не задан'));
+        $archive = new BackupArchive();
+
+        try {
+            $requested = $archive->parseParts((string) ($args['only'] ?? ''));
+        } catch (RuntimeException $e) {
+            $r->error($e->getMessage());
 
             return $r;
         }
 
+        $db = $this->dbConfig();
+
         $tmpDir = sys_get_temp_dir() . '/damoony_restore_' . bin2hex(random_bytes(6));
+        $manifest = null;
+        $parts = [];
 
         try {
             Fs::mkdir($tmpDir);
             $this->unzip($zipPath, $tmpDir);
 
-            if (!is_file($tmpDir . '/db.sql')) {
-                throw new RuntimeException('В архиве отсутствует db.sql');
+            $manifest = $archive->readManifest($tmpDir);
+            if ($manifest === null) {
+                $r->warn('В архиве нет manifest.json — старый формат, восстанавливаем всё найденное');
+                $available = BackupArchive::PARTS;
+            } else {
+                $stats = is_array($manifest['parts'] ?? null) ? $manifest['parts'] : [];
+                $available = [];
+                foreach (BackupArchive::PARTS as $part) {
+                    $entry = $stats[$part] ?? null;
+                    if (is_array($entry) && (int) ($entry['files'] ?? 0) > 0) {
+                        $available[] = $part;
+                    }
+                }
             }
 
-            $context->step('Восстановление БД...', true);
-            $this->importDatabase($db, $tmpDir . '/db.sql');
+            $parts = array_values(array_intersect($requested, $available));
+            if ($parts === []) {
+                throw new RuntimeException(
+                    'В архиве нет выбранных частей (' . implode(', ', $requested) . '); есть: '
+                    . ($available === [] ? 'ничего' : implode(', ', $available)),
+                );
+            }
 
-            $context->step('Восстановление файлов (текущие в карантин)...', true);
+            if (in_array('db', $parts, true)) {
+                if (($db['driver'] ?? '') !== 'mysql') {
+                    throw new RuntimeException('Только MySQL/MariaDB: driver=' . (string) ($db['driver'] ?? 'не задан'));
+                }
+                if (!is_file($tmpDir . '/db.sql')) {
+                    throw new RuntimeException('В архиве отсутствует db.sql');
+                }
+
+                $context->step('Восстановление БД...', true);
+                $this->importDatabase($db, $tmpDir . '/db.sql');
+            }
+
+            $context->step('Восстановление файлов (' . implode(', ', array_diff($parts, ['db'])) . '; текущие в карантин)...', true);
             $stamp = date('Y-m-d_H-i-s');
 
             $appCurrent = $this->paths->domain($project->folder);
@@ -105,24 +142,35 @@ final class BackupRestoreCommand implements CommandInterface
             Fs::mkdir($this->paths->mediaRoot() . '/.trash');
             Fs::mkdir($this->paths->contentRoot() . '/.trash');
 
-            if (Fs::isDir($appCurrent)
-                && !@rename($appCurrent, $this->paths->appRoot() . '/' . $project->folder . '_trash_restore_' . $stamp)) {
-                throw new RuntimeException('Не удалось увести текущие файлы проекта в карантин');
-            }
-            if (Fs::isDir($mediaCurrent)
-                && !@rename($mediaCurrent, $this->paths->mediaRoot() . '/.trash/'
-                    . $project->folder . '_trash_restore_' . $stamp)) {
-                $r->warn('Не удалось увести media проекта в карантин');
-            }
-            if (Fs::isDir($contentCurrent)
-                && !@rename($contentCurrent, $this->paths->contentRoot() . '/.trash/'
-                    . $project->folder . '_trash_restore_' . $stamp)) {
-                $r->warn('Не удалось увести content проекта в карантин');
+            if (in_array('app', $parts, true)) {
+                if (Fs::isDir($appCurrent)
+                    && !@rename($appCurrent, $this->paths->appRoot() . '/' . $project->folder . '_trash_restore_' . $stamp)) {
+                    throw new RuntimeException('Не удалось увести текущие файлы проекта в карантин');
+                }
+                $this->copyTree($tmpDir . '/app/' . $project->folder, $appCurrent);
             }
 
-            $this->copyTree($tmpDir . '/app/' . $project->folder, $appCurrent);
-            $this->copyTree($tmpDir . '/www/media/' . $project->folder, $mediaCurrent);
-            $this->copyTree($tmpDir . '/content/' . $project->folder, $contentCurrent);
+            if (in_array('media', $parts, true)) {
+                if (Fs::isDir($mediaCurrent)
+                    && !@rename($mediaCurrent, $this->paths->mediaRoot() . '/.trash/'
+                        . $project->folder . '_trash_restore_' . $stamp)) {
+                    $r->warn('Не удалось увести media проекта в карантин');
+                }
+                // Новый формат — media/, старые архивы — www/media/.
+                $mediaSrc = is_dir($tmpDir . '/media/' . $project->folder)
+                    ? $tmpDir . '/media/' . $project->folder
+                    : $tmpDir . '/www/media/' . $project->folder;
+                $this->copyTree($mediaSrc, $mediaCurrent);
+            }
+
+            if (in_array('content', $parts, true)) {
+                if (Fs::isDir($contentCurrent)
+                    && !@rename($contentCurrent, $this->paths->contentRoot() . '/.trash/'
+                        . $project->folder . '_trash_restore_' . $stamp)) {
+                    $r->warn('Не удалось увести content проекта в карантин');
+                }
+                $this->copyTree($tmpDir . '/content/' . $project->folder, $contentCurrent);
+            }
         } catch (Throwable $e) {
             Fs::rmrf($tmpDir);
             $r->error($e->getMessage());
@@ -133,7 +181,13 @@ final class BackupRestoreCommand implements CommandInterface
         Fs::rmrf($tmpDir);
 
         $r->warn('Старые файлы в карантине: очистка php bin/cli.php trash:clear --force --older=7d');
-        $r->data = ['project' => $project->key, 'restored' => true, 'file' => $file];
+        $r->data = [
+            'project' => $project->key,
+            'restored' => true,
+            'file' => $file,
+            'parts' => $parts,
+            'created_at' => is_array($manifest) ? (string) ($manifest['created_at'] ?? '') : '',
+        ];
 
         $context->step('Восстановление завершено', true);
 

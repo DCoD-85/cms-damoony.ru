@@ -47,18 +47,32 @@ php bin/cli.php admin:passwd --name=admin --password=<сильный>   # вхо
 
 ## 5. Бэкапы
 
+Один архив на проект: `var/backups/backup_{folder}_{YYYY-mm-dd_HH-MM-SS}.zip`.
+
+```
+manifest.json   версия, время, проект, состав и размеры частей
+app/            код домена и алиасов
+content/        загруженный контент (content:store)
+media/          скины и media проекта
+db.sql          дамп БД (только при --only с db)
+```
+
 | Команда | Что делает |
 |---|---|
-| `backup:create --domain=X` | ZIP в `var/backups/`: `app/{folder}/`, `www/media/{folder}/`, `content/{folder}/`, `db.sql` |
-| `backup:restore --domain=X --file=… --force` | распаковка, импорт БД, app/media/content проекта — в карантин, копирование из архива |
+| `backup:create --domain=X [--only=app,content,media,db] [--keep=N]` | собрать архив; `--only` — частичный бэкап, `--keep` — оставить N новейших (старые удаляются) |
+| `backup:restore --domain=X --file=… --force [--only=…]` | восстановить из архива; `--only` — только выбранные части |
 
-Ограничения и гарантии:
+Гарантии и ограничения:
 
-- только MySQL/MariaDB (`driver=mysql`), иначе явный отказ;
-- дамп/импорт — `mysqldump`/`mysql` (на Windows ищется локальный бинарь MariaDB);
+- части восстанавливаются **изолированно**: `--only=content` не трогает `app`, `media` и БД;
+- `manifest.json` — источник правды: restore берёт из него состав и предупреждает, если его нет
+  (старый архив, тогда восстанавливается всё найденное);
+- `db` требует MySQL/MariaDB (`driver=mysql`) и `mysqldump`/`mysql` (на Windows ищется локальный бинарь);
+- `media` в ZIP кладётся без пересжатия (картинки не сжимаются — экономия CPU);
 - упаковка/распаковка: `ZipArchive`, при его отсутствии — `PharData`;
 - при ошибке временный каталог удаляется, недоделанный ZIP не остаётся;
-- старые файлы уходят в карантин с маркером `_trash_restore_`, а не удаляются.
+- старые файлы уходят в карантин с маркером `_trash_restore_`, а не удаляются;
+- retention по умолчанию **выключен** (`--keep` не задан) — архивы не удаляются сами.
 
 ## 6. Прочее
 
