@@ -64,11 +64,11 @@ final class DomainRemoveCommand implements CommandInterface
         $realDomain = (string) ($site['domains_mirrors'][$domain] ?? '');
         $isMapped = ($realDomain !== '' && $realDomain !== $domain);
         $domainInConfig = isset($site['domains_real'][$domain]) || isset($site['domains_mirrors'][$domain]);
+        $mappedDomains = [];
 
         if ($isMapped) {
             $context->step("Домен {$domain} является привязкой к {$realDomain}. Удаляем только конфиг.", true);
         } else {
-            $mappedDomains = [];
             foreach ($site['domains_mirrors'] ?? [] as $d => $real) {
                 if ($d !== $domain && $real === $domain) {
                     $mappedDomains[] = $d;
@@ -99,16 +99,46 @@ final class DomainRemoveCommand implements CommandInterface
             }
 
             if (is_dir($domainDir)) {
-                $trashDir = $domainDir . '_trash_' . time();
-                if (!@rename($domainDir, $trashDir)) {
-                    $r->error('Не удалось переместить папку домена в карантин');
-                    return $r;
+                if (!$context->isDryRun()) {
+                    $trashDir = $domainDir . '_trash_' . time();
+                    if (!@rename($domainDir, $trashDir)) {
+                        $r->error('Не удалось переместить папку домена в карантин');
+                        return $r;
+                    }
+                    $context->step('Папка реального домена перемещена в карантин', true, basename($trashDir));
+                    $r->warn('Очистка карантина: php bin/cli.php trash:clear --force --older=7d');
                 }
-                $context->step('Папка реального домена перемещена в карантин', true, basename($trashDir));
-                $r->warn('Очистка карантина: php bin/cli.php trash:clear --force --older=7d');
             } else {
                 $r->warn('Папка реального домена не найдена — чистим только конфиг');
             }
+        }
+
+        if ($context->isDryRun()) {
+            $planDomainDir = $this->paths->domain($domain);
+            $planMediaDir = $this->paths->mediaRoot() . '/' . $domain;
+            $configKeys = [];
+            foreach (self::DOMAIN_KEYS as $key) {
+                if (isset($site[$key][$domain])) {
+                    $configKeys[] = $key;
+                }
+            }
+
+            $action = $isMapped
+                ? 'привязка ' . $domain . ' будет снята (конфиг + media)'
+                : 'домен ' . $domain . ' будет удалён в карантин';
+            $context->step('Dry-run: ' . $action);
+
+            $r->data = [
+                'domain' => $domain,
+                'binding_only' => $isMapped,
+                'mapped_to' => $isMapped ? $realDomain : null,
+                'cascade' => $mappedDomains,
+                'domain_dir' => is_dir($planDomainDir) ? Fs::rel($planDomainDir, $this->paths->root()) : null,
+                'media_dir' => is_dir($planMediaDir) ? Fs::rel($planMediaDir, $this->paths->root()) : null,
+                'config_keys' => $configKeys,
+                'dry_run' => true,
+            ];
+            return $r;
         }
 
         // 2. Карантин для media домена
