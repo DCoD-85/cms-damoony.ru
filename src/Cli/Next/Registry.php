@@ -19,6 +19,10 @@ use Damoony\Cli\Next\Commands\PageNewCommand;
 use Damoony\Cli\Next\Commands\PageReadCommand;
 use Damoony\Cli\Next\Commands\PageToggleCommand;
 use Damoony\Cli\Next\Commands\PageWriteCommand;
+use Damoony\Cli\Next\Commands\SchemeCopyCommand;
+use Damoony\Cli\Next\Commands\SchemeListCommand;
+use Damoony\Cli\Next\Commands\SchemeNewCommand;
+use Damoony\Cli\Next\Commands\SchemeRemoveCommand;
 use Damoony\Cli\Next\Scaffold\Scaffolder;
 use Damoony\Cli\Next\Support\ContentRefs;
 use Damoony\Cli\Next\Support\Quarantine;
@@ -73,6 +77,10 @@ final class Registry
         $registry->add(new PageReadCommand($paths, $resolver));
         $registry->add(new PageWriteCommand($paths, $resolver, $contentRefs));
         $registry->add(new PageToggleCommand($paths, $resolver));
+        $registry->add(new SchemeListCommand($paths, $site));
+        $registry->add(new SchemeNewCommand($paths, $site));
+        $registry->add(new SchemeCopyCommand($paths, $site));
+        $registry->add(new SchemeRemoveCommand($paths, $site, $quarantine));
 
         return $registry;
     }

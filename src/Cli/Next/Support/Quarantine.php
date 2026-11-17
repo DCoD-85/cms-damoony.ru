@@ -49,6 +49,33 @@ final class Quarantine
         return $target;
     }
 
+    /**
+     * Переместить набор файлов в карантинный каталог (создаётся при необходимости).
+     *
+     * @param list<string> $files
+     *
+     * @return list<string> новые пути перемещённых файлов
+     */
+    public function files(string $trashDir, array $files): array
+    {
+        Fs::mkdir($trashDir);
+
+        $moved = [];
+        foreach ($files as $file) {
+            if (!is_file($file)) {
+                continue;
+            }
+
+            $target = $this->unique($trashDir . '/' . basename($file));
+            if (!@rename($file, $target)) {
+                throw new RuntimeException("Не удалось переместить в карантин: {$file}");
+            }
+            $moved[] = $target;
+        }
+
+        return $moved;
+    }
+
     private function move(string $from, string $to): void
     {
         Fs::mkdir(dirname($to));
