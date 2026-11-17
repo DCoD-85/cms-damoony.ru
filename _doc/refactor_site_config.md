@@ -80,7 +80,7 @@
 | fillers | `filler:new`, `filler:write`, `filler:edit`, `filler:toggle`, `filler:list` | — |
 | skins | `skin:new`, `skin:edit`, `skin:remove`, `skin:list` | готово |
 | langs | `lang:list`, `lang:add`, `lang:remove`, `lang:repair`, `lang:sync` | готово |
-| sessions | `session:start`, `session:apply`, `session:discard`, `session:list` | — |
+| sessions | `session:start`, `session:apply`, `session:discard`, `session:list` | готово |
 | content | `content:store`, `content:remove`, `content:list`, `content:gc` | — |
 | structure | `structure:check`, `structure:repair` | — |
 | trash/system | `trash:clear`, `system:scan`, `system:clean`, `backup:create`, `backup:restore` | — |

@@ -39,6 +39,10 @@ use Damoony\Cli\Next\Commands\SchemeListCommand;
 use Damoony\Cli\Next\Commands\SchemeNewCommand;
 use Damoony\Cli\Next\Commands\SchemeRemoveCommand;
 use Damoony\Cli\Next\Commands\SchemeSaveCommand;
+use Damoony\Cli\Next\Commands\SessionApplyCommand;
+use Damoony\Cli\Next\Commands\SessionDiscardCommand;
+use Damoony\Cli\Next\Commands\SessionListCommand;
+use Damoony\Cli\Next\Commands\SessionStartCommand;
 use Damoony\Cli\Next\Commands\SkinEditCommand;
 use Damoony\Cli\Next\Commands\SkinListCommand;
 use Damoony\Cli\Next\Commands\SkinNewCommand;
@@ -48,6 +52,7 @@ use Damoony\Cli\Next\Support\BlockFileEditor;
 use Damoony\Cli\Next\Support\ContentRefs;
 use Damoony\Cli\Next\Support\Quarantine;
 use Damoony\Cli\Next\Support\SessionGuard;
+use Damoony\Cli\Next\Support\SessionWorkspace;
 use Damoony\Cli\Next\Support\TargetResolver;
 use Damoony\Core\Files\Paths;
 use Damoony\Core\Settings\SiteConfig;
@@ -85,6 +90,7 @@ final class Registry
         $contentRefs = new ContentRefs($paths);
         $sessionGuard = new SessionGuard($paths);
         $blockEditor = new BlockFileEditor($paths);
+        $workspace = new SessionWorkspace($paths);
 
         $registry = new CommandRegistry();
         $registry->add(new HelpCommand($registry));
@@ -125,6 +131,10 @@ final class Registry
         $registry->add(new LangRemoveCommand($paths, $site, $writer, $quarantine));
         $registry->add(new LangRepairCommand($paths, $site, $writer));
         $registry->add(new LangSyncCommand($paths, $site, $writer));
+        $registry->add(new SessionStartCommand($paths, $site, $workspace));
+        $registry->add(new SessionApplyCommand($paths, $site, $workspace));
+        $registry->add(new SessionDiscardCommand($paths, $site, $workspace));
+        $registry->add(new SessionListCommand($paths, $workspace));
 
         return $registry;
     }
