@@ -6,6 +6,7 @@ namespace Damoony\Cli\Next;
 
 use Damoony\Cli\CommandRegistry;
 use Damoony\Cli\HelpCommand;
+use Damoony\Cli\Next\Commands\AdminPasswdCommand;
 use Damoony\Cli\Next\Commands\AlliasListCommand;
 use Damoony\Cli\Next\Commands\AlliasNewCommand;
 use Damoony\Cli\Next\Commands\AlliasRemoveCommand;
@@ -63,6 +64,7 @@ use Damoony\Cli\Next\Commands\SkinRemoveCommand;
 use Damoony\Cli\Next\Commands\SystemCleanCommand;
 use Damoony\Cli\Next\Commands\SystemScanCommand;
 use Damoony\Cli\Next\Commands\TrashClearCommand;
+use Damoony\Cli\Next\Commands\UserNewCommand;
 use Damoony\Cli\Next\Scaffold\Scaffolder;
 use Damoony\Cli\Next\Support\BlockFileEditor;
 use Damoony\Cli\Next\Support\ContentLayout;
@@ -174,6 +176,8 @@ final class Registry
         $registry->add(new DbMutateCommand($site, $db, $providerInvoker));
         $registry->add(new DbMigrateCommand($paths, $db));
         $registry->add(new DataproviderAddMethodCommand($paths, $site));
+        $registry->add(new AdminPasswdCommand($paths));
+        $registry->add(new UserNewCommand($db));
 
         return $registry;
     }
