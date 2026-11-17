@@ -17,6 +17,7 @@ final class ObservabilityConfig
 {
     private const DEFAULTS = [
         'health' => ['backup_max_age_days' => 2, 'disk_min_free_mb' => 1024],
+        'metrics' => ['enabled' => true, 'sample' => 1, 'keep_days' => 14, 'token' => ''],
         'alerts' => ['file' => 'var/alerts.log', 'webhook' => null],
     ];
 
@@ -79,6 +80,32 @@ final class ObservabilityConfig
             $merged['health'][$key] = $health[$key];
         }
 
+        $metrics = $data['metrics'] ?? [];
+        if (!is_array($metrics)) {
+            throw new RuntimeException('observability.config: metrics должен быть объектом');
+        }
+        if (array_key_exists('enabled', $metrics)) {
+            if (!is_bool($metrics['enabled'])) {
+                throw new RuntimeException('observability.config: metrics.enabled должен быть boolean');
+            }
+            $merged['metrics']['enabled'] = $metrics['enabled'];
+        }
+        foreach (['sample' => 1, 'keep_days' => 0] as $key => $min) {
+            if (!array_key_exists($key, $metrics)) {
+                continue;
+            }
+            if (!is_int($metrics[$key]) || $metrics[$key] < $min) {
+                throw new RuntimeException('observability.config: metrics.' . $key . ' должен быть целым ≥ ' . $min);
+            }
+            $merged['metrics'][$key] = $metrics[$key];
+        }
+        if (array_key_exists('token', $metrics)) {
+            if (!is_string($metrics['token'])) {
+                throw new RuntimeException('observability.config: metrics.token должен быть строкой');
+            }
+            $merged['metrics']['token'] = $metrics['token'];
+        }
+
         $alerts = $data['alerts'] ?? [];
         if (!is_array($alerts)) {
             throw new RuntimeException('observability.config: alerts должен быть объектом');
@@ -108,6 +135,26 @@ final class ObservabilityConfig
     public function diskMinFreeMb(): int
     {
         return (int) $this->data['health']['disk_min_free_mb'];
+    }
+
+    public function metricsEnabled(): bool
+    {
+        return (bool) $this->data['metrics']['enabled'];
+    }
+
+    public function metricsSample(): int
+    {
+        return (int) $this->data['metrics']['sample'];
+    }
+
+    public function metricsKeepDays(): int
+    {
+        return (int) $this->data['metrics']['keep_days'];
+    }
+
+    public function metricsToken(): string
+    {
+        return (string) $this->data['metrics']['token'];
     }
 
     public function alertsFile(): string

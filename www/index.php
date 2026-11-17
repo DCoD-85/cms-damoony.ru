@@ -15,8 +15,10 @@ use Damoony\Core\Http\Middleware\SkinCookieMiddleware;
 use Damoony\Core\Http\MiddlewareStack;
 use Damoony\Core\Http\Request;
 use Damoony\Core\Http\Response;
+use Damoony\Core\Observability\Metrics;
 use Damoony\Core\Observability\RequestId;
 use Damoony\Core\Session\SessionInterface;
+use Damoony\Core\Settings\ObservabilityConfig;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -32,6 +34,14 @@ if (is_file($root . '/_dev/.dev')) {
     ini_set('display_errors', '0');
     ini_set('log_errors', '1');
 }
+try {
+    $observability = ObservabilityConfig::fromFile($root . '/config/observability.config');
+} catch (Throwable) {
+    $observability = ObservabilityConfig::defaults();
+}
+Metrics::configure($observability->metricsEnabled(), $root . '/var/metrics', $observability->metricsSample());
+Metrics::begin();
+
 $app = AppFactory::create($root);
 $container = $app->container();
 

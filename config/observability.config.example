@@ -1,4 +1,10 @@
 {
+    "metrics": {
+        "enabled": true,
+        "sample": 1,
+        "keep_days": 14,
+        "token": ""
+    },
     "health": {
         "backup_max_age_days": 2,
         "disk_min_free_mb": 1024

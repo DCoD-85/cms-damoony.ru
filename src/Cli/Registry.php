@@ -45,6 +45,7 @@ use Damoony\Cli\Commands\LangListCommand;
 use Damoony\Cli\Commands\LangRemoveCommand;
 use Damoony\Cli\Commands\LangRepairCommand;
 use Damoony\Cli\Commands\LangSyncCommand;
+use Damoony\Cli\Commands\MetricsSnapshotCommand;
 use Damoony\Cli\Commands\MigratePageRulesCommand;
 use Damoony\Cli\Commands\MigrateSiteConfigCommand;
 use Damoony\Cli\Commands\NewCommand;
@@ -182,7 +183,7 @@ final class Registry
         $registry->add(new ContentGcCommand($paths, $contentLayout, $maintenance));
         $registry->add(new TrashClearCommand($paths, $trashScanner, $maintenance));
         $registry->add(new SystemScanCommand($paths));
-        $registry->add(new SystemCleanCommand($paths, $trashScanner, $maintenance));
+        $registry->add(new SystemCleanCommand($paths, $trashScanner, $maintenance, $observability));
         $registry->add(new BackupCreateCommand($paths, $site, $maintenance));
         $registry->add(new BackupRestoreCommand($paths, $site));
         $registry->add(new DbSchemaCommand($site, $db));
@@ -195,6 +196,7 @@ final class Registry
         $registry->add(new AdminPasswdCommand($paths));
         $registry->add(new HealthCheckCommand($paths, $db, $observability));
         $registry->add(new AlertNotifyCommand($paths, $observability));
+        $registry->add(new MetricsSnapshotCommand($paths));
         $registry->add(new UserNewCommand($db));
         $registry->add(new ApiReflectCommand($paths));
         $registry->add(new MigratePageRulesCommand($paths, $site));

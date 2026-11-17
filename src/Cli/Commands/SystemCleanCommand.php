@@ -23,6 +23,7 @@ final class SystemCleanCommand implements CommandInterface
         private readonly Paths $paths,
         private readonly TrashScanner $scanner,
         private readonly MaintenanceConfig $maintenance,
+        private readonly \Damoony\Core\Settings\ObservabilityConfig $observability,
     ) {
     }
 
@@ -66,6 +67,7 @@ final class SystemCleanCommand implements CommandInterface
             if ($force) {
                 $this->pruneLogs($r, $context);
                 $this->pruneRateLimit($r, $context);
+                $this->pruneMetrics($r, $context);
             }
             $context->step('Мусора не найдено. Сервер чист.', true);
 
@@ -98,6 +100,7 @@ final class SystemCleanCommand implements CommandInterface
 
         $this->pruneLogs($r, $context);
         $this->pruneRateLimit($r, $context);
+        $this->pruneMetrics($r, $context);
 
         return $r;
     }
@@ -132,6 +135,39 @@ final class SystemCleanCommand implements CommandInterface
         if ($deleted > 0) {
             $context->step(sprintf('Удалено старых журналов CLI: %d (старше %d дн.)', $deleted, $days), true);
             $r->data['logs_deleted'] = $deleted;
+        }
+    }
+
+    /**
+     * Ротация метрик по `metrics.keep_days`.
+     */
+    private function pruneMetrics(Result $r, Context $context): void
+    {
+        $days = $this->observability->metricsKeepDays();
+        if ($days <= 0) {
+            return;
+        }
+
+        $dir = $this->paths->root() . '/var/metrics';
+        if (!is_dir($dir)) {
+            return;
+        }
+
+        $threshold = time() - $days * 86400;
+        $deleted = 0;
+        foreach (scandir($dir) ?: [] as $entry) {
+            if (!str_ends_with($entry, '.jsonl')) {
+                continue;
+            }
+            $path = $dir . '/' . $entry;
+            if (is_file($path) && (int) filemtime($path) < $threshold && @unlink($path)) {
+                $deleted++;
+            }
+        }
+
+        if ($deleted > 0) {
+            $context->step(sprintf('Удалено старых файлов метрик: %d (старше %d дн.)', $deleted, $days), true);
+            $r->data['metrics_deleted'] = $deleted;
         }
     }
 

@@ -127,7 +127,8 @@ cp config/maintenance.config.example config/maintenance.config
 ```bash
 cp config/observability.config.example config/observability.config
 ```
-Пороги `health:check` (свежесть бэкапа, свободный диск) и каналы `alert:notify` (файл/webhook).
+Пороги `health:check` (свежесть бэкапа, свободный диск), каналы `alert:notify` (файл/webhook)
+и метрики: `metrics.enabled/sample/keep_days`, `metrics.token` для `/metrics.php`.
 Подробности — `_doc/observability.md`.
 
 ---

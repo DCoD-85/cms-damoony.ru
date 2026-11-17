@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Data\Db\DataProvider;
 
+use Damoony\Core\Observability\Metrics;
 use Damoony\Data\Db\Connection;
 use PDOStatement;
 use RuntimeException;
@@ -71,11 +72,15 @@ abstract class AbstractProvider implements ProviderInterface
      */
     protected function query(string $sql, array $params = []): PDOStatement
     {
+        $started = microtime(true);
+
         $stmt = $this->conn->pdo()->prepare($sql);
         if ($stmt === false) {
             throw new RuntimeException('Failed to prepare statement');
         }
         $stmt->execute($params);
+
+        Metrics::dbQuery((microtime(true) - $started) * 1000);
 
         return $stmt;
     }

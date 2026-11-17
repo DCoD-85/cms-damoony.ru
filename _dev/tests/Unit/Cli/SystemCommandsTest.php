@@ -12,6 +12,7 @@ use Damoony\Cli\Context;
 use Damoony\Cli\Support\TrashScanner;
 use Damoony\Core\Files\Paths;
 use Damoony\Core\Settings\MaintenanceConfig;
+use Damoony\Core\Settings\ObservabilityConfig;
 use Damoony\Core\Settings\SiteConfig;
 use Damoony\Core\Settings\SiteConfigWriter;
 use PHPUnit\Framework\TestCase;
@@ -229,7 +230,7 @@ final class SystemCommandsTest extends TestCase
     {
         $paths = new Paths($this->root);
 
-        return new SystemCleanCommand($paths, new TrashScanner($paths), MaintenanceConfig::fromArray($config));
+        return new SystemCleanCommand($paths, new TrashScanner($paths), MaintenanceConfig::fromArray($config), ObservabilityConfig::defaults());
     }
 
     private function site(): SiteConfig

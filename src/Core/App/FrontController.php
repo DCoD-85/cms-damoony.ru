@@ -12,6 +12,7 @@ use Damoony\Core\Http\Request;
 use Damoony\Core\Http\Response;
 use Damoony\Core\I18n\LanguageNegotiator;
 use Damoony\Core\I18n\Translator;
+use Damoony\Core\Observability\Metrics;
 use Damoony\Core\Routing\RouterInterface;
 use Damoony\Core\Security\Csrf;
 use Damoony\Data\Auth\AuthInterface;
@@ -53,6 +54,8 @@ final class FrontController
         if ($aliasOverride !== null && $aliasOverride !== '' && $aliasOverride !== $domain->allias) {
             $domain = $domain->withAllias($aliasOverride);
         }
+
+        Metrics::setContext($domain->real, $domain->allias);
 
         // O12: Если домен/поддомен не зарегистрирован в конфиге -> 404
         if ($domain->real === $host && $domain->allias === '') {

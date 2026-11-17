@@ -7,7 +7,8 @@
 | Фаза | Что | Статус |
 |---|---|---|
 | **P0** | request_id, ошибки с контекстом, `health:check`, `alert:notify` | **готово** |
-| P1 | метрики, `/metrics`, ротация app-логов, `log:tail` | не начато |
+| **P1** | метрики запросов (1 строка/запрос), `metrics:snapshot`, `/metrics` по токену, ротация метрик | **готово** |
+| P2 | `cron:run`, пороговые алерты с дедупом, `report:daily` | не начато |
 | P2 | `cron:run`, пороговые алерты с дедупом, `report:daily` | не начато |
 | P3 | Loki/node_exporter/Sentry, страница в админке | по потребности |
 
@@ -66,15 +67,26 @@ php bin/cli.php alert:notify --message="..." --level=critical --source=health
 
 Нет файла → дефолты. Битый JSON/типы → явная ошибка.
 
-## P1 — дальше
+## P1 — сделано
 
-| # | Задача | Готово когда |
-|---|---|---|
-| 2.1 | Счётчики: `requests_total{status,host,alias}`, `request_duration_ms`, `errors_total`, `db_queries_total` | пишутся в `var/metrics/` |
-| 2.2 | Точки замера: `Kernel` (статус+время), `Connection` (запросы) | нет «слепых» слоёв |
-| 2.3 | `metrics:snapshot` / `/metrics` по токену | не публично |
-| 1.3 | Ротация app-логов (`logs.app_keep_days`) + в `system:clean` | логи не растут |
-| 1.4 | `log:tail --channel=app --lines=100` | без ручного доступа к файлам |
+Одна строка на запрос в `var/metrics/requests-YYYY-MM-DD.jsonl`:
+
+```json
+{"ts":"...","request_id":"...","host":"damoony3.ru","method":"GET","path":"/en/",
+ "status":200,"duration_ms":2.4,"project":"damoony.ru","alias":"www",
+ "db_queries":1,"db_ms":0.5}
+```
+
+- **нагрузка**: без записи на каждый запрос в БД и без локов; одна append-строка, без fsync;
+  `metrics.sample=N` — писать каждый N-й запрос; `metrics.enabled=false` — выключить;
+- **точки замера**: `FrontController` (project/alias), `AbstractProvider::query` (db_queries/db_ms);
+- **`metrics:snapshot --since=1h|24h|7d [--format=prometheus]`** — агрегаты: статусы, хосты, алиасы,
+  p50/p95/max, запросы к БД;
+- **`/metrics.php?token=...`** — Prometheus text; пустой `metrics.token` = эндпоинт выключен (404);
+- **ротация**: `metrics.keep_days` + `system:clean --force`.
+
+Не сделано и осознанно отложено: `log:tail` (app-лог идёт в stderr — смотреть через journald/nginx),
+обёртка всех PDO-вызовов (считаются только провайдеры).
 
 ## P2 — дальше
 
