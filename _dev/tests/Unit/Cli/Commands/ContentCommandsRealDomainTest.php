@@ -25,7 +25,8 @@ final class ContentCommandsRealDomainTest extends TestCase
         file_put_contents(
             $this->root . '/config/site.config',
             json_encode([
-                'domains_real' => ['real.ru' => 'real.ru', 'alias.ru' => 'real.ru'],
+                'domains_real' => ['real.ru' => 'real_ru'],
+                'domains_mirrors' => ['real.ru' => 'real.ru', 'alias.ru' => 'real.ru'],
             ], JSON_THROW_ON_ERROR),
         );
         file_put_contents(
