@@ -70,13 +70,23 @@
 
 ---
 
-## 5.1. Файловая админка (Element + dbcli + lang)
+## 5.1. Файловая админка: состояние
 
-Админка построена по архитектуре домена/алиаса: `app/.admin/` — домен, `app/.admin/{role}/` — алиас роли. Точка входа — `www/admin/index.php` (строит `DomainContext` от `.admin`/`{role}` и вызывает `FrontController` с `adminRole`).
-- **UI:** компоненты `Element` (Таблицы, Формы, Тоглы) с AJAX-навигацией.
-- **Управление БД:** `bin/dbcli.php`. В разделе домена (`/admin/ru/domains/{domain}/db`) доступен визуальный конструктор БД. Админка вызывает `dbcli` для генерации JSON, SQL и PHP-провайдера.
-- **Управление языками:** `/admin/{lang}/domains/langs` — список доменов, `/admin/{lang}/domains/langs/{domain}` — языки домена и алиасы, `/admin/{lang}/domains/langs/{domain}/{alias}` — языки алиаса. Все действия — через `lang:list`, `lang:add`, `lang:remove`, `lang:repair`.
-- **Роутинг:** `FileRouter` + `FrontController` обрабатывают пути `/admin/{lang}/{role}/...`. `DomainContext` для admin — `resolve('.admin')->withAllias($role)`. Роль валидируется regex `^[a-z][a-z0-9_]*$`.
+**Админка не входит в движок.** Каталог `app/.admin/` и команда `admin:new` удалены: оба были
+остатком старой модели, где админка жила как «домен» в общем дереве.
+
+Как ставится теперь: **сборкой** (`php bin/cli.php new --assembly=<имя>`) на уровне домена и
+алиаса — тем же механизмом, что и обычный сайт.
+
+Что осталось в движке (контракты, а не контент):
+
+- `AdminPage` — базовый класс с `guard()`, ролями и проверкой сессии;
+- `AdminUrlBuilder` — построение `/admin/{lang}/{role}/...`;
+- `FrontController` — admin-контекст и `adminRole`;
+- `db:*` — то, что раньше вызывала админка через `dbcli`;
+- `admin:passwd` — учётка админа (`config/admin.config`), единственная админская bootstrap-команда.
+
+⚠️ До установки сборки админки `http://[domain]/admin/` отдаёт 404 — это ожидаемо, а не поломка.
 
 **CI/CD:** `.github/workflows/ci.yml`. PHP 8.5, `www/router.php` для эмуляции Nginx-роутинга; полный прогон — `composer test` (актуальное число тестов не документируется).
 

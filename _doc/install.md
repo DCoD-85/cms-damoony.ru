@@ -97,7 +97,7 @@ php -r "var_dump(function_exists('curl_init'), function_exists('imagecreatetruec
 }
 ```
 ⚠️ Пароль задаётся через CLI: `php bin/cli.php admin:passwd --name=admin --password=[strong]`.
-`default_lang` — язык по умолчанию для `AdminPage::guard()` (redirect на `/admin/{default_lang}/login`). `default_role` — роль админки по умолчанию (папка `app/.admin/{role}/`).
+`default_lang` — язык по умолчанию для `AdminPage::guard()` (redirect на `/admin/{default_lang}/login`). `default_role` — роль админки по умолчанию; используется сборкой админки (`app/.admin` движком больше не поставляется).
 
 ### 3.4. `config/agent.config` — доступ для AI
 ```json
@@ -222,14 +222,15 @@ server {
 
 ```bash
 php bin/cli.php admin:passwd --name=admin --password=[strong]
-php bin/cli.php admin:new --role=superadmin
 php bin/cli.php user:new --login=admin --email=admin@example.com --password=[strong]
 ```
-*`admin:passwd` — логин/пароль админки (`/admin/`).*
-*`admin:new --role=superadmin` — каркас админки: `app/.admin/.schemesglobal/`, `.blocksglobal/`, `.dbglobal/`, `app/.admin/{role}/algoritm/{lang,lang/login,lang/logout,lang/domains,lang/domains/langs}`, `.blockslocal/.schemeslocal/.dblocal`, `www/media/.admin/{role}/skin/default/`. Требует `admin.config.default_lang`.*
+*`admin:passwd` — логин/пароль админки (`config/admin.config`).*
 *`user:new` — пользователь сайта (для страниц, которые вызывают `$this->isAuthenticated()`).*
 
-Откройте `http://[domain]/` и `http://[domain]/admin/`.
+Админка ставится отдельно — сборкой на уровне домена/алиаса (`php bin/cli.php new --assembly=<имя>`).
+До её установки `http://[domain]/admin/` отдаёт 404 — это ожидаемо.
+
+Откройте `http://[domain]/`.
 
 ---
 

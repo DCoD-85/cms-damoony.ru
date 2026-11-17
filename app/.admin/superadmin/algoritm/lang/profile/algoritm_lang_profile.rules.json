@@ -1,7 +1,0 @@
-{
-    "auth": true,
-    "available": {
-        "logout": "^logout$",
-        "": "^$"
-    }
-}

@@ -139,15 +139,15 @@
 | Skin (git) | `www/media/[domain]/[allias]/skin/[name]/{css,js,img,skin.json}` |
 | Карантин (6 уровней) | `app/[d]_trash_[ts]/`, `app/[d]/[a]_trash_[ts]/`, `.schemesglobal/[n]_trash_[ts]/`, `.blocksglobal/[n]_trash_[ts]/`, `/content/.trash/...`, `www/media/.trash/...` |
 | Конфиги | `config/*.config` (`engine`, `site`, `admin`, `agent`, `ainet`) |
-| Точки входа | `www/index.php` (сайт), `www/admin/index.php` (админка), `www/content.php` (content), `bin/cli.php` (CLI), `bin/dbcli.php` (работа с БД), `bin/aicli.php` (AI), `bin/ainet.php` (AINET) |
+| Точки входа | `www/index.php` (сайт), `www/content.php` (content), `bin/cli.php` (CLI), `bin/dbcli.php` (работа с БД), `bin/aicli.php` (AI), `bin/ainet.php` (AINET) |
 | AI-Оркестраторы | `src/Ai/Orchestrator/` (PHP, AIUI), `ai_agent/brain.py` (Python, Wizard) |
 | Тесты | `_dev/tests/` |
 | Runtime | `var/` (+ `var/ainet-cache/`, `var/ainet-ratelimit.json`) |
 | **Локальный сервер (Windows)** | `E:/localserver/` (tools: nginx/php/mariadb, domains: проекты) |
 | **Трей-менеджер** | `E:/localserver/server.ps1` + `server.vbs` |
-| **Админка (домен)** | `app/.admin/.blocksglobal/[name]/`, `.schemesglobal/[name].{php,rules,editor}`, `.dbglobal/` |
-| **Админка (роль)** | `app/.admin/{role}/algoritm/`, `.blockslocal/`, `.schemeslocal/`, `.dblocal/` |
-| **Админка (skin)** | `www/media/.admin/{role}/skin/[name]/` |
+| **Админка** | не входит в движок: ставится сборкой на уровне домена/алиаса (`new --assembly=...`) |
+| **Админка (контракты)** | `AdminPage`, `AdminUrlBuilder`, `/admin/{lang}/{role}/...` |
+| **Админка (удалено)** | `app/.admin/` и `admin:new` — см. `_doc/admin.md` §5.1 |
 | **Session (AIUI)** | `app/.sess_{tab}.{domain}/` (изолированная копия домена) |
 | **Session media** | `www/media/.sess_{tab}.{domain}/` (изолированный скин) |
 
