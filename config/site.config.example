@@ -4,18 +4,56 @@
             "folder": "damoony.ru",
             "namespace": "damoony_ru",
             "mirrors": {
-                "damoony.ru": { "available": true },
-                "damoony3.ru": { "available": true }
-            }
+                "damoony.ru": {
+                    "available": true
+                },
+                "damoony3.ru": {
+                    "available": true
+                }
+            },
+            "langs": [
+                "ru",
+                "en"
+            ]
         }
     },
     "alliases": {
         "damoony.ru": {
-            "www":          { "available": true, "langs": ["ru", "en"] },
-            "login":        { "available": true, "langs": ["ru", "en"] },
-            "profile":      { "available": true, "langs": ["ru", "en"] },
-            "registration": { "available": true, "langs": ["ru", "en"] },
-            "docs":         { "available": true, "langs": ["ru", "en"] }
+            "www": {
+                "available": true,
+                "langs": [
+                    "ru",
+                    "en"
+                ]
+            },
+            "login": {
+                "available": true,
+                "langs": [
+                    "ru",
+                    "en"
+                ]
+            },
+            "profile": {
+                "available": true,
+                "langs": [
+                    "ru",
+                    "en"
+                ]
+            },
+            "registration": {
+                "available": true,
+                "langs": [
+                    "ru",
+                    "en"
+                ]
+            },
+            "docs": {
+                "available": true,
+                "langs": [
+                    "ru",
+                    "en"
+                ]
+            }
         }
     }
 }

@@ -47,6 +47,7 @@ use Damoony\Cli\Next\Commands\LangRemoveCommand;
 use Damoony\Cli\Next\Commands\LangRepairCommand;
 use Damoony\Cli\Next\Commands\LangSyncCommand;
 use Damoony\Cli\Next\Commands\MigratePageRulesCommand;
+use Damoony\Cli\Next\Commands\MigrateSiteConfigCommand;
 use Damoony\Cli\Next\Commands\NewCommand;
 use Damoony\Cli\Next\Commands\PageListCommand;
 use Damoony\Cli\Next\Commands\PageNewCommand;
@@ -187,6 +188,7 @@ final class Registry
         $registry->add(new ApiReflectCommand($paths));
         $registry->add(new MigratePageRulesCommand($paths, $site));
         $registry->add(new NewCommand($paths, $site, $writer));
+        $registry->add(new MigrateSiteConfigCommand($paths, $writer));
 
         return $registry;
     }
