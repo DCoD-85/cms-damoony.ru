@@ -158,6 +158,21 @@ final class SystemCommandsTest extends TestCase
         self::assertStringContainsString('не найден', $result->errors[0]);
     }
 
+    public function testRestoreAcceptsAbsolutePath(): void
+    {
+        // Абсолютный путь не должен склеиваться с корнем проекта.
+        $absolute = sys_get_temp_dir() . '/does-not-exist-' . bin2hex(random_bytes(4)) . '.zip';
+
+        $result = $this->backupRestore()->run(
+            ['domain' => 'damoony.ru', 'file' => $absolute, 'force' => '1'],
+            $this->context(),
+        );
+
+        self::assertFalse($result->ok);
+        self::assertStringContainsString($absolute, $result->errors[0]);
+        self::assertStringNotContainsString($this->root . '/' . ltrim($absolute, '/\\'), $result->errors[0]);
+    }
+
     public function testRestoreRequiresForce(): void
     {
         file_put_contents($this->root . '/backup.zip', 'not a zip');

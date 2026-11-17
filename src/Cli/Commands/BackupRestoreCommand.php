@@ -49,7 +49,12 @@ final class BackupRestoreCommand implements CommandInterface
             return $r;
         }
 
-        $zipPath = $this->paths->root() . '/' . ltrim($file, '/\\');
+        // Абсолютный путь принимается как есть; относительный — от корня проекта.
+        $isAbsolute = str_starts_with($file, '/')
+            || str_starts_with($file, '\\')
+            || preg_match('/^[a-zA-Z]:[\\\\\/]/', $file) === 1;
+
+        $zipPath = $isAbsolute ? $file : $this->paths->root() . '/' . ltrim($file, '/\\');
         if (!is_file($zipPath)) {
             $r->error('Файл бэкапа не найден: ' . $zipPath);
 

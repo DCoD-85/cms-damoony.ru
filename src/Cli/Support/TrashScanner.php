@@ -15,7 +15,11 @@ use Damoony\Core\Files\Paths;
  */
 final class TrashScanner
 {
-    private const TRASH_RE = '/_trash_(\d+)$/';
+    /**
+     * Поддерживает оба формата метки: epoch (`_trash_1794735431`) и
+     * человекочитаемый (`_trash_restore_2026-11-17_19-28-12`).
+     */
+    private const TRASH_RE = '/_trash_(?:restore_)?(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}|\d+)$/';
 
     public function __construct(private readonly Paths $paths)
     {
@@ -93,9 +97,24 @@ final class TrashScanner
             return false;
         }
 
-        $found[] = ['path' => $path, 'ts' => (int) $m[1], 'kind' => $kind];
+        $found[] = ['path' => $path, 'ts' => $this->tsFrom($m[1]), 'kind' => $kind];
 
         return true;
+    }
+
+    private function tsFrom(string $raw): int
+    {
+        if (preg_match('/^\d+$/', $raw) === 1) {
+            return (int) $raw;
+        }
+
+        if (preg_match('/^(\d{4}-\d{2}-\d{2})_(\d{2})-(\d{2})-(\d{2})$/', $raw, $m) === 1) {
+            $ts = strtotime(sprintf('%s %s:%s:%s', $m[1], $m[2], $m[3], $m[4]));
+
+            return $ts === false ? 0 : $ts;
+        }
+
+        return 0;
     }
 
     /**
