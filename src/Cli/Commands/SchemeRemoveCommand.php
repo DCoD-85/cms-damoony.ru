@@ -70,10 +70,24 @@ final class SchemeRemoveCommand implements CommandInterface
             return $r;
         }
 
+        if ($context->isDryRun()) {
+            $context->step('Dry-run: схема ' . $name . ' будет удалена в карантин');
+            $r->data = [
+                'domain' => $domain,
+                'real_domain' => $realDomain,
+                'scheme' => $name,
+                'files' => array_map('basename', $existing),
+                'trash_dir' => Fs::rel($schemesDir . '/' . $name . '_trash_*', $this->paths->root()),
+                'dry_run' => true,
+            ];
+            return $r;
+        }
+
         // Карантин
         $trashDir = $schemesDir . '/' . $name . '_trash_' . time();
         Fs::mkdir($trashDir);
 
+        $quarantinedFiles = [];
         foreach ($existing as $file) {
             $basename = basename($file);
             $target = $trashDir . '/' . $basename;
@@ -82,11 +96,20 @@ final class SchemeRemoveCommand implements CommandInterface
                 $r->error('Не удалось переместить в карантин: ' . $basename);
                 return $r;
             }
+            $quarantinedFiles[] = $basename;
             $r->file(Fs::rel($target, $this->paths->root()));
         }
 
         $context->step('Схема перемещена в карантин', true, Fs::rel($trashDir, $this->paths->root()));
         $r->warn('Очистка карантина: php bin/cli.php trash:clear --force --older=7d');
+
+        $r->data = [
+            'domain' => $domain,
+            'real_domain' => $realDomain,
+            'scheme' => $name,
+            'quarantined_files' => $quarantinedFiles,
+            'trash_dir' => Fs::rel($trashDir, $this->paths->root()),
+        ];
 
         return $r;
     }
