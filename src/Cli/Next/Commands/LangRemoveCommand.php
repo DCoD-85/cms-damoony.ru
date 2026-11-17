@@ -122,7 +122,7 @@ final class LangRemoveCommand implements CommandInterface
             try {
                 $moved = $this->quarantine->files(
                     $this->paths->root() . '/var/trash/lang_' . $project->folder . '_'
-                        . ($alias !== '' ? $alias : 'project') . '_' . time(),
+                        . ($alias !== '' ? $alias : 'project') . '_trash_' . time(),
                     [$file],
                 );
             } catch (Throwable $e) {

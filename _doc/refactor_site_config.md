@@ -83,7 +83,7 @@
 | sessions | `session:start`, `session:apply`, `session:discard`, `session:list` | готово |
 | content | `content:store`, `content:remove`, `content:list`, `content:gc` | готово |
 | structure | `structure:check`, `structure:repair` | — |
-| trash/system | `trash:clear`, `system:scan`, `system:clean`, `backup:create`, `backup:restore` | — |
+| trash/system | `trash:clear` — готово; `system:scan`, `system:clean`, `backup:create`, `backup:restore` — в работе | частично |
 | db | `db:schema`, `db:methods`, `db:describe`, `db:call`, `db:mutate`, `db:migrate`, `dataprovider:add-method` | — |
 | admin/user | `admin:passwd`, `admin:new`, `user:new` | — |
 | прочее | `api:reflect`, `migrate:page-rules`, `assembly:new`/`new`, `ai:edit-page` | — |

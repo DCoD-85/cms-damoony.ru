@@ -51,6 +51,7 @@ use Damoony\Cli\Next\Commands\SkinEditCommand;
 use Damoony\Cli\Next\Commands\SkinListCommand;
 use Damoony\Cli\Next\Commands\SkinNewCommand;
 use Damoony\Cli\Next\Commands\SkinRemoveCommand;
+use Damoony\Cli\Next\Commands\TrashClearCommand;
 use Damoony\Cli\Next\Scaffold\Scaffolder;
 use Damoony\Cli\Next\Support\BlockFileEditor;
 use Damoony\Cli\Next\Support\ContentLayout;
@@ -59,6 +60,7 @@ use Damoony\Cli\Next\Support\Quarantine;
 use Damoony\Cli\Next\Support\SessionGuard;
 use Damoony\Cli\Next\Support\SessionWorkspace;
 use Damoony\Cli\Next\Support\TargetResolver;
+use Damoony\Cli\Next\Support\TrashScanner;
 use Damoony\Core\Files\Paths;
 use Damoony\Core\Settings\SiteConfig;
 use Damoony\Core\Settings\SiteConfigWriter;
@@ -97,6 +99,7 @@ final class Registry
         $blockEditor = new BlockFileEditor($paths);
         $workspace = new SessionWorkspace($paths);
         $contentLayout = new ContentLayout($paths);
+        $trashScanner = new TrashScanner($paths);
 
         $registry = new CommandRegistry();
         $registry->add(new HelpCommand($registry));
@@ -145,6 +148,7 @@ final class Registry
         $registry->add(new ContentRemoveCommand($paths, $resolver, $contentLayout));
         $registry->add(new ContentListCommand($paths, $resolver, $contentLayout));
         $registry->add(new ContentGcCommand($paths, $contentLayout));
+        $registry->add(new TrashClearCommand($paths, $trashScanner));
 
         return $registry;
     }
