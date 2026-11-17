@@ -114,6 +114,35 @@ final class ContentResponderTest extends TestCase
         self::assertTrue(ContentResponder::hostAllowed('example.com', 'sub.example.com'));
     }
 
+    public function testMirrorHostAllowedBySiteConfig(): void
+    {
+        $site = \Damoony\Core\Settings\SiteConfig::fromArray([
+            'domains_app' => [
+                'damoony.ru' => [
+                    'folder' => 'damoony.ru',
+                    'namespace' => 'damoony_ru',
+                    'mirrors' => [
+                        'damoony.ru' => ['available' => true],
+                        'damoony3.ru' => ['available' => true],
+                    ],
+                ],
+                'other.ru' => [
+                    'folder' => 'other.ru',
+                    'namespace' => 'other_ru',
+                    'mirrors' => ['other.ru' => ['available' => true]],
+                ],
+            ],
+            'alliases' => [],
+        ]);
+
+        // Миррор того же проекта — контент проекта разрешён.
+        self::assertTrue(ContentResponder::hostAllowed('damoony.ru', 'damoony3.ru', $site));
+        // Миррор другого проекта — нельзя.
+        self::assertFalse(ContentResponder::hostAllowed('damoony.ru', 'other.ru', $site));
+        // Без SiteConfig миррор не резолвится — остаётся точное совпадение.
+        self::assertFalse(ContentResponder::hostAllowed('damoony.ru', 'damoony3.ru'));
+    }
+
     // === resolveMime ===
 
     public function testResolveMimeFromMeta(): void

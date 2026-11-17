@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Diagnostics;
 
-use Damoony\Core\Config;
 use Damoony\Core\Files\Paths;
+use Damoony\Core\Settings\SiteConfig;
 use Damoony\Diagnostics\StructureChecker;
+use Damoony\UI\Region\FillerState;
 use PHPUnit\Framework\TestCase;
 
 final class StructureCheckerTest extends TestCase
@@ -43,12 +44,22 @@ final class StructureCheckerTest extends TestCase
 
     private function checker(): StructureChecker
     {
-        $config = Config::fromArray([
-            'domains_real' => ['example.ru' => 'example.ru'],
-            'alliases_real' => ['example.ru' => ['www' => 'www']],
+        $site = SiteConfig::fromArray([
+            'domains_app' => [
+                'example.ru' => [
+                    'folder' => 'example.ru',
+                    'namespace' => 'example_ru',
+                    'mirrors' => ['example.ru' => ['available' => true]],
+                ],
+            ],
+            'alliases' => [
+                'example.ru' => ['www' => ['available' => true, 'langs' => ['ru']]],
+            ],
         ]);
 
-        return new StructureChecker(new Paths($this->root), $config);
+        $paths = new Paths($this->root);
+
+        return new StructureChecker($paths, $site, new FillerState($paths));
     }
 
     public function testCleanStructureHasNoIssues(): void

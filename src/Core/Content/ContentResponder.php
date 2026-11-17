@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Damoony\Core\Content;
 
 use Damoony\Core\Files\Paths;
+use Damoony\Core\Settings\SiteConfig;
 use Damoony\Data\Auth\AuthInterface;
 use Damoony\UI\Page\PagePath;
 
@@ -60,9 +61,14 @@ final class ContentResponder
      * Host должен совпадать с domain из URL (без порта, без trailing-dot).
      * Не палим контент чужих доменов.
      *
-     * @param array<string, mixed> $siteConfig
      */
-    public static function hostAllowed(string $domain, string $host, array $siteConfig = []): bool
+    /**
+     * Host должен совпадать с папкой проекта из URL (без порта, без trailing-dot)
+     * или быть одним из мирроров этого проекта. Не палим контент чужих доменов.
+     *
+     * @param string $domain папка проекта (folder), как в URL /content/{domain}/...
+     */
+    public static function hostAllowed(string $domain, string $host, ?SiteConfig $site = null): bool
     {
         $host = strtolower($host);
         $host = (string) preg_replace('/:\d+$/', '', $host);
@@ -72,12 +78,14 @@ final class ContentResponder
             return true;
         }
 
-        $real = $siteConfig['domains_real'][$host] ?? null;
-        if ($real !== null && strtolower((string)$real) === strtolower($domain)) {
-            return true;
+        if ($site !== null) {
+            $project = $site->projectByHost($host);
+            if ($project !== null && strtolower($project->folder) === strtolower($domain)) {
+                return true;
+            }
         }
 
-        // Разрешаем поддомены только если domain — это FQDN (содержит точку)
+        // Поддомены разрешены только для FQDN-папки.
         if (str_contains($domain, '.') && str_ends_with($host, '.' . strtolower($domain))) {
             return true;
         }

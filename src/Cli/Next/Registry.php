@@ -67,6 +67,8 @@ use Damoony\Cli\Next\Commands\SkinEditCommand;
 use Damoony\Cli\Next\Commands\SkinListCommand;
 use Damoony\Cli\Next\Commands\SkinNewCommand;
 use Damoony\Cli\Next\Commands\SkinRemoveCommand;
+use Damoony\Cli\Next\Commands\StructureCheckCommand;
+use Damoony\Cli\Next\Commands\StructureRepairCommand;
 use Damoony\Cli\Next\Commands\SystemCleanCommand;
 use Damoony\Cli\Next\Commands\SystemScanCommand;
 use Damoony\Cli\Next\Commands\TrashClearCommand;
@@ -85,6 +87,8 @@ use Damoony\Core\Files\Paths;
 use Damoony\Core\Settings\SiteConfig;
 use Damoony\Core\Settings\SiteConfigWriter;
 use Damoony\Data\Db\Connection;
+use Damoony\Diagnostics\StructureChecker;
+use Damoony\UI\Region\FillerState;
 use RuntimeException;
 
 /**
@@ -122,6 +126,7 @@ final class Registry
         $contentLayout = new ContentLayout($paths);
         $trashScanner = new TrashScanner($paths);
         $providerInvoker = new ProviderInvoker($paths);
+        $structureChecker = new StructureChecker($paths, $site, new FillerState($paths));
 
         $registry = new CommandRegistry();
         $registry->add(new HelpCommand($registry));
@@ -189,6 +194,8 @@ final class Registry
         $registry->add(new MigratePageRulesCommand($paths, $site));
         $registry->add(new NewCommand($paths, $site, $writer));
         $registry->add(new MigrateSiteConfigCommand($paths, $writer));
+        $registry->add(new StructureCheckCommand($structureChecker, $site));
+        $registry->add(new StructureRepairCommand($paths, $site));
 
         return $registry;
     }

@@ -7,6 +7,7 @@ namespace Damoony\Cli\Ai\Handler;
 use Damoony\Ai\Roles;
 use Damoony\Cli\Ai\AbstractHandler;
 use Damoony\Cli\Ai\AicliResult;
+use Damoony\Core\Settings\SiteConfig;
 
 final class AiStartHandler extends AbstractHandler
 {
@@ -34,36 +35,13 @@ final class AiStartHandler extends AbstractHandler
             return [];
         }
 
-        $raw = file_get_contents($siteFile);
-        if ($raw === false) {
+        try {
+            $site = SiteConfig::fromFile($siteFile);
+        } catch (\Throwable) {
             return [];
         }
 
-        $site = json_decode($raw, true);
-        if (!is_array($site)) {
-            return [];
-        }
-
-        // Фаза 2 backlog: aicli ещё не переведён на схему domains_app.
-        // Молча возвращать [] нельзя — это тихая деградация.
-        if (!isset($site['domains_real']) && isset($site['domains_app'])) {
-            throw new \RuntimeException(
-                'aicli ещё не переведён на схему domains_app (фаза 2, см. _doc/refactor_site_config.md)',
-            );
-        }
-
-        if (!isset($site['domains_real']) || !is_array($site['domains_real'])) {
-            return [];
-        }
-
-        $set = [];
-        foreach ($site['domains_real'] as $real) {
-            if (is_string($real) && $real !== '') {
-                $set[$real] = true;
-            }
-        }
-
-        $domains = array_keys($set);
+        $domains = $site->projectKeys();
         sort($domains);
 
         return $domains;

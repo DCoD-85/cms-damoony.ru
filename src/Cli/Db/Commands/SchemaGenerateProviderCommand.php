@@ -5,19 +5,19 @@ declare(strict_types=1);
 namespace Damoony\Cli\Db\Commands;
 
 use Damoony\Cli\CommandInterface;
-use Damoony\Cli\Commands\Concerns\ResolvesRealDomain;
 use Damoony\Cli\Context;
+use Damoony\Cli\Db\Concerns\ResolvesProject;
 use Damoony\Cli\Result;
-use Damoony\Core\Config;
 use Damoony\Core\Files\Paths;
+use Damoony\Core\Settings\SiteConfig;
 
 final class SchemaGenerateProviderCommand implements CommandInterface
 {
-    use ResolvesRealDomain;
+    use ResolvesProject;
 
     public function __construct(
         private readonly Paths $paths,
-        private readonly Config $site,
+        private readonly SiteConfig $site,
     ) {
     }
 
@@ -48,7 +48,8 @@ final class SchemaGenerateProviderCommand implements CommandInterface
         }
 
         try {
-            $realDomain = $this->resolveRealDomain($this->paths, $domain);
+            $project = $this->resolveProject($this->site, $domain);
+            $realDomain = $project->folder;
         } catch (\RuntimeException $e) {
             $r->error($e->getMessage());
             return $r;
@@ -66,11 +67,7 @@ final class SchemaGenerateProviderCommand implements CommandInterface
             return $r;
         }
 
-        // Получаем неймспейс домена из конфига (по realDomain)
-        $ns = $this->site->getByKey(['domains_real', $realDomain], str_replace(['.', '-'], '_', $realDomain));
-        if (!is_string($ns)) {
-            $ns = str_replace(['.', '-'], '_', $realDomain);
-        }
+        $ns = $project->namespace;
 
         // Алиас по умолчанию
         $alias = (string) ($args['alias'] ?? 'www');
