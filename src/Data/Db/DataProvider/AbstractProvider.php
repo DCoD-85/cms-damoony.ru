@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Damoony\Data\Db\DataProvider;
 
-use Damoony\Core\Config;
 use Damoony\Data\Db\Connection;
 use PDOStatement;
 use RuntimeException;
@@ -12,9 +11,8 @@ use RuntimeException;
 /**
  * Базовая реализация провайдера.
  *
- * Резолвит физическое имя таблицы из site.config.domains_aliases_storage:
- *   {"domains_aliases_storage": {"d.ru": {"www": {"db": "main", "prefix": "d1_www__"}}}}
- * Fallback: prefix = "" (текущая схема без префиксов).
+ * Префикс таблиц алиаса передаётся снаружи (из domains_app[key].aliases_storage),
+ * провайдер не читает конфиг. Глобальные таблицы не префиксуются.
  *
  * @see ProviderInterface
  */
@@ -22,7 +20,7 @@ abstract class AbstractProvider implements ProviderInterface
 {
     public function __construct(
         protected readonly Connection $conn,
-        protected readonly Config $site,
+        protected readonly string $tablePrefix,
         protected readonly string $domain,
         protected readonly string $alias,
     ) {
@@ -40,7 +38,7 @@ abstract class AbstractProvider implements ProviderInterface
 
     /**
      * Глобальные таблицы (users, sessions, audit_log, ...) не префиксуются,
-     * даже если alias настроен с prefix в site.config.domains_aliases_storage.
+     * даже если алиас настроен с prefix в domains_app[key].aliases_storage.
      */
     protected function isGlobal(): bool
     {
@@ -61,27 +59,7 @@ abstract class AbstractProvider implements ProviderInterface
             return $table;
         }
 
-        $map = $this->site->getByKey(['domains_aliases_storage'], []);
-        if (!is_array($map)) {
-            return $table;
-        }
-
-        $domainMap = $map[$this->domain] ?? null;
-        if (!is_array($domainMap)) {
-            return $table;
-        }
-
-        $aliasMap = $domainMap[$this->alias] ?? null;
-        if (!is_array($aliasMap)) {
-            return $table;
-        }
-
-        $prefix = $aliasMap['prefix'] ?? '';
-        if (!is_string($prefix)) {
-            $prefix = '';
-        }
-
-        return $prefix . $table;
+        return $this->tablePrefix . $table;
     }
 
     /**

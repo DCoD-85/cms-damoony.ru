@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Db\DataProvider;
 
-use Damoony\Core\Config;
 use Damoony\Data\Db\Connection;
 use Damoony\Data\Db\DataProvider\AuditProvider;
 use PHPUnit\Framework\TestCase;
@@ -13,7 +12,7 @@ final class AuditProviderTest extends TestCase
 {
     private Connection $conn;
 
-    private Config $site;
+    private string $site;
 
     protected function setUp(): void
     {
@@ -34,7 +33,7 @@ final class AuditProviderTest extends TestCase
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             )',
         );
-        $this->site = new Config([]);
+        $this->site = '';
     }
 
     private function provider(): AuditProvider
@@ -44,13 +43,8 @@ final class AuditProviderTest extends TestCase
 
     public function testPhysicalTableIsGlobal(): void
     {
-        // даже при настроенном prefix audit_log остаётся без префикса
-        $site = new Config([
-            'domains_aliases_storage' => [
-                'd1.ru' => ['www' => ['db' => 'main', 'prefix' => 'd1_www__']],
-            ],
-        ]);
-        $p = new AuditProvider($this->conn, $site, 'd1.ru', 'www');
+        // даже при непустом prefix audit_log остаётся без префикса
+        $p = new AuditProvider($this->conn, 'd1_www__', 'd1.ru', 'www');
         $this->assertSame('audit_log', $p->physicalTable());
     }
 

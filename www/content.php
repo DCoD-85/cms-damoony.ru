@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use Damoony\Core\App\AppFactory;
-use Damoony\Core\Config;
 use Damoony\Core\Content\ContentResponder;
 use Damoony\Core\Files\Paths;
 use Damoony\Data\Auth\AuthInterface;
@@ -30,7 +29,14 @@ if ($req === null) {
 // === 3. Host check (не палим чужие домены) ===
 $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
 $siteConfigFile = dirname(__DIR__) . '/config/site.config';
-$siteConfig = is_file($siteConfigFile) ? Config::fromFile($siteConfigFile)->all() : [];
+$siteConfig = null;
+if (is_file($siteConfigFile)) {
+    try {
+        $siteConfig = \Damoony\Core\Settings\SiteConfig::fromFile($siteConfigFile);
+    } catch (\Throwable) {
+        $siteConfig = null;
+    }
+}
 
 if (!ContentResponder::hostAllowed($req->domain, $host, $siteConfig)) {
     _not_found();

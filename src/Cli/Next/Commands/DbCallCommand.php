@@ -125,10 +125,10 @@ final class DbCallCommand implements CommandInterface
         }
 
         try {
-            $providerSite = $this->invoker->providerConfig($project, $alias);
+            $prefix = $project->storagePrefix($alias);
 
             /** @var ProviderInterface $instance */
-            $instance = new $class($this->db, $providerSite, $project->folder, $alias);
+            $instance = new $class($this->db, $prefix, $project->folder, $alias);
             $result = $ref->getMethod($method)->invokeArgs($instance, $bound['args'] ?? []);
         } catch (Throwable $e) {
             $r->error('Вызов не удался: ' . $e->getMessage());

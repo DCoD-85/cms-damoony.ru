@@ -8,7 +8,6 @@ use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Next\Support\ProviderInvoker;
 use Damoony\Cli\Result;
-use Damoony\Core\Config;
 use Damoony\Core\Settings\SiteConfig;
 use Damoony\Data\Db\Connection;
 use Damoony\Data\Db\DataProvider\AuditProvider;
@@ -137,20 +136,20 @@ final class DbMutateCommand implements CommandInterface
             return $r;
         }
 
-        $providerSite = $this->invoker->providerConfig($project, $alias);
+        $prefix = $project->storagePrefix($alias);
 
         try {
             /** @var ProviderInterface $instance */
-            $instance = new $class($this->db, $providerSite, $project->folder, $alias);
+            $instance = new $class($this->db, $prefix, $project->folder, $alias);
             $result = $ref->getMethod($method)->invokeArgs($instance, $bound['args'] ?? []);
         } catch (Throwable $e) {
-            $this->audit($r, $providerSite, $project->folder, $alias, $provider, $method, $params, false, $e->getMessage(), $source, $role);
+            $this->audit($r, $prefix, $project->folder, $alias, $provider, $method, $params, false, $e->getMessage(), $source, $role);
             $r->error('Мутация не удалась: ' . $e->getMessage());
 
             return $r;
         }
 
-        $this->audit($r, $providerSite, $project->folder, $alias, $provider, $method, $params, true, '', $source, $role);
+        $this->audit($r, $prefix, $project->folder, $alias, $provider, $method, $params, true, '', $source, $role);
 
         $r->data = [
             'project' => $project->key,
@@ -172,7 +171,7 @@ final class DbMutateCommand implements CommandInterface
      */
     private function audit(
         Result $r,
-        Config $providerSite,
+        string $prefix,
         string $folder,
         string $alias,
         string $provider,
@@ -188,7 +187,7 @@ final class DbMutateCommand implements CommandInterface
         }
 
         try {
-            $audit = new AuditProvider($this->db, $providerSite, $folder, $alias);
+            $audit = new AuditProvider($this->db, $prefix, $folder, $alias);
             $audit->log($folder, $alias, $provider, $method, $params, $ok, $error, $source, $role);
         } catch (Throwable $e) {
             $r->warn('audit_log не записан: ' . $e->getMessage());

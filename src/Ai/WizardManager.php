@@ -101,7 +101,7 @@ final class WizardManager
             $decoded = json_decode($raw, true);
             $site = is_array($decoded) ? $decoded : [];
         }
-        $existing = $site['alliases_real'][$domain] ?? [];
+        $existing = $site['alliases'][$domain] ?? [];
 
         if (is_dir($alliasDir) || isset($existing[$allias])) {
             $r->error("Алиас '{$allias}' уже занят. Выберите другое имя для сайта (или попросите администратора освободить его).");

@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Cli\Next\Support;
 
-use Damoony\Core\Config;
 use Damoony\Core\Files\Paths;
-use Damoony\Core\Settings\ProjectSettings;
 use Damoony\Data\Db\DataProvider\ProviderResolver;
 use ReflectionMethod;
 use ReflectionNamedType;
@@ -28,27 +26,6 @@ final class ProviderInvoker
     public function resolveClass(string $provider, string $folder, string $alias): ?string
     {
         return ProviderResolver::resolveClass($provider, $folder, $alias, $this->paths);
-    }
-
-    /**
-     * Config для конструктора DataProvider.
-     *
-     * Фаза 2: AbstractProvider пока принимает Damoony\Core\Config и читает
-     * `domains_aliases_storage` для префикса. Здесь этот контракт собирается из
-     * новых полей проекта; после перевода движка на SiteConfig метод уходит.
-     */
-    public function providerConfig(ProjectSettings $project, string $alias): Config
-    {
-        return Config::fromArray([
-            'domains_aliases_storage' => [
-                $project->folder => [
-                    $alias => [
-                        'prefix' => $project->storagePrefix($alias),
-                        'db' => $project->storageDb($alias),
-                    ],
-                ],
-            ],
-        ]);
     }
 
     /**

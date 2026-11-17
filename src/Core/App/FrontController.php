@@ -106,6 +106,9 @@ final class FrontController
             throw new \RuntimeException('Config expected');
         }
 
+        $siteConfig = $this->container->has(\Damoony\Core\Settings\SiteConfig::class)
+            ? $this->container->get(\Damoony\Core\Settings\SiteConfig::class) : null;
+
         // O11: Определяем язык (URL -> Cookie -> Конфиг)
         if (isset($match->args['lang'])) {
             $lang = (string) $match->args['lang'];
@@ -179,6 +182,7 @@ final class FrontController
         $context = new RegionContext($request, $domain, $meta, [
             'paths' => $paths,
             'site' => $site,
+            'site_config' => $siteConfig,
             'auth' => $auth,
             'csrf' => $csrf,
             'i18n' => $translator,

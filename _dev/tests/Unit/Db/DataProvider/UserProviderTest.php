@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Db\DataProvider;
 
-use Damoony\Core\Config;
 use Damoony\Data\Db\Connection;
 use Damoony\Data\Db\DataProvider\UserProvider;
 use PHPUnit\Framework\TestCase;
@@ -13,7 +12,7 @@ final class UserProviderTest extends TestCase
 {
     private Connection $conn;
 
-    private Config $site;
+    private string $site;
 
     protected function setUp(): void
     {
@@ -31,7 +30,7 @@ final class UserProviderTest extends TestCase
             )',
         );
 
-        $this->site = new Config([]);
+        $this->site = '';
     }
 
     private function provider(?string $domain = 'example.ru', ?string $alias = 'www'): UserProvider
@@ -121,16 +120,9 @@ final class UserProviderTest extends TestCase
         $this->assertIsString($row['created_at']);
     }
 
-    public function testPhysicalTableUsesPrefixFromSiteConfig(): void
+    public function testPhysicalTableUsesPrefix(): void
     {
-        $site = new Config([
-            'domains_aliases_storage' => [
-                'd1.ru' => [
-                    'www' => ['db' => 'main', 'prefix' => 'd1_www__'],
-                ],
-            ],
-        ]);
-        $p = new UserProvider($this->conn, $site, 'd1.ru', 'www');
+        $p = new UserProvider($this->conn, 'd1_www__', 'd1.ru', 'www');
 
         $this->assertSame('d1_www__users', $p->physicalTable());
     }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Db\DataProvider;
 
-use Damoony\Core\Config;
 use Damoony\Data\Db\Connection;
 use Damoony\Data\Db\DataProvider\FilesProvider;
 use PHPUnit\Framework\TestCase;
@@ -13,7 +12,7 @@ final class FilesProviderTest extends TestCase
 {
     private Connection $conn;
 
-    private Config $site;
+    private string $site;
 
     protected function setUp(): void
     {
@@ -31,7 +30,7 @@ final class FilesProviderTest extends TestCase
             )',
         );
 
-        $this->site = new Config([]);
+        $this->site = '';
     }
 
     private function provider(?string $domain = 'example.ru', ?string $alias = 'www'): FilesProvider
@@ -49,12 +48,7 @@ final class FilesProviderTest extends TestCase
 
     public function testPhysicalTableUsesPrefix(): void
     {
-        $site = new Config([
-            'domains_aliases_storage' => [
-                'd1.ru' => ['www' => ['db' => 'main', 'prefix' => 'd1_www__']],
-            ],
-        ]);
-        $p = new FilesProvider($this->conn, $site, 'd1.ru', 'www');
+        $p = new FilesProvider($this->conn, 'd1_www__', 'd1.ru', 'www');
         $this->assertSame('d1_www__files', $p->physicalTable());
     }
 

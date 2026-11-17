@@ -7,7 +7,6 @@ namespace Damoony\Cli\Next\Commands;
 use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
-use Damoony\Core\Config;
 use Damoony\Data\Db\Connection;
 use Damoony\Data\Db\DataProvider\UserProvider;
 use Throwable;
@@ -72,7 +71,7 @@ final class UserNewCommand implements CommandInterface
         }
 
         // Таблица users глобальная: префикс алиаса не применяется.
-        $provider = new UserProvider($this->db, Config::fromArray([]), 'local', 'www');
+        $provider = new UserProvider($this->db, '', 'local', 'www');
 
         if ($context->isDryRun()) {
             $exists = $provider->exists($login);

@@ -3,11 +3,11 @@
 declare(strict_types=1);
 
 use Damoony\Core\App\AppFactory;
-use Damoony\Core\Config;
 use Damoony\Core\Http\Middleware\RateLimitMiddleware;
 use Damoony\Core\Http\Request;
 use Damoony\Core\Http\Response;
 use Damoony\Core\Security\Csrf;
+use Damoony\Core\Settings\SiteConfig;
 use Damoony\Data\Db\Connection;
 use Damoony\Data\Db\DataProvider\FormSubmissionProvider;
 
@@ -51,10 +51,14 @@ try {
     // 3. Запись в БД
     $db = $container->get(Connection::class);
     assert($db instanceof Connection);
-    $site = $container->get('site');
-    assert($site instanceof Config);
+    $site = $container->get(SiteConfig::class);
+    assert($site instanceof SiteConfig);
 
-    $provider = new FormSubmissionProvider($db, $site, 'damoony.ru', 'www');
+    $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
+    $project = $site->projectByHost($host) ?? $site->project('damoony.ru');
+
+    $folder = $project->folder ?? 'damoony.ru';
+    $provider = new FormSubmissionProvider($db, $project?->storagePrefix('www') ?? '', $folder, 'www');
 
     $data = $_POST;
     unset($data['_csrf']);

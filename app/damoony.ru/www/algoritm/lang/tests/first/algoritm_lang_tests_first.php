@@ -14,14 +14,17 @@ final class algoritm_lang_tests_first extends Page
     protected function content(): Node|Response|null
     {
         $paths = $this->context->service('paths');
-        $site = $this->context->service('site');
+        $site = $this->context->service('site_config');
         $db = $this->context->service('db');
         if (!$db instanceof \Damoony\Data\Db\Connection) { return Response::internalError('DB missing'); }
+        if (!$site instanceof \Damoony\Core\Settings\SiteConfig) { return Response::internalError('site.config missing'); }
         $providerFile = $paths->allias($this->context->domain->real, $this->context->domain->allias) . '/.dbprovider/Test_itemsProvider.php';
         if (!is_file($providerFile)) { return Builder::div()->content('Provider not found'); }
         require_once $providerFile;
         $className = '\\damoony_ru\\www\\Test_itemsProvider';
-        $provider = new $className($db, $site, $this->context->domain->real, $this->context->domain->allias);
+        $project = $site->resolve($this->context->domain->real);
+        $prefix = $project->storagePrefix($this->context->domain->allias);
+        $provider = new $className($db, $prefix, $this->context->domain->real, $this->context->domain->allias);
 
         if ($this->isPost()) {
             $title = (string) $this->context->request->post('title');
