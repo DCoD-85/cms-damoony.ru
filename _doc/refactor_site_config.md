@@ -44,6 +44,12 @@
 | `src/Core/Content/ContentResponder.php:75` | `domains_real` | фаза 2 |
 | `src/UI/Page/PageNamespace.php` | `domains_real` | удаляется в фазе 2 |
 | `src/Core/App/AppFactory.php:32` | загрузка `site.config` | фаза 2 |
+| `Cli\Next\Support\ProviderInvoker::providerConfig()` | собирает `Core\Config` c `domains_aliases_storage` для конструктора `AbstractProvider` | фаза 2: провайдеры переходят на SiteConfig/prefix-объект |
+
+## Проверка в фазе 3 (не покрыто юнит-тестами)
+
+- Успешный вызов `db:call` / `db:mutate` на реальном провайдере и таблицах
+  (в тестах покрыты whitelist, --force, ошибки, `ProviderInvoker::bind`).
 
 ## Критерий готовности фазы 1 (swap-point)
 
@@ -84,7 +90,7 @@
 | content | `content:store`, `content:remove`, `content:list`, `content:gc` | готово |
 | structure | `structure:check`, `structure:repair` | — |
 | trash/system | `trash:clear`, `system:scan`, `system:clean`, `backup:create`, `backup:restore` | готово |
-| db | `db:schema`, `db:methods`, `db:describe`, `db:call`, `db:mutate`, `db:migrate`, `dataprovider:add-method` | — |
+| db | `db:schema`, `db:methods`, `db:describe`, `db:call`, `db:mutate` — готово; `db:migrate`, `dataprovider:add-method` — в работе | частично |
 | admin/user | `admin:passwd`, `admin:new`, `user:new` | — |
 | прочее | `api:reflect`, `migrate:page-rules`, `assembly:new`/`new`, `ai:edit-page` | — |
 | миграция | `site:config:migrate` | — |

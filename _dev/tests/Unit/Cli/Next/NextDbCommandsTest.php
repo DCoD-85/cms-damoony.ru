@@ -159,6 +159,82 @@ final class NextDbCommandsTest extends TestCase
         self::assertSame('recent', $result->data['method']);
     }
 
+    public function testCallRejectsUnknownProvider(): void
+    {
+        $result = $this->call()->run(
+            ['domain' => 'damoony.ru', 'provider' => 'ghost', 'method' => 'recent'],
+            $this->context(),
+        );
+
+        self::assertFalse($result->ok);
+        self::assertStringContainsString('Неизвестный провайдер', $result->errors[0]);
+    }
+
+    public function testCallRejectsMethodOutsideWhitelist(): void
+    {
+        $result = $this->call()->run(
+            ['domain' => 'damoony.ru', 'alias' => 'www', 'provider' => 'news', 'method' => 'delete'],
+            $this->context(),
+        );
+
+        self::assertFalse($result->ok);
+        self::assertStringContainsString('не в whitelist', $result->errors[0]);
+    }
+
+    public function testMutateRequiresForce(): void
+    {
+        $result = $this->mutate()->run(
+            ['domain' => 'damoony.ru', 'alias' => 'www', 'provider' => 'news', 'method' => 'create'],
+            $this->context(),
+        );
+
+        self::assertFalse($result->ok);
+        self::assertStringContainsString('--force=1', $result->errors[0]);
+    }
+
+    public function testMutateRejectsReadMethod(): void
+    {
+        $result = $this->mutate()->run(
+            ['domain' => 'damoony.ru', 'alias' => 'www', 'provider' => 'news', 'method' => 'recent', 'force' => '1'],
+            $this->context(),
+        );
+
+        self::assertFalse($result->ok);
+        self::assertStringContainsString('не в whitelist', $result->errors[0]);
+    }
+
+    public function testCallWithoutDbReportsClearError(): void
+    {
+        $command = new \Damoony\Cli\Next\Commands\DbCallCommand(
+            $this->site(),
+            null,
+            new \Damoony\Cli\Next\Support\ProviderInvoker(new Paths($this->root)),
+        );
+
+        $result = $command->run(['domain' => 'damoony.ru', 'provider' => 'news', 'method' => 'recent'], $this->context());
+
+        self::assertFalse($result->ok);
+        self::assertStringContainsString('БД не сконфигурирована', $result->errors[0]);
+    }
+
+    private function call(): \Damoony\Cli\Next\Commands\DbCallCommand
+    {
+        return new \Damoony\Cli\Next\Commands\DbCallCommand(
+            $this->site(),
+            new Connection(['driver' => 'sqlite', 'path' => $this->dbFile]),
+            new \Damoony\Cli\Next\Support\ProviderInvoker(new Paths($this->root)),
+        );
+    }
+
+    private function mutate(): \Damoony\Cli\Next\Commands\DbMutateCommand
+    {
+        return new \Damoony\Cli\Next\Commands\DbMutateCommand(
+            $this->site(),
+            new Connection(['driver' => 'sqlite', 'path' => $this->dbFile]),
+            new \Damoony\Cli\Next\Support\ProviderInvoker(new Paths($this->root)),
+        );
+    }
+
     private function site(): SiteConfig
     {
         return SiteConfig::fromFile($this->root . '/config/site.config');

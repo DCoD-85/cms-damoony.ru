@@ -20,8 +20,10 @@ use Damoony\Cli\Next\Commands\ContentGcCommand;
 use Damoony\Cli\Next\Commands\ContentListCommand;
 use Damoony\Cli\Next\Commands\ContentRemoveCommand;
 use Damoony\Cli\Next\Commands\ContentStoreCommand;
+use Damoony\Cli\Next\Commands\DbCallCommand;
 use Damoony\Cli\Next\Commands\DbDescribeCommand;
 use Damoony\Cli\Next\Commands\DbMethodsCommand;
+use Damoony\Cli\Next\Commands\DbMutateCommand;
 use Damoony\Cli\Next\Commands\DbSchemaCommand;
 use Damoony\Cli\Next\Commands\DomainBindCommand;
 use Damoony\Cli\Next\Commands\DomainListCommand;
@@ -63,6 +65,7 @@ use Damoony\Cli\Next\Scaffold\Scaffolder;
 use Damoony\Cli\Next\Support\BlockFileEditor;
 use Damoony\Cli\Next\Support\ContentLayout;
 use Damoony\Cli\Next\Support\ContentRefs;
+use Damoony\Cli\Next\Support\ProviderInvoker;
 use Damoony\Cli\Next\Support\Quarantine;
 use Damoony\Cli\Next\Support\SessionGuard;
 use Damoony\Cli\Next\Support\SessionWorkspace;
@@ -108,6 +111,7 @@ final class Registry
         $workspace = new SessionWorkspace($paths);
         $contentLayout = new ContentLayout($paths);
         $trashScanner = new TrashScanner($paths);
+        $providerInvoker = new ProviderInvoker($paths);
 
         $registry = new CommandRegistry();
         $registry->add(new HelpCommand($registry));
@@ -164,6 +168,8 @@ final class Registry
         $registry->add(new DbSchemaCommand($site, $db));
         $registry->add(new DbMethodsCommand($paths, $site));
         $registry->add(new DbDescribeCommand($paths, $site));
+        $registry->add(new DbCallCommand($site, $db, $providerInvoker));
+        $registry->add(new DbMutateCommand($site, $db, $providerInvoker));
 
         return $registry;
     }
