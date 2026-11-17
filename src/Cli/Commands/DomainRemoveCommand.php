@@ -156,13 +156,14 @@ final class DomainRemoveCommand implements CommandInterface
         }
 
         // 3. Полная очистка конфига (все ключи по домену)
-        $removed = 0;
+        $removedKeys = [];
         foreach (self::DOMAIN_KEYS as $key) {
             if (isset($site[$key][$domain])) {
                 unset($site[$key][$domain]);
-                $removed++;
+                $removedKeys[] = $key;
             }
         }
+        $removed = count($removedKeys);
 
         if ($removed > 0) {
             Fs::writeAtomic(
@@ -174,6 +175,19 @@ final class DomainRemoveCommand implements CommandInterface
         } else {
             $context->step('В конфиге не было', true);
         }
+
+        $domainQuarantined = !$isMapped && count(glob($this->paths->domain($domain) . '_trash_*') ?: []) > 0;
+        $mediaQuarantined = !$isMapped && count(glob($this->paths->mediaRoot() . '/.trash/' . $domain . '_trash_*') ?: []) > 0;
+
+        $r->data = [
+            'domain' => $domain,
+            'binding_only' => $isMapped,
+            'mapped_to' => $isMapped ? $realDomain : null,
+            'cascade' => $mappedDomains,
+            'removed_keys' => $removedKeys,
+            'domain_dir' => $domainQuarantined ? 'quarantined' : null,
+            'media_dir' => $mediaQuarantined ? 'quarantined' : null,
+        ];
 
         return $r;
     }
