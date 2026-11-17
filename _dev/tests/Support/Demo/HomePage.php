@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Damoony\Demo\Page;
+namespace Damoony\Tests\Support\Demo;
 
 use Damoony\UI\Algoritm\Page;
 use Damoony\UI\Builder;

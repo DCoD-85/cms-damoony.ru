@@ -40,7 +40,7 @@ final class AjaxScenarioTest extends TestCase
         file_put_contents($dir . '/ajax/mode/algoritm_ajax_mode.php', <<<'PHP'
             <?php
             namespace damoony_test\www;
-            use Damoony\Demo\Page\AjaxPage;
+            use Damoony\Tests\Support\Demo\AjaxPage;
             final class algoritm_ajax_mode extends AjaxPage {}
             PHP);
     }

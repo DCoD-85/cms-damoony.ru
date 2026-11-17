@@ -35,7 +35,7 @@ final class IndexRenderScenarioTest extends TestCase
         file_put_contents($dir . '/algoritm.php', <<<'PHP'
             <?php
             namespace damoony_test\www;
-            use Damoony\Demo\Page\HomePage;
+            use Damoony\Tests\Support\Demo\HomePage;
             final class algoritm extends HomePage {}
             PHP);
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Damoony\Demo\Region;
+namespace Damoony\Tests\Support\Demo;
 
 use Damoony\UI\Builder;
 use Damoony\UI\Node;
