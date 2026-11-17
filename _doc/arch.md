@@ -41,21 +41,19 @@
 
 ### 3.1. Модульная структура
 
-`src/` разделён на 9 модулей. Каждый модуль решает только свою задачу.
+`src/` разделён на 7 модулей. Каждый модуль решает только свою задачу.
 
 | Модуль | Путь | Ответственность |
 |---|---|---|
 | **Core** | `src/Core/` | Ядро: HTTP (Kernel, Request, Response), Роутинг (FileRouter), Домены, Файлы, Безопасность (Csrf), Сессии, I18n. |
-| **UI** | `src/UI/` | Всё для отрисовки: `Element`, `Builder`, `Page`, `Region`, `Scheme`, `Skin`, `Components`. |
-| **Data** | `src/Data/` | Работа с БД: `Connection`, `DataProvider`, `Auth`. |
-| **Cli** | `src/Cli/` | Все консольные команды: `Commands/` (для `bin/cli.php`), `Db/` (для `bin/dbcli.php`), `Ai/` (для `bin/aicli.php`). |
-| **Admin** | `src/Admin/` | `Auth.php`, `AuthInterface.php` — авторизация админки. Страницы админки — `Admin\\Pages\\{role}` (через `FileRouter`). |
-| **Ai** | `src/Ai/` | Мультиагентный Orchestrator, ModelRouter, Roles, Navigator. |
+| **Cli** | `src/Cli/` | Команды: `Commands/` (для `bin/cli.php`), `Support/`, `Scaffold/`, `Identity/` (идентификатор+журнал), `Db/` (для `bin/dbcli.php`), `Ai/` (для `bin/aicli.php`). |
+| **UI** | `src/UI/` | Всё для отрисовки: `Element`, `Builder`, `Page`/`Algoritm` (`AdminPage` — контракт админки), `Region`, `Scheme`, `Skin`, `Components`, `Url`. |
+| **Data** | `src/Data/` | Работа с БД: `Connection`, `DataProvider` (префикс таблиц передаётся снаружи), `Auth`. |
+| **Diagnostics** | `src/Diagnostics/` | `StructureChecker` — целостность структуры (error/warning). Используется в `structure:check`. |
+| **Ai** | `src/Ai/` | Мультиагентный Orchestrator, ModelRouter, Roles, Navigator (заморожен: `aicli` отдаёт только read-команды). |
 | **Ainet** | `src/Ainet/` | Выход в интернет: `UrlGuard` (SSRF), `HttpClient`, `AinetFacade`, ImageSearch-провайдеры. |
-| **Diagnostics** | `src/Diagnostics/` | `StructureChecker` — целостность структуры (error/warning). Используется в `structure:check` и админке. |
-| **Demo** | `src/Demo/` | Legacy-примеры страниц/регионов. Используется точечно (`app/damoony.ru/www/algoritm/ajax/`). |
 
-**Правило:** если код нужен и сайту, и админке, и CLI — он живёт в `Core` или `UI`. Если только CLI — в `Cli`.
+**Правило:** если код нужен и сайту, и CLI — он живёт в `Core` или `UI`. Если только CLI — в `Cli`.
 
 ### 3.2. Правило 3 файлов
 - **Страница:** `algoritm_[name].{php,rules.json,editor.json}` (все три в одной папке). Root: `algoritm/algoritm.{php,rules.json,editor.json}`.
