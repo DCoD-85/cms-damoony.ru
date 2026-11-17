@@ -7,6 +7,7 @@ namespace Damoony\Cli\Next\Commands;
 use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Next\Support\PageAddress;
+use Damoony\Cli\Next\Support\SessionGuard;
 use Damoony\Cli\Next\Support\TargetResolver;
 use Damoony\Cli\Result;
 use Damoony\Core\Files\Fs;
@@ -24,11 +25,10 @@ use RuntimeException;
  */
 final class PageNewCommand implements CommandInterface
 {
-    private const SESSION_RE = '/^[a-f0-9]{8,32}$/';
-
     public function __construct(
         private readonly Paths $paths,
         private readonly TargetResolver $resolver,
+        private readonly SessionGuard $sessionGuard,
     ) {
     }
 
@@ -68,17 +68,13 @@ final class PageNewCommand implements CommandInterface
         }
 
         $sessionId = trim((string) ($args['session'] ?? ''));
-        if ($sessionId !== '') {
-            if (preg_match(self::SESSION_RE, $sessionId) !== 1) {
-                $r->error('Некорректный --session (8-32 hex символов)');
 
-                return $r;
-            }
-            if (!is_dir($this->paths->sessionDir($sessionId, $target->folder()))) {
-                $r->error('Сессия не найдена: ' . $sessionId);
+        try {
+            $this->sessionGuard->assertAllowed($sessionId, $target->folder());
+        } catch (RuntimeException $e) {
+            $r->error($e->getMessage());
 
-                return $r;
-            }
+            return $r;
         }
 
         $page = PagePath::resolve(

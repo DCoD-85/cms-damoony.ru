@@ -9,6 +9,7 @@ use Damoony\Cli\Next\Commands\PageNewCommand;
 use Damoony\Cli\Next\Commands\PageWriteCommand;
 use Damoony\Cli\Next\Registry;
 use Damoony\Cli\Next\Support\ContentRefs;
+use Damoony\Cli\Next\Support\SessionGuard;
 use Damoony\Cli\Next\Support\TargetResolver;
 use Damoony\Core\Files\Paths;
 use Damoony\Core\Settings\SiteConfig;
@@ -235,14 +236,16 @@ final class NextPageEditCommandsTest extends TestCase
 
     private function pageNew(): PageNewCommand
     {
-        return new PageNewCommand(new Paths($this->root), $this->resolver());
+        $paths = new Paths($this->root);
+
+        return new PageNewCommand($paths, $this->resolver(), new SessionGuard($paths));
     }
 
     private function pageWrite(): PageWriteCommand
     {
         $paths = new Paths($this->root);
 
-        return new PageWriteCommand($paths, $this->resolver(), new ContentRefs($paths));
+        return new PageWriteCommand($paths, $this->resolver(), new ContentRefs($paths), new SessionGuard($paths));
     }
 
     private function context(): Context

@@ -9,7 +9,9 @@ use Damoony\Cli\Next\Commands\SchemeCopyCommand;
 use Damoony\Cli\Next\Commands\SchemeListCommand;
 use Damoony\Cli\Next\Commands\SchemeNewCommand;
 use Damoony\Cli\Next\Commands\SchemeRemoveCommand;
+use Damoony\Cli\Next\Commands\SchemeSaveCommand;
 use Damoony\Cli\Next\Support\Quarantine;
+use Damoony\Cli\Next\Support\SessionGuard;
 use Damoony\Core\Files\Paths;
 use Damoony\Core\Settings\SiteConfig;
 use Damoony\Core\Settings\SiteConfigWriter;
@@ -191,6 +193,109 @@ final class NextSchemeCommandsTest extends TestCase
         self::assertCount(1, $result->warnings);
     }
 
+    public function testSaveWritesEditorAndCompilesPhp(): void
+    {
+        file_put_contents($this->schemesDir . '/www.php', "<?php return [];\n");
+        file_put_contents(
+            $this->schemesDir . '/www.editor.json',
+            json_encode(['fields' => [], 'scheme' => ['children' => []]]),
+        );
+
+        $scheme = json_encode([
+            'children' => [
+                ['type' => 'slot', 'name' => 'center'],
+                ['type' => 'element', 'tag' => 'header', 'class' => 'top'],
+                ['type' => 'element', 'tag' => 'script'],
+            ],
+            'meta' => ['css' => ['/a.css']],
+        ]);
+
+        $result = $this->save()->run(
+            ['domain' => 'damoony3.ru', 'name' => 'www', 'scheme_json' => (string) $scheme],
+            $this->context(),
+        );
+
+        self::assertTrue($result->ok, implode('; ', $result->errors));
+
+        $editor = json_decode((string) file_get_contents($this->schemesDir . '/www.editor.json'), true);
+        self::assertIsArray($editor);
+        self::assertCount(3, $editor['scheme']['children']);
+
+        $php = (string) file_get_contents($this->schemesDir . '/www.php');
+        self::assertStringContainsString('center', $php);
+        self::assertStringContainsString('header', $php);
+        self::assertStringNotContainsString("'tag' => 'script'", $php);
+        self::assertStringContainsString('/a.css', $php);
+    }
+
+    public function testSaveRequiresEditor(): void
+    {
+        $result = $this->save()->run(
+            ['domain' => 'damoony.ru', 'name' => 'ghost', 'scheme_json' => '{"children":[]}'],
+            $this->context(),
+        );
+
+        self::assertFalse($result->ok);
+        self::assertStringContainsString('editor.json не найден', $result->errors[0]);
+    }
+
+    public function testSaveRequiresJson(): void
+    {
+        $result = $this->save()->run(['domain' => 'damoony.ru', 'name' => 'www'], $this->context());
+
+        self::assertFalse($result->ok);
+        self::assertStringContainsString('--scheme_json', $result->errors[0]);
+    }
+
+    public function testSaveRejectsBrokenJson(): void
+    {
+        $result = $this->save()->run(
+            ['domain' => 'damoony.ru', 'name' => 'www', 'scheme_json' => '{broken'],
+            $this->context(),
+        );
+
+        self::assertFalse($result->ok);
+        self::assertStringContainsString('Некорректный JSON', $result->errors[0]);
+    }
+
+    public function testSaveDryRunKeepsFiles(): void
+    {
+        file_put_contents($this->schemesDir . '/www.php', "<?php return [];\n");
+        file_put_contents($this->schemesDir . '/www.editor.json', json_encode(['scheme' => ['children' => []]]));
+        $before = (string) file_get_contents($this->schemesDir . '/www.editor.json');
+
+        $result = $this->save()->run(
+            ['domain' => 'damoony.ru', 'name' => 'www', 'scheme_json' => '{"children":[{"type":"slot","name":"center"}]}'],
+            $this->dryRunContext(),
+        );
+
+        self::assertTrue($result->ok);
+        self::assertTrue($result->data['dry_run']);
+        self::assertSame($before, (string) file_get_contents($this->schemesDir . '/www.editor.json'));
+    }
+
+    public function testSaveHonoursSessionPermission(): void
+    {
+        file_put_contents($this->schemesDir . '/www.php', "<?php return [];\n");
+        file_put_contents($this->schemesDir . '/www.editor.json', json_encode(['scheme' => ['children' => []]]));
+
+        $tab = 'abcdef1234567890';
+        $sessionDir = $this->root . '/app/.sess_' . $tab . '.damoony.ru';
+        mkdir($sessionDir, 0o775, true);
+        file_put_contents(
+            $sessionDir . '/.session.json',
+            json_encode(['permissions' => ['scheme:save' => false]]),
+        );
+
+        $result = $this->save()->run(
+            ['domain' => 'damoony.ru', 'name' => 'www', 'scheme_json' => '{"children":[]}', 'session' => $tab],
+            $this->context(),
+        );
+
+        self::assertFalse($result->ok);
+        self::assertStringContainsString('запрещена в этой сессии', $result->errors[0]);
+    }
+
     private function site(): SiteConfig
     {
         return SiteConfig::fromFile($this->root . '/config/site.config');
@@ -214,6 +319,13 @@ final class NextSchemeCommandsTest extends TestCase
     private function remove(): SchemeRemoveCommand
     {
         return new SchemeRemoveCommand(new Paths($this->root), $this->site(), new Quarantine());
+    }
+
+    private function save(): SchemeSaveCommand
+    {
+        $paths = new Paths($this->root);
+
+        return new SchemeSaveCommand($paths, $this->site(), new SessionGuard($paths));
     }
 
     private function context(): Context

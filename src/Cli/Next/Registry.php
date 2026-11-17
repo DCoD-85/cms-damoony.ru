@@ -23,9 +23,11 @@ use Damoony\Cli\Next\Commands\SchemeCopyCommand;
 use Damoony\Cli\Next\Commands\SchemeListCommand;
 use Damoony\Cli\Next\Commands\SchemeNewCommand;
 use Damoony\Cli\Next\Commands\SchemeRemoveCommand;
+use Damoony\Cli\Next\Commands\SchemeSaveCommand;
 use Damoony\Cli\Next\Scaffold\Scaffolder;
 use Damoony\Cli\Next\Support\ContentRefs;
 use Damoony\Cli\Next\Support\Quarantine;
+use Damoony\Cli\Next\Support\SessionGuard;
 use Damoony\Cli\Next\Support\TargetResolver;
 use Damoony\Core\Files\Paths;
 use Damoony\Core\Settings\SiteConfig;
@@ -61,6 +63,7 @@ final class Registry
         $quarantine = new Quarantine();
         $resolver = new TargetResolver($site);
         $contentRefs = new ContentRefs($paths);
+        $sessionGuard = new SessionGuard($paths);
 
         $registry = new CommandRegistry();
         $registry->add(new HelpCommand($registry));
@@ -73,13 +76,14 @@ final class Registry
         $registry->add(new AlliasNewCommand($paths, $site, $writer, $scaffolder));
         $registry->add(new AlliasRemoveCommand($paths, $site, $writer, $quarantine));
         $registry->add(new PageListCommand($paths, $resolver));
-        $registry->add(new PageNewCommand($paths, $resolver));
+        $registry->add(new PageNewCommand($paths, $resolver, $sessionGuard));
         $registry->add(new PageReadCommand($paths, $resolver));
-        $registry->add(new PageWriteCommand($paths, $resolver, $contentRefs));
+        $registry->add(new PageWriteCommand($paths, $resolver, $contentRefs, $sessionGuard));
         $registry->add(new PageToggleCommand($paths, $resolver));
         $registry->add(new SchemeListCommand($paths, $site));
         $registry->add(new SchemeNewCommand($paths, $site));
         $registry->add(new SchemeCopyCommand($paths, $site));
+        $registry->add(new SchemeSaveCommand($paths, $site, $sessionGuard));
         $registry->add(new SchemeRemoveCommand($paths, $site, $quarantine));
 
         return $registry;
