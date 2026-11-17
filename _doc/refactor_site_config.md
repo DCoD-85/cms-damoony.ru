@@ -58,7 +58,7 @@
 2. `site:config:migrate` переносит `site.config.old` → `site.config` без потерь.
 3. Паритет-прогон read-only команд на реальном `app/` совпадает.
 4. `phpunit` + `phpstan` + `php-cs-fixer` зелёные.
-5. `_doc/cli.md` + раздел конфига в `install.md` описывают новую схему.
+5. `_doc/cli/README.md` + раздел конфига в `install.md` описывают новую схему.
 6. Только после этого: `src/Cli/Commands` → `src/Cli/CommandsOld`, `src/Cli/Next/*` → канонические пути,
    затем удаление `*Old` и `config/site.config.old`.
 7. `aicli.php` и `dbcli.php` падают с внятной ошибкой (а не молча «нет доменов»).

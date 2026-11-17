@@ -86,7 +86,7 @@ Pending (Phase 4.8): `select_by`, `select_all`, `update`, `delete`, `count`, `ex
 - `db:mutate … --force=1` — write + audit_log.
 - `dataprovider:add-method --template=… --args='{}'` — генерация.
 
-Per-command флаги — `_doc/cli.md` §10.
+Per-command флаги — `_doc/cli/README.md` §10.
 
 Design-time команды (schema/generate): `bin/dbcli.php` — см. `_doc/dbcli.md`.
 

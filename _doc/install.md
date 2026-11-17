@@ -1,6 +1,6 @@
 # Установка и развёртывание
 
-Документ описывает установку Damoony Engine с нуля. Для написания кода после установки читайте `_doc/dev.md`, для управления — `_doc/cli.md`.
+Документ описывает установку Damoony Engine с нуля. Для написания кода после установки читайте `_doc/dev.md`, для управления — `_doc/cli/README.md`.
 
 ---
 
@@ -54,31 +54,38 @@ php -r "var_dump(function_exists('curl_init'), function_exists('imagecreatetruec
 ```
 ⚠️ `security.allow_php_blocks` по умолчанию `false` (защита от RCE). Включайте только если нужны блоки с сырым PHP.
 
-### 3.2. `config/site.config` — домены и алиасы
+### 3.2. `config/site.config` — проекты, хосты и алиасы
+
+Полная схема, валидация и миграция — `_doc/cli/config.md`. Минимальный пример:
+
 ```json
 {
-  "domains_real": {
-    "damoony.ru": "damoony_ru"
-  },
-  "domains_mirrors": {
-    "damoony.ru": "damoony.ru",
-    "damoony3.ru": "damoony.ru"
-  },
-  "domains_mirrors_available": {
-    "damoony.ru": true,
-    "damoony3.ru": true
+  "domains_app": {
+    "damoony.ru": {
+      "folder": "damoony.ru",
+      "namespace": "damoony_ru",
+      "langs": ["ru", "en"],
+      "mirrors": {
+        "damoony.ru":  { "available": true },
+        "damoony3.ru": { "available": true }
+      }
+    }
   },
   "alliases": {
     "damoony.ru": {
-      "www": { "available": true, "langs": ["ru", "en"] },
-      "doc": { "available": true, "langs": ["ru"] }
+      "www":  { "available": true, "langs": ["ru", "en"] },
+      "docs": { "available": true, "langs": ["ru"] }
     }
   }
 }
 ```
-⚠️ `domains_real` хранит namespace для папки. `domains_mirrors` — это входные хосты (зеркала). Языки и настройки алиасов живут в дереве `alliases`. Глобальный default — `admin.config.default_lang`.
-⚠️ **Self-mapping обязателен:** ключ реального домена должен указывать на себя (`"damoony.ru": "damoony.ru"`).
-⚠️ Если `domains_real["damoony3.ru"] = "damoony.ru"`, то папка создаётся в `app/damoony.ru/` (realDomain). 
+
+⚠️ `folder` — папка в `app/` (FS-пути), `namespace` — PHP-namespace домена. Это разные поля, и
+путать их нельзя: старая схема `domains_real` смешивала оба смысла.
+⚠️ `mirrors` — входные хосты проекта; один хост не может принадлежать двум проектам.
+⚠️ Языки алиаса обязаны быть подмножеством языков проекта.
+⚠️ Правки — только через CLI (`domain:*`, `allias:*`, `lang:*`, `new`): конфиг валидируется
+до записи. Старый формат переносится командой `site:config:migrate`.
 
 ### 3.3. `config/admin.config` — доступ в админку
 ```json

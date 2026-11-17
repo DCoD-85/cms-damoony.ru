@@ -200,5 +200,5 @@ brain.py — независимый Python-процесс, вызывает `bin
 - `_doc/orchestrator.md` — внутренний мультиагентный конвейер AIUI (Blackboard, AgentInterface, ModelRouter, 4 action AIUI, build_progress).
 - `_doc/aiui.md` — UI-документация AIUI (кнопки, панели, сессия).
 - `_doc/arch.md` §4 — контракты Orchestrator и ModelRouter.
-- `_doc/cli.md` — файловые команды (`bin/cli.php`), которые вызывает aicli.
+- `_doc/cli/README.md` — файловые команды (`bin/cli.php`), которые вызывает aicli.
 - `_doc/dev.md` — как писать страницы/блоки.
