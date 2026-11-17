@@ -9,6 +9,7 @@ final class algoritm extends Page
 {
     protected function content(): Node|Response|null
     {
-        return Response::redirect('/ru/');
+        // Корень алиаса ведёт на язык проекта по умолчанию (не хардкод «ru»).
+        return Response::redirect('/' . $this->context->domain->language . '/', 301);
     }
 }
