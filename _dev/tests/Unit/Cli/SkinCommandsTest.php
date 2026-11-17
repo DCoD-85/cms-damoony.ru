@@ -251,7 +251,9 @@ final class SkinCommandsTest extends TestCase
 
     private function skinNew(): SkinNewCommand
     {
-        return new SkinNewCommand(new Paths($this->root), $this->resolver());
+        $paths = new Paths($this->root);
+
+        return new SkinNewCommand($paths, $this->resolver(), new \Damoony\Cli\Scaffold\Scaffolder($paths));
     }
 
     private function skinList(): SkinListCommand

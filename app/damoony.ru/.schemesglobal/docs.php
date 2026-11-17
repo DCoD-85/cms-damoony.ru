@@ -50,12 +50,22 @@ return array (
   array (
     'css' => 
     array (
-      0 => '/media/damoony.ru/docs/css/main.css',
-      1 => '/media/damoony.ru/docs/skin/{skin}/css/main.css',
+      0 => '/media/{real}/{skin_path}/css/main.css',
+      1 => '/media/{real}/{skin_path}/css/blocks.css',
+      2 => '/media/{real}/{skin_path}/css/components.css',
+      3 => '/media/{real}/{skin_path}/css/mobile.css',
+      4 => '/media/{real}/{skin_path}/css/top.css',
+      5 => '/media/{real}/{skin_path}/css/left.css',
+      6 => '/media/{real}/{skin_path}/css/center.css',
+      7 => '/media/{real}/{skin_path}/css/right.css',
+      8 => '/media/{real}/{skin_path}/css/footer.css',
+      9 => '/media/{real}/{skin_path}/css/bottom.css',
+      10 => '/media/{real}/{skin_path}/css/policy.css',
+      11 => '/media/{real}/{skin_path}/css/toast.css',
     ),
     'js' => 
     array (
-      0 => '/media/damoony.ru/docs/skin/{skin}/js/main.js',
+      0 => '/media/{real}/{skin_path}/js/main.js',
       1 => '/media/shared/scripts/cliajax.js',
     ),
   ),

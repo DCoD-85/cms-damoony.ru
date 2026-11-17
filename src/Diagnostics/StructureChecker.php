@@ -122,7 +122,91 @@ final class StructureChecker
             }
         }
 
+        $this->checkSchemeAssets($project, $alias, $schemeData, $issues);
+
         return $issues;
+    }
+
+    /**
+     * Ссылки `meta.css` / `meta.js` должны существовать в media скина.
+     *
+     * @param array<string, mixed> $schemeData
+     * @param list<array{level: string, message: string}> $issues
+     */
+    private function checkSchemeAssets(ProjectSettings $project, string $alias, array $schemeData, array &$issues): void
+    {
+        $meta = $schemeData['meta'] ?? null;
+        if (!is_array($meta)) {
+            return;
+        }
+
+        $skin = $this->firstSkin($project->folder, $alias);
+
+        foreach (['css', 'js'] as $kind) {
+            $list = $meta[$kind] ?? null;
+            if (!is_array($list)) {
+                continue;
+            }
+
+            foreach ($list as $url) {
+                if (!is_string($url) || !str_starts_with($url, '/media/')) {
+                    continue;
+                }
+
+                if ($skin === null && str_contains($url, '{skin')) {
+                    $issues[] = [
+                        'level' => 'warning',
+                        'message' => "Схема ссылается на {$kind} со скином, но у алиаса {$alias} нет ни одного скина",
+                    ];
+
+                    continue;
+                }
+
+                $path = $this->assetPath($url, $project->folder, $alias, $skin ?? 'default');
+                if ($path !== null && !is_file($path)) {
+                    $issues[] = [
+                        'level' => 'warning',
+                        'message' => "Схема ссылается на несуществующий {$kind}: {$url}",
+                    ];
+                }
+            }
+        }
+    }
+
+    private function assetPath(string $url, string $folder, string $alias, string $skin): ?string
+    {
+        // Отбрасываем query/fragment: /media/x.css?v=3 — это тот же файл.
+        $parts = preg_split('/[?#]/', $url);
+        $url = is_array($parts) && $parts !== [] ? (string) $parts[0] : $url;
+
+        $relative = substr($url, strlen('/media/'));
+        if ($relative === '' || str_contains($relative, '..')) {
+            return null;
+        }
+
+        $relative = str_replace(
+            ['{real}', '{alias}', '{skin_path}', '{skin}'],
+            [$folder, $alias, $alias . '/skin/' . $skin, $skin],
+            $relative,
+        );
+
+        return $this->paths->mediaRoot() . '/' . $relative;
+    }
+
+    private function firstSkin(string $folder, string $alias): ?string
+    {
+        $dir = $this->paths->media($folder, $alias) . '/skin';
+        if (!is_dir($dir)) {
+            return null;
+        }
+
+        foreach (scandir($dir) ?: [] as $entry) {
+            if ($entry !== '.' && $entry !== '..' && is_dir($dir . '/' . $entry)) {
+                return $entry;
+            }
+        }
+
+        return null;
     }
 
     /**

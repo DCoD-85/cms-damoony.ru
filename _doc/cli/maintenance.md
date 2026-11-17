@@ -49,8 +49,8 @@ php bin/cli.php admin:passwd --name=admin --password=<сильный>   # вхо
 
 | Команда | Что делает |
 |---|---|
-| `backup:create --domain=X` | ZIP в `var/backups/`: `app/{folder}/`, `www/media/{folder}/`, `db.sql` |
-| `backup:restore --domain=X --file=… --force` | распаковка, импорт БД, файлы проекта в карантин, копирование из архива |
+| `backup:create --domain=X` | ZIP в `var/backups/`: `app/{folder}/`, `www/media/{folder}/`, `content/{folder}/`, `db.sql` |
+| `backup:restore --domain=X --file=… --force` | распаковка, импорт БД, app/media/content проекта — в карантин, копирование из архива |
 
 Ограничения и гарантии:
 

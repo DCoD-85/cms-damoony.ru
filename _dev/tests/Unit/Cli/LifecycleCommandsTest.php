@@ -216,6 +216,12 @@ final class LifecycleCommandsTest extends TestCase
 
     public function testAlliasRemoveQuarantinesAndCleansConfig(): void
     {
+        // Схема алиаса должна уйти в карантин вместе с ним, а не остаться сиротой.
+        $schemesDir = $this->root . '/app/damoony.ru/.schemesglobal';
+        mkdir($schemesDir, 0o775, true);
+        file_put_contents($schemesDir . '/blog.php', "<?php\n\nreturn [];\n");
+        file_put_contents($schemesDir . '/blog.rules.json', "{\"enabled\":true}\n");
+
         $result = $this->alliasRemove()->run(
             ['domain' => 'damoony.ru', 'name' => 'blog', 'force' => '1'],
             $this->context(),
@@ -226,6 +232,13 @@ final class LifecycleCommandsTest extends TestCase
         self::assertDirectoryDoesNotExist($this->root . '/www/media/damoony.ru/blog');
         self::assertFalse($this->site()->requireProject('damoony.ru')->hasAlias('blog'));
         self::assertTrue($this->site()->requireProject('damoony.ru')->hasAlias('www'));
+
+        self::assertFileDoesNotExist($schemesDir . '/blog.php');
+        self::assertFileDoesNotExist($schemesDir . '/blog.rules.json');
+
+        $trash = glob($this->root . '/app/damoony.ru/blog_trash_*') ?: [];
+        self::assertCount(1, $trash);
+        self::assertFileExists($trash[0] . '/.schemesglobal/blog.php');
     }
 
     public function testAlliasRemoveUnknownIsHarmless(): void

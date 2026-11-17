@@ -100,8 +100,10 @@ final class BackupRestoreCommand implements CommandInterface
 
             $appCurrent = $this->paths->domain($project->folder);
             $mediaCurrent = $this->paths->mediaRoot() . '/' . $project->folder;
+            $contentCurrent = $this->paths->contentRoot() . '/' . $project->folder;
 
             Fs::mkdir($this->paths->mediaRoot() . '/.trash');
+            Fs::mkdir($this->paths->contentRoot() . '/.trash');
 
             if (Fs::isDir($appCurrent)
                 && !@rename($appCurrent, $this->paths->appRoot() . '/' . $project->folder . '_trash_restore_' . $stamp)) {
@@ -112,9 +114,15 @@ final class BackupRestoreCommand implements CommandInterface
                     . $project->folder . '_trash_restore_' . $stamp)) {
                 $r->warn('Не удалось увести media проекта в карантин');
             }
+            if (Fs::isDir($contentCurrent)
+                && !@rename($contentCurrent, $this->paths->contentRoot() . '/.trash/'
+                    . $project->folder . '_trash_restore_' . $stamp)) {
+                $r->warn('Не удалось увести content проекта в карантин');
+            }
 
             $this->copyTree($tmpDir . '/app/' . $project->folder, $appCurrent);
             $this->copyTree($tmpDir . '/www/media/' . $project->folder, $mediaCurrent);
+            $this->copyTree($tmpDir . '/content/' . $project->folder, $contentCurrent);
         } catch (Throwable $e) {
             Fs::rmrf($tmpDir);
             $r->error($e->getMessage());

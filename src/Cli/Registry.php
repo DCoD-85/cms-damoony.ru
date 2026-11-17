@@ -158,7 +158,7 @@ final class Registry
         $registry->add(new FillerEditCommand($paths, $resolver, $blockEditor));
         $registry->add(new FillerToggleCommand($paths, $resolver));
         $registry->add(new SkinListCommand($paths, $resolver));
-        $registry->add(new SkinNewCommand($paths, $resolver));
+        $registry->add(new SkinNewCommand($paths, $resolver, $scaffolder));
         $registry->add(new SkinEditCommand($paths, $resolver, $sessionGuard));
         $registry->add(new SkinRemoveCommand($paths, $resolver, $quarantine));
         $registry->add(new LangListCommand($paths, $site));

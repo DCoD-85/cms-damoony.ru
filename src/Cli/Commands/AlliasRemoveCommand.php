@@ -106,6 +106,7 @@ final class AlliasRemoveCommand implements CommandInterface
                 $this->paths->mediaRoot() . '/.trash',
                 $project->folder . '_' . $name,
             );
+            $schemesTrash = $this->quarantineSchemes($project->folder, $name, $alliasTrash);
         } catch (Throwable $e) {
             $r->error($e->getMessage());
 
@@ -124,6 +125,13 @@ final class AlliasRemoveCommand implements CommandInterface
             $context->step('Media перемещено в карантин', true, Fs::rel($mediaTrash, $this->paths->root()));
         }
 
+        if ($schemesTrash !== []) {
+            foreach ($schemesTrash as $path) {
+                $r->file(Fs::rel($path, $this->paths->root()));
+            }
+            $context->step('Схемы алиаса в карантине', true);
+        }
+
         try {
             $this->writer->removeAlias($project->key, $name);
         } catch (Throwable $e) {
@@ -136,5 +144,48 @@ final class AlliasRemoveCommand implements CommandInterface
         $r->data = ['project' => $project->key, 'alias' => $name];
 
         return $r;
+    }
+
+    /**
+     * Схемы алиаса (`.schemesglobal/{alias}.{php,editor.json,rules.json}`) — в карантин.
+     *
+     * Кладём в карантин папки алиаса, если он есть; иначе — отдельным каталогом в `/var/trash`.
+     *
+     * @return list<string>
+     */
+    private function quarantineSchemes(string $folder, string $alias, ?string $alliasTrash): array
+    {
+        $schemesDir = $this->paths->schemesGlobal($folder);
+        $files = [];
+        foreach (['php', 'editor.json', 'rules.json'] as $ext) {
+            $file = $schemesDir . '/' . $alias . '.' . $ext;
+            if (is_file($file)) {
+                $files[] = $file;
+            }
+        }
+
+        if ($files === []) {
+            return [];
+        }
+
+        if ($alliasTrash !== null) {
+            $target = $alliasTrash . '/.schemesglobal';
+            Fs::mkdir($target);
+
+            $moved = [];
+            foreach ($files as $file) {
+                $dst = $target . '/' . basename($file);
+                if (@rename($file, $dst)) {
+                    $moved[] = $dst;
+                }
+            }
+
+            return $moved;
+        }
+
+        $trashDir = $this->paths->root() . '/var/trash/schemes_trash_' . time();
+        Fs::mkdir($trashDir);
+
+        return $this->quarantine->files($trashDir, $files);
     }
 }

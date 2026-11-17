@@ -52,13 +52,24 @@ Guard'ы `scheme:save`: whitelist тегов (нет `script/iframe/style/form/i
 
 `www/media/{folder}/{alias}/skin/{name}/` — `css/*.css`, `js/main.js`, `img/`, `skin.json`.
 
-- `skin:new` создаёт скелет;
+**Контракт скина** (один для сборок и для `skin:new`/`allias:new`):
+
+```
+css/main.css  blocks.css  components.css  mobile.css
+css/{top,left,center,right,bottom,footer,policy,toast}.css   ← по файлу на слот схемы
+js/main.js   skin.json   img/
+```
+
+- `skin:new` и `allias:new` создают скелет именно по этому контракту (пустые файлы-заглушки);
+- схема ссылается на них токенами `{real}` и `{skin_path}` — без «alias-level» `css/main.css`,
+  которого не существует;
 - `skin:edit --file=css/<name>.css|js/main.js` — whitelist файлов, лимит 1 MB,
   блокировка `@import` и `url(javascript:…)`; недостающие `}` дописываются, лишние — ошибка;
 - `skin:remove --force` — в `www/media/.trash/`;
 - `skin:list` — список скинов алиаса.
 
-Skin подключается **из схемы** (`meta.css`/`meta.js`) токенами `{skin}`, `{real}`, `{alias}`.
+`structure:check` проверяет, что все `meta.css`/`meta.js` схемы существуют в media скина
+(warning, а не error), и не считает query-string (`?v=3`) частью имени файла.
 
 ## 5. Языки
 

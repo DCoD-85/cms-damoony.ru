@@ -7,6 +7,7 @@ namespace Damoony\Cli\Commands;
 use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
+use Damoony\Cli\Scaffold\Scaffolder;
 use Damoony\Cli\Support\TargetResolver;
 use Damoony\Core\Files\Fs;
 use Damoony\Core\Files\Paths;
@@ -14,6 +15,9 @@ use RuntimeException;
 
 /**
  * skin:new для схемы domains_app.
+ *
+ * Скелет скина создаёт Scaffolder — единственный источник контракта скина
+ * (базовые css + файл на слот схемы).
  */
 final class SkinNewCommand implements CommandInterface
 {
@@ -22,6 +26,7 @@ final class SkinNewCommand implements CommandInterface
     public function __construct(
         private readonly Paths $paths,
         private readonly TargetResolver $resolver,
+        private readonly Scaffolder $scaffolder,
     ) {
     }
 
@@ -32,7 +37,7 @@ final class SkinNewCommand implements CommandInterface
 
     public function description(): string
     {
-        return 'Создать скин алиаса (css/main.css, js/main.js, img/, skin.json)';
+        return 'Создать скин алиаса (css по слотам схемы, js/main.js, img/, skin.json)';
     }
 
     public function run(array $args, Context $context): Result
@@ -76,25 +81,18 @@ final class SkinNewCommand implements CommandInterface
             return $r;
         }
 
-        Fs::mkdir($skinDir . '/css');
-        Fs::mkdir($skinDir . '/js');
-        Fs::mkdir($skinDir . '/img');
+        try {
+            $created = $this->scaffolder->skin($target->folder(), $target->aliasName(), $name);
+        } catch (\Throwable $e) {
+            $r->error('Не удалось создать скин: ' . $e->getMessage());
 
-        $cssFile = $skinDir . '/css/main.css';
-        $jsFile = $skinDir . '/js/main.js';
+            return $r;
+        }
 
-        Fs::writeAtomic($cssFile, "/* Skin: {$name} */\n");
-        Fs::writeAtomic($jsFile, "// Skin: {$name}\n");
-        Fs::writeAtomic(
-            $skinDir . '/skin.json',
-            json_encode(
-                ['name' => $name, 'version' => '1.0', 'created_at' => gmdate('Y-m-d\TH:i:s\Z')],
-                JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE,
-            ) . "\n",
-        );
-
-        foreach ([$cssFile, $jsFile, $skinDir . '/skin.json'] as $file) {
-            $r->file(Fs::rel($file, $this->paths->root()));
+        foreach ($created as $path) {
+            if (!Fs::isDir($path)) {
+                $r->file(Fs::rel($path, $this->paths->root()));
+            }
         }
 
         $r->data = ['project' => $target->projectKey(), 'allias' => $target->aliasName(), 'skin' => $name];

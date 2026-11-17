@@ -75,9 +75,11 @@ final class BackupCreateCommand implements CommandInterface
         try {
             Fs::mkdir($tmpDir . '/app');
             Fs::mkdir($tmpDir . '/www/media');
+            Fs::mkdir($tmpDir . '/content');
 
             $this->copyTree($this->paths->domain($project->folder), $tmpDir . '/app/' . $project->folder);
             $this->copyTree($this->paths->mediaRoot() . '/' . $project->folder, $tmpDir . '/www/media/' . $project->folder);
+            $this->copyTree($this->paths->contentRoot() . '/' . $project->folder, $tmpDir . '/content/' . $project->folder);
 
             $context->step('Дамп БД...', true);
             $sql = $this->dumpDatabase($db);

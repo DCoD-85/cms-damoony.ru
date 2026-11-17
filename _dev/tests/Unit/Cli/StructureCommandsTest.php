@@ -48,6 +48,26 @@ final class StructureCommandsTest extends TestCase
         $this->rrmdir($this->root);
     }
 
+    public function testCheckWarnsAboutMissingSchemeAssets(): void
+    {
+        // Схема ссылается на CSS, которого нет в скине → warning, не error.
+        file_put_contents(
+            $this->root . '/app/damoony.ru/.schemesglobal/www.php',
+            "<?php return ['tag' => 'div', 'children' => [['tag' => 'header', 'slot' => 'top']],"
+            . " 'meta' => ['css' => ['/media/{real}/{skin_path}/css/main.css', '/media/{real}/{skin_path}/css/missing.css?v=3']]];",
+        );
+        mkdir($this->root . '/www/media/damoony.ru/www/skin/default/css', 0o775, true);
+        file_put_contents($this->root . '/www/media/damoony.ru/www/skin/default/css/main.css', "/* ok */\n");
+
+        $result = $this->check()->run([], $this->context());
+
+        $warnings = implode("\n", $result->data['warnings']);
+        self::assertStringContainsString('несуществующий css', $warnings);
+        self::assertStringContainsString('missing.css', $warnings);
+        // main.css существует — про него предупреждения быть не должно (query-string не мешает).
+        self::assertStringNotContainsString('css/main.css', $warnings);
+    }
+
     public function testCheckReportsMissingFiles(): void
     {
         $result = $this->check()->run([], $this->context());

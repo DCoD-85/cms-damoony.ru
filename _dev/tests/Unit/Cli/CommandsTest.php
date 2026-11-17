@@ -201,6 +201,13 @@ final class CommandsTest extends TestCase
         );
         self::assertFileExists($this->root . '/app/damoony.ru/.schemesglobal/blog.php');
         self::assertFileExists($this->root . '/www/media/damoony.ru/blog/skin/default/css/main.css');
+        self::assertFileExists($this->root . '/www/media/damoony.ru/blog/skin/default/css/blocks.css');
+        self::assertFileExists($this->root . '/www/media/damoony.ru/blog/skin/default/css/top.css');
+
+        // Схема ссылается на скин через токен, а не на несуществующий alias-level CSS.
+        $scheme = (string) file_get_contents($this->root . '/app/damoony.ru/.schemesglobal/blog.php');
+        self::assertStringContainsString('{skin_path}', $scheme);
+        self::assertStringNotContainsString('/media/damoony.ru/blog/css/main.css', $scheme);
 
         $site = SiteConfig::fromFile(Registry::configPath($this->root));
         self::assertTrue($site->requireProject('damoony.ru')->hasAlias('blog'));

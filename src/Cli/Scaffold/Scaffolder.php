@@ -102,17 +102,27 @@ final class Scaffolder
         Fs::mkdir($skinDir . '/js');
         Fs::mkdir($skinDir . '/img');
 
-        return [
-            $this->write($skinDir . '/css/main.css', "/* Skin: {$name} */\n"),
-            $this->write($skinDir . '/js/main.js', "// Skin: {$name}\n"),
-            $this->write(
-                $skinDir . '/skin.json',
-                json_encode(
-                    ['name' => $name, 'version' => '1.0', 'created_at' => gmdate('Y-m-d\TH:i:s\Z')],
-                    JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE,
-                ) . "\n",
-            ),
-        ];
+        $created = [];
+
+        // Контракт скина: базовые файлы + по файлу на слот схемы,
+        // чтобы схема не ссылалась на несуществующие CSS.
+        foreach (['main', 'blocks', 'components', 'mobile'] as $base) {
+            $created[] = $this->write($skinDir . '/css/' . $base . '.css', "/* Skin: {$name} — {$base} */\n");
+        }
+        foreach (self::SLOTS as $slot) {
+            $created[] = $this->write($skinDir . '/css/' . $slot . '.css', "/* Skin: {$name} — {$slot} */\n");
+        }
+
+        $created[] = $this->write($skinDir . '/js/main.js', "// Skin: {$name}\n");
+        $created[] = $this->write(
+            $skinDir . '/skin.json',
+            json_encode(
+                ['name' => $name, 'version' => '1.0', 'created_at' => gmdate('Y-m-d\TH:i:s\Z')],
+                JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE,
+            ) . "\n",
+        );
+
+        return $created;
     }
 
     /**
@@ -205,17 +215,24 @@ final class Scaffolder
             $children[] = ['tag' => $tag, 'slot' => $slot];
         }
 
+        $css = [
+            '/media/{real}/{skin_path}/css/main.css',
+            '/media/{real}/{skin_path}/css/blocks.css',
+            '/media/{real}/{skin_path}/css/components.css',
+            '/media/{real}/{skin_path}/css/mobile.css',
+        ];
+        foreach (self::SLOTS as $slot) {
+            $css[] = '/media/{real}/{skin_path}/css/' . $slot . '.css';
+        }
+
         return [
             'tag' => 'div',
             'class' => 'layout',
             'children' => $children,
             'meta' => [
-                'css' => [
-                    '/media/' . $folder . '/' . $alias . '/css/main.css',
-                    '/media/' . $folder . '/' . $alias . '/skin/{skin}/css/main.css',
-                ],
+                'css' => $css,
                 'js' => [
-                    '/media/' . $folder . '/' . $alias . '/skin/{skin}/js/main.js',
+                    '/media/{real}/{skin_path}/js/main.js',
                     '/media/shared/scripts/cliajax.js',
                 ],
             ],
