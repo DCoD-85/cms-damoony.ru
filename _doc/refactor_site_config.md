@@ -90,7 +90,7 @@
 | content | `content:store`, `content:remove`, `content:list`, `content:gc` | готово |
 | structure | `structure:check`, `structure:repair` | — |
 | trash/system | `trash:clear`, `system:scan`, `system:clean`, `backup:create`, `backup:restore` | готово |
-| db | `db:schema`, `db:methods`, `db:describe`, `db:call`, `db:mutate` — готово; `db:migrate`, `dataprovider:add-method` — в работе | частично |
+| db | `db:schema`, `db:methods`, `db:describe`, `db:call`, `db:mutate`, `db:migrate`, `dataprovider:add-method` | готово |
 | admin/user | `admin:passwd`, `admin:new`, `user:new` | — |
 | прочее | `api:reflect`, `migrate:page-rules`, `assembly:new`/`new`, `ai:edit-page` | — |
 | миграция | `site:config:migrate` | — |

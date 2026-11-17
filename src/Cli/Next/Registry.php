@@ -20,9 +20,11 @@ use Damoony\Cli\Next\Commands\ContentGcCommand;
 use Damoony\Cli\Next\Commands\ContentListCommand;
 use Damoony\Cli\Next\Commands\ContentRemoveCommand;
 use Damoony\Cli\Next\Commands\ContentStoreCommand;
+use Damoony\Cli\Next\Commands\DataproviderAddMethodCommand;
 use Damoony\Cli\Next\Commands\DbCallCommand;
 use Damoony\Cli\Next\Commands\DbDescribeCommand;
 use Damoony\Cli\Next\Commands\DbMethodsCommand;
+use Damoony\Cli\Next\Commands\DbMigrateCommand;
 use Damoony\Cli\Next\Commands\DbMutateCommand;
 use Damoony\Cli\Next\Commands\DbSchemaCommand;
 use Damoony\Cli\Next\Commands\DomainBindCommand;
@@ -170,6 +172,8 @@ final class Registry
         $registry->add(new DbDescribeCommand($paths, $site));
         $registry->add(new DbCallCommand($site, $db, $providerInvoker));
         $registry->add(new DbMutateCommand($site, $db, $providerInvoker));
+        $registry->add(new DbMigrateCommand($paths, $db));
+        $registry->add(new DataproviderAddMethodCommand($paths, $site));
 
         return $registry;
     }

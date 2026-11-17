@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Scenarios;
 
-use Damoony\Cli\Commands\DbMigrateCommand;
 use Damoony\Cli\Context;
+use Damoony\Cli\Next\Commands\DbMigrateCommand;
 use Damoony\Cli\Result;
 use Damoony\Core\Files\Paths;
 use Damoony\Data\Db\Connection;
@@ -63,7 +63,7 @@ final class DbMigrateScenarioTest extends TestCase
     public function testS19AppliesAllMigrations(): void
     {
         $conn = new Connection(['driver' => 'sqlite', 'path' => $this->dbPath]);
-        $cmd = new DbMigrateCommand(new Paths($this->root), connection: $conn);
+        $cmd = new DbMigrateCommand(new Paths($this->root), $conn);
 
         $r = new Result();
         $res = $cmd->run([], $this->ctx($r));
@@ -84,11 +84,11 @@ final class DbMigrateScenarioTest extends TestCase
         $conn = new Connection(['driver' => 'sqlite', 'path' => $this->dbPath]);
 
         $r1 = new Result();
-        new DbMigrateCommand(new Paths($this->root), connection: $conn)->run([], $this->ctx($r1));
+        new DbMigrateCommand(new Paths($this->root), $conn)->run([], $this->ctx($r1));
         self::assertCount(3, $r1->steps);
 
         $r2 = new Result();
-        new DbMigrateCommand(new Paths($this->root), connection: $conn)->run([], $this->ctx($r2));
+        new DbMigrateCommand(new Paths($this->root), $conn)->run([], $this->ctx($r2));
         self::assertCount(1, $r2->steps);
         self::assertSame('Нет новых миграций', $r2->steps[0]['message']);
     }
@@ -96,7 +96,7 @@ final class DbMigrateScenarioTest extends TestCase
     public function testS19MissingDir(): void
     {
         $conn = new Connection(['driver' => 'sqlite', 'path' => $this->dbPath]);
-        $cmd = new DbMigrateCommand(new Paths($this->root), connection: $conn);
+        $cmd = new DbMigrateCommand(new Paths($this->root), $conn);
 
         $r = new Result();
         $res = $cmd->run(['dir' => '/nonexistent'], $this->ctx($r));
