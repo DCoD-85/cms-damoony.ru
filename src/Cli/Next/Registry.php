@@ -6,6 +6,7 @@ namespace Damoony\Cli\Next;
 
 use Damoony\Cli\CommandRegistry;
 use Damoony\Cli\HelpCommand;
+use Damoony\Cli\Identity\IdentityStore;
 use Damoony\Cli\Next\Commands\AdminPasswdCommand;
 use Damoony\Cli\Next\Commands\AlliasListCommand;
 use Damoony\Cli\Next\Commands\AlliasNewCommand;
@@ -39,6 +40,7 @@ use Damoony\Cli\Next\Commands\FillerListCommand;
 use Damoony\Cli\Next\Commands\FillerNewCommand;
 use Damoony\Cli\Next\Commands\FillerToggleCommand;
 use Damoony\Cli\Next\Commands\FillerWriteCommand;
+use Damoony\Cli\Next\Commands\InitCommand;
 use Damoony\Cli\Next\Commands\LangAddCommand;
 use Damoony\Cli\Next\Commands\LangListCommand;
 use Damoony\Cli\Next\Commands\LangRemoveCommand;
@@ -122,6 +124,7 @@ final class Registry
 
         $registry = new CommandRegistry();
         $registry->add(new HelpCommand($registry));
+        $registry->add(new InitCommand(new IdentityStore($root), $root));
         $registry->add(new DomainListCommand($paths, $site));
         $registry->add(new DomainNewCommand($paths, $site, $writer, $scaffolder));
         $registry->add(new DomainBindCommand($site, $writer));
