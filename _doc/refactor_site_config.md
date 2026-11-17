@@ -62,24 +62,31 @@
 | `bin/aicli.php` (`AiStartHandler`) | падает явно; перевод — вместе с AI-контуром |
 | `bin/dbcli.php` (`SchemaGenerate*`) | падает явно; перевод — вместе с движком БД |
 
-## Backlog фазы 2
+## Фаза 2: движок
 
-| Файл | Что читает / проблема |
+**Закрыта** (2026-11-17): старых чтений конфига в `src/` не осталось.
+
+| Было | Стало |
 |---|---|
-| `src/Core/Domain/ConfigDomainResolver.php` | `domains_mirrors`, `domains_real`, `domains_stub`, `domains_scheme`, `alliases_real` |
-| `src/UI/Page/PageNamespace.php` | `domains_real` (эвристика namespace) |
-| `src/Core/Content/ContentResponder.php` | `domains_real` |
-| `src/Core/App/AppFactory.php` | загрузка `site.config` |
-| `src/Diagnostics/StructureChecker.php` | `domains_real`, `domains_scheme` |
-| `Cli\Next\Support\ProviderInvoker::providerConfig()` | собирает `Core\Config` для `AbstractProvider`; уходит после перевода провайдеров |
-| `src/Cli/Ai/Handler/AiStartHandler.php` | fail-fast вместо чтения `domains_real` |
-| `src/Cli/Db/Commands/SchemaGenerate*.php` | fail-fast через `ResolvesRealDomain` |
+| `ConfigDomainResolver` (`domains_real/mirrors`) | `SiteDomainResolver` на `SiteConfig` |
+| `PageNamespace::fromSite()` (эвристика) | `project->namespace` |
+| `ContentResponder::hostAllowed(..., array)` | `SiteConfig::projectByHost()` |
+| `StructureChecker` (Config) | `StructureChecker` (SiteConfig + `FillerState`) |
+| `structure:*` в старом CLI | `structure:check`/`structure:repair` в новом CLI |
+| `aicli` fail-fast | `SiteConfig::projectKeys()` |
+| `dbcli` (`ResolvesRealDomain` trait) | `ResolvesProject` + `project->folder/namespace/storagePrefix()` |
+| `ProviderInvoker::providerConfig()` (мост) | `AbstractProvider` принимает готовый префикс таблиц |
+| `src/Cli/Commands/*` (65 файлов) | каталог удалён целиком |
+
+`FrontController` дополнительно отдаёт страницам `site_config` (SiteConfig); `site` (Config)
+оставлен ради `alliases` в существующем контенте.
 
 ## Проверка в фазе 3 (не покрыто юнит-тестами)
 
-- Успешный вызов `db:call` / `db:mutate` на реальном провайдере и таблицах.
+- ~~Успешный вызов `db:call`~~ — проверено на живой БД (`db:call user::by_login`).
+- `db:mutate` на реальном провайдере (пишет `audit_log` + префикс таблиц).
 - `backup:create` / `backup:restore` на живой MySQL (в тестах — только отказы).
-- Живой прогон сайта после перевода движка.
+- Живой прогон сайта и админки после перевода движка (локально — сайт 200 OK).
 
 ## Решения (журнал)
 

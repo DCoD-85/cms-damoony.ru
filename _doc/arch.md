@@ -67,7 +67,7 @@
 - **Skin (`www/media/[domain]/[allias]/skin/[name]/`)** — git-tracked инфраструктура. Файлы: `css/main.css`, `js/main.js`, `img/`, `skin.json`. Управление через CLI (`skin:*`).
 
 ### 3.4. Приоритет схем и Базовые Meta
-- **Приоритет схем:** `SchemeLoader` для public-страницы ищет `{allias}.php` в `app/{domain}/.schemesglobal/`, затем `{schemeName}.php` (`schemeName` — из `domains_scheme[real]`, по умолчанию `www`). Для admin-страницы — `{role}/.schemesglobal/{allias}.php` → `{role}/.schemesglobal/admin.php` → `.admin/.schemesglobal/{allias}.php` → `.admin/.schemesglobal/admin.php` (role-level override → domain-level).
+- **Приоритет схем:** `SchemeLoader` для public-страницы ищет `{allias}.php` в `app/{folder}/.schemesglobal/`, затем `{scheme}.php` (`scheme` — из `domains_app[key].scheme`, по умолчанию `www`). Для admin-страницы — `{role}/.schemesglobal/{allias}.php` → `{role}/.schemesglobal/admin.php` → `.admin/.schemesglobal/{allias}.php` → `.admin/.schemesglobal/admin.php` (role-level override → domain-level).
 - **Базовые Meta (CSS/JS):** Схемы содержат массив `meta`. При сборке финального `Document` эти данные автоматически вливаются в `<head>`. Пути в `meta.css`/`meta.js` могут содержать токены `{skin}`, `{real}`, `{alias}` — `SchemeRenderer` подставляет активный skin и домен/алиас.
 
 ### 3.5. CSS и Layout (факты)
@@ -120,7 +120,7 @@
 2. **RegionContext::service():** возвращает `mixed`; нужен `@template` PHPDoc.
 3. ~~**assert():** в prod исчезает; заменить на явные `if (!instanceof) throw`.~~ Решено: заменено на `if (!instanceof) throw new \RuntimeException(...)` в `AppFactory.php` и `FrontController.php` (7 мест).
 4. ~~**Builder неполон:**~~ **Реверт:** методы `form`/`table`/`nav`/`select`/`textarea`/`label` добавлены в `74edf81`, но удалены в `0935c61`. Текущий `Builder` — 12 Element-фабрик (`el`, `elA`, `div`, `span`, `p`, `h`, `a`, `img`, `input`, `ul`, `li`, `button`). Композиты — в `src/UI/Components/*`.
-5. **domains_real[$domain] в save():** работает только при self-mapping.
+5. ~~**domains_real[$domain] в save():** работает только при self-mapping.~~ Решено: `domains_app[key].folder` и `.namespace` разделены, self-mapping не нужен.
 6. **Namespace `Damoony\UI\Algoritm`:** унаследован; P2 — переименовать в `Damoony\UI\Page`.
 7. **AINET:** только GET; нет парсинга HTML.
 8. **ArchitectAgent нестабилен:** разные имена страниц в разных запусках; P2 — whitelist slug-ов.

@@ -92,10 +92,10 @@ use Damoony\UI\Region\FillerState;
 use RuntimeException;
 
 /**
- * Реестр нового CLI-стека (схема domains_app).
+ * Реестр CLI (схема domains_app).
  *
- * Читает config/site.config. Старый формат (domains_real/domains_mirrors)
- * больше не поддерживается — файл называется site.config.old.
+ * Читает config/site.config. Старый формат не поддерживается:
+ * он переносится командой site:config:migrate.
  */
 final class Registry
 {
