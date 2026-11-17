@@ -94,7 +94,6 @@ use Damoony\Core\Settings\SiteConfigWriter;
 use Damoony\Data\Db\Connection;
 use Damoony\Diagnostics\StructureChecker;
 use Damoony\UI\Region\FillerState;
-use RuntimeException;
 
 /**
  * Реестр CLI (схема domains_app).
