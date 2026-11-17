@@ -93,9 +93,9 @@ final class AlliasRemoveCommand implements CommandInterface
         }
 
         // 3. Карантин для media
-        $mediaDir = $this->paths->media($domain, $name);
+        $mediaDir = $this->paths->media($realDomain, $name);
         if (is_dir($mediaDir)) {
-            $mediaTrashDir = $this->paths->mediaRoot() . '/.trash/' . $domain . '_' . $name . '_trash_' . time();
+            $mediaTrashDir = $this->paths->mediaRoot() . '/.trash/' . $realDomain . '_' . $name . '_trash_' . time();
             if (!is_dir(dirname($mediaTrashDir))) {
                 @mkdir(dirname($mediaTrashDir), 0o775, true);
             }

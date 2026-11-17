@@ -22,6 +22,7 @@ final class AlliasRemoveRealDomainTest extends TestCase
         $this->paths = new Paths($this->root);
 
         mkdir($this->paths->allias('real.ru', 'doc') . '/algoritm', 0o777, true);
+        mkdir($this->paths->media('real.ru', 'doc'), 0o777, true);
         mkdir($this->paths->allias('real.ru', 'www') . '/algoritm', 0o777, true);
 
         file_put_contents($this->root . '/config/site.config', json_encode([
@@ -62,6 +63,8 @@ final class AlliasRemoveRealDomainTest extends TestCase
         self::assertNotSame([], glob($this->paths->allias('real.ru', 'doc') . '_trash_*') ?: []);
         self::assertDirectoryDoesNotExist($this->root . '/app/mirror.ru');
         self::assertDirectoryExists($this->paths->allias('real.ru', 'www'));
+        self::assertDirectoryDoesNotExist($this->paths->media('real.ru', 'doc'));
+        self::assertNotSame([], glob($this->paths->mediaRoot() . '/.trash/real.ru_doc_trash_*') ?: []);
     }
 
     public function testSelfMappedRemovalStillWorks(): void
