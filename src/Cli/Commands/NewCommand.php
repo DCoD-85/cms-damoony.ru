@@ -68,6 +68,7 @@ final class NewCommand implements CommandInterface
         $namespace = $existing === null
             ? (string) ($args['namespace'] ?? str_replace(['.', '-'], '_', $domain))
             : $existing->namespace;
+        $force = isset($args['force']) && !in_array((string) $args['force'], ['0', 'false'], true);
 
         if (!is_dir($this->paths->root() . '/stubs/assemblies/' . $assembly)) {
             $r->error(sprintf('Сборка "%s" не найдена в stubs/assemblies/', $assembly));
@@ -82,10 +83,29 @@ final class NewCommand implements CommandInterface
                 'folder' => $folder,
                 'assembly' => $assembly,
                 'alias' => $alias,
+                'force' => $force,
                 'dry_run' => true,
             ];
 
             return $r;
+        }
+
+        if ($force) {
+            $appDir = $this->paths->domain($folder);
+            $mediaDir = $this->paths->media($folder, $alias);
+
+            if (is_dir($appDir) && !Fs::rmrf($appDir)) {
+                $r->error('Не удалось очистить app/' . $folder);
+
+                return $r;
+            }
+            if (is_dir($mediaDir) && !Fs::rmrf($mediaDir)) {
+                $r->error('Не удалось очистить media/' . $folder . '/' . $alias);
+
+                return $r;
+            }
+
+            $context->step('Старые файлы проекта удалены (--force)', true, $domain);
         }
 
         try {

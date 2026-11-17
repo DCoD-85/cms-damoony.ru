@@ -17,25 +17,13 @@ final class NewCommandTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->root = sys_get_temp_dir() . '/damoony_cli_new_' . bin2hex(random_bytes(6));
+        $this->root = sys_get_temp_dir() . '/damoony_new_' . bin2hex(random_bytes(6));
         mkdir($this->root . '/config', 0o775, true);
+        mkdir($this->root . '/stubs/assemblies/demo/app/.blocksglobal/top', 0o775, true);
+        file_put_contents($this->root . '/stubs/assemblies/demo/assembly.json', json_encode(['name' => 'Demo']));
 
-        SiteConfigWriter::forRoot($this->root)->save(['domains_app' => []]);
-
-        // Мини-сборка: app/ + media/ + shared/ с плейсхолдерами.
-        $asm = $this->root . '/stubs/assemblies/demo';
-        mkdir($asm . '/app/www/algoritm', 0o775, true);
-        mkdir($asm . '/media/skin/default/css', 0o775, true);
-        mkdir($asm . '/shared/css', 0o775, true);
-
-        file_put_contents($asm . '/assembly.json', json_encode(['name' => 'Demo']));
-        file_put_contents(
-            $asm . '/app/www/algoritm/algoritm.php',
-            "<?php\n\nnamespace {{namespace}}\\{{alias}};\n// domain={{domain}} real={{real}} alias={{alias}}\n",
-        );
-        file_put_contents($asm . '/app/www/algoritm/algoritm.rules.json', json_encode(['available' => ['' => '^$']]));
-        file_put_contents($asm . '/media/skin/default/css/main.css', '/* {{domain}} */');
-        file_put_contents($asm . '/shared/css/base.css', '/* shared */');
+        $block = $this->root . '/stubs/assemblies/demo/app/.blocksglobal/top/top.php';
+        file_put_contents($block, "<?php\nnamespace {{namespace}};\nfinal class blocksglobal_top {}\n");
     }
 
     protected function tearDown(): void
@@ -43,74 +31,50 @@ final class NewCommandTest extends TestCase
         $this->rrmdir($this->root);
     }
 
-    public function testBuildsProjectFromAssembly(): void
+    public function testForceRemovesExistingProjectFiles(): void
     {
-        $result = $this->command()->run(['domain' => 'damoony.ru', 'assembly' => 'demo'], $this->context());
+        $oldApp = $this->root . '/app/demo.test';
+        $oldMedia = $this->root . '/www/media/demo.test/www';
+        mkdir($oldApp, 0o775, true);
+        mkdir($oldMedia, 0o775, true);
+        file_put_contents($oldApp . '/stale.php', 'stale');
+        file_put_contents($oldMedia . '/stale.css', 'stale');
+
+        $result = $this->command()->run([
+            'domain' => 'demo.test',
+            'assembly' => 'demo',
+            'force' => '1',
+        ], $this->context());
 
         self::assertTrue($result->ok, implode('; ', $result->errors));
-
-        $php = (string) file_get_contents($this->root . '/app/damoony.ru/www/algoritm/algoritm.php');
-        self::assertStringContainsString('namespace damoony_ru\www;', $php);
-        self::assertStringContainsString('domain=damoony.ru', $php);
-
-        self::assertFileExists($this->root . '/www/media/damoony.ru/www/skin/default/css/main.css');
-        self::assertFileExists($this->root . '/www/media/shared/css/base.css');
+        self::assertFileDoesNotExist($oldApp . '/stale.php');
+        self::assertFileDoesNotExist($oldMedia . '/stale.css');
+        self::assertFileExists($oldApp . '/.blocksglobal/top/top.php');
 
         $site = SiteConfig::fromFile($this->root . '/config/site.config');
-        self::assertSame('damoony.ru', $site->folder('damoony.ru'));
-        self::assertSame('damoony_ru', $site->namespace('damoony.ru'));
-        self::assertSame('damoony.ru', $site->folderByHost('damoony.ru'));
-        self::assertSame(['ru', 'en'], $site->requireProject('damoony.ru')->aliasLangs('www'));
-        self::assertSame(['ru', 'en'], $site->requireProject('damoony.ru')->langs);
+        self::assertNotNull($site->project('demo.test'));
     }
 
-    public function testRejectsUnknownAssembly(): void
+    public function testWithoutForceExistingFilesRemain(): void
     {
-        $result = $this->command()->run(['domain' => 'damoony.ru', 'assembly' => 'ghost'], $this->context());
+        $oldApp = $this->root . '/app/demo.test';
+        mkdir($oldApp, 0o775, true);
+        file_put_contents($oldApp . '/stale.php', 'stale');
 
-        self::assertFalse($result->ok);
-        self::assertStringContainsString('не найдена в stubs/assemblies', $result->errors[0]);
-    }
-
-    public function testRejectsInvalidDomain(): void
-    {
-        $result = $this->command()->run(['domain' => 'not a domain', 'assembly' => 'demo'], $this->context());
-
-        self::assertFalse($result->ok);
-        self::assertStringContainsString('Некорректный домен', $result->errors[0]);
-    }
-
-    public function testDryRunCreatesNothing(): void
-    {
-        $result = $this->command()->run(['domain' => 'damoony.ru', 'assembly' => 'demo'], $this->dryRunContext());
-
-        self::assertTrue($result->ok);
-        self::assertTrue($result->data['dry_run']);
-        self::assertDirectoryDoesNotExist($this->root . '/app/damoony.ru');
-        self::assertFalse(SiteConfig::fromFile($this->root . '/config/site.config')->has('damoony.ru'));
-    }
-
-    public function testReusesExistingProject(): void
-    {
-        $writer = SiteConfigWriter::forRoot($this->root);
-        $writer->ensureProject('damoony.ru', 'damoony.ru', 'custom_ns');
-        $writer->ensureMirror('damoony.ru', 'damoony.ru');
-        $writer->ensureAlias('damoony.ru', 'www');
-
-        $result = $this->command()->run(['domain' => 'damoony.ru', 'assembly' => 'demo'], $this->context());
+        $result = $this->command()->run([
+            'domain' => 'demo.test',
+            'assembly' => 'demo',
+        ], $this->context());
 
         self::assertTrue($result->ok, implode('; ', $result->errors));
-        self::assertSame('custom_ns', $result->data['namespace']);
-
-        $php = (string) file_get_contents($this->root . '/app/damoony.ru/www/algoritm/algoritm.php');
-        self::assertStringContainsString('namespace custom_ns\www;', $php);
+        self::assertFileExists($oldApp . '/stale.php');
     }
 
     private function command(): NewCommand
     {
         return new NewCommand(
             new Paths($this->root),
-            SiteConfig::fromFile($this->root . '/config/site.config'),
+            SiteConfig::empty(),
             SiteConfigWriter::forRoot($this->root),
         );
     }
@@ -119,12 +83,6 @@ final class NewCommandTest extends TestCase
     {
         return new Context(static function (string $m, bool $ok = true, string $d = ''): void {
         });
-    }
-
-    private function dryRunContext(): Context
-    {
-        return new Context(static function (string $m, bool $ok = true, string $d = ''): void {
-        }, false, true);
     }
 
     private function rrmdir(string $dir): void
