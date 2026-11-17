@@ -1,0 +1,17 @@
+{
+    "site.auth.email": "E-mail",
+    "site.auth.error_csrf": "Session expired, reload the page",
+    "site.auth.password2": "Repeat password",
+    "site.auth.register_error_email": "Invalid e-mail",
+    "site.auth.register_error_exists": "Login is already taken",
+    "site.auth.register_error_login": "Login: 3–32 chars, a-z0-9_",
+    "site.auth.register_error_match": "Passwords do not match",
+    "site.auth.register_error_password": "Password must be at least 8 chars",
+    "site.auth.register_link": "Sign up",
+    "site.auth.register_link_login": "I already have an account",
+    "site.auth.register_submit": "Create account",
+    "site.auth.register_title": "Sign up",
+    "site.auth.success": "Signed in",
+    "site.menu.register": "Sign up",
+    "site.name": "Damoony"
+}

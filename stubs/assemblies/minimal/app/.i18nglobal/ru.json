@@ -1,0 +1,17 @@
+{
+    "site.auth.email": "E-mail",
+    "site.auth.error_csrf": "Сессия устарела, обновите страницу",
+    "site.auth.password2": "Повтор пароля",
+    "site.auth.register_error_email": "Некорректный e-mail",
+    "site.auth.register_error_exists": "Такой логин уже занят",
+    "site.auth.register_error_login": "Логин: 3–32 символа, a-z0-9_",
+    "site.auth.register_error_match": "Пароли не совпадают",
+    "site.auth.register_error_password": "Пароль минимум 8 символов",
+    "site.auth.register_link": "Регистрация",
+    "site.auth.register_link_login": "У меня есть аккаунт",
+    "site.auth.register_submit": "Зарегистрироваться",
+    "site.auth.register_title": "Регистрация",
+    "site.auth.success": "Вы вошли",
+    "site.menu.register": "Регистрация",
+    "site.name": "Damoony"
+}
