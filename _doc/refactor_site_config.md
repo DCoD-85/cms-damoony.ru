@@ -1,103 +1,92 @@
-# Рефакторинг site.config → domains_app (рабочий план)
+# Рефакторинг CLI на схему `domains_app` (рабочий план)
 
-Живой чек-лист. Обновляется по ходу; после завершения удаляется.
+Живой чек-лист. Обновляется по ходу; после завершения фазы 2 удаляется.
 
 ## Цель
 
 Единственная схема конфига — `domains_app` (`folder` + `namespace` + `mirrors` + алиасы).
-`domains_real`, `domains_mirrors`, `domains_mirrors_available`, `fillers` — удаляются полностью,
+`domains_real`, `domains_mirrors`, `domains_mirrors_available`, `fillers` — удалены полностью,
 без слоя совместимости.
-
-## Конвенция имён
-
-- Каноническое имя всегда у **нового**: `bin/cli.php`, `config/site.config`, `src/Cli/Commands`.
-- Старое получает постфикс `old`: `config/site.config.old`, `src/Cli/CommandsOld`.
-- Удаление старого — только когда проверка **полностью** перенесена на новое.
-
-## Правило переноса тестов
-
-Старый тест удаляется в том же коммите, где его аналог в новом стеке стал зелёным.
-Тесты ядра, не зависящие от конфига (`PageCompiler`, `BlockCompiler`, `UrlSanitizer`,
-`Fs`, `Paths`, `FileRouter`, `Translator`), не удаляются вообще.
 
 ## Фазы
 
-1. **CLI** (текущая) — все команды CLI на `domains_app`, старый CLI-код удалён.
-   Сайт/админка локально могут не работать.
+1. **CLI** — все команды на `domains_app`, старый CLI-код удалён. Сайт локально может не работать.
 2. **Движок** — `ConfigDomainResolver`, `PageNamespace`, `ContentResponder`, `AppFactory`,
    `StructureChecker` на `SiteConfig`; удаление старых чтений конфига.
-3. **Фиксация** — гейты + фиксация рабочего состояния.
-4. **Живой тест локально.**
-5. **Боевой** — миграция `site.config` на проде, деплой, проверка.
+3. **Фиксация** — гейты + живой прогон локально.
+4. **Боевой** — миграция `site.config` на проде, деплой, проверка.
 
-## Backlog фазы 2 (готовим сейчас, не рефакторим)
+## Конвенция имён
 
-Точки, которые остаются на старом формате до фазы 2. В фазе 1 их **не портируем**
-целиком — только явный fail вместо тихой деградации:
+Каноническое имя — у нового (`bin/cli.php`, `config/site.config`). Старое получает постфикс
+`old` и удаляется, когда проверка полностью перенесена на новое.
 
-| Файл | Что читает | Статус в фазе 1 |
-|---|---|---|
-| `src/Cli/Db/Commands/SchemaGenerateProviderCommand.php:70` | `domains_real` → namespace провайдера | fail-fast при схеме `domains_app` |
-| `src/Cli/Ai/Handler/AiStartHandler.php:43,48` | перебор `domains_real` | fail-fast при схеме `domains_app` |
-| `src/Diagnostics/StructureChecker.php:22,39` | `domains_real`, `domains_scheme` | `structure:*` переносятся в фазу 2 |
-| `src/Core/Domain/ConfigDomainResolver.php:28..114` | `domains_mirrors`, `domains_real`, `domains_stub`, `domains_scheme`, `alliases_real` | фаза 2 |
-| `src/Core/Content/ContentResponder.php:75` | `domains_real` | фаза 2 |
-| `src/UI/Page/PageNamespace.php` | `domains_real` | удаляется в фазе 2 |
-| `src/Core/App/AppFactory.php:32` | загрузка `site.config` | фаза 2 |
-| `Cli\Next\Support\ProviderInvoker::providerConfig()` | собирает `Core\Config` c `domains_aliases_storage` для конструктора `AbstractProvider` | фаза 2: провайдеры переходят на SiteConfig/prefix-объект |
+## Правило переноса тестов
 
-## Проверка в фазе 3 (не покрыто юнит-тестами)
+Старый тест удаляется в том же коммите, где его аналог в новом стеке зелёный.
+Тесты ядра (`PageCompiler`, `BlockCompiler`, `Fs`, `Paths`, `FileRouter`), не зависящие
+от схемы конфига, не удаляются.
 
-- Успешный вызов `db:call` / `db:mutate` на реальном провайдере и таблицах
-  (в тестах покрыты whitelist, --force, ошибки, `ProviderInvoker::bind`).
+## Статус фазы 1
 
-## Критерий готовности фазы 1 (swap-point)
-
-1. Все команды из `bin/cli.old.php` (65) реализованы в новом стеке — кроме тех,
-   что явно отнесены к backlog фазы 2 (`structure:check`, `structure:repair`).
-2. `site:config:migrate` переносит `site.config.old` → `site.config` без потерь.
-3. Паритет-прогон read-only команд на реальном `app/` совпадает.
-4. `phpunit` + `phpstan` + `php-cs-fixer` зелёные.
-5. `_doc/cli/README.md` + раздел конфига в `install.md` описывают новую схему.
-6. Только после этого: `src/Cli/Commands` → `src/Cli/CommandsOld`, `src/Cli/Next/*` → канонические пути,
-   затем удаление `*Old` и `config/site.config.old`.
-7. `aicli.php` и `dbcli.php` падают с внятной ошибкой (а не молча «нет доменов»).
-
-## Статус
+**Фаза 1 закрыта** (2026-11-17), кроме двух команд, отнесённых к фазе 2.
 
 ### Готово
 
-- `core-settings`: `SiteConfig`, `ProjectSettings`, `AliasSettings`, `SiteConfigWriter`, `UnknownProjectException`.
-- `core-settings`: поля `scheme`, `stub`, `default_alias`, `langs`, `aliases_storage`, `alliases[].stub`.
-- `cli-next`: `Quarantine`, `TargetResolver`, `ResolvedTarget`, `PageAddress`, `ContentRefs`, `Scaffolder`.
-- Команды: `help`, `domain:list|new|bind|unbind|remove`, `allias:list|new|remove`,
-  `page:list|new|read|write|toggle`, `scheme:list|new|copy|save|remove`,
-  `block:list|new|write|edit|remove`.
-- Инфраструктура: `SessionGuard` (проверка `.session.json` permissions).
-- Конфиг переключён: `config/site.config` (новая схема), `config/site.config.old` (артефакт).
-- `bin/cli.php` — новый стек; старый вход удалён.
+- **Конфиг:** `SiteConfig` / `ProjectSettings` / `AliasSettings` / `SiteConfigWriter`,
+  строгая валидация (уникальность хостов, `folder` без обхода, языки алиаса ⊆ проекта,
+  `prefix` таблиц), миграция `site:config:migrate` (проверена на реальном конфиге).
+- **Команды (64 + help):**
+  - проекты: `domain:list|new|bind|unbind|remove`, `allias:list|new|remove`, `new --assembly`;
+  - контент сайта: `page:*`, `block:*`, `filler:*`, `scheme:*`, `skin:*`, `lang:*`, `content:*`;
+  - сессии: `session:start|apply|discard|list`;
+  - данные: `db:schema|methods|describe|call|mutate|migrate`, `dataprovider:add-method`;
+  - обслуживание: `cli:init`, `admin:passwd`, `user:new`, `system:scan|clean`, `trash:clear`,
+    `backup:create|restore`, `api:reflect`, `migrate:page-rules`, `site:config:migrate`.
+- **Инфраструктура:** `TargetResolver`, `SessionGuard`, `SessionWorkspace`, `ContentLayout`,
+  `ContentRefs`, `Scaffolder`, `Quarantine`, `TrashScanner`, `BlockFileEditor`, `ProviderInvoker`,
+  `IdentityStore`, `CliLogger`.
+- **Идентификация:** `cli:init` → `var/cli.identity` (0600, проверка владельца на Unix);
+  без идентификатора CLI отказывает. Журнал запусков — `var/log/cli/YYYY-MM-DD.log` (JSONL,
+  редакция секретов).
+- **Документация:** `_doc/cli/` (7 файлов), `install.md` §3.2 приведён к новой схеме,
+  `_doc/cli.md` удалён, ссылки обновлены.
+- **Результат:** 800 тестов, `phpstan` — no errors, `php-cs-fixer` — 0.
 
-### Осталось (по группам)
+### Осталось в фазе 1 → перенесено в фазу 2
 
-| Группа | Команды | Статус |
-|---|---|---|
-| schemes | `scheme:new`, `scheme:copy`, `scheme:save`, `scheme:remove`, `scheme:list` | готово |
-| blocks | `block:new`, `block:write`, `block:edit`, `block:remove`, `block:list` | готово |
-| fillers | `filler:new`, `filler:write`, `filler:edit`, `filler:toggle`, `filler:list` | — |
-| skins | `skin:new`, `skin:edit`, `skin:remove`, `skin:list` | готово |
-| langs | `lang:list`, `lang:add`, `lang:remove`, `lang:repair`, `lang:sync` | готово |
-| sessions | `session:start`, `session:apply`, `session:discard`, `session:list` | готово |
-| content | `content:store`, `content:remove`, `content:list`, `content:gc` | готово |
-| structure | `structure:check`, `structure:repair` | — |
-| trash/system | `trash:clear`, `system:scan`, `system:clean`, `backup:create`, `backup:restore` | готово |
-| db | `db:schema`, `db:methods`, `db:describe`, `db:call`, `db:mutate`, `db:migrate`, `dataprovider:add-method` | готово |
-| admin/user | `admin:passwd`, `admin:new`, `user:new` | — |
-| прочее | `api:reflect`, `migrate:page-rules`, `assembly:new`/`new`, `ai:edit-page` | — |
-| миграция | `site:config:migrate` | — |
+| Что | Причина |
+|---|---|
+| `structure:check`, `structure:repair` | опираются на `Diagnostics\StructureChecker`, который читает старый конфиг |
+| удаление `src/Cli/Commands/*` (2 файла) | исчезнут вместе с `StructureChecker` |
+| `bin/aicli.php` (`AiStartHandler`) | падает явно; перевод — вместе с AI-контуром |
+| `bin/dbcli.php` (`SchemaGenerate*`) | падает явно; перевод — вместе с движком БД |
+
+## Backlog фазы 2
+
+| Файл | Что читает / проблема |
+|---|---|
+| `src/Core/Domain/ConfigDomainResolver.php` | `domains_mirrors`, `domains_real`, `domains_stub`, `domains_scheme`, `alliases_real` |
+| `src/UI/Page/PageNamespace.php` | `domains_real` (эвристика namespace) |
+| `src/Core/Content/ContentResponder.php` | `domains_real` |
+| `src/Core/App/AppFactory.php` | загрузка `site.config` |
+| `src/Diagnostics/StructureChecker.php` | `domains_real`, `domains_scheme` |
+| `Cli\Next\Support\ProviderInvoker::providerConfig()` | собирает `Core\Config` для `AbstractProvider`; уходит после перевода провайдеров |
+| `src/Cli/Ai/Handler/AiStartHandler.php` | fail-fast вместо чтения `domains_real` |
+| `src/Cli/Db/Commands/SchemaGenerate*.php` | fail-fast через `ResolvesRealDomain` |
+
+## Проверка в фазе 3 (не покрыто юнит-тестами)
+
+- Успешный вызов `db:call` / `db:mutate` на реальном провайдере и таблицах.
+- `backup:create` / `backup:restore` на живой MySQL (в тестах — только отказы).
+- Живой прогон сайта после перевода движка.
 
 ## Решения (журнал)
 
-- `admin` — не проект в `domains_app`; `app/.admin` остаётся инфраструктурой.
+- `admin` — не проект в `domains_app`; каркас админки ставится **сборкой** на уровне домена/алиаса.
+- `ai:edit-page` не переносится: она писала в production в обход контура `aicli`.
+- CLI идентифицирует владельца (`cli:init`), роли и токены — отдельный шаг.
 - Пустой `domains_app` допустим (свежая установка, удаление последнего проекта).
 - Настройки проекта живут в `domains_app[key]`; `fillers` в конфиге не существует.
 - URL картинки в JSON-блоке — атрибут `content` (не `url`).
+- Контент ключуется папкой проекта, а не входным хостом.
