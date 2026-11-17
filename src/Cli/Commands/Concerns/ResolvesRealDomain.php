@@ -27,11 +27,11 @@ trait ResolvesRealDomain
         }
 
         $site = Config::fromFile($siteFile)->all();
-        $real = (string) ($site['domains_real'][$domain] ?? '');
-        if ($real === '') {
+        $realDomain = (string) ($site['domains_mirrors'][$domain] ?? $domain);
+        if (!isset($site['domains_real'][$realDomain])) {
             throw new \RuntimeException('Домен не найден в site.config');
         }
 
-        return $real;
+        return $realDomain;
     }
 }

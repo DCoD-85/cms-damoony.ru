@@ -28,7 +28,7 @@ final class SchemeRemoveDryRunTest extends TestCase
         file_put_contents($schemesDir . '/test.editor.json', '{}');
 
         file_put_contents($this->root . '/config/site.config', json_encode([
-            'domains_real' => ['real.ru' => 'real_ru'],
+            'domains_real' => ['real.ru' => 'real_ru', 'mirror.ru' => 'real_ru'],
             'domains_mirrors' => ['real.ru' => 'real.ru', 'mirror.ru' => 'real.ru'],
         ]));
     }
