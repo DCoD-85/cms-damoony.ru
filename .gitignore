@@ -81,17 +81,17 @@ app/**/.*_trash_*
 # --- AI media (runtime) ---
 /www/media/*/*/
 !/www/media/*/skin/
-!/www/media/admin/
 !/www/media/shared/
 /www/media/.trash/
 
+# --- AI-сессии: копии проекта и media (runtime) ---
+/app/.sess_*/
+/app/_trash_sess_*/
+/www/media/.sess_*/
+/www/media/_trash_sess_*/
+
 # --- E2E test-domain (генерируется brain.py) ---
 /app/damoony3test.ru/
-
-# --- Локальный мусор CLI ---
-/bin/*.txt
-# --- Эфемерные E2E-домены, генерируемые brain.py (не трекаются) ---
-# Формат: <allias=agentN|siteNNNN>.<domain из whitelist>
 /www/media/agent*.damoony.ru/
 /www/media/agent*.damoony3.ru/
 /www/media/agent*.damoony3test.ru/
@@ -99,19 +99,8 @@ app/**/.*_trash_*
 /www/media/site[0-9]*.damoony3.ru/
 /www/media/site[0-9]*.damoony3test.ru/
 
-# --- AI edit sessions (runtime) ---
-/app/.sess_*/
-/app/_trash_sess_*/
-
-# Session media copies (runtime, AIUI preview)
-/www/media/.sess_*/
-/www/media/_trash_sess_*/
-
-# --- AIUI sessions (runtime) ---
-/app/.sess_*/
-/www/media/.sess_*/
-/app/_trash_sess_*/
-/www/media/_trash_sess_*/
+# --- Локальный мусор CLI ---
+/bin/*.txt
 _dev/api.stub.php
 www/stubs/assemblies/
 www/stubs/*.php
