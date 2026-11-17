@@ -9,6 +9,8 @@ use Damoony\Cli\HelpCommand;
 use Damoony\Cli\Next\Commands\AlliasListCommand;
 use Damoony\Cli\Next\Commands\AlliasNewCommand;
 use Damoony\Cli\Next\Commands\AlliasRemoveCommand;
+use Damoony\Cli\Next\Commands\BackupCreateCommand;
+use Damoony\Cli\Next\Commands\BackupRestoreCommand;
 use Damoony\Cli\Next\Commands\BlockEditCommand;
 use Damoony\Cli\Next\Commands\BlockListCommand;
 use Damoony\Cli\Next\Commands\BlockNewCommand;
@@ -51,6 +53,8 @@ use Damoony\Cli\Next\Commands\SkinEditCommand;
 use Damoony\Cli\Next\Commands\SkinListCommand;
 use Damoony\Cli\Next\Commands\SkinNewCommand;
 use Damoony\Cli\Next\Commands\SkinRemoveCommand;
+use Damoony\Cli\Next\Commands\SystemCleanCommand;
+use Damoony\Cli\Next\Commands\SystemScanCommand;
 use Damoony\Cli\Next\Commands\TrashClearCommand;
 use Damoony\Cli\Next\Scaffold\Scaffolder;
 use Damoony\Cli\Next\Support\BlockFileEditor;
@@ -149,6 +153,10 @@ final class Registry
         $registry->add(new ContentListCommand($paths, $resolver, $contentLayout));
         $registry->add(new ContentGcCommand($paths, $contentLayout));
         $registry->add(new TrashClearCommand($paths, $trashScanner));
+        $registry->add(new SystemScanCommand($paths));
+        $registry->add(new SystemCleanCommand($paths, $trashScanner));
+        $registry->add(new BackupCreateCommand($paths, $site));
+        $registry->add(new BackupRestoreCommand($paths, $site));
 
         return $registry;
     }
