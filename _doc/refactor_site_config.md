@@ -81,7 +81,7 @@
 | skins | `skin:new`, `skin:edit`, `skin:remove`, `skin:list` | готово |
 | langs | `lang:list`, `lang:add`, `lang:remove`, `lang:repair`, `lang:sync` | готово |
 | sessions | `session:start`, `session:apply`, `session:discard`, `session:list` | готово |
-| content | `content:store`, `content:remove`, `content:list`, `content:gc` | — |
+| content | `content:store`, `content:remove`, `content:list`, `content:gc` | готово |
 | structure | `structure:check`, `structure:repair` | — |
 | trash/system | `trash:clear`, `system:scan`, `system:clean`, `backup:create`, `backup:restore` | — |
 | db | `db:schema`, `db:methods`, `db:describe`, `db:call`, `db:mutate`, `db:migrate`, `dataprovider:add-method` | — |

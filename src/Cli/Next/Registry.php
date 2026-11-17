@@ -14,6 +14,10 @@ use Damoony\Cli\Next\Commands\BlockListCommand;
 use Damoony\Cli\Next\Commands\BlockNewCommand;
 use Damoony\Cli\Next\Commands\BlockRemoveCommand;
 use Damoony\Cli\Next\Commands\BlockWriteCommand;
+use Damoony\Cli\Next\Commands\ContentGcCommand;
+use Damoony\Cli\Next\Commands\ContentListCommand;
+use Damoony\Cli\Next\Commands\ContentRemoveCommand;
+use Damoony\Cli\Next\Commands\ContentStoreCommand;
 use Damoony\Cli\Next\Commands\DomainBindCommand;
 use Damoony\Cli\Next\Commands\DomainListCommand;
 use Damoony\Cli\Next\Commands\DomainNewCommand;
@@ -49,6 +53,7 @@ use Damoony\Cli\Next\Commands\SkinNewCommand;
 use Damoony\Cli\Next\Commands\SkinRemoveCommand;
 use Damoony\Cli\Next\Scaffold\Scaffolder;
 use Damoony\Cli\Next\Support\BlockFileEditor;
+use Damoony\Cli\Next\Support\ContentLayout;
 use Damoony\Cli\Next\Support\ContentRefs;
 use Damoony\Cli\Next\Support\Quarantine;
 use Damoony\Cli\Next\Support\SessionGuard;
@@ -91,6 +96,7 @@ final class Registry
         $sessionGuard = new SessionGuard($paths);
         $blockEditor = new BlockFileEditor($paths);
         $workspace = new SessionWorkspace($paths);
+        $contentLayout = new ContentLayout($paths);
 
         $registry = new CommandRegistry();
         $registry->add(new HelpCommand($registry));
@@ -135,6 +141,10 @@ final class Registry
         $registry->add(new SessionApplyCommand($paths, $site, $workspace));
         $registry->add(new SessionDiscardCommand($paths, $site, $workspace));
         $registry->add(new SessionListCommand($paths, $workspace));
+        $registry->add(new ContentStoreCommand($paths, $resolver, $contentLayout));
+        $registry->add(new ContentRemoveCommand($paths, $resolver, $contentLayout));
+        $registry->add(new ContentListCommand($paths, $resolver, $contentLayout));
+        $registry->add(new ContentGcCommand($paths, $contentLayout));
 
         return $registry;
     }
