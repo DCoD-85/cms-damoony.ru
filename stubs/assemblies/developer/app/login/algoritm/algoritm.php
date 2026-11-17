@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace {{namespace}}\login;
 
-use Damoony\UI\Algoritm\Page;
+use Damoony\UI\Page\Page;
 use Damoony\UI\Node;
 
 final class algoritm extends Page

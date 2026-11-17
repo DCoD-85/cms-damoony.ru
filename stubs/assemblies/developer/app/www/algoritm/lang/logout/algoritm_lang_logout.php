@@ -2,7 +2,7 @@
 declare(strict_types=1);
 namespace {{namespace}}\www;
 use Damoony\Core\Http\Response;
-use Damoony\UI\Algoritm\Page;
+use Damoony\UI\Page\Page;
 use Damoony\UI\Node;
 
 final class algoritm_lang_logout extends Page
