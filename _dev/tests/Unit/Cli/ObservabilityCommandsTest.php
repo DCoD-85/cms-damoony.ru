@@ -84,6 +84,36 @@ final class ObservabilityCommandsTest extends TestCase
         self::assertSame('fail', $result->data['status']);
     }
 
+    public function testAlertDedupSuppressesRepeat(): void
+    {
+        $config = ObservabilityConfig::fromArray(['alerts' => ['dedup_minutes' => 60]]);
+        $command = new AlertNotifyCommand(new Paths($this->root), $config);
+
+        $first = $command->run(['message' => 'same', 'level' => 'error', 'source' => 'cron'], $this->context());
+        $second = $command->run(['message' => 'same', 'level' => 'error', 'source' => 'cron'], $this->context());
+        $third = $command->run(['message' => 'other', 'level' => 'error', 'source' => 'cron'], $this->context());
+
+        self::assertFalse($first->data['deduped']);
+        self::assertTrue($second->data['deduped']);
+        self::assertSame([], $second->data['channels']);
+        self::assertFalse($third->data['deduped']);
+
+        $lines = file($this->root . '/var/alerts.log', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
+        self::assertCount(2, $lines);
+    }
+
+    public function testAlertDedupDisabledDeliversTwice(): void
+    {
+        $config = ObservabilityConfig::fromArray(['alerts' => ['dedup_minutes' => 0]]);
+        $command = new AlertNotifyCommand(new Paths($this->root), $config);
+
+        $command->run(['message' => 'same'], $this->context());
+        $result = $command->run(['message' => 'same'], $this->context());
+
+        self::assertFalse($result->data['deduped']);
+        $lines = file($this->root . '/var/alerts.log', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
+        self::assertCount(2, $lines);
+    }
     public function testAlertWritesToFile(): void
     {
         $result = $this->alert()->run(

@@ -8,8 +8,8 @@
 |---|---|---|
 | **P0** | request_id, ошибки с контекстом, `health:check`, `alert:notify` | **готово** |
 | **P1** | метрики запросов (1 строка/запрос), `metrics:snapshot`, `/metrics` по токену, ротация метрик | **готово** |
-| P2 | `cron:run`, пороговые алерты с дедупом, `report:daily` | не начато |
-| P2 | `cron:run`, пороговые алерты с дедупом, `report:daily` | не начато |
+| **P2** | `cron:run` с flock и журналом, дедуп алертов, `report:daily` | **готово** |
+| P3 | Loki/node_exporter/Sentry, страница в админке | по потребности |
 | P3 | Loki/node_exporter/Sentry, страница в админке | по потребности |
 
 ## P0 — что сделано
@@ -88,9 +88,40 @@ php bin/cli.php alert:notify --message="..." --level=critical --source=health
 Не сделано и осознанно отложено: `log:tail` (app-лог идёт в stderr — смотреть через journald/nginx),
 обёртка всех PDO-вызовов (считаются только провайдеры).
 
-## P2 — дальше
+## P2 — сделано
 
-`cron:run` с `flock` и журналом; `report:daily`; пороговые алерты (бэкап, диск, ошибки) с дедупом.
+### `cron:run`
+
+```bash
+php bin/cli.php cron:run [--task=backup] [--dry-run]
+```
+
+- задачи и их включённость — `maintenance.config.cron.tasks` (`cleanup`, `content_gc`, `backup`, `structure`, `health`);
+- `backup` выполняется по `cron.backup_domains` (пусто = все проекты);
+- `flock` в `cron.lock_dir/cron.lock`: второй запуск пропускается с warning;
+- журнал `var/log/cron-YYYY-MM-DD.jsonl` — по строке на задачу + итоговая `_cron`;
+- при провале задачи — `alert:notify` (level=error, source=cron).
+
+### Дедуп алертов
+
+`alert:notify` помнит хэш `level|source|message` в `var/state/alerts.json` и подавляет повторы
+в течение `alerts.dedup_minutes` (по умолчанию 60). `dedup_minutes: 0` — выключено.
+Записи старше 7 дней чистятся автоматически.
+
+### `report:daily`
+
+```bash
+php bin/cli.php report:daily [--since=24h] [--alert]
+```
+
+Сводка: запросы/5xx/p95, health, количество и возраст бэкапов, число алертов за период, диск.
+`--alert` отправляет сводку через `alert:notify` (level=info, а при health=fail — error).
+
+### Порог ошибок
+
+`alerts.errors_5xx_per_5m` зарезервирован как порог для алертов по ошибкам; сейчас cron
+алертит по факту провала задач (health/structure/backup), а не по счётчику — счётчик остаётся
+за `report:daily` и ручным `metrics:snapshot`.
 
 ## P3 — по потребности
 

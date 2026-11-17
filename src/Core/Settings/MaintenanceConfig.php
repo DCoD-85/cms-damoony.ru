@@ -16,6 +16,14 @@ use RuntimeException;
  */
 final class MaintenanceConfig
 {
+    private const DEFAULT_TASKS = [
+        'cleanup' => true,
+        'content_gc' => false,
+        'backup' => true,
+        'structure' => true,
+        'health' => true,
+    ];
+
     private const DEFAULTS = [
         'backups' => ['keep' => 7, 'parts' => ['app', 'content', 'media', 'db'], 'compress_media' => false],
         'trash' => ['ttl_days' => 0],
@@ -23,6 +31,11 @@ final class MaintenanceConfig
         'content' => ['gc_ttl_days' => 30, 'max_mb' => 25, 'min_side_px' => 200],
         'logs' => ['cli_keep_days' => 14],
         'ratelimit' => ['storage_keep_days' => 7],
+        'cron' => [
+            'lock_dir' => 'var/locks',
+            'tasks' => self::DEFAULT_TASKS,
+            'backup_domains' => [],
+        ],
     ];
 
     /** @param array<string, mixed> $data */
@@ -143,8 +156,78 @@ final class MaintenanceConfig
         return (int) $this->data['ratelimit']['storage_keep_days'];
     }
 
+    public function cronLockDir(): string
+    {
+        return (string) $this->data['cron']['lock_dir'];
+    }
+
+    /**
+     * @return array<string, bool>
+     */
+    public function cronTasks(): array
+    {
+        /** @var array<string, bool> $tasks */
+        $tasks = $this->data['cron']['tasks'];
+
+        return $tasks;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function cronBackupDomains(): array
+    {
+        /** @var list<string> $domains */
+        $domains = $this->data['cron']['backup_domains'];
+
+        return $domains;
+    }
+
     private static function validate(string $section, string $key, mixed $value, mixed $default): mixed
     {
+        if ($section === 'cron' && $key === 'lock_dir') {
+            if (!is_string($value) || trim($value) === '') {
+                throw new RuntimeException('maintenance.config: cron.lock_dir должен быть непустой строкой');
+            }
+
+            return $value;
+        }
+
+        if ($section === 'cron' && $key === 'tasks') {
+            if (!is_array($value)) {
+                throw new RuntimeException('maintenance.config: cron.tasks должен быть объектом');
+            }
+
+            $tasks = self::DEFAULT_TASKS;
+            foreach ($value as $name => $enabled) {
+                if (!is_string($name) || !array_key_exists($name, $tasks)) {
+                    throw new RuntimeException('maintenance.config: неизвестная cron-задача ' . (string) $name);
+                }
+                if (!is_bool($enabled)) {
+                    throw new RuntimeException('maintenance.config: cron.tasks.' . $name . ' должен быть boolean');
+                }
+                $tasks[$name] = $enabled;
+            }
+
+            return $tasks;
+        }
+
+        if ($section === 'cron' && $key === 'backup_domains') {
+            if (!is_array($value)) {
+                throw new RuntimeException('maintenance.config: cron.backup_domains должен быть массивом');
+            }
+
+            $domains = [];
+            foreach ($value as $domain) {
+                if (!is_string($domain) || trim($domain) === '') {
+                    throw new RuntimeException('maintenance.config: cron.backup_domains — только непустые строки');
+                }
+                $domains[] = $domain;
+            }
+
+            return $domains;
+        }
+
         if (is_bool($default)) {
             if (!is_bool($value)) {
                 throw new RuntimeException("maintenance.config: {$section}.{$key} должен быть boolean");

@@ -20,5 +20,16 @@
     },
     "ratelimit": {
         "storage_keep_days": 7
+    },
+    "cron": {
+        "lock_dir": "var/locks",
+        "tasks": {
+            "cleanup": true,
+            "content_gc": false,
+            "backup": true,
+            "structure": true,
+            "health": true
+        },
+        "backup_domains": []
     }
 }

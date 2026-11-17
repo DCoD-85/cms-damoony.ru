@@ -85,6 +85,8 @@ db.sql          дамп БД (только при --only с db)
 | `health:check [--json]` | готовность: конфиг, БД, `var/`, диск, свежесть бэкапа (exit 1 при fail) |
 | `alert:notify --message=… [--level=] [--source=]` | алерт в `var/alerts.log` и webhook |
 | `metrics:snapshot [--since=24h] [--format=text\|prometheus]` | сводка по `var/metrics/requests-*.jsonl` |
+| `cron:run [--task=] [--dry-run]` | обслуживание по `maintenance.config.cron` (flock, журнал, алерты) |
+| `report:daily [--since=24h] [--alert]` | суточная сводка: запросы, health, бэкапы, диск |
 
 ## 7. Работа без БД
 

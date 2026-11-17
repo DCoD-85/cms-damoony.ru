@@ -11,6 +11,8 @@
     },
     "alerts": {
         "file": "var/alerts.log",
-        "webhook": null
+        "webhook": null,
+        "dedup_minutes": 60,
+        "errors_5xx_per_5m": 10
     }
 }

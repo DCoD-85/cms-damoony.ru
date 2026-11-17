@@ -20,6 +20,25 @@ final class ObservabilityConfigTest extends TestCase
         self::assertNull($config->alertsWebhook());
     }
 
+    public function testDedupAndThresholdDefaults(): void
+    {
+        $config = ObservabilityConfig::defaults();
+
+        self::assertSame(60, $config->alertsDedupMinutes());
+        self::assertSame(10, $config->errorsThreshold5xx());
+        self::assertTrue($config->metricsEnabled());
+        self::assertSame(1, $config->metricsSample());
+        self::assertSame(14, $config->metricsKeepDays());
+        self::assertSame('', $config->metricsToken());
+    }
+
+    public function testRejectsNegativeDedup(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('dedup_minutes');
+        ObservabilityConfig::fromArray(['alerts' => ['dedup_minutes' => -5]]);
+    }
+
     public function testOverrides(): void
     {
         $config = ObservabilityConfig::fromArray([

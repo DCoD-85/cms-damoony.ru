@@ -26,6 +26,44 @@ final class MaintenanceConfigTest extends TestCase
         self::assertSame(7, $config->ratelimitKeepDays());
     }
 
+    public function testCronDefaults(): void
+    {
+        $config = MaintenanceConfig::defaults();
+
+        self::assertSame('var/locks', $config->cronLockDir());
+        self::assertSame([], $config->cronBackupDomains());
+        self::assertSame([
+            'cleanup' => true,
+            'content_gc' => false,
+            'backup' => true,
+            'structure' => true,
+            'health' => true,
+        ], $config->cronTasks());
+    }
+
+    public function testCronOverrides(): void
+    {
+        $config = MaintenanceConfig::fromArray([
+            'cron' => [
+                'lock_dir' => 'var/my-locks',
+                'tasks' => ['content_gc' => true, 'backup' => false],
+                'backup_domains' => ['damoony.ru'],
+            ],
+        ]);
+
+        self::assertSame('var/my-locks', $config->cronLockDir());
+        self::assertTrue($config->cronTasks()['content_gc']);
+        self::assertFalse($config->cronTasks()['backup']);
+        self::assertTrue($config->cronTasks()['cleanup']);
+        self::assertSame(['damoony.ru'], $config->cronBackupDomains());
+    }
+
+    public function testCronRejectsUnknownTask(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('неизвестная cron-задача');
+        MaintenanceConfig::fromArray(['cron' => ['tasks' => ['ghost' => true]]]);
+    }
     public function testOverridesMergeWithDefaults(): void
     {
         $config = MaintenanceConfig::fromArray([

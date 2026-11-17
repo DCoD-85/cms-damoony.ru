@@ -15,7 +15,12 @@
   "sessions": { "ttl_hours": 24 },
   "content": { "gc_ttl_days": 30, "max_mb": 25, "min_side_px": 200 },
   "logs": { "cli_keep_days": 14 },
-  "ratelimit": { "storage_keep_days": 7 }
+  "ratelimit": { "storage_keep_days": 7 },
+  "cron": {
+    "lock_dir": "var/locks",
+    "tasks": { "cleanup": true, "content_gc": false, "backup": true, "structure": true, "health": true },
+    "backup_domains": []
+  }
 }
 ```
 
@@ -31,6 +36,9 @@
 | `content.min_side_px` | `200` | `content:store` — минимальная сторона изображения |
 | `logs.cli_keep_days` | `14` | `system:clean --force` — ротация `var/log/cli/*.log` |
 | `ratelimit.storage_keep_days` | `7` | `system:clean --force` — чистка `var/ratelimit`, `var/form-ratelimit` |
+| `cron.lock_dir` | `var/locks` | `cron:run` — flock, второй запуск пропускается |
+| `cron.tasks` | см. пример | какие задачи выполняет `cron:run` |
+| `cron.backup_domains` | `[]` | домены для `backup`-задачи; пусто — все проекты |
 
 Правила:
 
@@ -56,4 +64,4 @@ php bin/cli.php system:clean --force
 - `ainet.cache_ttl_days` — живёт в `ainet.config`;
 - `db.*` — в `engine.config`;
 - хосты, языки, алиасы — в `site.config` (`domains_app`);
-- расписания и `cron:run` — не реализованы; крон настраивается снаружи, команды готовы к вызову.
+- расписание (cron-выражения) — не в конфиге: расписание задаётся во внешнем crontab, `cron:run` только выполняет задачи.

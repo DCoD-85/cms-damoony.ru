@@ -10,15 +10,19 @@ use RuntimeException;
 /**
  * Настройки наблюдаемости (config/observability.config).
  *
- * Необязательный файл: нет — работают дефолты. Чего здесь нет — метрик и каналов
- * алертов кроме webhook/файла (фаза P1/P2).
+ * Необязательный файл: нет — работают дефолты. Битый JSON/типы — явная ошибка.
  */
 final class ObservabilityConfig
 {
     private const DEFAULTS = [
         'health' => ['backup_max_age_days' => 2, 'disk_min_free_mb' => 1024],
         'metrics' => ['enabled' => true, 'sample' => 1, 'keep_days' => 14, 'token' => ''],
-        'alerts' => ['file' => 'var/alerts.log', 'webhook' => null],
+        'alerts' => [
+            'file' => 'var/alerts.log',
+            'webhook' => null,
+            'dedup_minutes' => 60,
+            'errors_5xx_per_5m' => 10,
+        ],
     ];
 
     /** @param array<string, mixed> $data */
@@ -74,10 +78,7 @@ final class ObservabilityConfig
             if (!array_key_exists($key, $health)) {
                 continue;
             }
-            if (!is_int($health[$key]) || $health[$key] < 0) {
-                throw new RuntimeException("observability.config: health.{$key} должен быть целым ≥ 0");
-            }
-            $merged['health'][$key] = $health[$key];
+            $merged['health'][$key] = self::intOrFail($health[$key], 0, 'health.' . $key);
         }
 
         $metrics = $data['metrics'] ?? [];
@@ -90,14 +91,11 @@ final class ObservabilityConfig
             }
             $merged['metrics']['enabled'] = $metrics['enabled'];
         }
-        foreach (['sample' => 1, 'keep_days' => 0] as $key => $min) {
-            if (!array_key_exists($key, $metrics)) {
-                continue;
-            }
-            if (!is_int($metrics[$key]) || $metrics[$key] < $min) {
-                throw new RuntimeException('observability.config: metrics.' . $key . ' должен быть целым ≥ ' . $min);
-            }
-            $merged['metrics'][$key] = $metrics[$key];
+        if (array_key_exists('sample', $metrics)) {
+            $merged['metrics']['sample'] = self::intOrFail($metrics['sample'], 1, 'metrics.sample');
+        }
+        if (array_key_exists('keep_days', $metrics)) {
+            $merged['metrics']['keep_days'] = self::intOrFail($metrics['keep_days'], 0, 'metrics.keep_days');
         }
         if (array_key_exists('token', $metrics)) {
             if (!is_string($metrics['token'])) {
@@ -122,6 +120,16 @@ final class ObservabilityConfig
                 throw new RuntimeException('observability.config: alerts.webhook должен быть http(s)-URL или null');
             }
             $merged['alerts']['webhook'] = $webhook;
+        }
+        if (array_key_exists('dedup_minutes', $alerts)) {
+            $merged['alerts']['dedup_minutes'] = self::intOrFail($alerts['dedup_minutes'], 0, 'alerts.dedup_minutes');
+        }
+        if (array_key_exists('errors_5xx_per_5m', $alerts)) {
+            $merged['alerts']['errors_5xx_per_5m'] = self::intOrFail(
+                $alerts['errors_5xx_per_5m'],
+                0,
+                'alerts.errors_5xx_per_5m',
+            );
         }
 
         return new self($merged);
@@ -167,5 +175,24 @@ final class ObservabilityConfig
         $webhook = $this->data['alerts']['webhook'];
 
         return is_string($webhook) && $webhook !== '' ? $webhook : null;
+    }
+
+    public function alertsDedupMinutes(): int
+    {
+        return (int) $this->data['alerts']['dedup_minutes'];
+    }
+
+    public function errorsThreshold5xx(): int
+    {
+        return (int) $this->data['alerts']['errors_5xx_per_5m'];
+    }
+
+    private static function intOrFail(mixed $value, int $min, string $field): int
+    {
+        if (!is_int($value) || $value < $min) {
+            throw new RuntimeException("observability.config: {$field} должен быть целым ≥ {$min}");
+        }
+
+        return $value;
     }
 }

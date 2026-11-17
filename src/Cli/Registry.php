@@ -21,6 +21,7 @@ use Damoony\Cli\Commands\ContentGcCommand;
 use Damoony\Cli\Commands\ContentListCommand;
 use Damoony\Cli\Commands\ContentRemoveCommand;
 use Damoony\Cli\Commands\ContentStoreCommand;
+use Damoony\Cli\Commands\CronRunCommand;
 use Damoony\Cli\Commands\DataproviderAddMethodCommand;
 use Damoony\Cli\Commands\DbCallCommand;
 use Damoony\Cli\Commands\DbDescribeCommand;
@@ -54,6 +55,7 @@ use Damoony\Cli\Commands\PageNewCommand;
 use Damoony\Cli\Commands\PageReadCommand;
 use Damoony\Cli\Commands\PageToggleCommand;
 use Damoony\Cli\Commands\PageWriteCommand;
+use Damoony\Cli\Commands\ReportDailyCommand;
 use Damoony\Cli\Commands\SchemeCopyCommand;
 use Damoony\Cli\Commands\SchemeListCommand;
 use Damoony\Cli\Commands\SchemeNewCommand;
@@ -194,8 +196,10 @@ final class Registry
         $registry->add(new DbMigrateCommand($paths, $db));
         $registry->add(new DataproviderAddMethodCommand($paths, $site));
         $registry->add(new AdminPasswdCommand($paths));
-        $registry->add(new HealthCheckCommand($paths, $db, $observability));
-        $registry->add(new AlertNotifyCommand($paths, $observability));
+        $healthCommand = new HealthCheckCommand($paths, $db, $observability);
+        $alertCommand = new AlertNotifyCommand($paths, $observability);
+        $registry->add($healthCommand);
+        $registry->add($alertCommand);
         $registry->add(new MetricsSnapshotCommand($paths));
         $registry->add(new UserNewCommand($db));
         $registry->add(new ApiReflectCommand($paths));
@@ -204,6 +208,17 @@ final class Registry
         $registry->add(new MigrateSiteConfigCommand($paths, $writer));
         $registry->add(new StructureCheckCommand($structureChecker, $site));
         $registry->add(new StructureRepairCommand($paths, $site));
+
+        $cronTasks = [
+            'cleanup' => new SystemCleanCommand($paths, $trashScanner, $maintenance, $observability),
+            'content_gc' => new ContentGcCommand($paths, $contentLayout, $maintenance),
+            'backup' => new BackupCreateCommand($paths, $site, $maintenance),
+            'structure' => new StructureCheckCommand($structureChecker, $site),
+            'health' => $healthCommand,
+        ];
+
+        $registry->add(new CronRunCommand($paths, $site, $maintenance, $alertCommand, $cronTasks));
+        $registry->add(new ReportDailyCommand($paths, $observability, $healthCommand, $alertCommand));
 
         return $registry;
     }

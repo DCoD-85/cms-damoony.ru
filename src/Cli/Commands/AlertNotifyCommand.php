@@ -57,6 +57,14 @@ final class AlertNotifyCommand implements CommandInterface
             'message' => $message,
         ];
 
+        $key = sha1($level . '|' . $source . '|' . $message);
+        if ($this->isDuplicate($key)) {
+            $r->data = ['alert' => $alert, 'channels' => [], 'deduped' => true];
+            $context->step('Алерт подавлен дедупом (' . $this->observability->alertsDedupMinutes() . ' мин.)', true, $level);
+
+            return $r;
+        }
+
         $channels = [];
 
         $file = $this->alertFile();
@@ -88,10 +96,78 @@ final class AlertNotifyCommand implements CommandInterface
             return $r;
         }
 
-        $r->data = ['alert' => $alert, 'channels' => $channels];
+        $this->remember($key);
+
+        $r->data = ['alert' => $alert, 'channels' => $channels, 'deduped' => false];
         $context->step('Алерт доставлен: ' . implode(', ', $channels), true, $level);
 
         return $r;
+    }
+
+    private function isDuplicate(string $key): bool
+    {
+        $minutes = $this->observability->alertsDedupMinutes();
+        if ($minutes <= 0) {
+            return false;
+        }
+
+        $state = $this->readState();
+        $last = $state[$key] ?? null;
+        if (!is_int($last)) {
+            return false;
+        }
+
+        return (time() - $last) < $minutes * 60;
+    }
+
+    private function remember(string $key): void
+    {
+        $state = $this->readState();
+        $threshold = time() - 7 * 86400;
+        foreach ($state as $k => $ts) {
+            if ($ts < $threshold) {
+                unset($state[$k]);
+            }
+        }
+        $state[$key] = time();
+
+        try {
+            Fs::mkdir(dirname($this->stateFile()));
+            Fs::writeAtomic(
+                $this->stateFile(),
+                (string) json_encode($state, JSON_UNESCAPED_SLASHES) . "\n",
+            );
+        } catch (Throwable) {
+            // состояние дедупа не критично
+        }
+    }
+
+    /** @return array<string, int> */
+    private function readState(): array
+    {
+        $file = $this->stateFile();
+        if (!is_file($file)) {
+            return [];
+        }
+
+        $decoded = json_decode((string) file_get_contents($file), true);
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        $state = [];
+        foreach ($decoded as $k => $ts) {
+            if (is_string($k) && is_int($ts)) {
+                $state[$k] = $ts;
+            }
+        }
+
+        return $state;
+    }
+
+    private function stateFile(): string
+    {
+        return $this->paths->root() . '/var/state/alerts.json';
     }
 
     private function alertFile(): string
