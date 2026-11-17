@@ -9,6 +9,11 @@ use Damoony\Cli\HelpCommand;
 use Damoony\Cli\Next\Commands\AlliasListCommand;
 use Damoony\Cli\Next\Commands\AlliasNewCommand;
 use Damoony\Cli\Next\Commands\AlliasRemoveCommand;
+use Damoony\Cli\Next\Commands\BlockEditCommand;
+use Damoony\Cli\Next\Commands\BlockListCommand;
+use Damoony\Cli\Next\Commands\BlockNewCommand;
+use Damoony\Cli\Next\Commands\BlockRemoveCommand;
+use Damoony\Cli\Next\Commands\BlockWriteCommand;
 use Damoony\Cli\Next\Commands\DomainBindCommand;
 use Damoony\Cli\Next\Commands\DomainListCommand;
 use Damoony\Cli\Next\Commands\DomainNewCommand;
@@ -85,6 +90,11 @@ final class Registry
         $registry->add(new SchemeCopyCommand($paths, $site));
         $registry->add(new SchemeSaveCommand($paths, $site, $sessionGuard));
         $registry->add(new SchemeRemoveCommand($paths, $site, $quarantine));
+        $registry->add(new BlockListCommand($paths, $site));
+        $registry->add(new BlockNewCommand($paths, $site));
+        $registry->add(new BlockWriteCommand($paths, $site, $sessionGuard));
+        $registry->add(new BlockEditCommand($paths, $site));
+        $registry->add(new BlockRemoveCommand($paths, $site, $quarantine));
 
         return $registry;
     }

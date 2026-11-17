@@ -38,7 +38,8 @@
 - `core-settings`: поля `scheme`, `stub`, `default_alias`, `langs`, `aliases_storage`, `alliases[].stub`.
 - `cli-next`: `Quarantine`, `TargetResolver`, `ResolvedTarget`, `PageAddress`, `ContentRefs`, `Scaffolder`.
 - Команды: `help`, `domain:list|new|bind|unbind|remove`, `allias:list|new|remove`,
-  `page:list|new|read|write|toggle`, `scheme:list|new|copy|save|remove`.
+  `page:list|new|read|write|toggle`, `scheme:list|new|copy|save|remove`,
+  `block:list|new|write|edit|remove`.
 - Инфраструктура: `SessionGuard` (проверка `.session.json` permissions).
 - Конфиг переключён: `config/site.config` (новая схема), `config/site.config.old` (артефакт).
 - `bin/cli.php` — новый стек; старый вход удалён.
@@ -48,7 +49,7 @@
 | Группа | Команды | Статус |
 |---|---|---|
 | schemes | `scheme:new`, `scheme:copy`, `scheme:save`, `scheme:remove`, `scheme:list` | готово |
-| blocks | `block:new`, `block:write`, `block:edit`, `block:remove`, `block:list` | — |
+| blocks | `block:new`, `block:write`, `block:edit`, `block:remove`, `block:list` | готово |
 | fillers | `filler:new`, `filler:write`, `filler:edit`, `filler:toggle`, `filler:list` | — |
 | skins | `skin:new`, `skin:edit`, `skin:remove`, `skin:list` | — |
 | langs | `lang:list`, `lang:add`, `lang:remove`, `lang:repair`, `lang:sync` | — |
