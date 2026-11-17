@@ -10,6 +10,7 @@ use Damoony\Cli\Next\Commands\AdminPasswdCommand;
 use Damoony\Cli\Next\Commands\AlliasListCommand;
 use Damoony\Cli\Next\Commands\AlliasNewCommand;
 use Damoony\Cli\Next\Commands\AlliasRemoveCommand;
+use Damoony\Cli\Next\Commands\ApiReflectCommand;
 use Damoony\Cli\Next\Commands\BackupCreateCommand;
 use Damoony\Cli\Next\Commands\BackupRestoreCommand;
 use Damoony\Cli\Next\Commands\BlockEditCommand;
@@ -43,6 +44,7 @@ use Damoony\Cli\Next\Commands\LangListCommand;
 use Damoony\Cli\Next\Commands\LangRemoveCommand;
 use Damoony\Cli\Next\Commands\LangRepairCommand;
 use Damoony\Cli\Next\Commands\LangSyncCommand;
+use Damoony\Cli\Next\Commands\MigratePageRulesCommand;
 use Damoony\Cli\Next\Commands\PageListCommand;
 use Damoony\Cli\Next\Commands\PageNewCommand;
 use Damoony\Cli\Next\Commands\PageReadCommand;
@@ -178,6 +180,8 @@ final class Registry
         $registry->add(new DataproviderAddMethodCommand($paths, $site));
         $registry->add(new AdminPasswdCommand($paths));
         $registry->add(new UserNewCommand($db));
+        $registry->add(new ApiReflectCommand($paths));
+        $registry->add(new MigratePageRulesCommand($paths, $site));
 
         return $registry;
     }
