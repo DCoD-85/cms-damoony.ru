@@ -20,6 +20,9 @@ use Damoony\Cli\Next\Commands\ContentGcCommand;
 use Damoony\Cli\Next\Commands\ContentListCommand;
 use Damoony\Cli\Next\Commands\ContentRemoveCommand;
 use Damoony\Cli\Next\Commands\ContentStoreCommand;
+use Damoony\Cli\Next\Commands\DbDescribeCommand;
+use Damoony\Cli\Next\Commands\DbMethodsCommand;
+use Damoony\Cli\Next\Commands\DbSchemaCommand;
 use Damoony\Cli\Next\Commands\DomainBindCommand;
 use Damoony\Cli\Next\Commands\DomainListCommand;
 use Damoony\Cli\Next\Commands\DomainNewCommand;
@@ -68,6 +71,7 @@ use Damoony\Cli\Next\Support\TrashScanner;
 use Damoony\Core\Files\Paths;
 use Damoony\Core\Settings\SiteConfig;
 use Damoony\Core\Settings\SiteConfigWriter;
+use Damoony\Data\Db\Connection;
 use RuntimeException;
 
 /**
@@ -83,7 +87,7 @@ final class Registry
         return $root . '/config/site.config';
     }
 
-    public static function build(string $root): CommandRegistry
+    public static function build(string $root, ?Connection $db = null): CommandRegistry
     {
         $configPath = self::configPath($root);
         if (!is_file($configPath)) {
@@ -157,6 +161,9 @@ final class Registry
         $registry->add(new SystemCleanCommand($paths, $trashScanner));
         $registry->add(new BackupCreateCommand($paths, $site));
         $registry->add(new BackupRestoreCommand($paths, $site));
+        $registry->add(new DbSchemaCommand($site, $db));
+        $registry->add(new DbMethodsCommand($paths, $site));
+        $registry->add(new DbDescribeCommand($paths, $site));
 
         return $registry;
     }
