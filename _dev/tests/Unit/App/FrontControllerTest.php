@@ -8,8 +8,8 @@ use Damoony\Core\App\FrontController;
 use Damoony\Core\App\PageHandler;
 use Damoony\Core\Config;
 use Damoony\Core\Container;
-use Damoony\Core\Domain\ConfigDomainResolver;
 use Damoony\Core\Domain\DomainResolverInterface;
+use Damoony\Core\Domain\SiteDomainResolver;
 use Damoony\Core\Files\Paths;
 use Damoony\Core\Http\Request;
 use Damoony\Core\Routing\FileRouter;
@@ -18,6 +18,7 @@ use Damoony\Core\Routing\RulesMatcher;
 use Damoony\Core\Security\Csrf;
 use Damoony\Core\Session\SessionInterface;
 use Damoony\Data\Auth\AuthInterface;
+use Damoony\Tests\Support\SiteConfigFixture;
 use PHPUnit\Framework\TestCase;
 
 final class FrontControllerTest extends TestCase
@@ -57,13 +58,8 @@ final class FrontControllerTest extends TestCase
 
     private function fc(bool $available): FrontController
     {
-        $site = Config::fromArray([
-            'language' => 'ru-ru',
-            'domains_real' => ['example.ru' => 'example_ru'],
-            'domains_mirrors' => ['example.ru' => 'example.ru'],
-            'domains_mirrors_available' => ['example.ru' => $available],
-            'alliases' => ['example.ru' => ['www' => ['available' => true, 'langs' => ['ru']]]],
-        ]);
+        $siteConfig = SiteConfigFixture::single('example.ru', available: $available);
+        $site = Config::fromArray(SiteConfigFixture::legacyView('example.ru'));
 
         $c = new Container();
         $c->setInstance(Paths::class, new Paths($this->root));
@@ -119,7 +115,7 @@ final class FrontControllerTest extends TestCase
             }
         });
 
-        $c->setInstance(DomainResolverInterface::class, new ConfigDomainResolver($site, new \Damoony\Core\Files\Paths($this->root)));
+        $c->setInstance(DomainResolverInterface::class, new SiteDomainResolver($siteConfig, new \Damoony\Core\Files\Paths($this->root)));
         $c->setInstance(RouterInterface::class, new FileRouter($this->root, new RulesMatcher()));
 
         $resolver = $c->get(DomainResolverInterface::class);

@@ -8,13 +8,14 @@ use Damoony\Core\App\FrontController;
 use Damoony\Core\App\PageHandler;
 use Damoony\Core\Config;
 use Damoony\Core\Container;
-use Damoony\Core\Domain\ConfigDomainResolver;
 use Damoony\Core\Domain\DomainResolverInterface;
+use Damoony\Core\Domain\SiteDomainResolver;
 use Damoony\Core\Files\Paths;
 use Damoony\Core\Http\Request;
 use Damoony\Core\Routing\FileRouter;
 use Damoony\Core\Routing\RouterInterface;
 use Damoony\Core\Routing\RulesMatcher;
+use Damoony\Tests\Support\SiteConfigFixture;
 use PHPUnit\Framework\TestCase;
 
 final class IndexRenderScenarioTest extends TestCase
@@ -112,16 +113,8 @@ final class IndexRenderScenarioTest extends TestCase
 
     private function fc(): FrontController
     {
-        $site = Config::fromArray([
-            'language' => 'ru', // ИЗМЕНЕНО: ru вместо ru-ru
-            'domains_real' => [
-                'example.ru' => 'example_ru',
-            ],
-            'domains_mirrors' => ['damoony.test' => 'damoony.test'],
-            'domains_mirrors_available' => ['damoony.test' => true],
-            'alliases' => ['damoony.test' => ['www' => 'www']],
-            'domains_namespace' => ['damoony.test' => 'damoony_test'],
-        ]);
+        $siteConfig = SiteConfigFixture::single('damoony.test');
+        $site = Config::fromArray(SiteConfigFixture::legacyView('damoony.test'));
         $c = new Container();
         $c->setInstance(Paths::class, new Paths($this->root));
         $c->setInstance('site', $site);
@@ -175,7 +168,7 @@ final class IndexRenderScenarioTest extends TestCase
             }
         });
 
-        $c->setInstance(DomainResolverInterface::class, new ConfigDomainResolver($site, new \Damoony\Core\Files\Paths(sys_get_temp_dir())));
+        $c->setInstance(DomainResolverInterface::class, new SiteDomainResolver($siteConfig, new \Damoony\Core\Files\Paths(sys_get_temp_dir())));
         $c->setInstance(RouterInterface::class, new FileRouter($this->root, new RulesMatcher()));
 
         $resolver = $c->get(DomainResolverInterface::class);

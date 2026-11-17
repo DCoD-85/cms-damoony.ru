@@ -8,12 +8,13 @@ use Damoony\Core\App\FrontController;
 use Damoony\Core\App\PageHandler;
 use Damoony\Core\Config;
 use Damoony\Core\Container;
-use Damoony\Core\Domain\ConfigDomainResolver;
 use Damoony\Core\Domain\DomainResolverInterface;
+use Damoony\Core\Domain\SiteDomainResolver;
 use Damoony\Core\Http\Request;
 use Damoony\Core\Routing\FileRouter;
 use Damoony\Core\Routing\RouterInterface;
 use Damoony\Core\Routing\RulesMatcher;
+use Damoony\Tests\Support\SiteConfigFixture;
 use PHPUnit\Framework\TestCase;
 
 final class NotFoundScenarioTest extends TestCase
@@ -53,18 +54,10 @@ final class NotFoundScenarioTest extends TestCase
 
     private function fc(): FrontController
     {
-        $site = Config::fromArray([
-            'language' => 'ru-ru',
-            'domains_real' => [
-                'example.ru' => 'example_ru',
-            ],
-            'domains_mirrors' => ['example.ru' => 'example.ru'],
-            'domains_mirrors_available' => ['example.ru' => true],
-            'alliases' => ['example.ru' => ['www' => 'www']],
-            'domains_namespace' => ['example.ru' => 'example'],
-        ]);
+        $siteConfig = SiteConfigFixture::single('example.ru');
+        $site = Config::fromArray(SiteConfigFixture::legacyView('example.ru'));
         $c = new Container();
-        $c->setInstance(DomainResolverInterface::class, new ConfigDomainResolver($site, new \Damoony\Core\Files\Paths(sys_get_temp_dir())));
+        $c->setInstance(DomainResolverInterface::class, new SiteDomainResolver($siteConfig, new \Damoony\Core\Files\Paths(sys_get_temp_dir())));
         $c->setInstance(RouterInterface::class, new FileRouter($this->root, new RulesMatcher()));
         $resolver = $c->get(DomainResolverInterface::class);
         assert($resolver instanceof DomainResolverInterface);

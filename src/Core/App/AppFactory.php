@@ -7,8 +7,8 @@ namespace Damoony\Core\App;
 use Damoony\Core\Application;
 use Damoony\Core\Config;
 use Damoony\Core\Container;
-use Damoony\Core\Domain\ConfigDomainResolver;
 use Damoony\Core\Domain\DomainResolverInterface;
+use Damoony\Core\Domain\SiteDomainResolver;
 use Damoony\Core\Env;
 use Damoony\Core\Error\ErrorPage;
 use Damoony\Core\ErrorHandler;
@@ -19,6 +19,7 @@ use Damoony\Core\Routing\RouterInterface;
 use Damoony\Core\Routing\RulesMatcher;
 use Damoony\Core\Security\Csrf;
 use Damoony\Core\Session\NativeSession;
+use Damoony\Core\Settings\SiteConfig;
 use Damoony\Data\Auth\AuthInterface;
 use Damoony\Data\Auth\DbAuth;
 use Damoony\Data\Db\Connection;
@@ -33,6 +34,9 @@ final class AppFactory
 
         $config = is_file($configFile) ? Config::fromFile($configFile) : Config::fromArray([]);
         $site = is_file($siteFile) ? Config::fromFile($siteFile) : Config::fromArray([]);
+        $siteConfig = is_file($siteFile)
+            ? SiteConfig::fromFile($siteFile)
+            : SiteConfig::fromArray(['domains_app' => [], 'alliases' => []]);
 
         $container = new Container();
         $logger = new Logger(null, $env);
@@ -41,6 +45,7 @@ final class AppFactory
         $container->setInstance(Env::class, $env);
         $container->setInstance(Config::class, $config);
         $container->setInstance('site', $site);
+        $container->setInstance(SiteConfig::class, $siteConfig);
 
         $adminConfigFile = $root . '/config/admin.config';
         $adminConfig = is_file($adminConfigFile) ? Config::fromFile($adminConfigFile) : Config::fromArray([]);
@@ -81,7 +86,10 @@ final class AppFactory
 
         $container->set(
             DomainResolverInterface::class,
-            fn (): DomainResolverInterface => new ConfigDomainResolver($site, $container->get(Paths::class)),
+            fn (): DomainResolverInterface => new SiteDomainResolver(
+                $siteConfig,
+                $container->get(Paths::class),
+            ),
         );
 
         $container->set(
