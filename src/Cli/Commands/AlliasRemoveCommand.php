@@ -109,8 +109,8 @@ final class AlliasRemoveCommand implements CommandInterface
         // 4. Полная очистка конфига (все ключи по домену+алиасу)
         $removed = 0;
         foreach (self::ALLIAS_KEYS as $key) {
-            if (isset($site[$key][$domain][$name])) {
-                unset($site[$key][$domain][$name]);
+            if (isset($site[$key][$realDomain][$name])) {
+                unset($site[$key][$realDomain][$name]);
                 $removed++;
             }
         }
