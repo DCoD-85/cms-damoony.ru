@@ -219,6 +219,75 @@ final class NextBlockCommandsTest extends TestCase
         self::assertCount(1, $result->warnings);
     }
 
+    public function testEditRejectsOversizeRules(): void
+    {
+        $rules = json_encode(['enabled' => true, 'type' => 'mixed', 'padding' => str_repeat('x', 70000)]);
+
+        $result = $this->blockEdit()->run(
+            ['domain' => 'damoony.ru', 'name' => 'center', 'file' => 'rules', 'content' => (string) $rules],
+            $this->context(),
+        );
+
+        self::assertFalse($result->ok);
+        self::assertStringContainsString('Файл больше', $result->errors[0]);
+    }
+
+    public function testEditAcceptsContentBase64(): void
+    {
+        $rules = base64_encode(json_encode(['enabled' => true, 'type' => 'script']));
+
+        $result = $this->blockEdit()->run(
+            ['domain' => 'damoony.ru', 'name' => 'center', 'file' => 'rules', 'content_b64' => $rules],
+            $this->context(),
+        );
+
+        self::assertTrue($result->ok, implode('; ', $result->errors));
+
+        $saved = json_decode((string) file_get_contents($this->blocksDir . '/center/center.rules.json'), true);
+        self::assertIsArray($saved);
+        self::assertSame('script', $saved['type']);
+    }
+
+    public function testEditAllowsPhpWhenEnginePermits(): void
+    {
+        file_put_contents(
+            $this->root . '/config/engine.config',
+            json_encode(['security' => ['allow_php_blocks' => true]]),
+        );
+
+        $code = "<?php\n\ndeclare(strict_types=1);\n\nnamespace damoony_ru;\n\nfinal class blocksglobal_center\n{\n}\n";
+
+        $result = $this->blockEdit()->run(
+            [
+                'domain' => 'damoony.ru',
+                'name' => 'center',
+                'file' => 'code',
+                'content' => $code,
+                'allow_php' => '1',
+            ],
+            $this->context(),
+        );
+
+        self::assertTrue($result->ok, implode('; ', $result->errors));
+        self::assertStringContainsString('blocksglobal_center', (string) file_get_contents($this->blocksDir . '/center/center.php'));
+    }
+
+    public function testEditCodeRequiresAllowPhpFlag(): void
+    {
+        file_put_contents(
+            $this->root . '/config/engine.config',
+            json_encode(['security' => ['allow_php_blocks' => true]]),
+        );
+
+        $result = $this->blockEdit()->run(
+            ['domain' => 'damoony.ru', 'name' => 'center', 'file' => 'code', 'content' => "<?php\n"],
+            $this->context(),
+        );
+
+        self::assertFalse($result->ok);
+        self::assertStringContainsString('--allow_php', $result->errors[0]);
+    }
+
     private function site(): SiteConfig
     {
         return SiteConfig::fromFile($this->root . '/config/site.config');

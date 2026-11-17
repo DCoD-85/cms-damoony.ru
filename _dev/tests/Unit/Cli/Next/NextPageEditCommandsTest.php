@@ -229,6 +229,72 @@ final class NextPageEditCommandsTest extends TestCase
         self::assertSame(['about'], $meta['page_refs']);
     }
 
+    public function testWriteRemovesStaleRefs(): void
+    {
+        $contentDir = $this->root . '/content/damoony.ru/www/general';
+        mkdir($contentDir, 0o775, true);
+        $metaFile = $contentDir . '/' . self::HASH . '.meta.json';
+        file_put_contents($metaFile, json_encode(['page_refs' => []]));
+
+        $url = '/content/damoony.ru/www/general/' . self::HASH . '.png';
+        $withImage = json_encode([['type' => 'img', 'content' => $url, 'alt' => 'Pic']]);
+
+        $first = $this->pageWrite()->run(
+            ['domain' => 'damoony.ru', 'allias' => 'www', 'name' => 'about', 'json' => (string) $withImage],
+            $this->context(),
+        );
+        self::assertTrue($first->ok, implode('; ', $first->errors));
+        self::assertSame(1, $first->data['content_refs_updated']);
+
+        $second = $this->pageWrite()->run(
+            ['domain' => 'damoony.ru', 'allias' => 'www', 'name' => 'about', 'json' => '[{"type":"p","content":"без картинки"}]'],
+            $this->context(),
+        );
+
+        self::assertTrue($second->ok, implode('; ', $second->errors));
+        self::assertSame(1, $second->data['content_refs_updated']);
+
+        $meta = json_decode((string) file_get_contents($metaFile), true);
+        self::assertIsArray($meta);
+        self::assertSame([], $meta['page_refs']);
+    }
+
+    public function testWriteIgnoresForeignDomainRefs(): void
+    {
+        $foreignMeta = $this->root . '/content/other.ru/www/general/' . self::HASH . '.meta.json';
+        mkdir(dirname($foreignMeta), 0o775, true);
+        file_put_contents($foreignMeta, json_encode(['page_refs' => []]));
+
+        $url = '/content/other.ru/www/general/' . self::HASH . '.png';
+        $json = json_encode([['type' => 'img', 'content' => $url, 'alt' => 'X']]);
+
+        $result = $this->pageWrite()->run(
+            ['domain' => 'damoony.ru', 'allias' => 'www', 'name' => 'about', 'json' => (string) $json],
+            $this->context(),
+        );
+
+        self::assertTrue($result->ok, implode('; ', $result->errors));
+        self::assertSame(0, $result->data['content_refs_updated']);
+
+        $meta = json_decode((string) file_get_contents($foreignMeta), true);
+        self::assertIsArray($meta);
+        self::assertSame([], $meta['page_refs']);
+    }
+
+    public function testWriteToleratesMissingMeta(): void
+    {
+        $url = '/content/damoony.ru/www/general/ffffffffffffffff.png';
+        $json = json_encode([['type' => 'img', 'content' => $url, 'alt' => 'X']]);
+
+        $result = $this->pageWrite()->run(
+            ['domain' => 'damoony.ru', 'allias' => 'www', 'name' => 'about', 'json' => (string) $json],
+            $this->context(),
+        );
+
+        self::assertTrue($result->ok, implode('; ', $result->errors));
+        self::assertSame(0, $result->data['content_refs_updated']);
+    }
+
     private function resolver(): TargetResolver
     {
         return new TargetResolver(SiteConfig::fromFile(Registry::configPath($this->root)));
