@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Damoony\UI\Algoritm;
+namespace Damoony\UI\Page;
 
 use Damoony\Core\Http\Response;
 use Damoony\UI\Node;

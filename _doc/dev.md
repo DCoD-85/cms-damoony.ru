@@ -23,7 +23,7 @@
 
 ## 2. Написание страниц (Page)
 
-Базовый класс — `Damoony\UI\Algoritm\Page`. Даёт:
+Базовый класс — `Damoony\UI\Page\Page`. Даёт:
 - `$this->context` — `Meta`, `Domain`, `Request`, `service($name)`.
 - `$this->regions()` — `RegionRegistry` (слоты схемы).
 - `$this->setContent(string $slot, Node $node)` — наполнить слот.
@@ -41,7 +41,7 @@ declare(strict_types=1);
 
 namespace example_ru\www;
 
-use Damoony\UI\Algoritm\Page;
+use Damoony\UI\Page\Page;
 use Damoony\UI\Builder;
 use Damoony\UI\Node;
 
@@ -207,7 +207,7 @@ if (!$this->isAuthenticated()) {
 
 **Admin-страница:** наследуйте `AdminPage`:
 ```php
-use Damoony\UI\Algoritm\AdminPage;
+use Damoony\UI\Page\AdminPage;
 
 final class algoritm_about extends AdminPage
 {

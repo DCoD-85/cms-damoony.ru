@@ -100,7 +100,7 @@ final class PageHandlerTest extends TestCase
         $this->writePage('ph_about', 'algoritm_ph_about', <<<'PHP'
             <?php
             namespace example\www;
-            use Damoony\UI\Algoritm\Page;
+            use Damoony\UI\Page\Page;
             use Damoony\Core\Http\Response;
             use Damoony\UI\Builder;
             use Damoony\UI\Node;
@@ -123,7 +123,7 @@ final class PageHandlerTest extends TestCase
         $this->writePage('ph_api', 'algoritm_ph_api', <<<'PHP'
             <?php
             namespace example\www;
-            use Damoony\UI\Algoritm\Page;
+            use Damoony\UI\Page\Page;
             use Damoony\Core\Http\Response;
             use Damoony\UI\Node;
             final class algoritm_ph_api extends Page {
@@ -152,7 +152,7 @@ final class PageHandlerTest extends TestCase
         $this->writePage('ph_nul', 'algoritm_ph_nul', <<<'PHP'
             <?php
             namespace example\www;
-            use Damoony\UI\Algoritm\Page;
+            use Damoony\UI\Page\Page;
             final class algoritm_ph_nul extends Page {
             }
             PHP);
@@ -168,7 +168,7 @@ final class PageHandlerTest extends TestCase
             <?php
             declare(strict_types=1);
             namespace example\www;
-            use Damoony\UI\Algoritm\Page;
+            use Damoony\UI\Page\Page;
             use Damoony\UI\Node;
             use Damoony\Core\Http\Response;
             final class algoritm_test extends Page {

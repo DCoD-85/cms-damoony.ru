@@ -15,7 +15,7 @@ final class PageCompiler
     {
         $code = "<?php\n\ndeclare(strict_types=1);\n\n";
         $code .= "namespace {$namespace};\n\n";
-        $code .= "use Damoony\\UI\\Algoritm\\Page;\n";
+        $code .= "use Damoony\\UI\\Page\\Page;\n";
         $code .= "use Damoony\\UI\\Builder;\n";
         $code .= "use Damoony\\UI\\Node;\n";
         $code .= "use Damoony\\UI\\Components\\Button;\n";

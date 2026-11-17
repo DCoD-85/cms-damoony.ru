@@ -47,7 +47,7 @@
 |---|---|---|
 | **Core** | `src/Core/` | Ядро: HTTP (Kernel, Request, Response), Роутинг (FileRouter), Домены, Файлы, Безопасность (Csrf), Сессии, I18n. |
 | **Cli** | `src/Cli/` | Команды: `Commands/` (для `bin/cli.php`), `Support/`, `Scaffold/`, `Identity/` (идентификатор+журнал), `Db/` (для `bin/dbcli.php`), `Ai/` (для `bin/aicli.php`). |
-| **UI** | `src/UI/` | Всё для отрисовки: `Element`, `Builder`, `Page`/`Algoritm` (`AdminPage` — контракт админки), `Region`, `Scheme`, `Skin`, `Components`, `Url`. |
+| **UI** | `src/UI/` | Всё для отрисовки: `Element`, `Builder`, `Page` (`PageInterface`, `AdminPage` — контракт админки), `Region`, `Scheme`, `Skin`, `Components`, `Url`. |
 | **Data** | `src/Data/` | Работа с БД: `Connection`, `DataProvider` (префикс таблиц передаётся снаружи), `Auth`. |
 | **Diagnostics** | `src/Diagnostics/` | `StructureChecker` — целостность структуры (error/warning). Используется в `structure:check`. |
 | **Ai** | `src/Ai/` | Мультиагентный Orchestrator, ModelRouter, Roles, Navigator (заморожен: `aicli` отдаёт только read-команды). |
@@ -119,7 +119,7 @@
 3. ~~**assert():** в prod исчезает; заменить на явные `if (!instanceof) throw`.~~ Решено: заменено на `if (!instanceof) throw new \RuntimeException(...)` в `AppFactory.php` и `FrontController.php` (7 мест).
 4. ~~**Builder неполон:**~~ **Реверт:** методы `form`/`table`/`nav`/`select`/`textarea`/`label` добавлены в `74edf81`, но удалены в `0935c61`. Текущий `Builder` — 12 Element-фабрик (`el`, `elA`, `div`, `span`, `p`, `h`, `a`, `img`, `input`, `ul`, `li`, `button`). Композиты — в `src/UI/Components/*`.
 5. ~~**domains_real[$domain] в save():** работает только при self-mapping.~~ Решено: `domains_app[key].folder` и `.namespace` разделены, self-mapping не нужен.
-6. **Namespace `Damoony\UI\Algoritm`:** унаследован; P2 — переименовать в `Damoony\UI\Page`.
+6. ~~**Namespace `Damoony\UI\Algoritm`:**~~ Решено: `Damoony\UI\Page` (`Page`, `PageInterface`, `AdminPage`); `algoritm/` остался только именем папки страниц.
 7. **AINET:** только GET; нет парсинга HTML.
 8. **ArchitectAgent нестабилен:** разные имена страниц в разных запусках; P2 — whitelist slug-ов.
 9. **Coder wrap в `section`:** `build_progress.blocks` считает только верхний уровень.

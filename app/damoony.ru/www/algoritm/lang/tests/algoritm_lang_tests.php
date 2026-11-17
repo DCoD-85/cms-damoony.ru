@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace damoony_ru\www;
-use Damoony\UI\Algoritm\Page;
+use Damoony\UI\Page\Page;
 use Damoony\UI\Builder;
 use Damoony\UI\Node;
 

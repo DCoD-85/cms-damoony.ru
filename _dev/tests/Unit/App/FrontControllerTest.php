@@ -146,7 +146,7 @@ final class FrontControllerTest extends TestCase
         file_put_contents($base . '/fc_home/algoritm_fc_home.php', <<<'PHP'
             <?php
             namespace example_ru\www;
-            use Damoony\UI\Algoritm\Page;
+            use Damoony\UI\Page\Page;
             use Damoony\Core\Http\Response;
             use Damoony\UI\Builder;
             use Damoony\UI\Node;

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Support\Demo;
 
-use Damoony\UI\Algoritm\Page;
 use Damoony\UI\Builder;
 use Damoony\UI\Node;
+use Damoony\UI\Page\Page;
 
 class HomePage extends Page
 {

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Damoony\Tests\Support\Demo;
 
 use Damoony\Core\Http\Response;
-use Damoony\UI\Algoritm\Page;
 use Damoony\UI\Builder;
 use Damoony\UI\Node;
+use Damoony\UI\Page\Page;
 use Damoony\UI\Response\AjaxStruct;
 use Damoony\UI\Response\MinStruct;
 
