@@ -10,6 +10,7 @@ use Damoony\Cli\Result;
 use Damoony\Cli\Support\TrashScanner;
 use Damoony\Core\Files\Fs;
 use Damoony\Core\Files\Paths;
+use Damoony\Core\Settings\MaintenanceConfig;
 
 /**
  * trash:clear для схемы domains_app: очистка всех видов карантина.
@@ -21,6 +22,7 @@ final class TrashClearCommand implements CommandInterface
     public function __construct(
         private readonly Paths $paths,
         private readonly TrashScanner $scanner,
+        private readonly MaintenanceConfig $maintenance,
     ) {
     }
 
@@ -41,7 +43,7 @@ final class TrashClearCommand implements CommandInterface
         $force = isset($args['force']);
         $domainFilter = (string) ($args['domain'] ?? '');
 
-        $olderSeconds = 0;
+        $olderSeconds = $this->maintenance->trashTtlDays() * 86400;
         $olderSpec = (string) ($args['older'] ?? '');
         if ($olderSpec !== '') {
             $olderSeconds = $this->parseAge($olderSpec);

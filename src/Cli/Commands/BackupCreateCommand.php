@@ -11,6 +11,7 @@ use Damoony\Cli\Support\BackupArchive;
 use Damoony\Core\Config;
 use Damoony\Core\Files\Fs;
 use Damoony\Core\Files\Paths;
+use Damoony\Core\Settings\MaintenanceConfig;
 use Damoony\Core\Settings\SiteConfig;
 use RuntimeException;
 use ZipArchive;
@@ -26,6 +27,7 @@ final class BackupCreateCommand implements CommandInterface
     public function __construct(
         private readonly Paths $paths,
         private readonly SiteConfig $site,
+        private readonly MaintenanceConfig $maintenance,
     ) {
     }
 
@@ -67,7 +69,10 @@ final class BackupCreateCommand implements CommandInterface
         $archive = new BackupArchive();
 
         try {
-            $parts = $archive->parseParts((string) ($args['only'] ?? ''));
+            $onlyRaw = (string) ($args['only'] ?? '');
+            $parts = $onlyRaw !== ''
+                ? $archive->parseParts($onlyRaw)
+                : $archive->parseParts(implode(',', $this->maintenance->backupParts()));
         } catch (RuntimeException $e) {
             $r->error($e->getMessage());
 
@@ -108,7 +113,7 @@ final class BackupCreateCommand implements CommandInterface
                 'project' => $project->key,
                 'folder' => $project->folder,
                 'db' => ['driver' => (string) ($db['driver'] ?? ''), 'dbname' => (string) ($db['dbname'] ?? '')],
-            ]);
+            ], $this->maintenance->compressMedia());
         } catch (RuntimeException $e) {
             Fs::rmrf($tmpDir);
             @unlink($zipPath);
@@ -121,7 +126,9 @@ final class BackupCreateCommand implements CommandInterface
         $r->file(Fs::rel($zipPath, $root));
 
         $pruned = [];
-        $keep = (int) ($args['keep'] ?? 0);
+        $keep = isset($args['keep'])
+            ? (int) $args['keep']
+            : $this->maintenance->backupsKeep();
         if ($keep > 0) {
             $pruned = $archive->prune($backupDir, 'backup_' . $project->folder . '_', $keep);
             foreach ($pruned as $path) {

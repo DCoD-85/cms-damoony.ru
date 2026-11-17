@@ -113,9 +113,17 @@ cp config/ainet.config.example config/ainet.config
 ```
 Содержит whitelist URL-доменов (для `fetch`, `image:search`), лимиты, таймауты. Если файл отсутствует или битый — `net:*` команды вернут ошибку (fail-safe).
 
+### 3.6. `config/maintenance.config` — обслуживание и retention (необязательно)
+```bash
+cp config/maintenance.config.example config/maintenance.config
+```
+Дефолты для `backup:create`, `trash:clear`, `content:gc`, `content:store`, `system:clean`:
+сколько бэкапов хранить, состав архива, TTL карантина, лимиты контента, ротация логов.
+Файла нет → встроенные значения. Полная таблица — `_doc/maintenance.md`.
+
 ---
 
-### 3.6. Модели AI (config/models.config)
+### 3.7. Модели AI (config/models.config)
 
 Используется ModelRouter (см. _doc/orchestrator.md §3.3). Маппинг role -> model для внутреннего AI-контура AIUI.
 

@@ -12,6 +12,7 @@ use Damoony\Cli\Support\TargetResolver;
 use Damoony\Core\Config;
 use Damoony\Core\Files\Fs;
 use Damoony\Core\Files\Paths;
+use Damoony\Core\Settings\MaintenanceConfig;
 use RuntimeException;
 
 /**
@@ -29,12 +30,11 @@ final class ContentStoreCommand implements CommandInterface
         'image/svg+xml' => 'svg',
     ];
 
-    private const MAX_SIZE = 26214400;
-
     public function __construct(
         private readonly Paths $paths,
         private readonly TargetResolver $resolver,
         private readonly ContentLayout $layout,
+        private readonly MaintenanceConfig $maintenance,
     ) {
     }
 
@@ -96,8 +96,8 @@ final class ContentStoreCommand implements CommandInterface
             return $r;
         }
 
-        if (strlen($bytes) > self::MAX_SIZE) {
-            $r->error('Файл больше ' . self::MAX_SIZE . ' байт');
+        if (strlen($bytes) > $this->maintenance->contentMaxBytes()) {
+            $r->error('Файл больше ' . $this->maintenance->contentMaxBytes() . ' байт');
 
             return $r;
         }
@@ -116,8 +116,9 @@ final class ContentStoreCommand implements CommandInterface
             $width = (int) $info[0];
             $height = (int) $info[1];
 
-            if ($width < 200 || $height < 200) {
-                $r->error(sprintf('Изображение слишком маленькое (%dx%d, минимум 200x200)', $width, $height));
+            $minSide = $this->maintenance->contentMinSidePx();
+            if ($width < $minSide || $height < $minSide) {
+                $r->error(sprintf('Изображение слишком маленькое (%dx%d, минимум %dx%d)', $width, $height, $minSide, $minSide));
 
                 return $r;
             }

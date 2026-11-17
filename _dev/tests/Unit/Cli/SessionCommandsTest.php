@@ -11,6 +11,7 @@ use Damoony\Cli\Commands\SessionStartCommand;
 use Damoony\Cli\Context;
 use Damoony\Cli\Support\SessionWorkspace;
 use Damoony\Core\Files\Paths;
+use Damoony\Core\Settings\MaintenanceConfig;
 use Damoony\Core\Settings\SiteConfig;
 use Damoony\Core\Settings\SiteConfigWriter;
 use PHPUnit\Framework\TestCase;
@@ -188,7 +189,7 @@ final class SessionCommandsTest extends TestCase
 
     private function list(): SessionListCommand
     {
-        return new SessionListCommand(new Paths($this->root), $this->workspace());
+        return new SessionListCommand(new Paths($this->root), $this->workspace(), MaintenanceConfig::defaults());
     }
 
     private function context(): Context

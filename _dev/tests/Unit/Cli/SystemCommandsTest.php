@@ -11,6 +11,7 @@ use Damoony\Cli\Commands\SystemScanCommand;
 use Damoony\Cli\Context;
 use Damoony\Cli\Support\TrashScanner;
 use Damoony\Core\Files\Paths;
+use Damoony\Core\Settings\MaintenanceConfig;
 use Damoony\Core\Settings\SiteConfig;
 use Damoony\Core\Settings\SiteConfigWriter;
 use PHPUnit\Framework\TestCase;
@@ -186,16 +187,49 @@ final class SystemCommandsTest extends TestCase
         self::assertStringContainsString('--force', $result->errors[0]);
     }
 
+    public function testCleanPrunesLogsAndRateLimitByConfig(): void
+    {
+        mkdir($this->root . '/var/log/cli', 0o775, true);
+        mkdir($this->root . '/var/ratelimit', 0o775, true);
+        mkdir($this->root . '/var/form-ratelimit', 0o775, true);
+
+        $old = time() - 40 * 86400;
+        $fresh = time();
+
+        file_put_contents($this->root . '/var/log/cli/old.log', '{}\n');
+        touch($this->root . '/var/log/cli/old.log', $old);
+        file_put_contents($this->root . '/var/log/cli/fresh.log', '{}\n');
+        touch($this->root . '/var/log/cli/fresh.log', $fresh);
+
+        file_put_contents($this->root . '/var/ratelimit/old.json', '{}');
+        touch($this->root . '/var/ratelimit/old.json', $old);
+        file_put_contents($this->root . '/var/form-ratelimit/old.json', '{}');
+        touch($this->root . '/var/form-ratelimit/old.json', $old);
+
+        $result = $this->clean([
+            'logs' => ['cli_keep_days' => 30],
+            'ratelimit' => ['storage_keep_days' => 30],
+        ])->run(['force' => '1'], $this->context());
+
+        self::assertTrue($result->ok, implode('; ', $result->errors));
+        self::assertFileDoesNotExist($this->root . '/var/log/cli/old.log');
+        self::assertFileExists($this->root . '/var/log/cli/fresh.log');
+        self::assertFileDoesNotExist($this->root . '/var/ratelimit/old.json');
+        self::assertFileDoesNotExist($this->root . '/var/form-ratelimit/old.json');
+        self::assertSame(1, $result->data['logs_deleted']);
+        self::assertSame(2, $result->data['ratelimit_deleted']);
+    }
     private function scan(): SystemScanCommand
     {
         return new SystemScanCommand(new Paths($this->root));
     }
 
-    private function clean(): SystemCleanCommand
+    /** @param array<string, mixed> $config */
+    private function clean(array $config = []): SystemCleanCommand
     {
         $paths = new Paths($this->root);
 
-        return new SystemCleanCommand($paths, new TrashScanner($paths));
+        return new SystemCleanCommand($paths, new TrashScanner($paths), MaintenanceConfig::fromArray($config));
     }
 
     private function site(): SiteConfig
@@ -205,7 +239,7 @@ final class SystemCommandsTest extends TestCase
 
     private function backupCreate(): BackupCreateCommand
     {
-        return new BackupCreateCommand(new Paths($this->root), $this->site());
+        return new BackupCreateCommand(new Paths($this->root), $this->site(), MaintenanceConfig::defaults());
     }
 
     private function backupRestore(): BackupRestoreCommand

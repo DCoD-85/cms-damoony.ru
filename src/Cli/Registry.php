@@ -82,6 +82,7 @@ use Damoony\Cli\Support\SessionWorkspace;
 use Damoony\Cli\Support\TargetResolver;
 use Damoony\Cli\Support\TrashScanner;
 use Damoony\Core\Files\Paths;
+use Damoony\Core\Settings\MaintenanceConfig;
 use Damoony\Core\Settings\SiteConfig;
 use Damoony\Core\Settings\SiteConfigWriter;
 use Damoony\Data\Db\Connection;
@@ -113,6 +114,7 @@ final class Registry
 
         $paths = new Paths($root);
         $site = SiteConfig::fromFile($configPath);
+        $maintenance = MaintenanceConfig::fromFile($root . '/config/maintenance.config');
         $writer = new SiteConfigWriter($configPath);
         $scaffolder = new Scaffolder($paths);
         $quarantine = new Quarantine();
@@ -169,15 +171,15 @@ final class Registry
         $registry->add(new SessionStartCommand($paths, $site, $workspace));
         $registry->add(new SessionApplyCommand($paths, $site, $workspace));
         $registry->add(new SessionDiscardCommand($paths, $site, $workspace));
-        $registry->add(new SessionListCommand($paths, $workspace));
-        $registry->add(new ContentStoreCommand($paths, $resolver, $contentLayout));
+        $registry->add(new SessionListCommand($paths, $workspace, $maintenance));
+        $registry->add(new ContentStoreCommand($paths, $resolver, $contentLayout, $maintenance));
         $registry->add(new ContentRemoveCommand($paths, $resolver, $contentLayout));
         $registry->add(new ContentListCommand($paths, $resolver, $contentLayout));
-        $registry->add(new ContentGcCommand($paths, $contentLayout));
-        $registry->add(new TrashClearCommand($paths, $trashScanner));
+        $registry->add(new ContentGcCommand($paths, $contentLayout, $maintenance));
+        $registry->add(new TrashClearCommand($paths, $trashScanner, $maintenance));
         $registry->add(new SystemScanCommand($paths));
-        $registry->add(new SystemCleanCommand($paths, $trashScanner));
-        $registry->add(new BackupCreateCommand($paths, $site));
+        $registry->add(new SystemCleanCommand($paths, $trashScanner, $maintenance));
+        $registry->add(new BackupCreateCommand($paths, $site, $maintenance));
         $registry->add(new BackupRestoreCommand($paths, $site));
         $registry->add(new DbSchemaCommand($site, $db));
         $registry->add(new DbMethodsCommand($paths, $site));

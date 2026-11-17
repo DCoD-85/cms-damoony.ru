@@ -1,0 +1,24 @@
+{
+    "backups": {
+        "keep": 7,
+        "parts": ["app", "content", "media", "db"],
+        "compress_media": false
+    },
+    "trash": {
+        "ttl_days": 0
+    },
+    "sessions": {
+        "ttl_hours": 24
+    },
+    "content": {
+        "gc_ttl_days": 30,
+        "max_mb": 25,
+        "min_side_px": 200
+    },
+    "logs": {
+        "cli_keep_days": 14
+    },
+    "ratelimit": {
+        "storage_keep_days": 7
+    }
+}

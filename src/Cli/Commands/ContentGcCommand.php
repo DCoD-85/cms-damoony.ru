@@ -10,6 +10,7 @@ use Damoony\Cli\Result;
 use Damoony\Cli\Support\ContentLayout;
 use Damoony\Core\Files\Fs;
 use Damoony\Core\Files\Paths;
+use Damoony\Core\Settings\MaintenanceConfig;
 
 /**
  * content:gc для схемы domains_app: orphan-контент в карантин.
@@ -25,6 +26,7 @@ final class ContentGcCommand implements CommandInterface
     public function __construct(
         private readonly Paths $paths,
         private readonly ContentLayout $layout,
+        private readonly MaintenanceConfig $maintenance,
     ) {
     }
 
@@ -58,7 +60,7 @@ final class ContentGcCommand implements CommandInterface
             return $r;
         }
 
-        $olderSeconds = 0;
+        $olderSeconds = $this->maintenance->contentGcTtlDays() * 86400;
         $olderSpec = (string) ($args['older'] ?? '');
         if ($olderSpec !== '') {
             $olderSeconds = $this->parseAge($olderSpec);

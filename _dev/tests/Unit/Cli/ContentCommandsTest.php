@@ -12,6 +12,7 @@ use Damoony\Cli\Context;
 use Damoony\Cli\Support\ContentLayout;
 use Damoony\Cli\Support\TargetResolver;
 use Damoony\Core\Files\Paths;
+use Damoony\Core\Settings\MaintenanceConfig;
 use Damoony\Core\Settings\SiteConfig;
 use Damoony\Core\Settings\SiteConfigWriter;
 use PHPUnit\Framework\TestCase;
@@ -45,6 +46,39 @@ final class ContentCommandsTest extends TestCase
         $this->rrmdir($this->root);
     }
 
+    public function testStoreRespectsConfigMaxSize(): void
+    {
+        $result = $this->store(['content' => ['max_mb' => 0]])->run(
+            [
+                'domain' => 'damoony.ru',
+                'allias' => 'www',
+                'category' => 'hero',
+                'data_b64' => base64_encode($this->png()),
+                'mime' => 'image/png',
+            ],
+            $this->context(),
+        );
+
+        self::assertFalse($result->ok);
+        self::assertStringContainsString('Файл больше', $result->errors[0]);
+    }
+
+    public function testStoreRespectsConfigMinSide(): void
+    {
+        $result = $this->store(['content' => ['min_side_px' => 2000]])->run(
+            [
+                'domain' => 'damoony.ru',
+                'allias' => 'www',
+                'category' => 'hero',
+                'data_b64' => base64_encode($this->png()),
+                'mime' => 'image/png',
+            ],
+            $this->context(),
+        );
+
+        self::assertFalse($result->ok);
+        self::assertStringContainsString('слишком маленькое', $result->errors[0]);
+    }
     public function testStoreWritesFileAndMeta(): void
     {
         $bytes = $this->png();
@@ -269,9 +303,10 @@ final class ContentCommandsTest extends TestCase
         return new ContentLayout(new Paths($this->root));
     }
 
-    private function store(): ContentStoreCommand
+    /** @param array<string, mixed> $config */
+    private function store(array $config = []): ContentStoreCommand
     {
-        return new ContentStoreCommand(new Paths($this->root), $this->resolver(), $this->layout());
+        return new ContentStoreCommand(new Paths($this->root), $this->resolver(), $this->layout(), MaintenanceConfig::fromArray($config));
     }
 
     private function remove(): ContentRemoveCommand
@@ -284,9 +319,10 @@ final class ContentCommandsTest extends TestCase
         return new ContentListCommand(new Paths($this->root), $this->resolver(), $this->layout());
     }
 
-    private function gc(): ContentGcCommand
+    /** @param array<string, mixed> $config */
+    private function gc(array $config = []): ContentGcCommand
     {
-        return new ContentGcCommand(new Paths($this->root), $this->layout());
+        return new ContentGcCommand(new Paths($this->root), $this->layout(), MaintenanceConfig::fromArray($config));
     }
 
     private function context(): Context

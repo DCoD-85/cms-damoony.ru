@@ -73,8 +73,13 @@ final class BackupArchive
      *
      * @return array<string, mixed> манифест
      */
-    public function pack(string $stagingDir, string $zipPath, array $parts, array $meta): array
-    {
+    public function pack(
+        string $stagingDir,
+        string $zipPath,
+        array $parts,
+        array $meta,
+        bool $compressMedia = false,
+    ): array {
         $manifest = [
             'version' => 1,
             'created_at' => gmdate('Y-m-d\TH:i:s\Z'),
@@ -88,7 +93,7 @@ final class BackupArchive
 
         file_put_contents($stagingDir . '/' . self::MANIFEST, $json . "\n");
 
-        $this->zip($stagingDir, $zipPath);
+        $this->zip($stagingDir, $zipPath, $compressMedia);
 
         return $manifest;
     }
@@ -201,7 +206,7 @@ final class BackupArchive
         return $stats;
     }
 
-    private function zip(string $tmpDir, string $zipPath): void
+    private function zip(string $tmpDir, string $zipPath, bool $compressMedia = false): void
     {
         if (class_exists(ZipArchive::class)) {
             $zip = new ZipArchive();
@@ -222,8 +227,8 @@ final class BackupArchive
                 $relative = str_replace('\\', '/', substr($path, strlen($tmpDir) + 1));
                 $zip->addFile($path, $relative);
 
-                // Медиа (картинки) не пересжимаем: выигрыша нет, CPU тратится.
-                if (str_starts_with($relative, 'media/')) {
+                // Медиа (картинки) по умолчанию не пересжимаем: выигрыша нет, CPU тратится.
+                if (!$compressMedia && str_starts_with($relative, 'media/')) {
                     $zip->setCompressionName($relative, ZipArchive::CM_STORE);
                 }
             }

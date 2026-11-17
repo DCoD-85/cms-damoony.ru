@@ -10,17 +10,17 @@ use Damoony\Cli\Result;
 use Damoony\Cli\Support\SessionWorkspace;
 use Damoony\Core\Files\Fs;
 use Damoony\Core\Files\Paths;
+use Damoony\Core\Settings\MaintenanceConfig;
 
 /**
  * session:list для схемы domains_app: сканирует app/.sess_*.
  */
 final class SessionListCommand implements CommandInterface
 {
-    private const TTL = 86400;
-
     public function __construct(
         private readonly Paths $paths,
         private readonly SessionWorkspace $workspace,
+        private readonly MaintenanceConfig $maintenance,
     ) {
     }
 
@@ -37,6 +37,8 @@ final class SessionListCommand implements CommandInterface
     public function run(array $args, Context $context): Result
     {
         $r = new Result();
+
+        $ttl = $this->maintenance->sessionsTtlHours() * 3600;
 
         $appRoot = $this->paths->appRoot();
         if (!Fs::isDir($appRoot)) {
@@ -71,7 +73,7 @@ final class SessionListCommand implements CommandInterface
                 'admin_session_id' => $meta['admin_session_id'] ?? '',
                 'created_at' => $createdAt,
                 'age_seconds' => $age,
-                'ttl_remaining' => max(0, self::TTL - $age),
+                'ttl_remaining' => max(0, $ttl - $age),
             ];
 
             $r->file('_sess_' . $tab . '.' . $folder);

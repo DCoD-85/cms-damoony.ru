@@ -8,6 +8,7 @@ use Damoony\Cli\Commands\TrashClearCommand;
 use Damoony\Cli\Context;
 use Damoony\Cli\Support\TrashScanner;
 use Damoony\Core\Files\Paths;
+use Damoony\Core\Settings\MaintenanceConfig;
 use PHPUnit\Framework\TestCase;
 
 final class TrashClearTest extends TestCase
@@ -30,6 +31,32 @@ final class TrashClearTest extends TestCase
         $this->rrmdir($this->root);
     }
 
+    public function testConfigTtlSkipsYoungTrashWithoutOlderFlag(): void
+    {
+        $now = time();
+        mkdir($this->root . '/app/old.ru_trash_' . ($now - 10 * 86400));
+        mkdir($this->root . '/app/young.ru_trash_' . ($now - 86400));
+
+        $result = $this->command(['trash' => ['ttl_days' => 7]])
+            ->run(['force' => '1'], $this->context());
+
+        self::assertTrue($result->ok, implode('; ', $result->errors));
+        self::assertDirectoryDoesNotExist($this->root . '/app/old.ru_trash_' . ($now - 10 * 86400));
+        self::assertDirectoryExists($this->root . '/app/young.ru_trash_' . ($now - 86400));
+        self::assertSame(1, $result->data['found']);
+    }
+
+    public function testOlderFlagOverridesConfigTtl(): void
+    {
+        $now = time();
+        mkdir($this->root . '/app/young.ru_trash_' . ($now - 86400));
+
+        $result = $this->command(['trash' => ['ttl_days' => 7]])
+            ->run(['force' => '1', 'older' => '1h'], $this->context());
+
+        self::assertTrue($result->ok, implode('; ', $result->errors));
+        self::assertDirectoryDoesNotExist($this->root . '/app/young.ru_trash_' . ($now - 86400));
+    }
     public function testFindsAllKindsOfTrash(): void
     {
         $now = time();
@@ -127,11 +154,12 @@ final class TrashClearTest extends TestCase
         self::assertSame(0, $result->data['found']);
     }
 
-    private function command(): TrashClearCommand
+    /** @param array<string, mixed> $config */
+    private function command(array $config = []): TrashClearCommand
     {
         $paths = new Paths($this->root);
 
-        return new TrashClearCommand($paths, new TrashScanner($paths));
+        return new TrashClearCommand($paths, new TrashScanner($paths), MaintenanceConfig::fromArray($config));
     }
 
     private function context(): Context

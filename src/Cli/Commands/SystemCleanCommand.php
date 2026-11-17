@@ -10,6 +10,7 @@ use Damoony\Cli\Result;
 use Damoony\Cli\Support\TrashScanner;
 use Damoony\Core\Files\Fs;
 use Damoony\Core\Files\Paths;
+use Damoony\Core\Settings\MaintenanceConfig;
 
 /**
  * system:clean — уборка карантина и брошенных сессий/визардов.
@@ -21,6 +22,7 @@ final class SystemCleanCommand implements CommandInterface
     public function __construct(
         private readonly Paths $paths,
         private readonly TrashScanner $scanner,
+        private readonly MaintenanceConfig $maintenance,
     ) {
     }
 
@@ -61,6 +63,10 @@ final class SystemCleanCommand implements CommandInterface
 
         if ($targets === []) {
             $r->data = ['force' => $force, 'targets' => [], 'deleted' => 0];
+            if ($force) {
+                $this->pruneLogs($r, $context);
+                $this->pruneRateLimit($r, $context);
+            }
             $context->step('Мусора не найдено. Сервер чист.', true);
 
             return $r;
@@ -90,6 +96,78 @@ final class SystemCleanCommand implements CommandInterface
         $r->data = ['force' => true, 'targets' => $targets, 'deleted' => $deleted];
         $context->step('Удалено директорий: ' . $deleted, true);
 
+        $this->pruneLogs($r, $context);
+        $this->pruneRateLimit($r, $context);
+
         return $r;
+    }
+
+    /**
+     * Ротация журнала CLI по `logs.cli_keep_days`.
+     */
+    private function pruneLogs(Result $r, Context $context): void
+    {
+        $days = $this->maintenance->cliLogsKeepDays();
+        if ($days <= 0) {
+            return;
+        }
+
+        $dir = $this->paths->root() . '/var/log/cli';
+        if (!is_dir($dir)) {
+            return;
+        }
+
+        $threshold = time() - $days * 86400;
+        $deleted = 0;
+        foreach (scandir($dir) ?: [] as $entry) {
+            if (!str_ends_with($entry, '.log')) {
+                continue;
+            }
+            $path = $dir . '/' . $entry;
+            if (is_file($path) && (int) filemtime($path) < $threshold && @unlink($path)) {
+                $deleted++;
+            }
+        }
+
+        if ($deleted > 0) {
+            $context->step(sprintf('Удалено старых журналов CLI: %d (старше %d дн.)', $deleted, $days), true);
+            $r->data['logs_deleted'] = $deleted;
+        }
+    }
+
+    /**
+     * Чистка хранилищ rate-limit по `ratelimit.storage_keep_days`.
+     */
+    private function pruneRateLimit(Result $r, Context $context): void
+    {
+        $days = $this->maintenance->ratelimitKeepDays();
+        if ($days <= 0) {
+            return;
+        }
+
+        $threshold = time() - $days * 86400;
+        $deleted = 0;
+
+        foreach (['var/ratelimit', 'var/form-ratelimit'] as $relative) {
+            $dir = $this->paths->root() . '/' . $relative;
+            if (!is_dir($dir)) {
+                continue;
+            }
+
+            foreach (scandir($dir) ?: [] as $entry) {
+                if ($entry === '.' || $entry === '..') {
+                    continue;
+                }
+                $path = $dir . '/' . $entry;
+                if (is_file($path) && (int) filemtime($path) < $threshold && @unlink($path)) {
+                    $deleted++;
+                }
+            }
+        }
+
+        if ($deleted > 0) {
+            $context->step(sprintf('Удалено старых записей rate-limit: %d (старше %d дн.)', $deleted, $days), true);
+            $r->data['ratelimit_deleted'] = $deleted;
+        }
     }
 }
