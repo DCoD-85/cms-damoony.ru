@@ -5,9 +5,13 @@ declare(strict_types=1);
 use Damoony\Core\App\AppFactory;
 use Damoony\Core\Content\ContentResponder;
 use Damoony\Core\Files\Paths;
+use Damoony\Core\Observability\RequestId;
 use Damoony\Data\Auth\AuthInterface;
 
 require_once __DIR__ . '/../vendor/autoload.php';
+
+$requestId = RequestId::initFromGlobals();
+header('X-Request-Id: ' . $requestId);
 
 // === 1. HTTP-метод ===
 $method = (string) ($_SERVER['REQUEST_METHOD'] ?? 'GET');

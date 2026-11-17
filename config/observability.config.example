@@ -1,0 +1,10 @@
+{
+    "health": {
+        "backup_max_age_days": 2,
+        "disk_min_free_mb": 1024
+    },
+    "alerts": {
+        "file": "var/alerts.log",
+        "webhook": null
+    }
+}

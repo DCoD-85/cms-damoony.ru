@@ -82,6 +82,8 @@ db.sql          дамп БД (только при --only с db)
 | `migrate:page-rules [--domain=X] [--dry]` | легаси `.rules.json` → `algoritm_{name}.rules.json`, идемпотентно |
 | `user:new --login=… --email=… --password=… [--role=user\|admin] [--update]` | пользователь сайта (таблица `users`, глобальная) |
 | `site:config:migrate` | перенос `site.config.old` → схема `domains_app` |
+| `health:check [--json]` | готовность: конфиг, БД, `var/`, диск, свежесть бэкапа (exit 1 при fail) |
+| `alert:notify --message=… [--level=] [--source=]` | алерт в `var/alerts.log` и webhook |
 
 ## 7. Работа без БД
 

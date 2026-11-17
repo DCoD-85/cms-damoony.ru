@@ -15,9 +15,13 @@ use Damoony\Core\Http\Middleware\SkinCookieMiddleware;
 use Damoony\Core\Http\MiddlewareStack;
 use Damoony\Core\Http\Request;
 use Damoony\Core\Http\Response;
+use Damoony\Core\Observability\RequestId;
 use Damoony\Core\Session\SessionInterface;
 
 require_once __DIR__ . '/../vendor/autoload.php';
+
+$requestId = RequestId::initFromGlobals();
+header('X-Request-Id: ' . $requestId);
 
 $root = dirname(__DIR__);
 if (is_file($root . '/_dev/.dev')) {

@@ -123,7 +123,16 @@ cp config/maintenance.config.example config/maintenance.config
 
 ---
 
-### 3.7. Модели AI (config/models.config)
+### 3.7. `config/observability.config` — наблюдаемость (необязательно)
+```bash
+cp config/observability.config.example config/observability.config
+```
+Пороги `health:check` (свежесть бэкапа, свободный диск) и каналы `alert:notify` (файл/webhook).
+Подробности — `_doc/observability.md`.
+
+---
+
+### 3.8. Модели AI (config/models.config)
 
 Используется ModelRouter (см. _doc/orchestrator.md §3.3). Маппинг role -> model для внутреннего AI-контура AIUI.
 

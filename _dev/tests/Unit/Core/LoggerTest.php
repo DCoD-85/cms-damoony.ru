@@ -43,6 +43,26 @@ final class LoggerTest extends TestCase
         self::assertArrayHasKey('ts', $lines[0]);
     }
 
+    public function testIncludesRequestIdChannelAndHost(): void
+    {
+        $_SERVER['HTTP_HOST'] = 'damoony.ru';
+        \Damoony\Core\Observability\RequestId::reset();
+        \Damoony\Core\Observability\RequestId::init('0123456789abcdef');
+
+        $stream = fopen('php://memory', 'w+b');
+        assert(is_resource($stream));
+        $logger = new Logger($stream, Env::Test, 'http');
+        $logger->info('req');
+
+        $lines = $this->read($stream);
+        self::assertSame('http', $lines[0]['channel']);
+        self::assertSame('0123456789abcdef', $lines[0]['request_id']);
+        self::assertSame('damoony.ru', $lines[0]['host']);
+        self::assertIsInt($lines[0]['pid']);
+
+        unset($_SERVER['HTTP_HOST']);
+        \Damoony\Core\Observability\RequestId::reset();
+    }
     public function testAllLevels(): void
     {
         [$logger, $stream] = $this->make();

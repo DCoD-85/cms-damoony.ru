@@ -6,12 +6,16 @@ use Damoony\Core\App\AppFactory;
 use Damoony\Core\Http\Middleware\RateLimitMiddleware;
 use Damoony\Core\Http\Request;
 use Damoony\Core\Http\Response;
+use Damoony\Core\Observability\RequestId;
 use Damoony\Core\Security\Csrf;
 use Damoony\Core\Settings\SiteConfig;
 use Damoony\Data\Db\Connection;
 use Damoony\Data\Db\DataProvider\FormSubmissionProvider;
 
 require_once __DIR__ . '/../vendor/autoload.php';
+
+$requestId = RequestId::initFromGlobals();
+header('X-Request-Id: ' . $requestId);
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     http_response_code(405);

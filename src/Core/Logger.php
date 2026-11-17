@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Core;
 
+use Damoony\Core\Observability\RequestId;
 use Psr\Log\AbstractLogger;
 use Psr\Log\LogLevel;
 use Stringable;
@@ -13,9 +14,15 @@ final class Logger extends AbstractLogger
     /** @var resource */
     private mixed $stream;
 
-    /** @param resource|null $stream */
-    public function __construct(mixed $stream = null, private readonly Env $env = Env::Prod)
-    {
+    /**
+     * @param resource|null $stream
+     * @param string $channel логический канал: app|http|cli|db
+     */
+    public function __construct(
+        mixed $stream = null,
+        private readonly Env $env = Env::Prod,
+        private readonly string $channel = 'app',
+    ) {
         $stream ??= fopen('php://stderr', 'wb');
         if (!is_resource($stream)) {
             throw new \RuntimeException('Logger stream is not writable');
@@ -32,16 +39,22 @@ final class Logger extends AbstractLogger
             'ts' => new \DateTimeImmutable('now', new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.u\Z'),
             'env' => $this->env->value,
             'level' => (string) $level,
+            'channel' => $this->channel,
+            'request_id' => RequestId::get(),
+            'host' => (string) ($_SERVER['HTTP_HOST'] ?? ''),
+            'pid' => getmypid(),
             'message' => (string) $message,
             'context' => $context,
         ];
 
-        $line = json_encode($record, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $line = json_encode($record, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
         if ($line === false) {
             $line = json_encode([
                 'ts' => $record['ts'],
                 'env' => $record['env'],
                 'level' => $record['level'],
+                'channel' => $record['channel'],
+                'request_id' => $record['request_id'],
                 'message' => $record['message'],
                 'context' => ['_encode_error' => json_last_error_msg()],
             ]) ?: '{}';

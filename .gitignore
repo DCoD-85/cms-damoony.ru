@@ -49,6 +49,7 @@ env.php
 /config/agent.config
 /config/ainet.config
 /config/maintenance.config
+/config/observability.config
 
 # --- Test artifacts ---
 /tests/fixtures/scenarios/**/actual/
