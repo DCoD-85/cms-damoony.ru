@@ -161,4 +161,20 @@ final class PageListCommandTest extends TestCase
             self::assertStringNotContainsString('.hidden', $n);
         }
     }
+
+    public function testAvailableReturnsTargetsNotPatterns(): void
+    {
+        $alg = $this->root . '/app/example.ru/www/algoritm';
+        mkdir($alg, 0o777, true);
+        file_put_contents($alg . '/algoritm.php', '<?php');
+        file_put_contents($alg . '/algoritm.rules.json', json_encode([
+            'available' => ['' => '^$', 'about' => '^about$', 'lang' => '^([a-z]{2})$'],
+            'auth' => false,
+        ]));
+
+        $res = $this->execute(['domain' => 'example.ru', 'allias' => 'www']);
+
+        self::assertTrue($res->ok, implode('; ', $res->errors));
+        self::assertSame(['', 'about', 'lang'], $res->data['rows'][0]['available']);
+    }
 }

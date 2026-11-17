@@ -142,13 +142,22 @@ final class PageListCommand implements CommandInterface
         if (!is_array($available)) {
             $available = [];
         }
-        $available = array_values(array_filter($available, 'is_string'));
+        // available: assoc target => regex (актуальный формат) либо legacy list имён.
+        // В выдачу идут имена переходов, а не регулярки. Порядок значим для FileRouter.
+        $targets = [];
+        foreach ($available as $target => $pattern) {
+            if (is_string($target)) {
+                $targets[] = $target;
+            } elseif (is_string($pattern)) {
+                $targets[] = $pattern;
+            }
+        }
 
         return [
             'name' => $name,
             'url' => $url,
             'php' => $php,
-            'available' => $available,
+            'available' => $targets,
             'auth' => isset($rules['auth']) && $rules['auth'] === true,
             'search' => !isset($rules['search']) || $rules['search'] === true,
             'default' => isset($rules['default']) && $rules['default'] === true,
