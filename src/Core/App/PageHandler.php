@@ -77,8 +77,11 @@ final class PageHandler implements PageHandlerInterface
             return ErrorPage::serverError($domain->language, $this->debugDetail('Page class does not implement PageInterface'));
         }
 
-        // Глобальная проверка CSRF для всех POST-запросов
-        if ($context->request->isPost()) {
+        // Глобальная проверка CSRF для всех POST-запросов.
+        // Исключение: install-эндпоинт — он авторизуется одноразовым токеном, не сессией.
+        $installerPath = preg_match('#^/install/[a-f0-9]{64}$#', $context->request->path) === 1;
+
+        if ($context->request->isPost() && !$installerPath) {
             $csrf = $context->service('csrf');
             if ($csrf instanceof Csrf && !$csrf->check($context->request->post)) {
                 if ($context->request->isAjax()) {

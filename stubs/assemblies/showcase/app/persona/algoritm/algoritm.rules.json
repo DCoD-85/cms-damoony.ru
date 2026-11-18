@@ -1,1 +1,1 @@
-{"available": {"": "^$", "lang": "^([a-z]{2})$", "invite": "^invite$"}, "auth": false, "search": false}
+{"available": {"": "^$", "lang": "^([a-z]{2})$", "invite": "^invite$", "install": "^install$"}, "auth": false, "search": false}
