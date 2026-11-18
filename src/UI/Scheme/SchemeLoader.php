@@ -18,6 +18,7 @@ final class SchemeLoader
         private readonly Paths $paths,
         private readonly ?string $sessionId = null,
         private readonly ?string $adminRole = null,
+        private readonly ?string $schemeRoot = null,
     ) {
     }
 
@@ -30,8 +31,9 @@ final class SchemeLoader
         $file = null;
 
         if ($this->adminRole !== null) {
-            $baseDir = $appRoot . '/.admin/.schemesglobal/';
-            $roleDir = $appRoot . '/.admin/' . $this->adminRole . '/.schemesglobal/';
+            $root = trim($this->schemeRoot ?? 'app/.admin', '/');
+            $baseDir = $appRoot . '/' . $root . '/.schemesglobal/';
+            $roleDir = $appRoot . '/' . $root . '/' . $this->adminRole . '/.schemesglobal/';
 
             $paths = [
                 $roleDir . $schemeName . '.php',

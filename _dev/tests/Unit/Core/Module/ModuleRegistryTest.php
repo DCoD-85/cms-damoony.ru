@@ -119,6 +119,10 @@ final class ModuleRegistryTest extends TestCase
             {
                 return 'X';
             }
+            public function resolvePage(string $remainder): ?\Damoony\Core\Module\PageRoute
+            {
+                return null;
+            }
         };
     }
 }

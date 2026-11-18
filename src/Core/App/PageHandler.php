@@ -12,6 +12,7 @@ use Damoony\Core\Error\ErrorPage;
 use Damoony\Core\Files\Paths;
 use Damoony\Core\Http\Response;
 use Damoony\Core\I18n\Translator;
+use Damoony\Core\Module\PageRoute;
 use Damoony\Core\Routing\RouteMatch;
 use Damoony\Core\Security\Csrf;
 use Damoony\UI\Document;
@@ -33,8 +34,11 @@ final class PageHandler implements PageHandlerInterface
     ) {
     }
 
-    public function handle(RouteMatch $match, RegionContext $context, ?string $adminRole = null): Response
-    {
+    public function handle(
+        RouteMatch $match,
+        RegionContext $context,
+        ?PageRoute $moduleRoute = null,
+    ): Response {
         $startTime = microtime(true);
         $sessionIdRaw = $context->service('session_id');
         $sessionId = is_string($sessionIdRaw) && $sessionIdRaw !== '' ? $sessionIdRaw : null;
@@ -48,7 +52,7 @@ final class PageHandler implements PageHandlerInterface
         }
 
         $domain = $context->domain;
-        $file = $this->path($domain, $match->pathRel, $match->classChain, $sessionId, $adminRole);
+        $file = $this->path($domain, $match->pathRel, $match->classChain, $sessionId, $moduleRoute);
         if (!is_file($file)) {
             if ($context->request->isAjax()) {
                 $m = new MinStruct();
@@ -58,8 +62,8 @@ final class PageHandler implements PageHandlerInterface
             return Response::notFound();
         }
 
-        if ($adminRole !== null) {
-            $class = 'Damoony\\Admin\\Pages\\' . $adminRole . '\\' . $match->classChain;
+        if ($moduleRoute !== null) {
+            $class = $moduleRoute->namespace . '\\' . $match->classChain;
         } else {
             $ns = $this->resolver->namespace($domain->real);
             $class = $ns . '\\' . $domain->allias . '\\' . $match->classChain;
@@ -101,7 +105,7 @@ final class PageHandler implements PageHandlerInterface
         $loader = new RegionLoader(
             $paths,
             $site instanceof Config ? $site : null,
-            $adminRole,
+            $moduleRoute?->role,
         );
         $regions = $loader->load($domain);
 
@@ -111,16 +115,21 @@ final class PageHandler implements PageHandlerInterface
             $result = $page->default();
             $debugTime = round((microtime(true) - $startTime) * 1000, 2);
 
-            return $this->toResponse($result, $domain, $context, $regions, $adminRole, $page->ajaxBlocks(), $debugTime, $page->getScheme());
+            return $this->toResponse($result, $domain, $context, $regions, $page->ajaxBlocks(), $debugTime, $page->getScheme(), $moduleRoute);
         } catch (\Throwable $e) {
             return ErrorPage::serverError($domain->language, $this->debugDetail($e->getMessage()));
         }
     }
 
-    private function path(DomainContext $domain, string $pathRel, string $classChain, ?string $sessionId = null, ?string $adminRole = null): string
-    {
-        if ($adminRole !== null) {
-            return rtrim($this->appRoot, '/') . '/app/.admin/' . $adminRole . '/algoritm'
+    private function path(
+        DomainContext $domain,
+        string $pathRel,
+        string $classChain,
+        ?string $sessionId = null,
+        ?PageRoute $moduleRoute = null,
+    ): string {
+        if ($moduleRoute !== null) {
+            return rtrim($this->appRoot, '/') . '/' . trim($moduleRoute->pagesRoot, '/') . '/algoritm'
                 . ($pathRel === '' ? '' : '/' . $pathRel)
                 . '/' . $classChain . '.php';
         }
@@ -139,7 +148,7 @@ final class PageHandler implements PageHandlerInterface
     /**
      * @param list<string> $ajaxBlocks
      */
-    private function toResponse(Node|Response|null $result, DomainContext $domain, RegionContext $context, RegionRegistry $regions, ?string $adminRole = null, array $ajaxBlocks = ['center'], float $debugTime = 0.0, ?string $customScheme = null): Response
+    private function toResponse(Node|Response|null $result, DomainContext $domain, RegionContext $context, RegionRegistry $regions, array $ajaxBlocks = ['center'], float $debugTime = 0.0, ?string $customScheme = null, ?PageRoute $moduleRoute = null): Response
     {
         if ($result instanceof Response) {
             // AJAX: перехватываем редиректы, чтобы JS мог их обработать
@@ -172,8 +181,10 @@ final class PageHandler implements PageHandlerInterface
             $paths = $context->service('paths');
             if ($paths instanceof Paths) {
                 $sid = $context->service('session_id');
-                $loader = new SchemeLoader($paths, is_string($sid) ? $sid : null, $adminRole);
-                $schemeName = $adminRole !== null ? 'admin' : ($customScheme ?? $domain->scheme);
+                $loader = new SchemeLoader($paths, is_string($sid) ? $sid : null, $moduleRoute?->role, $moduleRoute?->schemeRoot);
+                $schemeName = $moduleRoute !== null
+                    ? $moduleRoute->schemeName
+                    : ($customScheme ?? $domain->scheme);
                 try {
                     $manifest = $loader->load($domain, $schemeName);
                     $renderer = new SchemeRenderer();
@@ -193,8 +204,8 @@ final class PageHandler implements PageHandlerInterface
         $schemeRendered = false;
         if ($paths instanceof Paths) {
             $sid = $context->service('session_id');
-            $loader = new SchemeLoader($paths, is_string($sid) ? $sid : null, $adminRole);
-            $schemeName = $adminRole !== null ? 'admin' : ($customScheme ?? $domain->scheme);
+            $loader = new SchemeLoader($paths, is_string($sid) ? $sid : null, $moduleRoute?->role, $moduleRoute?->schemeRoot);
+            $schemeName = $moduleRoute !== null ? $moduleRoute->schemeName : ($customScheme ?? $domain->scheme);
 
             try {
                 $manifest = $loader->load($domain, $schemeName);

@@ -12,6 +12,10 @@ use Damoony\Core\Http\Request;
 use Damoony\Core\Http\Response;
 use Damoony\Core\I18n\LanguageNegotiator;
 use Damoony\Core\I18n\Translator;
+use Damoony\Core\Module\AccessPolicyProviderInterface;
+use Damoony\Core\Module\EntryPointInterface;
+use Damoony\Core\Module\ModuleRegistry;
+use Damoony\Core\Module\PageModuleInterface;
 use Damoony\Core\Observability\Metrics;
 use Damoony\Core\Routing\RouterInterface;
 use Damoony\Core\Security\Csrf;
@@ -21,7 +25,6 @@ use Damoony\Data\Db\Connection;
 use Damoony\Data\Persona\PersonaAuth;
 use Damoony\Data\Persona\PersonaBridge;
 use Damoony\Data\Persona\PersonaRepository;
-use Damoony\Modules\AuthAdmin\AdminAccess;
 use Damoony\UI\Meta;
 use Damoony\UI\Region\RegionContext;
 use Damoony\UI\Url\AdminUrlBuilder;
@@ -61,37 +64,52 @@ final class FrontController
             $domain = $domain->withAllias($aliasOverride);
         }
 
-        $adminPath = null;
+        $modules = $this->container->has(ModuleRegistry::class) ? $this->container->get(ModuleRegistry::class) : null;
+        $moduleRoute = null;
+        $routePath = $request->path;
 
-        // Серверная админка: /app/admin/{role}/... — доступ по политике modauthadmin.
-        if ($adminRole === null && preg_match('#^/app/admin/([a-z][a-z0-9_-]*)(/.*)?$#', $request->path, $adminMatch) === 1) {
-            $role = (string) $adminMatch[1];
-            if (!in_array($role, ['superadmin', 'domainadmin'], true)) {
-                return ErrorPage::notFound($domain->language);
-            }
-
-            $config = $this->container->has(Config::class) ? $this->container->get(Config::class) : null;
-            if ($config instanceof Config) {
-                $access = AdminAccess::fromConfig($config);
-                if (!$access->allows($request)) {
+        // Модуль сам объявляет mount и страницы; ядро только спрашивает политику.
+        if ($modules instanceof ModuleRegistry && $adminRole === null) {
+            $moduleMatch = $modules->match($request->path);
+            if ($moduleMatch !== null) {
+                $module = $moduleMatch->module;
+                if (!$module instanceof PageModuleInterface || !$module instanceof AccessPolicyProviderInterface) {
+                    return ErrorPage::notFound($domain->language);
+                }
+                if (!$module->accessPolicy()->allows($request)) {
                     return ErrorPage::forbidden($domain->language);
                 }
-            }
 
-            $adminRole = $role;
-            $adminPath = $adminMatch[2] ?? '/';
+                $route = $module->resolvePage($moduleMatch->remainder);
+                if ($route === null) {
+                    return ErrorPage::notFound($domain->language);
+                }
 
-            // Контекст — основной проект сервера (для языка/схемы/путей).
-            $siteConfig = $this->container->has(SiteConfig::class) ? $this->container->get(SiteConfig::class) : null;
-            $primary = $siteConfig instanceof SiteConfig ? ($siteConfig->projectKeys()[0] ?? null) : null;
-            if ($primary !== null) {
-                $domain = $resolver->resolve($primary);
+                $moduleRoute = $route;
+                $routePath = $route->path;
+                $adminRole = $route->role;
+
+                // Контекст — основной проект сервера (для языка/схемы/путей).
+                $siteConfig = $this->container->has(SiteConfig::class) ? $this->container->get(SiteConfig::class) : null;
+                $primary = $siteConfig instanceof SiteConfig ? ($siteConfig->projectKeys()[0] ?? null) : null;
+                if ($primary !== null) {
+                    $domain = $resolver->resolve($primary);
+                }
             }
         }
 
-        // Заход на IP сервера ведёт в админку.
-        if ($adminRole === null && filter_var($host, FILTER_VALIDATE_IP) !== false && $request->path === '/') {
-            return Response::redirect('/app/admin/superadmin/', 302);
+        // Заход на IP сервера: модуль может указать свой вход.
+        if ($moduleRoute === null && filter_var($host, FILTER_VALIDATE_IP) !== false && $request->path === '/') {
+            if ($modules instanceof ModuleRegistry) {
+                foreach ($modules->all() as $module) {
+                    if ($module instanceof EntryPointInterface) {
+                        $entry = $module->entryPathForHost($host);
+                        if ($entry !== null) {
+                            return Response::redirect($entry, 302);
+                        }
+                    }
+                }
+            }
         }
 
         Metrics::setContext($domain->real, $domain->allias);
@@ -126,8 +144,7 @@ final class FrontController
             throw new \RuntimeException('RouterInterface expected');
         }
 
-        $routePath = $adminPath ?? $request->path;
-        $match = $router->match($routePath, $domain, $sessionId, $adminRole);
+        $match = $router->match($routePath, $domain, $sessionId, $moduleRoute?->pagesRoot);
         if (!$match->found) {
             return $match->code === 403
                 ? ErrorPage::forbidden($domain->language)
@@ -179,8 +196,7 @@ final class FrontController
         $translator = new Translator($lang, $fallbackOrNull, $paths->lang(), $sources);
 
         $host = (string) ($request->header('host') ?? $request->server['SERVER_NAME'] ?? '');
-        $isVirtualAdmin = str_ends_with($host, '.admin') && $adminRole === null;
-        $effectiveAdminRole = $adminRole ?? ($isVirtualAdmin ? explode('.', $host)[0] : null);
+        $effectiveAdminRole = $adminRole;
         $isAdminCtx = $effectiveAdminRole !== null;
 
         $langStrategy = 'path';
@@ -191,9 +207,6 @@ final class FrontController
         }
 
         $basePath = '';
-        if ($isAdminCtx) {
-            $basePath = $isVirtualAdmin ? '' : '/admin';
-        }
 
         $currentPath = $request->path;
         if ($langStrategy === 'path') {
@@ -253,6 +266,6 @@ final class FrontController
             'persona_auth' => $personaAuth,
         ]);
 
-        return $this->pages->handle($match, $context, $adminRole);
+        return $this->pages->handle($match, $context, $moduleRoute);
     }
 }
