@@ -65,7 +65,9 @@ final class PageHandler implements PageHandlerInterface
         if ($moduleRoute !== null) {
             $class = $moduleRoute->namespace . '\\' . $match->classChain;
         } else {
-            $ns = $this->resolver->namespace($domain->real);
+            $ns = $domain->namespace !== ''
+                ? $domain->namespace
+                : $this->resolver->namespace($domain->real);
             $class = $ns . '\\' . $domain->allias . '\\' . $match->classChain;
         }
 

@@ -256,6 +256,7 @@ final class FrontController
             'db' => $db,
             'persona' => $persona,
             'admin_auth' => $this->container->has(AdminAuthService::class) ? $this->container->get(AdminAuthService::class) : null,
+            'admin_access' => $this->container->has(\Damoony\Modules\AuthAdmin\AdminAccess::class) ? $this->container->get(\Damoony\Modules\AuthAdmin\AdminAccess::class) : null,
             'persona_auth' => $personaAuth,
         ]);
 

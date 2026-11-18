@@ -41,10 +41,10 @@ Start-Process E:\localserver\tools\mariadb\bin\mariadbd.exe -ArgumentList '--dat
 Start-Process E:\localserver\tools\nginx\nginx.exe -ArgumentList '-p','E:\localserver\tools\nginx','-c','E:\localserver\tools\nginx\conf\nginx.conf'
 ```
 
-## Админка
+## Админка (проект admin, IP)
 
 ```
-http://127.0.0.1/admin.php
+http://127.0.0.1/ru/
 ```
 
 Учётки создаются CLI:

@@ -21,7 +21,7 @@ final class SiteConfigTest extends TestCase
                     'namespace' => 'damoony_ru',
                     'mirrors' => [
                         'damoony.ru' => ['available' => true],
-                        'damoony3.ru' => ['available' => true],
+                        'damoonyserver.ru' => ['available' => true],
                     ],
                     'aliases' => [
                         'www' => ['available' => true, 'langs' => ['ru', 'en']],
@@ -146,9 +146,9 @@ final class SiteConfigTest extends TestCase
     {
         $site = SiteConfig::fromArray(self::validConfig());
 
-        self::assertSame('damoony.ru', $site->resolve('damoony3.ru')->key);
-        self::assertSame('damoony.ru', $site->resolveFolder('damoony3.ru'));
-        self::assertSame('damoony.ru', $site->resolveFolder('Damoony3.ru:443'));
+        self::assertSame('damoony.ru', $site->resolve('damoonyserver.ru')->key);
+        self::assertSame('damoony.ru', $site->resolveFolder('damoonyserver.ru'));
+        self::assertSame('damoony.ru', $site->resolveFolder('Damoonyserver.ru:443'));
     }
 
     public function testResolveThrowsForUnknown(): void
@@ -180,8 +180,8 @@ final class SiteConfigTest extends TestCase
         $site = SiteConfig::fromArray(self::validConfig());
 
         self::assertSame('damoony.ru', $site->projectByHost('damoony.ru')?->key);
-        self::assertSame('damoony.ru', $site->projectByHost('damoony3.ru')?->key);
-        self::assertSame('damoony.ru', $site->folderByHost('damoony3.ru'));
+        self::assertSame('damoony.ru', $site->projectByHost('damoonyserver.ru')?->key);
+        self::assertSame('damoony.ru', $site->folderByHost('damoonyserver.ru'));
         self::assertNull($site->projectByHost('unknown.ru'));
         self::assertNull($site->folderByHost('unknown.ru'));
     }
@@ -194,7 +194,7 @@ final class SiteConfigTest extends TestCase
         self::assertSame('damoony.ru', SiteConfig::normalizeHost('damoony.ru:8080'));
         self::assertSame('damoony.ru', SiteConfig::normalizeHost('damoony.ru.'));
 
-        self::assertSame('damoony.ru', $site->projectByHost('Damoony3.RU:443')?->folder);
+        self::assertSame('damoony.ru', $site->projectByHost('Damoonyserver.RU:443')?->folder);
     }
 
     public function testHostMap(): void
@@ -202,7 +202,7 @@ final class SiteConfigTest extends TestCase
         $site = SiteConfig::fromArray(self::validConfig());
 
         self::assertSame(
-            ['damoony.ru' => 'damoony.ru', 'damoony3.ru' => 'damoony.ru'],
+            ['damoony.ru' => 'damoony.ru', 'damoonyserver.ru' => 'damoony.ru'],
             $site->hostMap(),
         );
     }
@@ -210,11 +210,11 @@ final class SiteConfigTest extends TestCase
     public function testHostAvailability(): void
     {
         $data = self::validConfig();
-        $data['domains_app']['damoony.ru']['mirrors']['damoony3.ru'] = ['available' => false];
+        $data['domains_app']['damoony.ru']['mirrors']['damoonyserver.ru'] = ['available' => false];
         $site = SiteConfig::fromArray($data);
 
         self::assertTrue($site->isHostAvailable('damoony.ru'));
-        self::assertFalse($site->isHostAvailable('damoony3.ru'));
+        self::assertFalse($site->isHostAvailable('damoonyserver.ru'));
         self::assertFalse($site->isHostAvailable('unknown.ru'));
     }
 
@@ -378,7 +378,7 @@ final class SiteConfigTest extends TestCase
         $site = SiteConfig::fromFile($path);
 
         self::assertTrue($site->has('damoony.ru'));
-        self::assertSame('damoony.ru', $site->folderByHost('damoony3.ru'));
+        self::assertSame('damoony.ru', $site->folderByHost('damoonyserver.ru'));
         self::assertSame('damoony_ru', $site->namespace('damoony.ru'));
     }
 }

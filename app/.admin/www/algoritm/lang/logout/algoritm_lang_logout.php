@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Damoony\Admin\Pages\auth;
+namespace admin_server\www;
 
 use Damoony\Core\Http\Response;
 use Damoony\Data\Admin\AdminAuthService;
@@ -10,7 +10,7 @@ use Damoony\Modules\Admin\AdminModule;
 use Damoony\UI\Node;
 use Damoony\UI\Page\Page;
 
-final class algoritm_logout extends Page
+final class algoritm_lang_logout extends Page
 {
     protected function content(): Node|Response|null
     {
@@ -27,6 +27,6 @@ final class algoritm_logout extends Page
             'samesite' => 'Lax',
         ]);
 
-        return Response::redirect('/app/admin/auth/');
+        return Response::redirect('/' . $this->context->domain->language . '/');
     }
 }

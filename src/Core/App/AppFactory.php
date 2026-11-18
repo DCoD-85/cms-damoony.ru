@@ -26,7 +26,7 @@ use Damoony\Data\Admin\AdminAuthService;
 use Damoony\Data\Auth\AuthInterface;
 use Damoony\Data\Auth\DbAuth;
 use Damoony\Data\Db\Connection;
-use Damoony\Modules\Admin\AdminModule;
+use Damoony\Modules\AuthAdmin\AdminAccess;
 
 final class AppFactory
 {
@@ -48,6 +48,7 @@ final class AppFactory
         $container->setInstance(Env::class, $env);
         $container->setInstance(Config::class, $config);
         $container->setInstance(SiteConfig::class, $siteConfig);
+        $container->setInstance(AdminAccess::class, AdminAccess::fromConfig($config));
 
         ErrorPage::bootstrap(
             fallback: '',
@@ -77,7 +78,7 @@ final class AppFactory
 
         $adminAuth = new AdminAuthService(new AdminAuthRepository($db));
         $container->setInstance(AdminAuthService::class, $adminAuth);
-        $container->setInstance(ModuleRegistry::class, new ModuleRegistry([new AdminModule($config, $adminAuth)]));
+        $container->setInstance(ModuleRegistry::class, new ModuleRegistry([]));
 
         // Сессия, авторизация, CSRF
         $sessionDomain = (string) $config->getByKey(['security', 'session_domain'], '');
