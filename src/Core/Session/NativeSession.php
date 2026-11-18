@@ -13,6 +13,7 @@ final class NativeSession implements SessionInterface
         private readonly string $name = 'DSESSID',
         private readonly bool $secure = true,
         string $sameSite = 'Lax',
+        private readonly ?string $domain = null,
     ) {
         $this->sameSite = match ($sameSite) {
             'Lax' => 'Lax',
@@ -32,12 +33,17 @@ final class NativeSession implements SessionInterface
         }
 
         session_name($this->name);
-        session_set_cookie_params([
+        $cookie = [
             'path' => '/',
             'secure' => $this->secure,
             'httponly' => true,
             'samesite' => $this->sameSite,
-        ]);
+        ];
+        if ($this->domain !== null && $this->domain !== '') {
+            $cookie['domain'] = $this->domain;
+        }
+
+        session_set_cookie_params($cookie);
 
         if (!@session_start()) {
             throw new \RuntimeException('Failed to start session');

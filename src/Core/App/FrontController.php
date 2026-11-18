@@ -18,6 +18,7 @@ use Damoony\Core\Security\Csrf;
 use Damoony\Data\Auth\AuthInterface;
 use Damoony\Data\Db\Connection;
 use Damoony\Data\Persona\PersonaAuth;
+use Damoony\Data\Persona\PersonaBridge;
 use Damoony\Data\Persona\PersonaRepository;
 use Damoony\UI\Meta;
 use Damoony\UI\Region\RegionContext;
@@ -195,6 +196,7 @@ final class FrontController
             $persona = new PersonaRepository($db);
             if ($session instanceof \Damoony\Core\Session\SessionInterface) {
                 $personaAuth = new PersonaAuth($session, $persona);
+                new PersonaBridge($db, $session, $persona)->sync($domain->allias);
             }
         }
 

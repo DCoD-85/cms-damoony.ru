@@ -76,7 +76,8 @@ final class AppFactory
         $container->setInstance(Connection::class, $db);
 
         // Сессия, авторизация, CSRF
-        $session = new NativeSession('SITE_SESSID', ($_SERVER['HTTPS'] ?? '') === 'on');
+        $sessionDomain = (string) $config->getByKey(['security', 'session_domain'], '');
+        $session = new NativeSession('SITE_SESSID', ($_SERVER['HTTPS'] ?? '') === 'on', 'Lax', $sessionDomain);
         $session->start();
         $container->setInstance(\Damoony\Core\Session\SessionInterface::class, $session);
         $container->setInstance(AuthInterface::class, new DbAuth($db, $session));

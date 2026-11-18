@@ -24,5 +24,11 @@ final class algoritm_lang_logout extends Page
             $auth->logout();
         }
 
-        return Response::redirect('/' . $this->context->domain->language . '/');    }
+        $localAuth = $this->context->service('auth');
+        if ($localAuth instanceof \Damoony\Data\Auth\AuthInterface) {
+            $localAuth->logout();
+        }
+
+        return Response::redirect('/' . $this->context->domain->language . '/');
+    }
 }

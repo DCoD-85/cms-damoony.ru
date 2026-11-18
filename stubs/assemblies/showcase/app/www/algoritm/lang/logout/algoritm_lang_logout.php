@@ -13,6 +13,11 @@ final class algoritm_lang_logout extends Page
         if ($auth instanceof \Damoony\Data\Auth\AuthInterface) {
             $auth->logout();
         }
+
+        $personaAuth = $this->context->service('persona_auth');
+        if ($personaAuth instanceof \Damoony\Data\Persona\PersonaAuth) {
+            $personaAuth->logout();
+        }
         return Response::redirect('/' . $this->context->domain->language . '/');
     }
 }
