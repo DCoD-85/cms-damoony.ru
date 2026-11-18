@@ -15,11 +15,13 @@ use Damoony\Core\I18n\Translator;
 use Damoony\Core\Observability\Metrics;
 use Damoony\Core\Routing\RouterInterface;
 use Damoony\Core\Security\Csrf;
+use Damoony\Core\Settings\SiteConfig;
 use Damoony\Data\Auth\AuthInterface;
 use Damoony\Data\Db\Connection;
 use Damoony\Data\Persona\PersonaAuth;
 use Damoony\Data\Persona\PersonaBridge;
 use Damoony\Data\Persona\PersonaRepository;
+use Damoony\Modules\AuthAdmin\AdminAccess;
 use Damoony\UI\Meta;
 use Damoony\UI\Region\RegionContext;
 use Damoony\UI\Url\AdminUrlBuilder;
@@ -59,6 +61,40 @@ final class FrontController
             $domain = $domain->withAllias($aliasOverride);
         }
 
+        $adminPath = null;
+
+        // Серверная админка: /app/admin/{role}/... — доступ по политике modauthadmin.
+        if ($adminRole === null && preg_match('#^/app/admin/([a-z][a-z0-9_-]*)(/.*)?$#', $request->path, $adminMatch) === 1) {
+            $role = (string) $adminMatch[1];
+            if (!in_array($role, ['superadmin', 'domainadmin'], true)) {
+                return ErrorPage::notFound($domain->language);
+            }
+
+            $config = $this->container->has(Config::class) ? $this->container->get(Config::class) : null;
+            if ($config instanceof Config) {
+                $access = AdminAccess::fromConfig($config);
+                $clientIp = (string) ($request->server['REMOTE_ADDR'] ?? '');
+                if (!$access->allows($clientIp)) {
+                    return ErrorPage::forbidden($domain->language);
+                }
+            }
+
+            $adminRole = $role;
+            $adminPath = $adminMatch[2] ?? '/';
+
+            // Контекст — основной проект сервера (для языка/схемы/путей).
+            $siteConfig = $this->container->has(SiteConfig::class) ? $this->container->get(SiteConfig::class) : null;
+            $primary = $siteConfig instanceof SiteConfig ? ($siteConfig->projectKeys()[0] ?? null) : null;
+            if ($primary !== null) {
+                $domain = $resolver->resolve($primary);
+            }
+        }
+
+        // Заход на IP сервера ведёт в админку.
+        if ($adminRole === null && filter_var($host, FILTER_VALIDATE_IP) !== false && $request->path === '/') {
+            return Response::redirect('/app/admin/superadmin/', 302);
+        }
+
         Metrics::setContext($domain->real, $domain->allias);
 
         // O12: Если домен/поддомен не зарегистрирован в конфиге -> 404
@@ -91,7 +127,8 @@ final class FrontController
             throw new \RuntimeException('RouterInterface expected');
         }
 
-        $match = $router->match($request->path, $domain, $sessionId, $adminRole);
+        $routePath = $adminPath ?? $request->path;
+        $match = $router->match($routePath, $domain, $sessionId, $adminRole);
         if (!$match->found) {
             return $match->code === 403
                 ? ErrorPage::forbidden($domain->language)
