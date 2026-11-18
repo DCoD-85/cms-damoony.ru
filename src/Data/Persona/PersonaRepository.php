@@ -310,6 +310,25 @@ final class PersonaRepository
         return (int) $this->conn->pdo()->lastInsertId();
     }
 
+    /** @return list<array<string, mixed>> */
+    public function expiredBuilds(): array
+    {
+        $stmt = $this->conn->pdo()->prepare(
+            'SELECT * FROM builds WHERE expires_at <= :now ORDER BY id',
+        );
+        $stmt->execute(['now' => gmdate('Y-m-d H:i:s')]);
+
+        /** @var list<array<string, mixed>> $rows */
+        $rows = array_values($stmt->fetchAll() ?: []);
+
+        return $rows;
+    }
+
+    public function deleteBuild(int $buildId): void
+    {
+        $this->conn->pdo()->prepare('DELETE FROM builds WHERE id = :id')->execute(['id' => $buildId]);
+    }
+
     /** @return array<string, mixed>|array{} */
     public function activeBuild(int $installationId): array
     {

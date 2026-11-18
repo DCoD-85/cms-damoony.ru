@@ -35,18 +35,18 @@ final class algoritm_lang_admin extends Page
 
         if ($this->isPost()) {
             $requestId = (int) $this->context->request->post('request_id');
-            $request = $repo->requestById($requestId);
+            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+            $base = $scheme . '://' . $this->context->domain->domain;
 
-            if ($request !== [] && ($request['status'] ?? '') === 'pending') {
-                $account = $repo->accountByEmail((string) $request['email']);
-                $accountId = $account === []
-                    ? $repo->createAccount((string) $request['email'], null, 'pending')
-                    : (int) $account['id'];
-
-                $token = \Damoony\Cli\Support\PersonaTokens::generate();
-                $repo->createInvite($accountId, \Damoony\Cli\Support\PersonaTokens::hash($token), \Damoony\Cli\Support\PersonaTokens::expiresAt(48));
-                $repo->decideRequest($requestId, 'approved', 'persona-admin');
-                $inviteUrl = 'https://' . $this->context->domain->domain . '/invite/' . $token;
+            try {
+                $approved = (new \Damoony\Data\Persona\PersonaService($repo))->approveRequest(
+                    $requestId,
+                    $base,
+                    'persona-admin',
+                );
+                $inviteUrl = $approved['invite_url'];
+            } catch (\RuntimeException) {
+                $inviteUrl = null;
             }
         }
 

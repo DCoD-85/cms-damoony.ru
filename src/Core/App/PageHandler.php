@@ -78,10 +78,8 @@ final class PageHandler implements PageHandlerInterface
         }
 
         // Глобальная проверка CSRF для всех POST-запросов.
-        // Исключение: install-эндпоинт — он авторизуется одноразовым токеном, не сессией.
-        $installerPath = preg_match('#^/install/[a-f0-9]{64}$#', $context->request->path) === 1;
-
-        if ($context->request->isPost() && !$installerPath) {
+        // Страница может отключить её в своих rules.json: "csrf": false (например, install по токену).
+        if ($context->request->isPost() && !$this->csrfDisabled($file)) {
             $csrf = $context->service('csrf');
             if ($csrf instanceof Csrf && !$csrf->check($context->request->post)) {
                 if ($context->request->isAjax()) {
@@ -251,6 +249,21 @@ final class PageHandler implements PageHandlerInterface
     private function debugDetail(string $message): string
     {
         return Env::fromServer()->isDev() ? $message : '';
+    }
+
+    /**
+     * Страница может отключить глобальный CSRF в своём rules.json (`"csrf": false`).
+     */
+    private function csrfDisabled(string $pageFile): bool
+    {
+        $rulesFile = preg_replace('/\.php$/', '.rules.json', $pageFile);
+        if (!is_string($rulesFile) || !is_file($rulesFile)) {
+            return false;
+        }
+
+        $rules = json_decode((string) file_get_contents($rulesFile), true);
+
+        return is_array($rules) && ($rules['csrf'] ?? true) === false;
     }
 
 }

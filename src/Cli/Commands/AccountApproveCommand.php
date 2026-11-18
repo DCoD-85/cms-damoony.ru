@@ -7,8 +7,8 @@ namespace Damoony\Cli\Commands;
 use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
-use Damoony\Cli\Support\PersonaTokens;
 use Damoony\Data\Persona\PersonaRepository;
+use Damoony\Data\Persona\PersonaService;
 use RuntimeException;
 
 /**
@@ -16,10 +16,11 @@ use RuntimeException;
  */
 final class AccountApproveCommand implements CommandInterface
 {
-    private const INVITE_TTL_HOURS = 48;
+    private readonly PersonaService $service;
 
     public function __construct(private readonly PersonaRepository $persona)
     {
+        $this->service = new PersonaService($persona);
     }
 
     public function name(): string
@@ -40,53 +41,27 @@ final class AccountApproveCommand implements CommandInterface
         $base = rtrim((string) ($args['base'] ?? 'https://persona.damoony.ru'), '/');
         $password = (string) ($args['password'] ?? '');
 
-        $request = $this->persona->requestById($requestId);
-        if ($request === [] || ($request['status'] ?? '') !== 'pending') {
-            $r->error('Заявка не найдена или уже обработана');
+        try {
+            $result = $this->service->approveRequest(
+                $requestId,
+                $base,
+                'cli',
+                $password === '' ? null : $password,
+            );
+        } catch (RuntimeException $e) {
+            $r->error($e->getMessage());
 
             return $r;
         }
 
-        $email = (string) $request['email'];
-        $account = $this->persona->accountByEmail($email);
-        $accountId = $account === []
-            ? $this->persona->createAccount($email, null, 'pending')
-            : (int) $account['id'];
-
-        try {
-            if ($password !== '') {
-                if (strlen($password) < 8) {
-                    throw new RuntimeException('Пароль минимум 8 символов');
-                }
-                $this->persona->setAccountPassword($accountId, password_hash($password, PASSWORD_DEFAULT));
-                $this->persona->decideRequest($requestId, 'approved', 'cli');
-                $r->data = ['account_id' => $accountId, 'email' => $email, 'invite_url' => null];
-
-                $context->step('Аккаунт активирован: ' . $email, true, 'persona');
-
-                return $r;
-            }
-
-            $token = PersonaTokens::generate();
-            $this->persona->createInvite(
-                $accountId,
-                PersonaTokens::hash($token),
-                PersonaTokens::expiresAt(self::INVITE_TTL_HOURS),
-            );
-            $this->persona->decideRequest($requestId, 'approved', 'cli');
-
-            $inviteUrl = $base . '/invite/' . $token;
-            $r->data = [
-                'account_id' => $accountId,
-                'email' => $email,
-                'invite_url' => $inviteUrl,
-                'expires_hours' => self::INVITE_TTL_HOURS,
-            ];
-
-            $context->step('Приглашение создано: ' . $inviteUrl, true, 'persona');
-        } catch (RuntimeException $e) {
-            $r->error($e->getMessage());
-        }
+        $r->data = $result;
+        $context->step(
+            $result['invite_url'] === null
+                ? 'Аккаунт активирован: ' . $result['email']
+                : 'Приглашение создано: ' . $result['invite_url'],
+            true,
+            'persona',
+        );
 
         return $r;
     }

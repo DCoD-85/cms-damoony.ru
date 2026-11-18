@@ -20,6 +20,7 @@ use Damoony\Cli\Commands\BlockListCommand;
 use Damoony\Cli\Commands\BlockNewCommand;
 use Damoony\Cli\Commands\BlockRemoveCommand;
 use Damoony\Cli\Commands\BlockWriteCommand;
+use Damoony\Cli\Commands\BuildPruneCommand;
 use Damoony\Cli\Commands\ContentGcCommand;
 use Damoony\Cli\Commands\ContentListCommand;
 use Damoony\Cli\Commands\ContentRemoveCommand;
@@ -223,6 +224,7 @@ final class Registry
             $registry->add(new InstallCreateCommand($paths, $persona));
             $registry->add(new InstallApproveCommand($persona));
             $registry->add(new InstallClaimCommand($persona));
+            $registry->add(new BuildPruneCommand($paths, $persona));
         }
 
         $cronTasks = [
