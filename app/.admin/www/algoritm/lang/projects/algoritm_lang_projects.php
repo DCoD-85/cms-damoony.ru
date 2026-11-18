@@ -84,7 +84,7 @@ final class algoritm_lang_projects extends AdminPage
         $form->method('POST');
         $form->action('/' . $lang . '/projects/');
         $form->add(new Input('hidden', '_csrf', $csrf));
-        $form->add(new Input('hidden', 'action', $action));
+        $form->add(new Input('hidden', 'op', $action));
         $form->add(new Input('hidden', 'project', $project));
         $form->add(new Input('hidden', 'target', $target));
         $form->add(new Button('Переключить'));
@@ -96,7 +96,7 @@ final class algoritm_lang_projects extends AdminPage
     {
         $projectKey = (string) $this->context->request->post('project');
         $target = (string) $this->context->request->post('target');
-        $action = (string) $this->context->request->post('action');
+        $action = (string) $this->context->request->post('op');
         $project = $site->project($projectKey);
 
         if ($project === null) {

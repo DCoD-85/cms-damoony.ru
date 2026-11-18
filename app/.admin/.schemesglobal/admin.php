@@ -18,7 +18,7 @@ return [
             '/media/shared/css/admin.css',
         ],
         'js' => [
-            '/media/shared/scripts/cliajax.js',
+            '/media/shared/scripts/cliajax.js?v=2',
         ],
     ],
 ];
