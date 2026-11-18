@@ -1,0 +1,4 @@
+/* components.css — тема скина: только оболочки и переменные.
+   Базовый вид ui-* элементов — в /media/shared/css/elements.css. */
+.auth-box { max-width: 420px; }
+.auth-box p { margin: 12px 0 0; }

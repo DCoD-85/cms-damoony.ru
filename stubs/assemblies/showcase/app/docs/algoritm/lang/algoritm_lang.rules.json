@@ -1,0 +1,1 @@
+{"available": {"": "^$", "overview": "^overview$", "quickstart": "^quickstart$", "install": "^install$", "cli": "^cli$", "config": "^config$", "projects": "^projects$", "ui": "^ui$", "deploy": "^deploy$", "observability": "^observability$"}, "auth": false, "search": false}

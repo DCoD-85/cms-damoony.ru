@@ -1,14 +1,15 @@
 {
     "name": "Showcase",
-    "description": "Витрина Damoony: главная, новостной портал, публичный API",
-    "aliases": ["www", "news", "api"],
+    "description": "Витрина Damoony: главная, новостной портал, публичный API, документация",
+    "aliases": ["www", "news", "api", "docs"],
     "langs": {
         "project": ["ru", "en"],
         "default": "ru",
         "aliases": {
             "www": ["ru", "en"],
             "news": ["ru", "en"],
-            "api": ["en"]
+            "api": ["en"],
+            "docs": ["ru", "en"]
         }
     }
 }
