@@ -25,12 +25,13 @@
 
 ## 3. Сборки
 
-`new --domain=X --assembly=developer [--alias=www] [--namespace=…]`
+`new --domain=X --assembly=minimal [--alias=www] [--namespace=…] [--langs=ru,en] [--default-lang=ru] [--force]`
 
 - раскладывает `stubs/assemblies/{assembly}/` в `app/{folder}/`, `www/media/{folder}/{alias}/`, `www/media/shared/`;
 - подставляет `{{domain}}`, `{{real}}`, `{{alias}}`, `{{namespace}}`, `{{timestamp}}`;
 - если проект уже объявлен — переиспользует его `folder`/`namespace`;
-- в конфиг добавляет проект, миррор, алиас и согласованные языки (`project.langs = alias.langs`).
+- языки берёт из `assembly.json` (`langs.project`, `langs.default`, `langs.aliases`), `--langs`/`--default-lang` перекрывают, алиас получает языки проекта (или свои из `langs.aliases`);
+- `--force` очищает `app/{folder}` и `media/{folder}/{alias}` перед сборкой.
 
 Практика: сборка — единственный правильный способ поставить типовой каркас
 (сайт, админка, магазин). Профили `clean/minimal/full` из старой версии заменены сборками.

@@ -51,3 +51,24 @@
 /ru/registration/        200, POST → 302 /ru/profile/
 /ru/profile/             после регистрации 200 с логином и выходом
 ```
+
+## Языки в сборке
+
+`assembly.json`:
+
+```json
+{
+    "name": "Minimal",
+    "langs": {
+        "project": ["ru", "en"],
+        "default": "ru",
+        "aliases": { "www": ["ru", "en"] }
+    }
+}
+```
+
+- `langs` нет — прежние `ru,en` (обратная совместимость);
+- `default` входит в `project`, в конфиг пишется первым;
+- языки алиаса ⊆ языков проекта;
+- для каждого языка проекта обязателен `app/.i18nglobal/{lang}.json` (иначе `new` падает до записи);
+- оверрайды: `new --assembly=minimal --langs=ru,en --default-lang=ru`.

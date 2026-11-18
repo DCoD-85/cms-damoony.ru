@@ -20,10 +20,22 @@ final class NewCommandTest extends TestCase
         $this->root = sys_get_temp_dir() . '/damoony_new_' . bin2hex(random_bytes(6));
         mkdir($this->root . '/config', 0o775, true);
         mkdir($this->root . '/stubs/assemblies/demo/app/.blocksglobal/top', 0o775, true);
-        file_put_contents($this->root . '/stubs/assemblies/demo/assembly.json', json_encode(['name' => 'Demo']));
+        mkdir($this->root . '/stubs/assemblies/demo/app/.i18nglobal', 0o775, true);
 
         $block = $this->root . '/stubs/assemblies/demo/app/.blocksglobal/top/top.php';
         file_put_contents($block, "<?php\nnamespace {{namespace}};\nfinal class blocksglobal_top {}\n");
+
+        file_put_contents($this->root . '/stubs/assemblies/demo/app/.i18nglobal/ru.json', '{}\n');
+        file_put_contents($this->root . '/stubs/assemblies/demo/app/.i18nglobal/en.json', '{}\n');
+
+        $this->writeManifest([
+            'name' => 'Demo',
+            'langs' => [
+                'project' => ['ru', 'en'],
+                'default' => 'ru',
+                'aliases' => ['www' => ['ru', 'en']],
+            ],
+        ]);
     }
 
     protected function tearDown(): void
@@ -50,9 +62,6 @@ final class NewCommandTest extends TestCase
         self::assertFileDoesNotExist($oldApp . '/stale.php');
         self::assertFileDoesNotExist($oldMedia . '/stale.css');
         self::assertFileExists($oldApp . '/.blocksglobal/top/top.php');
-
-        $site = SiteConfig::fromFile($this->root . '/config/site.config');
-        self::assertNotNull($site->project('demo.test'));
     }
 
     public function testWithoutForceExistingFilesRemain(): void
@@ -68,6 +77,73 @@ final class NewCommandTest extends TestCase
 
         self::assertTrue($result->ok, implode('; ', $result->errors));
         self::assertFileExists($oldApp . '/stale.php');
+    }
+
+    public function testUsesAssemblyLangs(): void
+    {
+        $result = $this->command()->run(['domain' => 'demo.test', 'assembly' => 'demo'], $this->context());
+
+        self::assertTrue($result->ok, implode('; ', $result->errors));
+        self::assertSame(['ru', 'en'], $result->data['langs']);
+
+        $project = SiteConfig::fromFile($this->root . '/config/site.config')->project('demo.test');
+        self::assertNotNull($project);
+        self::assertSame(['ru', 'en'], $project->langs);
+        self::assertSame(['ru', 'en'], $project->alias('www')?->langs ?? []);
+    }
+
+    public function testDefaultLangGoesFirst(): void
+    {
+        $this->writeManifest([
+            'name' => 'Demo',
+            'langs' => ['project' => ['ru', 'en'], 'default' => 'en'],
+        ]);
+
+        $result = $this->command()->run(['domain' => 'demo.test', 'assembly' => 'demo'], $this->context());
+
+        self::assertTrue($result->ok, implode('; ', $result->errors));
+        self::assertSame(['en', 'ru'], $result->data['langs']);
+        self::assertSame('en', $result->data['default_lang']);
+    }
+
+    public function testMissingTranslationsFails(): void
+    {
+        $this->writeManifest([
+            'name' => 'Demo',
+            'langs' => ['project' => ['ru', 'de']],
+        ]);
+
+        $result = $this->command()->run(['domain' => 'demo.test', 'assembly' => 'demo'], $this->context());
+
+        self::assertFalse($result->ok);
+        self::assertStringContainsString('нет переводов', $result->errors[0]);
+    }
+
+    public function testLangsOverride(): void
+    {
+        $result = $this->command()->run([
+            'domain' => 'demo.test',
+            'assembly' => 'demo',
+            'langs' => 'en',
+        ], $this->context());
+
+        self::assertTrue($result->ok, implode('; ', $result->errors));
+        self::assertSame(['en'], $result->data['langs']);
+
+        $project = SiteConfig::fromFile($this->root . '/config/site.config')->project('demo.test');
+        self::assertNotNull($project);
+        self::assertSame(['en'], $project->langs);
+    }
+
+    /**
+     * @param array<string, mixed> $manifest
+     */
+    private function writeManifest(array $manifest): void
+    {
+        file_put_contents(
+            $this->root . '/stubs/assemblies/demo/assembly.json',
+            json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+        );
     }
 
     private function command(): NewCommand

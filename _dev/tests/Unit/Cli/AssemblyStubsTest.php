@@ -37,6 +37,26 @@ final class AssemblyStubsTest extends TestCase
         }
     }
 
+    public function testDeclaredLangsHaveTranslations(): void
+    {
+        foreach ($this->assemblies() as $name => $dir) {
+            $manifest = json_decode((string) file_get_contents($dir . '/assembly.json'), true);
+            if (!is_array($manifest) || !isset($manifest['langs'])) {
+                continue;
+            }
+
+            $langs = (array) ($manifest['langs']['project'] ?? []);
+            self::assertNotEmpty($langs, 'langs.project пуст: ' . $name);
+
+            foreach ($langs as $lang) {
+                self::assertFileExists(
+                    $dir . '/app/.i18nglobal/' . $lang . '.json',
+                    'нет переводов для ' . $lang . ' в сборке ' . $name,
+                );
+            }
+        }
+    }
+
     public function testPhpFilesParseAfterSubstitution(): void
     {
         foreach ($this->assemblies() as $name => $dir) {
