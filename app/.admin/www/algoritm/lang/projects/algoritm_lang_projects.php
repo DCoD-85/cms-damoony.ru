@@ -44,6 +44,9 @@ final class algoritm_lang_projects extends AdminPage
         $wrap->append(Builder::h(1)->content('Проекты'));
 
         foreach ($site->projects() as $key => $project) {
+            if ($key === 'admin') {
+                continue;
+            }
             $block = Builder::div('admin-project');
             $block->append(Builder::el('strong')->content((string) $key));
             $block->append(Builder::div()->content(

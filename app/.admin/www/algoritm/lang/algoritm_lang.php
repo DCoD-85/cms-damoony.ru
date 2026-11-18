@@ -108,6 +108,9 @@ final class algoritm_lang extends Page
             if ($site instanceof SiteConfig) {
                 $list = Builder::ul('admin-projects');
                 foreach ($site->projects() as $key => $project) {
+                    if ($key === 'admin') {
+                        continue;
+                    }
                     $list->append(Builder::li()->content(
                         (string) $key
                         . ' · mirrors: ' . implode(', ', $project->hostNames())
