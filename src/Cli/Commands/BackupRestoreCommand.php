@@ -69,15 +69,26 @@ final class BackupRestoreCommand implements CommandInterface
             return $r;
         }
 
+        $archive = new BackupArchive();
+
+        $domainArg = (string) ($args['domain'] ?? '');
+        if ($domainArg === '') {
+            $archiveManifest = $archive->readManifestOfArchive($zipPath);
+            $domainArg = is_array($archiveManifest) ? (string) ($archiveManifest['project'] ?? '') : '';
+        }
+        if ($domainArg === '') {
+            $r->error('Укажите --domain: в архиве нет manifest.project');
+
+            return $r;
+        }
+
         try {
-            $project = $this->site->resolve((string) ($args['domain'] ?? ''));
+            $project = $this->site->resolve($domainArg);
         } catch (RuntimeException $e) {
             $r->error($e->getMessage());
 
             return $r;
         }
-
-        $archive = new BackupArchive();
 
         try {
             $requested = $archive->parseParts((string) ($args['only'] ?? ''));

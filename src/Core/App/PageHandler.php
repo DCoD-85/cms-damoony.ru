@@ -11,6 +11,7 @@ use Damoony\Core\Env;
 use Damoony\Core\Error\ErrorPage;
 use Damoony\Core\Files\Paths;
 use Damoony\Core\Http\Response;
+use Damoony\Core\I18n\Translator;
 use Damoony\Core\Routing\RouteMatch;
 use Damoony\Core\Security\Csrf;
 use Damoony\UI\Document;
@@ -215,7 +216,8 @@ final class PageHandler implements PageHandlerInterface
 
         // Если схема не отрендерилась, но был Node — оборачиваем в Document как есть
         $doc = new Document($context->meta);
-        $doc->lang($domain->language);
+        $translator = $context->service('i18n');
+        $doc->lang($translator instanceof Translator ? $translator->current() : $domain->language);
         $doc->body()->append($result);
 
         // Debug benchmark — единственный источник бейджа (только dev/отладка)

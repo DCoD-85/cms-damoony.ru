@@ -79,16 +79,31 @@ final class StructureChecker
         $issues = [];
 
         $schemesDir = $this->paths->schemesGlobal($project->folder);
-        $localScheme = $schemesDir . '/' . $alias . '.php';
-        $globalScheme = $schemesDir . '/' . $project->scheme . '.php';
+        $localSchemesDir = $this->paths->schemesLocal($project->folder, $alias);
 
-        if (!is_file($localScheme) && !is_file($globalScheme)) {
+        // Приоритет как в SchemeLoader: local {scheme}/{alias} → global {scheme}/{alias} → www.
+        $candidates = [
+            $localSchemesDir . '/' . $project->scheme . '.php',
+            $localSchemesDir . '/' . $alias . '.php',
+            $schemesDir . '/' . $project->scheme . '.php',
+            $schemesDir . '/' . $alias . '.php',
+            $schemesDir . '/www.php',
+        ];
+
+        $schemeFile = null;
+        foreach ($candidates as $candidate) {
+            if (is_file($candidate)) {
+                $schemeFile = $candidate;
+                break;
+            }
+        }
+
+        if ($schemeFile === null) {
             $issues[] = ['level' => 'error', 'message' => "Не найдена схема (ни {$alias}.php, ни {$project->scheme}.php)"];
 
             return $issues;
         }
 
-        $schemeFile = is_file($localScheme) ? $localScheme : $globalScheme;
         $schemeData = require $schemeFile;
         if (!is_array($schemeData)) {
             return $issues;

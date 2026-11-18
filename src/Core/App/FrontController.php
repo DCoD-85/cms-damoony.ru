@@ -62,6 +62,11 @@ final class FrontController
             return ErrorPage::notFound($domain->language);
         }
 
+        // Канонический слэш: /ru -> /ru/ (только корень языка)
+        if (preg_match('#^/[a-z]{2}$#', $request->path) === 1) {
+            return Response::redirect($request->path . '/', 301);
+        }
+
         // Показываем заглушку только для публичного сайта (не для админки)
         if ($adminRole === null && !$domain->available && !str_starts_with($request->path, '/admin')) {
             $paths = $this->container->has(Paths::class) ? $this->container->get(Paths::class) : null;
@@ -110,6 +115,9 @@ final class FrontController
         // O11: Определяем язык (URL -> Cookie -> Конфиг)
         if (isset($match->args['lang'])) {
             $lang = (string) $match->args['lang'];
+            if (!in_array($lang, $domain->supportedLanguages, true)) {
+                return ErrorPage::notFound($domain->language);
+            }
         } else {
             $negotiator = new LanguageNegotiator($domain->supportedLanguages, $domain->language);
             $lang = $negotiator->resolve($request, $domain);

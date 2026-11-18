@@ -70,6 +70,8 @@ final class BackupArchiveTest extends TestCase
         self::assertIsArray($read);
         self::assertSame($manifest['created_at'], $read['created_at']);
         self::assertSame(1, $read['parts']['app']['files']);
+        self::assertSame('damoony.ru', $read['project']);
+        self::assertSame('damoony.ru', $read['folder']);
     }
 
     public function testPruneKeepsNewestAndDeletesRest(): void
