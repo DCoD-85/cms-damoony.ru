@@ -166,6 +166,7 @@ file_put_contents("config/engine.config", json_encode(\$cfg, JSON_PRETTY_PRINT |
 ' "\$DB_NAME" "\$DB_USER" "\$DB_PASS"
 
 echo "[5/5] migrate & check"
+php bin/cli.php cli:init --name=installer
 php bin/cli.php db:migrate --force
 php bin/cli.php health:check
 
