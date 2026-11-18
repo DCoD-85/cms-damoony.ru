@@ -141,6 +141,12 @@ final class AdminAuthService
         return $this->repo->membersFor($accountId);
     }
 
+    /** @return list<array<string, mixed>> */
+    public function auditLog(int $limit = 200): array
+    {
+        return $this->repo->auditLog($limit);
+    }
+
     public function createAdmin(string $login, string $password, string $role, string $scope = ''): int
     {
         $login = trim($login);

@@ -102,7 +102,7 @@ final class algoritm_lang extends Page
         $wrap->append($nav);
 
         $cards = Builder::div('admin-cards');
-        foreach (['projects/' => 'Проекты', 'accounts/' => 'Аккаунты', 'ops/' => 'Мониторинг'] as $path => $label) {
+        foreach (['projects/' => 'Проекты', 'accounts/' => 'Аккаунты', 'ops/' => 'Мониторинг', 'audit/' => 'Аудит'] as $path => $label) {
             $cards->append(Builder::a('/' . $lang . '/' . $path, 'admin-card')->content($label));
         }
         $wrap->append($cards);

@@ -25,7 +25,7 @@ final class blockslocal_www_left implements RegionInterface
     {
         $lang = $context->domain->language;
         $nav = Builder::ul('admin-nav admin-nav-vertical');
-        foreach (['' => 'Главная', 'projects/' => 'Проекты', 'accounts/' => 'Аккаунты', 'ops/' => 'Мониторинг'] as $path => $label) {
+        foreach (['' => 'Главная', 'projects/' => 'Проекты', 'accounts/' => 'Аккаунты', 'ops/' => 'Мониторинг', 'audit/' => 'Аудит'] as $path => $label) {
             $nav->append(Builder::li()->append(
                 Builder::a('/' . $lang . '/' . $path)->content($label),
             ));
