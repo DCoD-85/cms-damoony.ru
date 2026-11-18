@@ -11,7 +11,7 @@ $children = [
 
 return [
     'tag' => 'div',
-    'class' => 'admin-shell',
+    'class' => 'dt admin-shell',
     'children' => $children,
     'meta' => [
         'css' => [
