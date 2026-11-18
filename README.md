@@ -1,102 +1,53 @@
 # Damoony Engine
 
-Лёгкий PHP 8.5 движок для мультидоменных сайтов с архитектурой CLI-First и нативной интеграцией AI-агентов.
+PHP 8.5 движок для мультидоменных сайтов: файловый routing, проекты/алиасы, схемы и блоки, i18n, CLI-first, серверная админка.
 
-**Статус:** v3.1-dev (Multi-Agent Orchestrator + AIUI). Полное состояние — [`_doc/arch.md`](_doc/arch.md). Дорожная карта — [`_doc/dataprovider-design.md`](_doc/dataprovider-design.md).
+## Требования
 
----
-
-## Что это
-
-Damoony Engine — это AI-Native CMS. Она сочетает скорость статического сайта (рендеринг за 0.8–3 мс) с мощью современных LLM.
-
-Главные отличия от классических CMS:
-
-1. **CLI-First:** CLI (`bin/cli.php`) — единственный источник истины. Админка и AI-агенты (`bin/aicli.php`) — лишь безопасные обёртки над CLI. Актуальный список команд — `php bin/cli.php help`.
-2. **Безопасный Low-Code:** Визуальный Drag&Drop оставлен ТОЛЬКО для Схем. Страницы, Блоки и Меню редактируются через CodeMirror или AI (через безопасный JSON). Это полностью исключает RCE-уязвимости.
-3. **AI-Интеграция (E2E):** Встроенный слой `bin/aicli.php` (9 ролей + Navigator) и Python-оркестратор (`ai_agent/brain.py`), который автономно генерирует сайты по текстовому брифу. Архитектура построена на паттерне Map-Reduce (Архитектор → Копирайтеры → Дизайнер).
-4. **Безопасный интернет (AINET):** Библиотека `src/Ainet/` (SSRF-защита, whitelist, только GET, кэш 7 дней) позволяет AI скачивать картинки, не имея доступа к локальной сети.
-5. **Визуальный конструктор БД (dbcli):** Создание таблиц и миграций прямо из админки. Под капотом — JSON-схемы, из которых генерируются SQL и PHP-провайдеры. Никакого сырого SQL.
-6. **Строгая архитектура:** Правило 3 файлов (`.php`, `.rules.json`, `.editor.json`) для всех сущностей. Карантин на 6 уровней для удаления файлов. Скин алиаса (`www/media/[domain]/[allias]/skin/`, CSS/JS). Wizard-генерация (`brain.py`) пишет два файла: `main.css` (base + layout + center) и `top.css` (меню). См. `arch.md` §3.4.
-7. **AIUI (AI User Interface):** два независимых AI-сценария для пользователя:
-   - **AIUI** (`/admin/aiui.php`) — встроенный AI-редактор страниц (split-screen: превью + чат). Интервьюер собирает бриф, кнопка «🚀 Создать» запускает `Orchestrator` (Interviewer → Architect → Coder), изменения пишутся в изолированную сессию `.sess_*`. См. [`_doc/aiui.md`](_doc/aiui.md) и [`_doc/orchestrator.md`](_doc/orchestrator.md).
-   - **Wizard** (`ai_agent/brain.py`) — фоновый мультиагент (Python) для генерации сайта «с нуля» по брифу. См. [`_doc/ai.md`](_doc/ai.md) §7.
-   
-   Оба используют безопасный JSON (`PageCompiler`/`BlockCodegen`), AI не пишет raw PHP.
-
----
-
-## Стек
-
-- **Язык:** PHP >= 8.5 (Composer, PSR-4/3/11).
-- **БД:** MariaDB 11+ / MySQL 8+ (через PDO). SQLite (для тестов).
-- **Веб-сервер:** Nginx + PHP-FPM или Apache 2.4.
-- **AI-Оркестратор:** Python 3.10+ (`ai_agent/brain.py`), Ollama (Gemma 4, Qwen 2.5).
-- **Качество:** PHPUnit 11, PHPStan (level 8), PHP-CS-Fixer.
-
----
+- PHP ≥ 8.5 (`pdo_mysql`, `mbstring`, `json`, `openssl`, `fileinfo`, `curl`, `gd`);
+- Composer;
+- MariaDB 11+ / MySQL 8+;
+- Nginx + PHP-FPM (рекомендуется);
+- Python 3.10+ — только для AI-сценариев (сейчас отложены).
 
 ## Быстрый старт
-
-Убедитесь, что в `config/engine.config` прописаны доступы к MariaDB.
 
 ```bash
 git clone https://github.com/DCoD-85/cms-damoony.ru.git damoony
 cd damoony
 composer install
-cp config/ainet.config.example config/ainet.config
-
-# Инициализация БД и администратора
+# создать config/engine.config (пример — в _doc/install.md)
+php bin/cli.php cli:init --name=owner
 php bin/cli.php db:migrate
-php bin/cli.php admin:passwd --name=admin --password=[strong_password]
-php bin/cli.php admin:new --role=superadmin
-
-# Создание первого сайта (вручную)
-php bin/cli.php domain:new --domain=example.ru --namespace=example
+php bin/cli.php new --domain=example.ru --assembly=minimal --force
+php bin/cli.php admin:create --login=root --password='strong-pass-1' --role=superadmin
+php bin/cli.php health:check
 ```
 
-**Или запуск AI-генерации сайта (E2E):**
-
-```bash
-# Убедитесь, что Ollama запущена
-python -m ai_agent.brain damoony3test.ru coffee "Сделай лендинг IT-агентства из 3 страниц" gemma4:e4b
-```
-
-Откройте `http://[domain]/` (сайт) и `http://[domain]/admin/` (админка).
-
----
+Сайт: `http://example.ru/ru/`  
+Админка: `http://127.0.0.1/ru/` (см. `_doc/admin.md`).
 
 ## Документация
 
-👉 **Новичкам и аудиторам начинать здесь:** [`_doc/start_new_audit.md`](_doc/start_new_audit.md) — окружение, правила работы, карта проекта, read-order.
-
-**Остальные документы в `_doc/`:**
-
 | Файл | О чём |
 |---|---|
-| [`arch.md`](_doc/arch.md) | Архитектура, 10 принципов, инварианты, открытые P2 |
-| [`cli.md`](_doc/cli.md) | Команды CLI: флаги, идемпотентность, guards |
-| [`dev.md`](_doc/dev.md) | How-to: страница, блок, схема, скин + Python smoke tests |
-| [`ai.md`](_doc/ai.md) | aicli (HATEOAS, роли, Navigator), AINET (SSRF), мультиагент, AI Wizard (Web UI) |
-| [`admin.md`](_doc/admin.md) | UI админки + делегирование CLI |
-| [`install.md`](_doc/install.md) | Установка с нуля, конфиги, веб-сервер |
-| [`deployment_test.md`](_doc/deployment_test.md) | E2E-сценарий развертывания (Vendor -> Client) |
-| [`dbcli.md`](_doc/dbcli.md) | Декларативная работа с БД (JSON-схемы) |
-| [`orchestrator.md`](_doc/orchestrator.md) | Внутренний AI-конвейер (Blackboard) |
-| [`pages_and_rules.md`](_doc/pages_and_rules.md) | FileRouter, `.rules.json`, available/auth |
-| [`progressive_enhancement.md`](_doc/progressive_enhancement.md) | AJAX, Toasts, MinStruct |
-| [`visuo_showcase.md`](_doc/visuo_showcase.md) | Эталонный мультиязычный алиас |
-| [`dataprovider-design.md`](_doc/dataprovider-design.md) | DataProvider, ProviderResolver |
+| `_doc/install.md` | установка с нуля |
+| `_doc/admin.md` | админка, роли, доступ |
+| `_doc/deploy.md` | staging/prod, nginx, php-fpm |
+| `_doc/cli.md` | команды CLI |
+| `_doc/local.md` | локальная среда |
 
-**Правило:** один факт — одно место. Метрики, перечень команд, требования — не дублируются, только ссылки.
----
+## Проверки
 
-## История изменений и аудит
+```bash
+vendor/bin/phpunit -c _dev/phpunit.xml
+vendor/bin/phpstan analyse -c _dev/phpstan.neon --memory-limit=1G
+php bin/cli.php structure:check
+php bin/cli.php health:check
+```
 
-Вся история изменений, коммитов и архитектурных решений находится **исключительно в Git**. 
-Документация в `_doc/` описывает только **актуальное состояние** проекта (as-is) и не содержит changelog'ов.
+## Статус
 
-Для аудита проекта, поиска причин изменений или просмотра истории конкретного файла используйте команды Git:
-- `git log --oneline` — краткая история коммитов.
-- `git log -p _doc/arch.md` — история изменений конкретного документа.
-- `git log --grep="refactor"` — поиск коммитов по ключевому слову.
+- ветка: `refactor/site-config-v2`;
+- админка: MVP (superadmin/domainadmin), `apps/` — следующий этап;
+- AI-вход и AI-редактор — отложены.

@@ -10,8 +10,6 @@
 | PHP CLI | `E:\localserver\tools\php8.5.12\php.exe` |
 | PHP-FPM/CGI | `127.0.0.1:9502` |
 
-Старый `damoony3.ru` удалён; его домен больше не используется.
-
 ## Домены
 
 - `damoonyserver.ru` — основной локальный сайт (проект `damoony.ru`);
