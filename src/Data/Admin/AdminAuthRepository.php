@@ -57,6 +57,32 @@ final class AdminAuthRepository
             ->execute(['hash' => $passwordHash, 'id' => $accountId]);
     }
 
+    /** @return list<array<string, mixed>> */
+    public function accounts(): array
+    {
+        $stmt = $this->conn->pdo()->query('SELECT * FROM admin_accounts ORDER BY login');
+        if ($stmt === false) {
+            return [];
+        }
+
+        /** @var list<array<string, mixed>> $rows */
+        $rows = array_values($stmt->fetchAll() ?: []);
+
+        return $rows;
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function membersFor(int $accountId): array
+    {
+        $stmt = $this->conn->pdo()->prepare('SELECT * FROM admin_members WHERE account_id = :account ORDER BY id');
+        $stmt->execute(['account' => $accountId]);
+
+        /** @var list<array<string, mixed>> $rows */
+        $rows = array_values($stmt->fetchAll() ?: []);
+
+        return $rows;
+    }
+
     public function createMember(int $accountId, string $role, string $scope = '', string $status = 'active'): int
     {
         $this->conn->pdo()->prepare(

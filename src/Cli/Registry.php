@@ -103,6 +103,7 @@ use Damoony\Core\Settings\ObservabilityConfig;
 use Damoony\Core\Settings\SiteConfig;
 use Damoony\Core\Settings\SiteConfigWriter;
 use Damoony\Data\Admin\AdminAuthRepository;
+use Damoony\Data\Admin\AdminAuthService;
 use Damoony\Data\Db\Connection;
 use Damoony\Data\Persona\PersonaRepository;
 use Damoony\Diagnostics\StructureChecker;
@@ -221,7 +222,8 @@ final class Registry
 
         if ($db instanceof Connection) {
             $adminRepo = new AdminAuthRepository($db);
-            $registry->add(new AdminCreateCommand($adminRepo));
+            $adminAuthService = new AdminAuthService($adminRepo);
+            $registry->add(new AdminCreateCommand($adminAuthService));
             $persona = new PersonaRepository($db);
             $registry->add(new AccountRequestCommand($persona, $alertCommand));
             $registry->add(new AccountApproveCommand($persona));

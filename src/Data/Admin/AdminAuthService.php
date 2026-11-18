@@ -129,6 +129,44 @@ final class AdminAuthService
         $this->repo->audit($accountId, 'password.changed', '', '');
     }
 
+    /** @return list<array<string, mixed>> */
+    public function accounts(): array
+    {
+        return $this->repo->accounts();
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function membersFor(int $accountId): array
+    {
+        return $this->repo->membersFor($accountId);
+    }
+
+    public function createAdmin(string $login, string $password, string $role, string $scope = ''): int
+    {
+        $login = trim($login);
+        if (preg_match('/^[a-z0-9_.-]{3,64}$/', $login) !== 1) {
+            throw new RuntimeException('Логин: 3–64 символа, латиница/цифры/._-');
+        }
+        if (strlen($password) < 10) {
+            throw new RuntimeException('Пароль минимум 10 символов');
+        }
+        if (!in_array($role, [self::ROLE_SUPERADMIN, self::ROLE_DOMAINADMIN], true)) {
+            throw new RuntimeException('Роль: superadmin или domainadmin');
+        }
+        if ($role === self::ROLE_DOMAINADMIN && trim($scope) === '') {
+            throw new RuntimeException('Для domainadmin укажите домен');
+        }
+        if ($this->repo->accountByLogin($login) !== []) {
+            throw new RuntimeException('Логин уже существует');
+        }
+
+        $accountId = $this->repo->createAccount($login, password_hash($password, PASSWORD_DEFAULT));
+        $this->repo->createMember($accountId, $role, trim($scope));
+        $this->repo->audit($accountId, 'account.created', $role . ':' . trim($scope), '');
+
+        return $accountId;
+    }
+
     /** @return array<string, mixed>|null */
     private function pickRole(int $accountId): ?array
     {

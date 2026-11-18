@@ -38,3 +38,8 @@
 button.admin-switch { border: 0; padding: 0; background: transparent; }
 .admin-switch.is-on .admin-switch-slider { background: #2e7d32; }
 .admin-switch.is-on .admin-switch-slider::before { transform: translateX(20px); }
+.admin-accounts { list-style: none; padding: 0; margin: 14px 0; display: grid; gap: 10px; }
+.admin-accounts li { padding: 12px; border: 1px solid rgba(0,0,0,.12); border-radius: 8px; }
+.admin-accounts .ui-form-wrapper { margin-top: 8px; }
+.admin-success { color: #2e7d32; }
+.admin-error { color: #b3261e; }

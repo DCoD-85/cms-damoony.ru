@@ -1,1 +1,1 @@
-{"available": {"": "^$"}, "auth": false, "search": false}
+{"available": {"": "^$"}, "auth": false, "search": false, "csrf": false}
