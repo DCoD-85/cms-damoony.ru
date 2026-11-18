@@ -64,6 +64,31 @@ final class NewCommandTest extends TestCase
         self::assertFileExists($oldApp . '/.blocksglobal/top/top.php');
     }
 
+    public function testForceRemovesStaleAliasesAndSetsProjectDefaults(): void
+    {
+        $writer = new SiteConfigWriter($this->root . '/config/site.config');
+        $writer->ensureProject('demo.test', 'demo.test', 'demo_test');
+        $writer->ensureMirror('demo.test', 'demo.test');
+        $writer->ensureAlias('demo.test', 'www', ['ru', 'en']);
+        $writer->ensureAlias('demo.test', 'old', ['ru']);
+
+        $result = $this->command()->run([
+            'domain' => 'demo.test',
+            'assembly' => 'demo',
+            'force' => '1',
+        ], $this->context());
+
+        self::assertTrue($result->ok, implode('; ', $result->errors));
+
+        $data = $writer->load();
+        $project = $data['domains_app']['demo.test'];
+        self::assertArrayHasKey('www', $project['aliases']);
+        self::assertArrayNotHasKey('old', $project['aliases']);
+        self::assertSame('www', $project['scheme']);
+        self::assertSame('www', $project['default_alias']);
+        self::assertSame('maintenance', $project['stub']);
+    }
+
     public function testWithoutForceExistingFilesRemain(): void
     {
         $oldApp = $this->root . '/app/demo.test';

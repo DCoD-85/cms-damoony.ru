@@ -160,6 +160,18 @@ final class NewCommand implements CommandInterface
                 $this->writer->setAliasLangs($domain, $aliasName, $langsForAlias);
             }
             $this->writer->setProjectLangs($domain, $projectLangs);
+
+            if ($force) {
+                $data = $this->writer->load();
+                $existingAliases = array_keys($data['domains_app'][$domain]['aliases'] ?? []);
+                foreach (array_diff($existingAliases, $aliases) as $staleAlias) {
+                    $this->writer->removeAlias($domain, (string) $staleAlias);
+                }
+            }
+
+            $this->writer->setProjectValue($domain, 'scheme', 'www');
+            $this->writer->setProjectValue($domain, 'default_alias', $aliases[0]);
+            $this->writer->setProjectValue($domain, 'stub', 'maintenance');
         } catch (RuntimeException $e) {
             $r->error('Конфиг не обновлён: ' . $e->getMessage());
 

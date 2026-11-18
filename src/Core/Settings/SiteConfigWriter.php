@@ -103,6 +103,18 @@ final class SiteConfigWriter
         return true;
     }
 
+    public function setProjectValue(string $key, string $field, mixed $value): void
+    {
+        $data = $this->load();
+        $apps = $this->apps($data);
+        if (!isset($apps[$key])) {
+            throw new RuntimeException("site.config: проект \"{$key}\" не найден");
+        }
+
+        $data['domains_app'][$key][$field] = $value;
+        $this->save($data);
+    }
+
     public function ensureMirror(string $key, string $host, bool $available = true): bool
     {
         $host = SiteConfig::normalizeHost($host);
