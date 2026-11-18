@@ -12,6 +12,20 @@ php bin/cli.php health:check
 php bin/cli.php structure:check
 ```
 
+## Точные флаги основных команд
+
+```bash
+new                 --domain= --assembly= [--force]
+domain:new          --domain= [--folder=] [--namespace=] [--allias=www] [--profile=minimal]
+domain:bind         --domain= --real=
+domain:unbind       --domain=
+domain:remove       --domain= [--force] [--cascade]
+allias:new          --domain= --name= [--profile=]
+page:new            --domain= --allias= --name= [--parent=] [--session=]
+backup:create       --domain= [--only=app,content,media,db] [--keep=N]
+install:create      --account= --domain= --assembly= [--langs=ru,en] [--aliases=] [--approve]
+```
+
 ## Сайты и домены
 
 | Команда | Назначение |

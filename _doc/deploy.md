@@ -74,6 +74,49 @@ php bin/cli.php structure:check
 php bin/cli.php health:check
 ```
 
+## Сертификаты
+
+- основной домен и wildcard: `*.damoony.ru`;
+- IP-админка: самоподписанный или отдельный домен — wildcard **не покрывает IP**;
+- обновление: `certbot renew --deploy-hook "systemctl reload nginx"`;
+- проверить: `openssl s_client -connect <IP>:443 -servername <IP>`.
+
+## Cron
+
+```cron
+17 3 * * * cd /var/www/damoony.ru && php bin/cli.php build:prune >> var/log/cron.log 2>&1
+5 6 * * * cd /var/www/damoony.ru && php bin/cli.php report:daily >> var/log/cron.log 2>&1
+```
+
+## Логи и мониторинг
+
+- `var/log/` — CLI, cron, запросы;
+- `/var/log/nginx/*.log`;
+- `journalctl -u php8.5-fpm`;
+- `php bin/cli.php health:check`;
+- `php bin/cli.php metrics:snapshot --since=24h`;
+- алерты: `alert:notify` + webhook.
+
+## Бэкапы
+
+- БД: `mysqldump --single-transaction`;
+- файлы: `config`, `content`, `app`, `www/media`;
+- хранение: ежедневно 14 дней, еженедельно 8 недель;
+- проверка восстановления — раз в месяц на staging.
+
+## Чек-лист деплоя
+
+- [ ] бэкап БД и конфигов;
+- [ ] `git reset --hard` на нужный commit;
+- [ ] `composer install --no-dev`;
+- [ ] `db:migrate --force`;
+- [ ] `structure:check` / `health:check`;
+- [ ] права на `app`, `www/media`, `var`, `content`;
+- [ ] `security.admin_ips` и IP-vhost;
+- [ ] smoke: сайт, persona, developer, админка;
+- [ ] логи без ошибок;
+- [ ] cron/бэкап-задачи на месте.
+
 ## Откат
 
 ```bash

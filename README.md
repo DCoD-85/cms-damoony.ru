@@ -32,10 +32,13 @@ php bin/cli.php health:check
 | Файл | О чём |
 |---|---|
 | `_doc/install.md` | установка с нуля |
+| `_doc/arch.md` | архитектура: домены, routing, pages, UI |
+| `_doc/ui.md` | страницы, схемы, блоки, AJAX |
 | `_doc/admin.md` | админка, роли, доступ |
 | `_doc/deploy.md` | staging/prod, nginx, php-fpm |
 | `_doc/cli.md` | команды CLI |
 | `_doc/local.md` | локальная среда |
+| `_doc/troubleshooting.md` | типовые проблемы |
 
 ## Проверки
 
@@ -45,6 +48,22 @@ vendor/bin/phpstan analyse -c _dev/phpstan.neon --memory-limit=1G
 php bin/cli.php structure:check
 php bin/cli.php health:check
 ```
+
+## Разработка
+
+1. Ветка от `refactor/site-config-v2`, без force-push.
+2. Миграции — только новым файлом в `migrations/`, не править применённые.
+3. Перед PR:
+
+```bash
+vendor/bin/phpunit -c _dev/phpunit.xml
+vendor/bin/phpstan analyse -c _dev/phpstan.neon --memory-limit=1G
+PHP_CS_FIXER_IGNORE_ENV=1 vendor/bin/php-cs-fixer fix --config=_dev/.php-cs-fixer.php --dry-run
+php bin/cli.php structure:check
+php bin/cli.php health:check
+```
+
+4. Документация — в `_doc/`, без исторических описаний.
 
 ## Статус
 
