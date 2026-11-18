@@ -35,16 +35,6 @@ final class Paths
         return $this->root . '/lang';
     }
 
-    public function i18nAdmin(): string
-    {
-        return $this->appRoot() . '/.admin/.i18nglobal';
-    }
-
-    public function i18nAdminRole(string $role): string
-    {
-        return $this->appRoot() . '/.admin/.' . $role . '/.i18nlocal';
-    }
-
     public function sessionDir(string $tabId, string $real): string
     {
         return $this->appRoot() . '/.sess_' . $tabId . '.' . $real;

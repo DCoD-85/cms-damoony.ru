@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Damoony\Core\App;
 
-use Damoony\Core\Config;
 use Damoony\Core\Domain\DomainResolverInterface;
 use Damoony\Core\Error\ErrorPage;
 use Damoony\Core\Files\Paths;
@@ -27,7 +26,6 @@ use Damoony\Data\Persona\PersonaBridge;
 use Damoony\Data\Persona\PersonaRepository;
 use Damoony\UI\Meta;
 use Damoony\UI\Region\RegionContext;
-use Damoony\UI\Url\AdminUrlBuilder;
 use Damoony\UI\Url\SiteUrlBuilder;
 use Psr\Container\ContainerInterface;
 
@@ -180,24 +178,15 @@ final class FrontController
             $lang = $negotiator->resolve($request, $domain);
         }
 
-        $adminConfig = $this->container->has('admin_config') ? $this->container->get('admin_config') : null;
-        $fallback = $adminConfig instanceof Config ? (string) $adminConfig->getByKey(['default_lang'], '') : '';
-        $fallbackOrNull = $fallback === '' ? null : $fallback;
+        $fallbackOrNull = null;
 
         $sources = [];
-        if ($adminRole !== null) {
-            $sources[] = $paths->i18nAdmin();
-            $sources[] = $paths->i18nAdminRole($adminRole);
-        } else {
-            $sources[] = $paths->i18nGlobal($domain->real);
-            $sources[] = $paths->i18nLocal($domain->real, $domain->allias);
-        }
+        $sources[] = $paths->i18nGlobal($domain->real);
+        $sources[] = $paths->i18nLocal($domain->real, $domain->allias);
 
         $translator = new Translator($lang, $fallbackOrNull, $paths->lang(), $sources);
 
         $host = (string) ($request->header('host') ?? $request->server['SERVER_NAME'] ?? '');
-        $effectiveAdminRole = $adminRole;
-        $isAdminCtx = $effectiveAdminRole !== null;
 
         $langStrategy = 'path';
         if (isset($request->query['lang'])) {
@@ -216,8 +205,6 @@ final class FrontController
         $requestContext = new \Damoony\Core\App\RequestContext(
             request: $request,
             domain: $domain,
-            isAdmin: $isAdminCtx,
-            adminRole: $effectiveAdminRole,
             lang: $lang,
             langStrategy: $langStrategy,
             basePath: $basePath,
@@ -225,9 +212,7 @@ final class FrontController
             currentPath: $currentPath,
         );
 
-        $urlBuilder = $isAdminCtx
-            ? new AdminUrlBuilder($requestContext)
-            : new SiteUrlBuilder($requestContext);
+        $urlBuilder = new SiteUrlBuilder($requestContext);
 
         $meta = new Meta();
         $session = $this->container->has(\Damoony\Core\Session\SessionInterface::class)
@@ -256,8 +241,6 @@ final class FrontController
             'csrf' => $csrf,
             'i18n' => $translator,
             'session_id' => $sessionId,
-            'admin_role' => $adminRole,
-            'admin_config' => $adminConfig,
             'url' => $urlBuilder,
             'routing' => $requestContext,
             'flash' => $flash,

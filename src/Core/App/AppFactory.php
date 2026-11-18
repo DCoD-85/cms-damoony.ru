@@ -48,12 +48,8 @@ final class AppFactory
         $container->setInstance(SiteConfig::class, $siteConfig);
         $container->setInstance(ModuleRegistry::class, new ModuleRegistry([new AdminModule($config)]));
 
-        $adminConfigFile = $root . '/config/admin.config';
-        $adminConfig = is_file($adminConfigFile) ? Config::fromFile($adminConfigFile) : Config::fromArray([]);
-        $container->setInstance('admin_config', $adminConfig);
-
         ErrorPage::bootstrap(
-            fallback: (string) $adminConfig->getByKey(['default_lang'], ''),
+            fallback: '',
             langDir: $root . '/lang',
         );
         $container->setInstance('logger', $logger);

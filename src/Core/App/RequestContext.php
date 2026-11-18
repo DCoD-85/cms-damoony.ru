@@ -12,8 +12,6 @@ final class RequestContext
     public function __construct(
         public readonly Request $request,
         public readonly DomainContext $domain,
-        public readonly bool $isAdmin,
-        public readonly ?string $adminRole,
         public readonly string $lang,
         public readonly string $langStrategy, // 'path' | 'query' | 'cookie'
         public readonly string $basePath,     // '' для virtual host, '/admin' для path

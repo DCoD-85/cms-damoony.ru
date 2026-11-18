@@ -31,7 +31,10 @@ final class SchemeLoader
         $file = null;
 
         if ($this->adminRole !== null) {
-            $root = trim($this->schemeRoot ?? 'app/.admin', '/');
+            $root = trim($this->schemeRoot ?? '', '/');
+            if ($root === '') {
+                throw new RuntimeException('Scheme root is required for module role: ' . $this->adminRole);
+            }
             $baseDir = $appRoot . '/' . $root . '/.schemesglobal/';
             $roleDir = $appRoot . '/' . $root . '/' . $this->adminRole . '/.schemesglobal/';
 

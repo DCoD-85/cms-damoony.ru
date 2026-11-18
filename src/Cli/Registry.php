@@ -7,7 +7,6 @@ namespace Damoony\Cli;
 use Damoony\Cli\Commands\AccountApproveCommand;
 use Damoony\Cli\Commands\AccountRequestCommand;
 use Damoony\Cli\Commands\AccountSetPasswordCommand;
-use Damoony\Cli\Commands\AdminPasswdCommand;
 use Damoony\Cli\Commands\AlertNotifyCommand;
 use Damoony\Cli\Commands\AlliasListCommand;
 use Damoony\Cli\Commands\AlliasNewCommand;
@@ -202,7 +201,6 @@ final class Registry
         $registry->add(new DbMutateCommand($site, $db, $providerInvoker));
         $registry->add(new DbMigrateCommand($paths, $db));
         $registry->add(new DataproviderAddMethodCommand($paths, $site));
-        $registry->add(new AdminPasswdCommand($paths));
         $healthCommand = new HealthCheckCommand($paths, $db, $observability);
         $alertCommand = new AlertNotifyCommand($paths, $observability);
         $registry->add($healthCommand);

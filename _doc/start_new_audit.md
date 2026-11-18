@@ -145,9 +145,9 @@
 | Runtime | `var/` (+ `var/ainet-cache/`, `var/ainet-ratelimit.json`) |
 | **Локальный сервер (Windows)** | `E:/localserver/` (tools: nginx/php/mariadb, domains: проекты) |
 | **Трей-менеджер** | `E:/localserver/server.ps1` + `server.vbs` |
-| **Админка** | не входит в движок: ставится сборкой на уровне домена/алиаса (`new --assembly=...`) |
-| **Админка (контракты)** | `AdminPage`, `AdminUrlBuilder`, `/admin/{lang}/{role}/...` |
-| **Админка (удалено)** | `app/.admin/` и `admin:new` — см. `_doc/admin.md` §5.1 |
+| **Админка** | модуль `admin`: `/app/admin/{role}`, страницы `app/.admin/{role}` |
+| **Админка (контракты)** | `ModuleInterface`, `PageModuleInterface`, `AccessPolicyInterface` |
+| **Админка (удалено)** | `AdminPage`, `AdminUrlBuilder`, `admin:passwd`, `config/admin.config`, `*.admin`-хосты |
 | **Session (AIUI)** | `app/.sess_{tab}.{domain}/` (изолированная копия домена) |
 | **Session media** | `www/media/.sess_{tab}.{domain}/` (изолированный скин) |
 

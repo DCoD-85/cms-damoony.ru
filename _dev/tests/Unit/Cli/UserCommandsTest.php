@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace Damoony\Tests\Unit\Cli;
 
-use Damoony\Cli\Commands\AdminPasswdCommand;
 use Damoony\Cli\Commands\UserNewCommand;
 use Damoony\Cli\Context;
-use Damoony\Core\Files\Paths;
 use Damoony\Data\Db\Connection;
 use PDO;
 use PHPUnit\Framework\TestCase;
 
-final class AdminUserCommandsTest extends TestCase
+final class UserCommandsTest extends TestCase
 {
     private string $root;
     private string $dbFile;
@@ -42,36 +40,6 @@ final class AdminUserCommandsTest extends TestCase
     protected function tearDown(): void
     {
         $this->rrmdir($this->root);
-    }
-
-    public function testAdminPasswdWritesConfig(): void
-    {
-        $result = $this->passwd()->run(['name' => 'root', 'password' => 'strong-pass-1'], $this->context());
-
-        self::assertTrue($result->ok, implode('; ', $result->errors));
-
-        $config = json_decode((string) file_get_contents($this->root . '/config/admin.config'), true);
-        self::assertIsArray($config);
-        self::assertSame('root', $config['login']);
-        self::assertTrue(password_verify('strong-pass-1', (string) $config['password_hash']));
-        self::assertSame('ru', $config['default_lang']);
-        self::assertSame('superadmin', $config['default_role']);
-    }
-
-    public function testAdminPasswdRejectsShortPassword(): void
-    {
-        $result = $this->passwd()->run(['name' => 'root', 'password' => 'short'], $this->context());
-
-        self::assertFalse($result->ok);
-        self::assertStringContainsString('минимум 8', $result->errors[0]);
-    }
-
-    public function testAdminPasswdRejectsBadLogin(): void
-    {
-        $result = $this->passwd()->run(['name' => 'a', 'password' => 'strong-pass-1'], $this->context());
-
-        self::assertFalse($result->ok);
-        self::assertStringContainsString('Некорректный логин', $result->errors[0]);
     }
 
     public function testUserNewCreatesUser(): void
@@ -151,11 +119,6 @@ final class AdminUserCommandsTest extends TestCase
 
         self::assertFalse($result->ok);
         self::assertStringContainsString('БД не сконфигурирована', $result->errors[0]);
-    }
-
-    private function passwd(): AdminPasswdCommand
-    {
-        return new AdminPasswdCommand(new Paths($this->root));
     }
 
     private function userNew(): UserNewCommand

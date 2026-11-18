@@ -47,7 +47,8 @@
 |---|---|---|
 | **Core** | `src/Core/` | Ядро: HTTP (Kernel, Request, Response), Роутинг (FileRouter), Домены, Файлы, Безопасность (Csrf), Сессии, I18n. |
 | **Cli** | `src/Cli/` | Команды: `Commands/` (для `bin/cli.php`), `Support/`, `Scaffold/`, `Identity/` (идентификатор+журнал), `Db/` (для `bin/dbcli.php`), `Ai/` (для `bin/aicli.php`). |
-| **UI** | `src/UI/` | Всё для отрисовки: `Element`, `Builder`, `Page` (`PageInterface`, `AdminPage` — контракт админки), `Region`, `Scheme`, `Skin`, `Components`, `Url`. |
+| **UI** | `src/UI/` | Всё для отрисовки: `Element`, `Builder`, `Page` (`PageInterface`), `Region`, `Scheme`, `Skin`, `Components`, `Url`. |
+| **Modules** | `src/Core/Module/`, `src/Modules/` | Контракт модулей, реестр, официальная админка. |
 | **Data** | `src/Data/` | Работа с БД: `Connection`, `DataProvider` (префикс таблиц передаётся снаружи), `Auth`. |
 | **Diagnostics** | `src/Diagnostics/` | `StructureChecker` — целостность структуры (error/warning). Используется в `structure:check`. |
 | **Ai** | `src/Ai/` | Мультиагентный Orchestrator, ModelRouter, Roles, Navigator (заморожен: `aicli` отдаёт только read-команды). |
@@ -80,7 +81,7 @@
 
 - **DomainResolver:** `resolve(host): DomainContext`. Не бросает исключений. Возвращает `available=false`, если домен/алиас выключен. `real` — источник истины для путей в `app/`.
 - **Router:** `match(path, context): RouteMatch`. Не рендерит ошибки, не выполняет контроллер. Возвращает `found=false` при промахе.
-- **PageInterface:** `content(): Node|Response|null`. Базовый класс `Page` даёт `isAuthenticated()`, `user()`, `regions()`. `AdminPage` проверяет `Admin\AuthInterface::isLoggedIn()` в `guard()` (при `false` → 302 на `/admin/{default_lang}/login`, `default_lang` из `admin.config`).
+- **PageInterface:** `content(): Node|Response|null`. Базовый класс `Page` даёт `isAuthenticated()`, `user()`, `regions()`. Страницы админки — обычные `Page` из модуля `admin`; доступ проверяет `AccessPolicyInterface` модуля, а не страница.
 - **RegionInterface:** `render(RegionContext): Node`. Регион не знает о других регионах и о схеме.
 - **SkinManager (`src/UI/Skin/SkinManager.php`):** `list(real, alias): list<string>` — скины в `www/media/{real}/{alias}/skin/`. `exists(real, alias, skin): bool` — проверка папки. Используется в `SchemeRenderer` для fallback при подстановке `{skin}`.
 - **ContentResponder:** `parse()`, `hostAllowed()`, `requiresAuth()`. Отдаёт только GET/HEAD. 404 при host-mismatch. 302 на логин при `page_refs` (auth).
@@ -103,8 +104,8 @@
 - **FS-пути — только от `realDomain`.** `Paths` принимает realDomain. CLI-команды резолвят через `ResolvesRealDomain`.
 - **Структура v4 (единственная и безальтернативная):** Разделение на `global` (домен) и `local` (алиас): `.blocksglobal`/`.blockslocal`, `.dbglobal`/`.dblocal`, `.i18nglobal`/`.i18nlocal`.
 - **Schema-First.** Если `Page::content()` возвращает `null`, `PageHandler` всё равно рендерит схему (`SchemeRenderer`). Пустая страница (204) отдается только если нет ни схемы, ни контента.
-- **CSRF обязателен для всех POST.** `PageHandler` проверяет токен `_csrf` (через `Csrf::check()`) для любого POST-запроса. При ошибке — 403.
-- **Auth — ответственность страницы.** `AdminPage::guard()` проверяет `AuthInterface::isLoggedIn()`.
+- **CSRF обязателен для всех POST.** `PageHandler` проверяет токен `_csrf`; страница может отключить это в `rules.json` (`"csrf": false`) для доверенных сервисных endpoint'ов.
+- **Доступ к модулям — политика модуля.** Нет `AccessPolicyProviderInterface` или `allows() === false` → deny, страница не выполняется.
 - **i18n:** Плоские JSON-ключи (`site.block.top`). Fallback: `local` перекрывает `global`. Метод `tPlural()` для склонений.
 - **Сборки (Assemblies).** `bin/cli.php new --domain=X --assembly=developer` разворачивает структуру из `stubs/assemblies/`. Никаких хардкодов структуры в PHP-командах.
 - **AI не пишет сырой PHP.** Используется безопасный JSON (`PageCompiler`/`BlockCompiler`).
@@ -119,7 +120,7 @@
 3. ~~**assert():** в prod исчезает; заменить на явные `if (!instanceof) throw`.~~ Решено: заменено на `if (!instanceof) throw new \RuntimeException(...)` в `AppFactory.php` и `FrontController.php` (7 мест).
 4. ~~**Builder неполон:**~~ **Реверт:** методы `form`/`table`/`nav`/`select`/`textarea`/`label` добавлены в `74edf81`, но удалены в `0935c61`. Текущий `Builder` — 12 Element-фабрик (`el`, `elA`, `div`, `span`, `p`, `h`, `a`, `img`, `input`, `ul`, `li`, `button`). Композиты — в `src/UI/Components/*`.
 5. ~~**domains_real[$domain] в save():** работает только при self-mapping.~~ Решено: `domains_app[key].folder` и `.namespace` разделены, self-mapping не нужен.
-6. ~~**Namespace `Damoony\UI\Algoritm`:**~~ Решено: `Damoony\UI\Page` (`Page`, `PageInterface`, `AdminPage`); `algoritm/` остался только именем папки страниц.
+6. ~~**Namespace `Damoony\UI\Algoritm`:**~~ Решено: `Damoony\UI\Page` (`Page`, `PageInterface`); `algoritm/` остался только именем папки страниц. Админка — модуль.
 7. **AINET:** только GET; нет парсинга HTML.
 8. **ArchitectAgent нестабилен:** разные имена страниц в разных запусках; P2 — whitelist slug-ов.
 9. **Coder wrap в `section`:** `build_progress.blocks` считает только верхний уровень.

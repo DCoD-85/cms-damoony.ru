@@ -54,7 +54,7 @@ AI не имеет прямого доступа к терминалу. Отпр
 
 **Роль `*`:** объединяет все 9 + специфичные: `wizard:*`, `agent:chat`, `ai:start`, `done`, `engine_status`, `net:*`, `image:search/download`, `fetch`, `block:write`, `filler:write`.
 
-**Запрещено всем:** `user:new`, `db:migrate`, `admin:passwd`, destructive (`*:remove`, `trash:clear`, `content:remove`).
+**Запрещено всем:** `user:new`, `db:migrate`, destructive (`*:remove`, `trash:clear`, `content:remove`).
 
 **Известные полуреализации:**
 - `wizard:abort` — нет ни в whitelist `Roles.php`, ни в `WizardManager::handle()` (match-case). Вызов отклоняется на валидации роли.

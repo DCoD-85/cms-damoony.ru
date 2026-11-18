@@ -108,7 +108,7 @@ final class AicliTest extends TestCase
     public function testDangerousCommandRejected(): void
     {
         // user:new, db:migrate, scheme:* — в whitelist AI отсутствуют
-        foreach (['user:new', 'db:migrate', 'admin:passwd', 'scheme:remove', 'scheme:copy', 'trash:clear'] as $cmd) {
+        foreach (['user:new', 'db:migrate', 'scheme:remove', 'scheme:copy', 'trash:clear'] as $cmd) {
             $r = $this->invoke(['command' => $cmd, 'args' => []]);
             self::assertSame(1, $r['exit'], "Command '{$cmd}' must be rejected");
             self::assertIsArray($r['output']);

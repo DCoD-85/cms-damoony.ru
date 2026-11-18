@@ -86,18 +86,19 @@ php -r "var_dump(function_exists('curl_init'), function_exists('imagecreatetruec
 ⚠️ Правки — только через CLI (`domain:*`, `allias:*`, `lang:*`, `new`): конфиг валидируется
 до записи. Старый формат переносится командой `site:config:migrate`.
 
-### 3.3. `config/admin.config` — доступ в админку
+### 3.3. Серверная админка
+
+Отдельного `config/admin.config` нет. Доступ к `/app/admin/*` даёт модуль `admin`
+(политика `modauthadmin`), список IP — `security.admin_ips` в `config/engine.config`:
+
 ```json
-{
-  "login": "admin",
-  "password_hash": "",
-  "domains_langs": ["ru", "en", "zh"],
-  "default_lang": "ru",
-  "default_role": "superadmin"
+"security": {
+  "admin_ips": ["127.0.0.1", "203.0.113.10"]
 }
 ```
-⚠️ Пароль задаётся через CLI: `php bin/cli.php admin:passwd --name=admin --password=[strong]`.
-`default_lang` — язык по умолчанию для `AdminPage::guard()` (redirect на `/admin/{default_lang}/login`). `default_role` — роль админки по умолчанию; используется сборкой админки (`app/.admin` движком больше не поставляется).
+
+Пустой список = только loopback (fail-closed). На проде продублируйте на nginx:
+`allow ...; deny all;`.
 
 ### 3.4. `config/agent.config` — доступ для AI
 ```json
@@ -239,14 +240,12 @@ server {
 ## 7. Первый запуск
 
 ```bash
-php bin/cli.php admin:passwd --name=admin --password=[strong]
 php bin/cli.php user:new --login=admin --email=admin@example.com --password=[strong]
 ```
-*`admin:passwd` — логин/пароль админки (`config/admin.config`).*
 *`user:new` — пользователь сайта (для страниц, которые вызывают `$this->isAuthenticated()`).*
 
-Админка ставится отдельно — сборкой на уровне домена/алиаса (`php bin/cli.php new --assembly=<имя>`).
-До её установки `http://[domain]/admin/` отдаёт 404 — это ожидаемо.
+Серверная админка — `/app/admin/superadmin/`; доступ по IP из `security.admin_ips`.
+Локальный вход: `http://127.0.0.1/app/admin/superadmin/`.
 
 Откройте `http://[domain]/`.
 

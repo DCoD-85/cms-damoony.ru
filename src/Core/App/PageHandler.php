@@ -102,12 +102,12 @@ final class PageHandler implements PageHandlerInterface
             return ErrorPage::serverError($domain->language, $this->debugDetail('Paths service missing'));
         }
 
-        $loader = new RegionLoader(
-            $paths,
-            $site instanceof Config ? $site : null,
-            $moduleRoute?->role,
-        );
-        $regions = $loader->load($domain);
+        if ($moduleRoute !== null) {
+            $regions = new RegionRegistry();
+        } else {
+            $loader = new RegionLoader($paths, $site instanceof Config ? $site : null);
+            $regions = $loader->load($domain);
+        }
 
         try {
             /** @var PageInterface $page */

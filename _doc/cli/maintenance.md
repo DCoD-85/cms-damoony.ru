@@ -4,11 +4,10 @@
 
 ```
 php bin/cli.php cli:init --name=<кто>          # один раз, создаёт var/cli.identity
-php bin/cli.php admin:passwd --name=admin --password=<сильный>   # вход в админку
 ```
 
 - `cli:init` — единственная команда, доступная без идентификатора; `--force` перезаписывает;
-- `admin:passwd` пишет `config/admin.config` (login, `password_hash`, `default_lang`, `default_role`).
+- вход в серверную админку — по IP (`security.admin_ips`), отдельного `admin:passwd` нет.
 
 ## 2. Журнал запусков
 

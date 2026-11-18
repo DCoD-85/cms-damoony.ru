@@ -41,7 +41,7 @@
   - контент сайта: `page:*`, `block:*`, `filler:*`, `scheme:*`, `skin:*`, `lang:*`, `content:*`;
   - сессии: `session:start|apply|discard|list`;
   - данные: `db:schema|methods|describe|call|mutate|migrate`, `dataprovider:add-method`;
-  - обслуживание: `cli:init`, `admin:passwd`, `user:new`, `system:scan|clean`, `trash:clear`,
+  - обслуживание: `cli:init`, `user:new`, `system:scan|clean`, `trash:clear`,
     `backup:create|restore`, `api:reflect`, `migrate:page-rules`, `site:config:migrate`.
 - **Инфраструктура:** `TargetResolver`, `SessionGuard`, `SessionWorkspace`, `ContentLayout`,
   `ContentRefs`, `Scaffolder`, `Quarantine`, `TrashScanner`, `BlockFileEditor`, `ProviderInvoker`,
@@ -117,7 +117,7 @@
   невозможен, удаление проекта не оставляет сирот. Плоский `alliases` удалён.
 - Конфиг в `app/{folder}/` отклонён: маршрутизация host→folder всё равно требует центрального
   индекса, а уникальность хостов — глобальной валидации.
-- `admin` — не проект в `domains_app`; `app/.admin` и `admin:new` **удалены**, админка ставится сборкой на уровне домена/алиаса.
+- `admin` — не проект в `domains_app`; серверная админка — модуль (`/app/admin/*`, `app/.admin`), `admin:new` удалён.
 - `ai:edit-page` не переносится: она писала в production в обход контура `aicli`.
 - CLI идентифицирует владельца (`cli:init`), роли и токены — отдельный шаг.
 - Пустой `domains_app` допустим (свежая установка, удаление последнего проекта).

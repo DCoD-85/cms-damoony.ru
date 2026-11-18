@@ -205,21 +205,21 @@ if (!$this->isAuthenticated()) {
 ```
 `isAuthenticated()` / `user()` — через `Damoony\Data\Auth\AuthInterface` (БД, `user:new`).
 
-**Admin-страница:** наследуйте `AdminPage`:
+**Admin-страница:** обычная `Page` в модуле `admin`:
 ```php
-use Damoony\UI\Page\AdminPage;
+use Damoony\UI\Page\Page;
 
-final class algoritm_about extends AdminPage
+final class algoritm_about extends Page
 {
     protected function content(): Node|Response|null
     {
-        // сюда попадём только если isLoggedIn() == true
+        // доступ уже проверен AccessPolicy модуля до вызова страницы
     }
 }
 ```
-`AdminPage::guard()` проверяет `Damoony\Admin\AuthInterface::isLoggedIn()`, при `false` → 302 на `/admin/{default_lang}/login` (`default_lang` из `admin.config`).
-
-⚠️ **Login-страница не должна наследовать `AdminPage`** (redirect loop).
+Маршрут модуля: `/app/admin/{role}/...`; страницы — `app/.admin/{role}/algoritm/...`,
+namespace — `Damoony\Admin\Pages\{role}`. Политика доступа — `modauthadmin`
+(`security.admin_ips`), страница не занимается аутентификацией.
 
 Пользователи сайта создаются через `user:new` (см. `cli/maintenance.md` §6).
 
@@ -316,7 +316,7 @@ php bin/dbcli.php db:schema:generate-provider --domain=example.ru --table=produc
 
 Любая страница (public или admin) теперь выглядит так:
 
-    final class algoritm_about extends Page // или AdminPage
+    final class algoritm_about extends Page
     {
         protected function content(): Node|Response|null
         {
@@ -331,8 +331,8 @@ php bin/dbcli.php db:schema:generate-provider --domain=example.ru --table=produc
 
 ### Инварианты (актуальные)
 
-1. **Схема обязательна.** `PageHandler` всегда пытается загрузить схему (с учетом `adminRole` и `sessionId`).
-2. **`Page::default()` final.** Реализован в ядре и не подлежит переопределению. Пишите бизнес-логику в `content()`, а проверки доступа — в `guard(): ?Response`.
+1. **Схема обязательна.** `PageHandler` всегда пытается загрузить схему (с учётом модуля и `sessionId`).
+2. **`Page::default()` final.** Реализован в ядре и не подлежит переопределению. Пишите бизнес-логику в `content()`; доступ проверяет политика модуля, а не страница.
 3. **`PageHandler` — единственная точка сборки.** `Page` не рендерит HTML.
 4. **`null` = нет данных для отдачи.** Ответ 204 No Content.
 5. **Skin — через схему.** Skin CSS/JS подключаются в `meta.css`/`meta.js` схемы через токены `{skin}`/`{real}`/`{alias}`. `PageHandler` skin не подключает (applySkin удалён). Язык/auth — Middleware или хуки, не `PageHandler`.

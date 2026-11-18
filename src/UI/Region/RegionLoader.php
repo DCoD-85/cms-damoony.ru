@@ -15,7 +15,6 @@ final class RegionLoader
     public function __construct(
         private readonly Paths $paths,
         private readonly ?Config $site = null,
-        private readonly ?string $adminRole = null,
         ?FillerState $fillerState = null,
     ) {
         $this->fillerState = $fillerState ?? new FillerState($paths);
@@ -25,19 +24,11 @@ final class RegionLoader
     {
         $registry = new RegionRegistry();
 
-        $roleDir = null;
-        if ($this->adminRole !== null) {
-            $baseDir = rtrim($this->paths->root(), '/') . '/app/.admin/.blocksglobal';
-            $roleDir = rtrim($this->paths->root(), '/') . '/app/.admin/' . $this->adminRole . '/.blocksglobal';
-            $namespace = 'Damoony\\Admin\\Pages\\' . $this->adminRole;
-        } else {
-            $baseDir = $this->paths->domain($domain->real) . '/.blocksglobal';
-            $namespace = $domain->namespace;
-        }
+        $baseDir = $this->paths->domain($domain->real) . '/.blocksglobal';
+        $namespace = $domain->namespace;
 
-        // Site-режим: local (new) + global base; legacy filler — fallback.
-        // Admin-режим: только baseDir/roleDir (без local — не применимо).
-        $localDir = $this->adminRole === null ? $this->paths->allias($domain->real, $domain->allias) . '/.blockslocal' : null;
+        // Site-режим: local + global base; legacy filler — fallback.
+        $localDir = $this->paths->allias($domain->real, $domain->allias) . '/.blockslocal';
 
         $names = [];
         if (is_dir($baseDir)) {
@@ -47,14 +38,7 @@ final class RegionLoader
                 }
             }
         }
-        if ($roleDir !== null && is_dir($roleDir)) {
-            foreach (scandir($roleDir) ?: [] as $e) {
-                if ($e !== '.' && $e !== '..' && is_dir($roleDir . '/' . $e)) {
-                    $names[$e] = true;
-                }
-            }
-        }
-        if ($localDir !== null && is_dir($localDir)) {
+        if (is_dir($localDir)) {
             foreach (scandir($localDir) ?: [] as $e) {
                 if ($e !== '.' && $e !== '..' && is_dir($localDir . '/' . $e)) {
                     $names[$e] = true;
@@ -69,21 +53,18 @@ final class RegionLoader
 
         foreach ($items as $item) {
             $domainBlock = $baseDir . '/' . $item;
-            $roleBlock = $roleDir !== null ? $roleDir . '/' . $item : null;
-            $localBlock = $localDir !== null ? $localDir . '/' . $item : null;
+            $localBlock = $localDir . '/' . $item;
 
             // Base (глобальный блок) — .blocksglobal/{item}/{item}.php
             $baseFile = null;
-            if ($roleBlock !== null && is_file($roleBlock . '/' . $item . '.php')) {
-                $baseFile = $roleBlock . '/' . $item . '.php';
-            } elseif (is_file($domainBlock . '/' . $item . '.php')) {
+            if (is_file($domainBlock . '/' . $item . '.php')) {
                 $baseFile = $domainBlock . '/' . $item . '.php';
             }
 
             // Local (new model): .blockslocal/{item}/{item}.php, класс blockslocal_{alias}_{item}
             $localFile = null;
             $localClass = null;
-            if ($localBlock !== null && is_file($localBlock . '/' . $item . '.php')) {
+            if (is_file($localBlock . '/' . $item . '.php')) {
                 $localFile = $localBlock . '/' . $item . '.php';
                 $localClass = $namespace . '\\blockslocal_' . $domain->allias . '_' . $item;
             }
@@ -91,10 +72,7 @@ final class RegionLoader
             // Legacy filler: .blocksglobal/{item}/{item}_{alias}.php
             $legacyFile = null;
             $legacyClass = null;
-            if ($roleBlock !== null && is_file($roleBlock . '/' . $item . '_' . $domain->allias . '.php')) {
-                $legacyFile = $roleBlock . '/' . $item . '_' . $domain->allias . '.php';
-                $legacyClass = $namespace . '\\blocksglobal_' . $item . '_' . $domain->allias;
-            } elseif (is_file($domainBlock . '/' . $item . '_' . $domain->allias . '.php')) {
+            if (is_file($domainBlock . '/' . $item . '_' . $domain->allias . '.php')) {
                 $legacyFile = $domainBlock . '/' . $item . '_' . $domain->allias . '.php';
                 $legacyClass = $namespace . '\\blocksglobal_' . $item . '_' . $domain->allias;
             }
