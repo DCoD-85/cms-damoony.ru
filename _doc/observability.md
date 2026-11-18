@@ -72,7 +72,7 @@ php bin/cli.php alert:notify --message="..." --level=critical --source=health
 Одна строка на запрос в `var/metrics/requests-YYYY-MM-DD.jsonl`:
 
 ```json
-{"ts":"...","request_id":"...","host":"damoony3.ru","method":"GET","path":"/en/",
+{"ts":"...","request_id":"...","host":"damoonyserver.ru","method":"GET","path":"/en/",
  "status":200,"duration_ms":2.4,"project":"damoony.ru","alias":"www",
  "db_queries":1,"db_ms":0.5}
 ```

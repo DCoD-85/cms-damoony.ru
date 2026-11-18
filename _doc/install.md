@@ -67,7 +67,7 @@ php -r "var_dump(function_exists('curl_init'), function_exists('imagecreatetruec
       "langs": ["ru", "en"],
       "mirrors": {
         "damoony.ru":  { "available": true },
-        "damoony3.ru": { "available": true }
+        "damoonyserver.ru": { "available": true }
       },
       "aliases": {
         "www":  { "available": true, "langs": ["ru", "en"] },

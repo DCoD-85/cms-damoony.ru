@@ -54,7 +54,7 @@
 ### Локальное (разработка)
 
 - Intel i9-14900HX, 32GB RAM, Windows 11, Локальный стек (Nginx + PHP-CGI + MariaDB).
-- Корень: `E:\localserver\domains\damoony3.ru\`. Терминал: gitbash + VSCode.
+- Корень: `E:\localserver\domains\damoonyserver.ru\`. Терминал: gitbash + VSCode.
 - PHP CLI: `E:\localserver\tools\php8.5.12\` (8.5.12).
 - MariaDB client: `E:\localserver\tools\mariadb\bin\` (11.8).
 - Расширения PHP: `curl`, `gd`, `openssl`, `mbstring`, `pdo_mysql`, `pdo_sqlite`, `fileinfo`, `tokenizer`, `xml`.

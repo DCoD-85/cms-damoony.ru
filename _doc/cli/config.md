@@ -21,7 +21,7 @@
             },
             "mirrors": {
                 "damoony.ru":  { "available": true },
-                "damoony3.ru": { "available": true }
+                "damoonyserver.ru": { "available": true }
             },
             "aliases": {
                 "www":  { "available": true, "langs": ["ru", "en"], "stub": "maintenance" },
