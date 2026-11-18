@@ -93,19 +93,16 @@ final class algoritm_lang extends Page
         $wrap->append(Builder::p()->content('Роль: ' . $role));
         $wrap->append(Builder::p()->content('Аккаунт: ' . (string) $session['account']['login']));
 
-        $nav = Builder::ul('admin-nav');
-        foreach (['' => 'Главная', 'projects/' => 'Проекты', 'accounts/' => 'Аккаунты', 'ops/' => 'Мониторинг', 'logout/' => 'Выйти'] as $path => $label) {
-            $nav->append(Builder::li()->append(
-                Builder::a('/' . $lang . '/' . $path)->content($label),
-            ));
+        $cardLinks = $role === AdminAuthService::ROLE_SUPERADMIN
+            ? ['projects/' => 'Проекты', 'accounts/' => 'Аккаунты', 'ops/' => 'Мониторинг', 'audit/' => 'Аудит']
+            : ($role === AdminAuthService::ROLE_DOMAINADMIN ? ['domain/' => 'Мой домен'] : []);
+        if ($cardLinks !== []) {
+            $cards = Builder::div('admin-cards');
+            foreach ($cardLinks as $path => $label) {
+                $cards->append(Builder::a('/' . $lang . '/' . $path, 'admin-card')->content($label));
+            }
+            $wrap->append($cards);
         }
-        $wrap->append($nav);
-
-        $cards = Builder::div('admin-cards');
-        foreach (['projects/' => 'Проекты', 'accounts/' => 'Аккаунты', 'ops/' => 'Мониторинг', 'audit/' => 'Аудит'] as $path => $label) {
-            $cards->append(Builder::a('/' . $lang . '/' . $path, 'admin-card')->content($label));
-        }
-        $wrap->append($cards);
         if ($role === AdminAuthService::ROLE_SUPERADMIN) {
             $site = $this->context->service('site_config');
             if ($site instanceof SiteConfig) {

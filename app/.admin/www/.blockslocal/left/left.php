@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace admin_server;
 
+use Damoony\Data\Admin\AdminAuthService;
+use Damoony\Modules\Admin\AdminModule;
 use Damoony\UI\Builder;
 use Damoony\UI\Node;
 use Damoony\UI\Region\RegionContext;
@@ -24,15 +26,32 @@ final class blockslocal_www_left implements RegionInterface
     public function render(RegionContext $context): Node
     {
         $lang = $context->domain->language;
+        $links = ['' => 'Главная'];
+
+        $auth = $context->service('admin_auth');
+        if ($auth instanceof AdminAuthService) {
+            $session = $auth->authenticate((string) ($context->request->cookies[AdminModule::COOKIE] ?? ''));
+            if ($session !== null) {
+                if ($session['role'] === AdminAuthService::ROLE_SUPERADMIN) {
+                    $links += [
+                        'projects/' => 'Проекты',
+                        'accounts/' => 'Аккаунты',
+                        'ops/' => 'Мониторинг',
+                        'audit/' => 'Аудит',
+                    ];
+                } elseif ($session['role'] === AdminAuthService::ROLE_DOMAINADMIN) {
+                    $links['domain/'] = 'Мой домен';
+                }
+            }
+        }
+        $links['logout/'] = 'Выйти';
+
         $nav = Builder::ul('admin-nav admin-nav-vertical');
-        foreach (['' => 'Главная', 'projects/' => 'Проекты', 'accounts/' => 'Аккаунты', 'ops/' => 'Мониторинг', 'audit/' => 'Аудит'] as $path => $label) {
+        foreach ($links as $path => $label) {
             $nav->append(Builder::li()->append(
                 Builder::a('/' . $lang . '/' . $path)->content($label),
             ));
         }
-        $nav->append(Builder::li()->append(
-            Builder::a('/' . $lang . '/logout/')->content('Выйти'),
-        ));
 
         return Builder::div('dt_inner')->append($nav);
     }

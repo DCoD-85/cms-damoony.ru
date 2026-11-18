@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Damoony\Admin\Page;
 
+use Damoony\Admin\Policy\AdminPolicy;
 use Damoony\Data\Admin\AdminAuthService;
 use Damoony\Modules\Admin\AdminModule;
 use Damoony\Modules\AuthAdmin\AdminAccess;
@@ -32,6 +33,19 @@ abstract class AdminPage extends Page
         }
 
         return $auth->authenticate((string) ($this->context->request->cookies[AdminModule::COOKIE] ?? ''));
+    }
+
+    /**
+     * @return array{account: array<string, mixed>, role: string, scope: string, session_id: int}|null
+     */
+    protected function requireCapability(string $capability, string $domain = '', string $alias = ''): ?array
+    {
+        $session = $this->adminSession();
+        if ($session === null) {
+            return null;
+        }
+
+        return AdminPolicy::allows($session, $capability, $domain, $alias) ? $session : null;
     }
 
     protected function csrfToken(): string

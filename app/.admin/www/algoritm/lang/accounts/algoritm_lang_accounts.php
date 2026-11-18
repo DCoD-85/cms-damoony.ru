@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace admin_server\www;
 
 use Damoony\Admin\Page\AdminPage;
+use Damoony\Admin\Policy\AdminPolicy;
 use Damoony\Core\Http\Response;
 use Damoony\Data\Admin\AdminAuthService;
 use Damoony\UI\Builder;
@@ -22,7 +23,7 @@ final class algoritm_lang_accounts extends AdminPage
     {
         $session = $this->adminSession();
         $auth = $this->context->service('admin_auth');
-        if ($session === null || $session['role'] !== 'superadmin' || !$auth instanceof AdminAuthService) {
+        if ($session === null || !AdminPolicy::allows($session, AdminPolicy::ACCOUNTS_MANAGE) || !$auth instanceof AdminAuthService) {
             return Response::notFound();
         }
 

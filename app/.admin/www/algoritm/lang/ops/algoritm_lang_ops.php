@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace admin_server\www;
 
 use Damoony\Admin\Page\AdminPage;
+use Damoony\Admin\Policy\AdminPolicy;
 use Damoony\Core\Files\Paths;
 use Damoony\Core\Http\Response;
 use Damoony\Core\Settings\SiteConfig;
@@ -20,7 +21,7 @@ final class algoritm_lang_ops extends AdminPage
     protected function content(): Node|Response|null
     {
         $session = $this->adminSession();
-        if ($session === null || $session['role'] !== 'superadmin') {
+        if ($session === null || !AdminPolicy::allows($session, AdminPolicy::OPS_VIEW)) {
             return Response::notFound();
         }
 
