@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Damoony\Cli;
 
+use Damoony\Cli\Commands\AccountApproveCommand;
+use Damoony\Cli\Commands\AccountRequestCommand;
+use Damoony\Cli\Commands\AccountSetPasswordCommand;
 use Damoony\Cli\Commands\AdminPasswdCommand;
 use Damoony\Cli\Commands\AlertNotifyCommand;
 use Damoony\Cli\Commands\AlliasListCommand;
@@ -41,11 +44,15 @@ use Damoony\Cli\Commands\FillerToggleCommand;
 use Damoony\Cli\Commands\FillerWriteCommand;
 use Damoony\Cli\Commands\HealthCheckCommand;
 use Damoony\Cli\Commands\InitCommand;
+use Damoony\Cli\Commands\InstallApproveCommand;
+use Damoony\Cli\Commands\InstallClaimCommand;
+use Damoony\Cli\Commands\InstallCreateCommand;
 use Damoony\Cli\Commands\LangAddCommand;
 use Damoony\Cli\Commands\LangListCommand;
 use Damoony\Cli\Commands\LangRemoveCommand;
 use Damoony\Cli\Commands\LangRepairCommand;
 use Damoony\Cli\Commands\LangSyncCommand;
+use Damoony\Cli\Commands\MemberApproveCommand;
 use Damoony\Cli\Commands\MetricsSnapshotCommand;
 use Damoony\Cli\Commands\MigratePageRulesCommand;
 use Damoony\Cli\Commands\MigrateSiteConfigCommand;
@@ -93,6 +100,7 @@ use Damoony\Core\Settings\ObservabilityConfig;
 use Damoony\Core\Settings\SiteConfig;
 use Damoony\Core\Settings\SiteConfigWriter;
 use Damoony\Data\Db\Connection;
+use Damoony\Data\Persona\PersonaRepository;
 use Damoony\Diagnostics\StructureChecker;
 use Damoony\UI\Region\FillerState;
 
@@ -205,6 +213,17 @@ final class Registry
         $registry->add(new StructureCheckCommand($structureChecker, $site));
         $registry->add(new StructureRepairCommand($paths, $site));
         $registry->add(new SiteScanCommand($paths, $site, $writer));
+
+        if ($db instanceof Connection) {
+            $persona = new PersonaRepository($db);
+            $registry->add(new AccountRequestCommand($persona, $alertCommand));
+            $registry->add(new AccountApproveCommand($persona));
+            $registry->add(new AccountSetPasswordCommand($persona));
+            $registry->add(new MemberApproveCommand($persona));
+            $registry->add(new InstallCreateCommand($paths, $persona));
+            $registry->add(new InstallApproveCommand($persona));
+            $registry->add(new InstallClaimCommand($persona));
+        }
 
         $cronTasks = [
             'cleanup' => new SystemCleanCommand($paths, $trashScanner, $maintenance, $observability),

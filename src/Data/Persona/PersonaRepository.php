@@ -118,6 +118,48 @@ final class PersonaRepository
             ->execute(['status' => $status, 'id' => $memberId]);
     }
 
+    public function createInvite(int $accountId, string $tokenHash, string $expiresAt): int
+    {
+        $this->conn->pdo()->prepare(
+            'INSERT INTO persona_invites (account_id, token_hash, expires_at)
+             VALUES (:account, :token, :expires)',
+        )->execute(['account' => $accountId, 'token' => $tokenHash, 'expires' => $expiresAt]);
+
+        return (int) $this->conn->pdo()->lastInsertId();
+    }
+
+    /** @return array<string, mixed>|array{} */
+    public function inviteByToken(string $tokenHash): array
+    {
+        $stmt = $this->conn->pdo()->prepare(
+            'SELECT * FROM persona_invites WHERE token_hash = :token AND used_at IS NULL LIMIT 1',
+        );
+        $stmt->execute(['token' => $tokenHash]);
+        $row = $stmt->fetch();
+
+        return $row === false ? [] : $row;
+    }
+
+    public function consumeInvite(int $inviteId): void
+    {
+        $this->conn->pdo()->prepare('UPDATE persona_invites SET used_at = :used WHERE id = :id')
+            ->execute(['used' => gmdate('Y-m-d H:i:s'), 'id' => $inviteId]);
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function installationsFor(int $accountId): array
+    {
+        $stmt = $this->conn->pdo()->prepare(
+            'SELECT * FROM installations WHERE account_id = :account ORDER BY id DESC',
+        );
+        $stmt->execute(['account' => $accountId]);
+
+        /** @var list<array<string, mixed>> $rows */
+        $rows = array_values($stmt->fetchAll() ?: []);
+
+        return $rows;
+    }
+
     /**
      * @param list<string> $projects
      */
