@@ -15,6 +15,8 @@ use Damoony\UI\Page\Page;
  */
 abstract class AdminPage extends Page
 {
+    private const CSRF_COOKIE = 'ADMIN_CSRF';
+
     /**
      * @return array{account: array<string, mixed>, role: string, scope: string, session_id: int}|null
      */
@@ -30,5 +32,30 @@ abstract class AdminPage extends Page
         }
 
         return $auth->authenticate((string) ($this->context->request->cookies[AdminModule::COOKIE] ?? ''));
+    }
+
+    protected function csrfToken(): string
+    {
+        $token = (string) ($this->context->request->cookies[self::CSRF_COOKIE] ?? '');
+        if ($token === '') {
+            $token = bin2hex(random_bytes(32));
+            setcookie(self::CSRF_COOKIE, $token, [
+                'expires' => time() + 3600,
+                'path' => '/',
+                'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]);
+        }
+
+        return $token;
+    }
+
+    protected function csrfValid(): bool
+    {
+        $token = (string) ($this->context->request->cookies[self::CSRF_COOKIE] ?? '');
+        $posted = (string) $this->context->request->post('_csrf', '');
+
+        return $token !== '' && hash_equals($token, $posted);
     }
 }

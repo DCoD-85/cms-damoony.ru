@@ -7,7 +7,6 @@ namespace admin_server\www;
 use Damoony\Core\Files\Paths;
 use Damoony\Core\Http\Response;
 use Damoony\Core\Settings\SiteConfig;
-use Damoony\Core\Settings\SiteConfigWriter;
 use Damoony\Data\Admin\AdminAuthService;
 use Damoony\Modules\Admin\AdminModule;
 use Damoony\Modules\AuthAdmin\AdminAccess;
@@ -51,10 +50,6 @@ final class algoritm_lang extends Page
                 $error = 'Слишком много попыток, попробуйте позже';
             } elseif (!hash_equals($csrf, $posted)) {
                 $error = 'Сессия устарела, обновите страницу';
-            } elseif ($session !== null && (string) $this->context->request->post('action') === 'toggle_alias') {
-                $this->toggleAlias();
-
-                return Response::redirect('/' . $lang . '/');
             } else {
                 $result = $auth->login(
                     (string) $this->context->request->post('login'),
@@ -111,27 +106,12 @@ final class algoritm_lang extends Page
             if ($site instanceof SiteConfig) {
                 $list = Builder::ul('admin-projects');
                 foreach ($site->projects() as $key => $project) {
-                    $item = Builder::li();
-                    $item->append(Builder::el('strong')->content((string) $key));
-                    $item->append(Builder::div()->content(
-                        'mirrors: ' . implode(', ', $project->hostNames())
+                    $list->append(Builder::li()->content(
+                        (string) $key
+                        . ' · mirrors: ' . implode(', ', $project->hostNames())
                         . ' · aliases: ' . implode(', ', $project->aliasNames())
                         . ' · langs: ' . implode(', ', $project->langs),
                     ));
-
-                    foreach ($project->aliasNames() as $alias) {
-                        $form = new Form('admin-alias-form');
-                        $form->method('POST');
-                        $form->action('/' . $lang . '/');
-                        $form->add(new Input('hidden', '_csrf', $csrf));
-                        $form->add(new Input('hidden', 'action', 'toggle_alias'));
-                        $form->add(new Input('hidden', 'project', (string) $key));
-                        $form->add(new Input('hidden', 'alias', $alias));
-                        $form->add(new Button(($project->isAliasAvailable($alias) ? 'Выключить ' : 'Включить ') . $alias));
-                        $item->append($form);
-                    }
-
-                    $list->append($item);
                 }
                 $wrap->append($list);
             }
@@ -144,26 +124,6 @@ final class algoritm_lang extends Page
         ));
 
         return $wrap;
-    }
-
-    private function toggleAlias(): void
-    {
-        $projectKey = (string) $this->context->request->post('project');
-        $alias = (string) $this->context->request->post('alias');
-        $paths = $this->context->service('paths');
-        $site = $this->context->service('site_config');
-
-        if (!$paths instanceof Paths || !$site instanceof SiteConfig || !$site->has($projectKey)) {
-            return;
-        }
-
-        $project = $site->project($projectKey);
-        if ($project === null || !$project->hasAlias($alias)) {
-            return;
-        }
-
-        (new SiteConfigWriter($paths->root() . '/config/site.config'))
-            ->setAliasAvailable($projectKey, $alias, !$project->isAliasAvailable($alias));
     }
 
     private function cookie(string $name, string $value, int $ttl): void
