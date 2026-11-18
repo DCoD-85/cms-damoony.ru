@@ -1,28 +1,35 @@
-/* blocks.css */
+/* blocks.css — общая структура слотов */
 .dt_top, .dt_left, .dt_center, .dt_right, .dt_bottom, .dt_footer {
-    padding: 16px;
-    border-radius: 6px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
 }
-.dt_inner { display: flex; flex-direction: column; gap: 8px; }
-.dt_menu { list-style: none; padding: 0; margin: 10px 0 0 0; }
-.dt_menu li { margin-bottom: 8px; }
-.dt_menu a { text-decoration: none; font-weight: bold; }
-.dt_menu a:hover { text-decoration: underline; }
+.dt_inner { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.dt_inner > p { margin: 0; }
 
-.skin-switcher { display: flex; gap: 10px; font-size: 0.9em; align-items: center; }
-.skin-switcher .label { color: #888; }
-.skin-switcher a { color: #007bff; text-decoration: none; }
-.skin-switcher a:hover { text-decoration: underline; }
-.skin-switcher a.active { color: #333; font-weight: bold; text-decoration: none; pointer-events: none; }
-body.dark-theme .skin-switcher a.active { color: #fff; }
+/* Верх: логотип, меню, авторизация */
+.dt_top_nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+.dt_logo { font-size: 1.35rem; font-weight: 700; letter-spacing: 0.01em; }
+.dt_main_menu, .dt_auth_menu { display: flex; list-style: none; margin: 0; padding: 0; gap: 18px; }
+.dt_main_menu a, .dt_auth_menu a { color: var(--text); text-decoration: none; font-weight: 500; }
+.dt_main_menu a:hover, .dt_auth_menu a:hover { color: var(--accent); text-decoration: underline; }
+.dt_switchers { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px; color: var(--muted); font-size: 0.9rem; }
+.lang-switcher, .skin-switcher { display: flex; align-items: center; gap: 8px; }
+.lang-switcher .label, .skin-switcher .label { color: var(--muted); }
+.lang-switcher a, .skin-switcher a { color: var(--muted); text-decoration: none; padding: 2px 4px; border-radius: 4px; }
+.lang-switcher a:hover, .skin-switcher a:hover { color: var(--accent); }
+.lang-switcher a.active, .skin-switcher a.active { color: var(--accent); font-weight: 700; pointer-events: none; }
 
-/* Header Layout */
-.dt_top_nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid rgba(0,0,0,0.1); }
-.dt_logo { font-size: 1.4em; font-weight: bold; }
-.dt_main_menu, .dt_auth_menu { display: flex; list-style: none; margin: 0; padding: 0; gap: 20px; }
-.dt_main_menu a, .dt_auth_menu a { text-decoration: none; font-weight: 500; }
-.dt_switchers { display: flex; gap: 20px; color: #888; }
-.lang-switcher, .skin-switcher { display: flex; gap: 8px; align-items: center; }
-.lang-switcher a, .skin-switcher a { text-decoration: none; color: inherit; }
-.lang-switcher a.active, .skin-switcher a.active { font-weight: bold; pointer-events: none; }
-body.dark-theme .dt_top_nav { border-bottom-color: rgba(255,255,255,0.1); }
+/* Меню в левом слоте */
+.dt_menu { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.dt_menu a { display: block; padding: 6px 8px; border-radius: 6px; color: var(--text); text-decoration: none; }
+.dt_menu a:hover { background: var(--accent-weak); color: var(--accent); }

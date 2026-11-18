@@ -1,2 +1,2 @@
-
-/* Базовые настройки для всех блоков, специфичные для скина */
+/* right.css — правая колонка */
+.dt_right { align-self: start; color: var(--muted); font-size: 0.92rem; }

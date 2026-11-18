@@ -1,2 +1,2 @@
-
-/* Базовые настройки для всех блоков, специфичные для скина */
+/* left.css — боковое меню */
+.dt_left { align-self: start; position: sticky; top: 92px; }

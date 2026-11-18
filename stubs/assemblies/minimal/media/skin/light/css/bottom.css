@@ -1,2 +1,15 @@
-
-/* Базовые настройки для всех блоков, специфичные для скина */
+/* bottom.css — акцентная полоса перед футером */
+.dt_bottom { background: var(--accent-weak); border-color: var(--accent); }
+.dt_bottom .dt_inner { flex-direction: row; align-items: center; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap; }
+.dt_bottom p { margin: 0; font-weight: 600; }
+.dt_cta {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.dt_cta:hover { filter: brightness(1.08); }

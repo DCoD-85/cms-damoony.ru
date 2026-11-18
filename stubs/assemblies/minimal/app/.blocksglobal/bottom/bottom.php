@@ -12,8 +12,15 @@ final class blocksglobal_bottom implements RegionInterface
     public function enabled(): bool { return true; }
     public function render(RegionContext $context): Node
     {
+        $lang = $context->domain->language;
+
         $wrap = Builder::div('dt_inner');
-        $wrap->append(Builder::p()->content($context->lang('block.bottom')));
+        $wrap->append(Builder::p()->content($context->lang('block.bottom.text')));
+
+        $cta = Builder::a('/' . $lang . '/about/')->content($context->lang('block.bottom.cta'));
+        $cta->attrs()->classAdd('dt_cta');
+        $wrap->append($cta);
+
         return $wrap;
     }
 }
