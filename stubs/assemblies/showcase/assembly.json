@@ -5,7 +5,8 @@
         "developer",
         "news",
         "api",
-        "docs"
+        "docs",
+        "admin"
     ],
     "base_lang": "ru",
     "description": "Витрина Damoony: главная, persona, developer, новости, API, документация",
@@ -36,6 +37,10 @@
                 "en"
             ],
             "docs": [
+                "ru",
+                "en"
+            ],
+            "admin": [
                 "ru",
                 "en"
             ]

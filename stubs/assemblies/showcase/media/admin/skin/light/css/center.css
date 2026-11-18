@@ -1,0 +1,12 @@
+/* center.css — контент страницы */
+.dt_center { min-height: 320px; }
+.dt_center h1 { font-size: 1.7rem; line-height: 1.25; margin: 0 0 12px; }
+.dt_center h2 { font-size: 1.3rem; margin: 24px 0 10px; }
+.dt_center h3 { font-size: 1.1rem; margin: 20px 0 8px; }
+.dt_center p { margin: 0 0 12px; }
+.dt_center ul, .dt_center ol { margin: 0 0 12px 20px; padding: 0; }
+.dt_center img { max-width: 100%; height: auto; border-radius: 8px; }
+.dt_center code { background: var(--accent-weak); border-radius: 4px; padding: 1px 5px; font-size: 0.9em; }
+.dt_center pre { background: var(--accent-weak); padding: 12px 14px; border-radius: 8px; overflow-x: auto; }
+.dt_center pre code { background: none; padding: 0; }
+.auth-box, .profile-box { max-width: 420px; }

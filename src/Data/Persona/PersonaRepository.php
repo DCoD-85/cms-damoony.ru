@@ -147,6 +147,27 @@ final class PersonaRepository
     }
 
     /** @return list<array<string, mixed>> */
+    public function pendingInstallations(): array
+    {
+        $stmt = $this->conn->pdo()->prepare(
+            'SELECT * FROM installations WHERE status = :status ORDER BY id DESC',
+        );
+        $stmt->execute(['status' => 'pending']);
+
+        /** @var list<array<string, mixed>> $rows */
+        $rows = array_values($stmt->fetchAll() ?: []);
+
+        return $rows;
+    }
+
+    public function accountsCount(): int
+    {
+        $stmt = $this->conn->pdo()->query('SELECT COUNT(*) FROM persona_accounts');
+
+        return $stmt === false ? 0 : (int) $stmt->fetchColumn();
+    }
+
+    /** @return list<array<string, mixed>> */
     public function installationsFor(int $accountId): array
     {
         $stmt = $this->conn->pdo()->prepare(
