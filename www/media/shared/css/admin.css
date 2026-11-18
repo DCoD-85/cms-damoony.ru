@@ -21,3 +21,17 @@
 @media (max-width: 720px) { .admin-shell { grid-template-columns: 1fr; } }
 .admin-ops { list-style: none; padding: 0; margin: 14px 0; display: grid; gap: 8px; }
 .admin-ops li { padding: 10px 12px; border: 1px solid rgba(0,0,0,.12); border-radius: 8px; }
+.admin-topbar { display: flex; align-items: center; gap: 16px; padding: 10px 0 14px; border-bottom: 1px solid rgba(0,0,0,.1); }
+.admin-brand { font-weight: 700; font-size: 1.1rem; }
+.admin-user { color: #666; margin-left: auto; }
+.admin-top-actions a { text-decoration: none; }
+.admin-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 16px 0 22px; }
+.admin-card { display: block; padding: 16px; border: 1px solid rgba(0,0,0,.14); border-radius: 10px; text-decoration: none; color: inherit; font-weight: 600; }
+.admin-card:hover { background: rgba(0,0,0,.04); }
+.admin-switch { position: relative; display: inline-block; width: 44px; height: 24px; flex: 0 0 auto; cursor: pointer; }
+.admin-switch-input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.admin-switch-slider { position: absolute; inset: 0; background: #c8c8c8; border-radius: 12px; transition: background .15s; }
+.admin-switch-slider::before { content: ""; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: transform .15s; }
+.admin-switch-input:checked + .admin-switch-slider { background: #2e7d32; }
+.admin-switch-input:checked + .admin-switch-slider::before { transform: translateX(20px); }
+.admin-switch-input:focus-visible + .admin-switch-slider { outline: 2px solid #2e7d32; outline-offset: 2px; }

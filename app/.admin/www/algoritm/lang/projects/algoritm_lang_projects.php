@@ -40,9 +40,6 @@ final class algoritm_lang_projects extends AdminPage
         $csrf = $this->csrfToken();
         $wrap = Builder::div('admin-box');
         $wrap->append(Builder::h(1)->content('Проекты'));
-        $wrap->append(Builder::p()->append(
-            Builder::a('/' . $lang . '/')->content('← Назад'),
-        ));
 
         foreach ($site->projects() as $key => $project) {
             $block = Builder::div('admin-project');
@@ -58,7 +55,7 @@ final class algoritm_lang_projects extends AdminPage
                 $item = Builder::li()->content(
                     $host . ' — ' . ($available ? 'включено' : 'выключено'),
                 );
-                $item->append($this->toggleForm($csrf, $lang, 'toggle_mirror', (string) $key, (string) $host));
+                $item->append($this->toggleForm($csrf, $lang, 'toggle_mirror', (string) $key, (string) $host, $available));
                 $mirrors->append($item);
             }
             $block->append($mirrors);
@@ -68,7 +65,7 @@ final class algoritm_lang_projects extends AdminPage
                 $item = Builder::li()->content(
                     $alias . ' — ' . ($project->isAliasAvailable($alias) ? 'включён' : 'выключен'),
                 );
-                $item->append($this->toggleForm($csrf, $lang, 'toggle_alias', (string) $key, $alias));
+                $item->append($this->toggleForm($csrf, $lang, 'toggle_alias', (string) $key, $alias, $project->isAliasAvailable($alias)));
                 $aliases->append($item);
             }
             $block->append($aliases);
@@ -78,7 +75,7 @@ final class algoritm_lang_projects extends AdminPage
         return $wrap;
     }
 
-    private function toggleForm(string $csrf, string $lang, string $action, string $project, string $target): Form
+    private function toggleForm(string $csrf, string $lang, string $action, string $project, string $target, bool $active): Form
     {
         $form = new Form('admin-toggle');
         $form->method('POST');
@@ -87,7 +84,19 @@ final class algoritm_lang_projects extends AdminPage
         $form->add(new Input('hidden', 'op', $action));
         $form->add(new Input('hidden', 'project', $project));
         $form->add(new Input('hidden', 'target', $target));
-        $form->add(new Button('Переключить'));
+
+        $toggle = new Input('checkbox', 'toggle', '1');
+        if ($active) {
+            $toggle->attrs()->add('checked', 'checked');
+        }
+        $toggle->attrs()->classAdd('admin-switch-input');
+        $toggle->attrs()->add('onchange', 'this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()');
+
+        $label = Builder::el('label');
+        $label->attrs()->classAdd('admin-switch');
+        $label->append($toggle);
+        $label->append(Builder::span('admin-switch-slider'));
+        $form->add($label);
 
         return $form;
     }

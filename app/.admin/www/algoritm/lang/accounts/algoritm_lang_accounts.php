@@ -22,9 +22,6 @@ final class algoritm_lang_accounts extends AdminPage
         $wrap = Builder::div('admin-box');
         $wrap->append(Builder::h(1)->content('Аккаунты'));
         $wrap->append(Builder::p()->content('Раздел в разработке: список админов, роли, сброс пароля.'));
-        $wrap->append(Builder::p()->append(
-            Builder::a('/' . $lang . '/')->content('← Назад'),
-        ));
 
         return $wrap;
     }

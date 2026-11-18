@@ -33,9 +33,6 @@ final class algoritm_lang_ops extends AdminPage
 
         $wrap = Builder::div('admin-box');
         $wrap->append(Builder::h(1)->content('Мониторинг'));
-        $wrap->append(Builder::p()->append(
-            Builder::a('/' . $lang . '/')->content('← Назад'),
-        ));
 
         $list = Builder::ul('admin-ops');
 
