@@ -16,6 +16,9 @@ final class SchemeRenderer
      */
     public function render(array $skeleton, RegionRegistry $regions, RegionContext $context): Element
     {
+        // Базовые стили элементов — одинаковы для всех скинов и сборок
+        $context->meta->addCss('/media/shared/css/elements.css', 'elements');
+
         // Мета
         if (isset($skeleton['meta']) && is_array($skeleton['meta'])) {
             $meta = $skeleton['meta'];

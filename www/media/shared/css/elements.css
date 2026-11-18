@@ -1,0 +1,82 @@
+/* elements.css — базовый вид UI-элементов, общий для всех скинов.
+   Скин задаёт только переменные темы (--accent, --border, --panel, --text, --muted, --radius). */
+
+.ui-btn {
+    display: inline-block;
+    padding: 9px 18px;
+    border: 1px solid var(--accent, #2563eb);
+    border-radius: var(--radius, 8px);
+    background: var(--accent, #2563eb);
+    color: #fff;
+    font: inherit;
+    font-weight: 600;
+    line-height: 1.2;
+    cursor: pointer;
+    text-decoration: none;
+}
+.ui-btn:hover { filter: brightness(1.08); }
+.ui-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.ui-input,
+.ui-textarea,
+.ui-select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 9px 12px;
+    border: 1px solid var(--border, #e2e7ee);
+    border-radius: var(--radius, 8px);
+    background: var(--panel, #fff);
+    color: var(--text, #1f2933);
+    font: inherit;
+}
+.ui-input:focus,
+.ui-textarea:focus,
+.ui-select:focus {
+    outline: 2px solid var(--accent-weak, #eff6ff);
+    border-color: var(--accent, #2563eb);
+}
+.ui-textarea { min-height: 96px; resize: vertical; }
+
+.ui-label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 500;
+    color: var(--text, #1f2933);
+}
+
+.ui-form,
+.ui-form-wrapper form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 0;
+}
+.ui-form-wrapper { max-width: 480px; }
+
+.ui-link { color: var(--accent, #2563eb); text-decoration: none; }
+.ui-link:hover { text-decoration: underline; }
+
+.ui-img { max-width: 100%; height: auto; border-radius: var(--radius, 8px); }
+
+.ui-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+.ui-th,
+.ui-td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border, #e2e7ee);
+    text-align: left;
+    vertical-align: top;
+}
+.ui-th {
+    font-weight: 600;
+    color: var(--muted, #6b7280);
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+}
+.ui-thead .ui-th { white-space: nowrap; }
+.ui-tbody tr:last-child .ui-td { border-bottom: 0; }
+.ui-tr:hover .ui-td { background: var(--accent-weak, #eff6ff); }
