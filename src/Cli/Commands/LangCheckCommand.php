@@ -40,6 +40,7 @@ final class LangCheckCommand implements CommandInterface
         $dirs = is_dir($baseDir) ? (scandir($baseDir) ?: []) : [];
         $checked = 0;
         $missingTotal = 0;
+        $todoTotal = 0;
 
         foreach ($dirs as $dir) {
             if ($dir === '.' || $dir === '..' || ($only !== '' && $dir !== $only)) {
@@ -81,6 +82,11 @@ final class LangCheckCommand implements CommandInterface
 
                     $keys = $this->keys($file);
                     $missing = array_values(array_diff($baseKeys, array_keys($keys)));
+                    $todo = $this->todoCount($file);
+                    if ($todo > 0) {
+                        $todoTotal += $todo;
+                        $r->warn($dir . '/' . $alias . '/' . $lang . ': не переведено (TODO): ' . $todo);
+                    }
                     if ($missing !== []) {
                         $missingTotal += count($missing);
                         $preview = implode(', ', array_slice($missing, 0, 5));
@@ -104,13 +110,13 @@ final class LangCheckCommand implements CommandInterface
             return $r;
         }
 
-        $r->data = ['assemblies' => $checked, 'missing' => $missingTotal, 'strict' => $strict];
+        $r->data = ['assemblies' => $checked, 'missing' => $missingTotal, 'todo' => $todoTotal, 'strict' => $strict];
 
-        if ($missingTotal > 0 && $strict) {
-            $r->error('Неполные переводы: ' . $missingTotal);
+        if (($missingTotal > 0 || $todoTotal > 0) && $strict) {
+            $r->error('Неполные переводы: ' . $missingTotal . ', TODO: ' . $todoTotal);
         } else {
             $context->step(
-                'Проверено сценариев: ' . $checked . ', проблем: ' . $missingTotal,
+                'Проверено сценариев: ' . $checked . ', проблем: ' . $missingTotal . ', TODO: ' . $todoTotal,
                 true,
                 'lang',
             );
@@ -133,5 +139,22 @@ final class LangCheckCommand implements CommandInterface
         }
 
         return $keys;
+    }
+
+    private function todoCount(string $file): int
+    {
+        $data = json_decode((string) file_get_contents($file), true);
+        if (!is_array($data)) {
+            return 0;
+        }
+
+        $count = 0;
+        foreach ($data as $value) {
+            if (is_string($value) && str_starts_with(trim($value), 'TODO:')) {
+                $count++;
+            }
+        }
+
+        return $count;
     }
 }

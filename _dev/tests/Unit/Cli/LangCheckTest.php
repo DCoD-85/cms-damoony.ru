@@ -63,6 +63,23 @@ final class LangCheckTest extends TestCase
         self::assertFalse($strict->ok);
     }
 
+    public function testTodoValuesReportedAndStrictFails(): void
+    {
+        file_put_contents(
+            $this->root . '/stubs/assemblies/demo/app/.i18nglobal/en.json',
+            json_encode(['a' => 'TODO: А', 'b' => 'B']),
+        );
+
+        $command = new LangCheckCommand(new Paths($this->root));
+
+        $soft = $command->run([], $this->context());
+        self::assertTrue($soft->ok);
+        self::assertSame(1, $soft->data['todo']);
+
+        $strict = $command->run(['strict' => '1'], $this->context());
+        self::assertFalse($strict->ok);
+    }
+
     public function testMissingBaseFileFails(): void
     {
         unlink($this->root . '/stubs/assemblies/demo/app/.i18nglobal/ru.json');
