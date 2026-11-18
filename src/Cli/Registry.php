@@ -65,6 +65,7 @@ use Damoony\Cli\Commands\SessionApplyCommand;
 use Damoony\Cli\Commands\SessionDiscardCommand;
 use Damoony\Cli\Commands\SessionListCommand;
 use Damoony\Cli\Commands\SessionStartCommand;
+use Damoony\Cli\Commands\SiteScanCommand;
 use Damoony\Cli\Commands\SkinEditCommand;
 use Damoony\Cli\Commands\SkinListCommand;
 use Damoony\Cli\Commands\SkinNewCommand;
@@ -203,6 +204,7 @@ final class Registry
         $registry->add(new MigrateSiteConfigCommand($paths, $writer));
         $registry->add(new StructureCheckCommand($structureChecker, $site));
         $registry->add(new StructureRepairCommand($paths, $site));
+        $registry->add(new SiteScanCommand($paths, $site, $writer));
 
         $cronTasks = [
             'cleanup' => new SystemCleanCommand($paths, $trashScanner, $maintenance, $observability),

@@ -43,3 +43,15 @@
 - скины: `www/media/{folder}/{alias}/skin/{name}/`.
 
 Локальные сущности создаются `allias:new`/`filler:new`, глобальные — `block:new`/`scheme:new`.
+
+## 5. Скан существующей установки
+
+`site:scan [--write] [--json]` — собирает `domains_app` по фактическим папкам `app/*`:
+
+- проект = каталог `app/<host>/`; алиас = подкаталог с `algoritm/` (или `.blockslocal`/`.schemeslocal`/`.i18nlocal`), `www` всегда первый;
+- языки проекта — из `.i18nglobal/*.json`, алиаса — из `.i18nlocal/*.json` (иначе языки проекта);
+- namespace берётся из существующего конфига, иначе из имени (`site.ru` → `site_ru`);
+- существующие значения не перетираются: namespace, мирроры, языки и алиасы дополняются только отсутствующим;
+- без `--write` — только отчёт.
+
+Для старой установки без конфига: `cli:init` → `site:scan --write` → `health:check`.
