@@ -1,18 +1,29 @@
 /* elements.css — базовый вид UI-элементов, общий для всех скинов.
    Скин задаёт только переменные темы (--accent, --border, --panel, --text, --muted, --radius). */
 
+:root {
+    --ui-line: 1.5;
+    --ui-pad-y: 8px;
+    --ui-pad-x: 12px;
+    --ui-gap: 12px;
+    --ui-control-border: 1px;
+}
+
 .ui-btn {
-    display: inline-block;
-    padding: 9px 18px;
-    border: 1px solid var(--accent, #2563eb);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: calc(var(--ui-pad-y) - var(--ui-control-border)) calc(var(--ui-pad-x) - var(--ui-control-border));
+    border: var(--ui-control-border) solid var(--accent, #2563eb);
     border-radius: var(--radius, 8px);
     background: var(--accent, #2563eb);
     color: #fff;
     font: inherit;
     font-weight: 600;
-    line-height: 1.2;
+    line-height: var(--ui-line);
     cursor: pointer;
     text-decoration: none;
+    box-sizing: border-box;
 }
 .ui-btn:hover { filter: brightness(1.08); }
 .ui-btn:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -22,12 +33,15 @@
 .ui-select {
     width: 100%;
     box-sizing: border-box;
-    padding: 9px 12px;
-    border: 1px solid var(--border, #e2e7ee);
+    margin: 0;
+    padding: calc(var(--ui-pad-y) - var(--ui-control-border)) calc(var(--ui-pad-x) - var(--ui-control-border));
+    border: var(--ui-control-border) solid var(--border, #e2e7ee);
     border-radius: var(--radius, 8px);
     background: var(--panel, #fff);
     color: var(--text, #1f2933);
     font: inherit;
+    line-height: var(--ui-line);
+    vertical-align: middle;
 }
 .ui-input:focus,
 .ui-textarea:focus,
@@ -41,6 +55,7 @@
     display: block;
     margin-bottom: 4px;
     font-weight: 500;
+    line-height: var(--ui-line);
     color: var(--text, #1f2933);
 }
 
@@ -48,10 +63,20 @@
 .ui-form-wrapper form {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: var(--ui-gap);
     margin: 0;
 }
 .ui-form-wrapper { max-width: 480px; }
+
+.ui-error {
+    margin: 0 0 var(--ui-gap);
+    padding: var(--ui-pad-y) var(--ui-pad-x) var(--ui-pad-y) calc(var(--ui-pad-x) + 16px);
+    border-radius: var(--radius, 8px);
+    background: #fdecec;
+    color: #9b1c1c;
+    font-size: 0.92rem;
+    line-height: var(--ui-line);
+}
 
 .ui-link { color: var(--accent, #2563eb); text-decoration: none; }
 .ui-link:hover { text-decoration: underline; }
@@ -63,12 +88,16 @@
     border-collapse: collapse;
     font-size: 0.95rem;
 }
+
+/* Ячейка — единый контейнер: отступы одинаковы для текста и контролов,
+   внешняя высота инпута равна строке текста за счёт padding − border. */
 .ui-th,
 .ui-td {
-    padding: 9px 12px;
+    padding: var(--ui-pad-y) var(--ui-pad-x);
     border-bottom: 1px solid var(--border, #e2e7ee);
+    line-height: var(--ui-line);
     text-align: left;
-    vertical-align: top;
+    vertical-align: middle;
 }
 .ui-th {
     font-weight: 600;
@@ -81,11 +110,12 @@
 .ui-tbody tr:last-child .ui-td { border-bottom: 0; }
 .ui-tr:hover .ui-td { background: var(--accent-weak, #eff6ff); }
 
-.ui-error {
-    margin: 0 0 12px;
-    padding: 10px 12px 10px 28px;
-    border-radius: var(--radius, 8px);
-    background: #fdecec;
-    color: #9b1c1c;
-    font-size: 0.92rem;
+/* Контролы внутри ячеек не добавляют собственных отступов и не ломают ось */
+.ui-td .ui-input,
+.ui-td .ui-select,
+.ui-td .ui-btn,
+.ui-th .ui-input,
+.ui-th .ui-select {
+    margin: 0;
+    vertical-align: middle;
 }

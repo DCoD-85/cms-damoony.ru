@@ -42,6 +42,18 @@ final class ElementsStyleContractTest extends TestCase
         }
     }
 
+    public function testRhythmTokensAreDefined(): void
+    {
+        $css = (string) file_get_contents(dirname(__DIR__, 4) . '/www/media/shared/css/elements.css');
+
+        foreach (['--ui-line', '--ui-pad-y', '--ui-pad-x', '--ui-gap'] as $token) {
+            self::assertStringContainsString($token . ':', $css, 'elements.css: нет токена ' . $token);
+        }
+
+        self::assertStringContainsString('vertical-align: middle', $css);
+        self::assertStringContainsString('calc(var(--ui-pad-y) - var(--ui-control-border))', $css);
+    }
+
     public function testAssembliesShipSameElementsCss(): void
     {
         $base = dirname(__DIR__, 4) . '/www/media/shared/css/elements.css';
