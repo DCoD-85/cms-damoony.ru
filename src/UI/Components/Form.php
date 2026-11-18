@@ -29,8 +29,23 @@ class Form extends Element
 
     public function add(Node $child): self
     {
+        if ($child instanceof self) {
+            throw new \InvalidArgumentException('В <form> нельзя вставлять <form>');
+        }
+        if ($child instanceof Table) {
+            throw new \InvalidArgumentException('В <form> нельзя вставлять <table>');
+        }
+
         $this->formNode->append($child);
         return $this;
+    }
+
+    /**
+     * Дети добавляются только через add(): прямой append в обёртку запрещён.
+     */
+    protected function accepts(Node|string $child): bool
+    {
+        return $child === $this->formNode;
     }
 
     public function action(string $url): self

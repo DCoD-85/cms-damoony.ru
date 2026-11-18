@@ -80,3 +80,12 @@
 .ui-thead .ui-th { white-space: nowrap; }
 .ui-tbody tr:last-child .ui-td { border-bottom: 0; }
 .ui-tr:hover .ui-td { background: var(--accent-weak, #eff6ff); }
+
+.ui-error {
+    margin: 0 0 12px;
+    padding: 10px 12px 10px 28px;
+    border-radius: var(--radius, 8px);
+    background: #fdecec;
+    color: #9b1c1c;
+    font-size: 0.92rem;
+}

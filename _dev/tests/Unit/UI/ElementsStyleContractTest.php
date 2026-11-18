@@ -25,6 +25,7 @@ final class ElementsStyleContractTest extends TestCase
         'ui-tr',
         'ui-th',
         'ui-td',
+        'ui-error',
         'ui-link',
         'ui-img',
     ];

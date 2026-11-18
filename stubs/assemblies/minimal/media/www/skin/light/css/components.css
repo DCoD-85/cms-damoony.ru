@@ -1,27 +1,4 @@
-/* components.css — формы и элементы */
-.dt_button, .auth-box button, .auth-box input[type="submit"] {
-    display: inline-block;
-    padding: 9px 18px;
-    border: 1px solid var(--accent);
-    border-radius: 8px;
-    background: var(--accent);
-    color: #fff;
-    font: inherit;
-    font-weight: 600;
-    cursor: pointer;
-}
-.dt_button:hover, .auth-box button:hover { filter: brightness(1.08); }
-.auth-box form { display: flex; flex-direction: column; gap: 10px; margin: 0; }
-.auth-box input[type="text"], .auth-box input[type="email"], .auth-box input[type="password"] {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 9px 12px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--panel);
-    color: var(--text);
-    font: inherit;
-}
-.auth-box input:focus { outline: 2px solid var(--accent-weak); border-color: var(--accent); }
+/* components.css — тема скина: только оболочки и переменные.
+   Базовый вид ui-* элементов — в /media/shared/css/elements.css. */
+.auth-box { max-width: 420px; }
 .auth-box p { margin: 12px 0 0; }
-.form-errors { margin: 0 0 12px; padding: 10px 12px 10px 28px; border-radius: 8px; background: #fdecec; color: #9b1c1c; }

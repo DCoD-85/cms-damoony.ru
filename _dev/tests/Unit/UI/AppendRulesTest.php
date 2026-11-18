@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Damoony\Tests\Unit\UI;
 
 use Damoony\UI\Components\Button;
+use Damoony\UI\Components\Form;
 use Damoony\UI\Components\Input;
 use Damoony\UI\Components\Option;
 use Damoony\UI\Components\Select;
@@ -99,6 +100,43 @@ final class AppendRulesTest extends TestCase
         $tr->append(new Th('Заголовок'));
 
         self::assertStringContainsString('<th class="ui-th">Заголовок</th>', $tr->release());
+    }
+
+    public function testFormAcceptsFieldsAndButtons(): void
+    {
+        $form = new Form();
+        $form->method('POST');
+        $form->add(new Input('text', 'login'));
+        $form->add(new Button('Войти'));
+
+        $html = $form->release();
+
+        self::assertStringContainsString('<form class="ui-form form_form" method="POST">', $html);
+        self::assertStringContainsString('<input class="ui-input" type="text" name="login" />', $html);
+        self::assertStringContainsString('<button class="ui-btn" type="submit">Войти</button>', $html);
+    }
+
+    public function testFormRejectsNestedForm(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('нельзя вставлять <form>');
+
+        new Form()->add(new Form());
+    }
+
+    public function testFormRejectsTable(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('нельзя вставлять <table>');
+
+        new Form()->add(new Table());
+    }
+
+    public function testFormRejectsDirectAppend(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        new Form()->append(new Input('text', 'login'));
     }
 
     public function testInputIsVoid(): void

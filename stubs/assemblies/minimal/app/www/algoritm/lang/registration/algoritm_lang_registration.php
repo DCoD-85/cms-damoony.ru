@@ -101,7 +101,7 @@ final class algoritm_lang_registration extends Page
         $wrap->append(Builder::h(1)->content($this->context->lang('auth.register_title')));
 
         if ($errors !== []) {
-            $list = Builder::ul('form-errors');
+            $list = Builder::ul('ui-error');
             foreach ($errors as $error) {
                 $list->append(Builder::li()->content($error));
             }

@@ -20,6 +20,7 @@
 | `ui-thead`, `ui-tbody`, `ui-tr`, `ui-th`, `ui-td` | `Tbody/Thead/Tr/Th/Td` | структура таблицы |
 | `ui-link` | `Components\Link` | ссылка |
 | `ui-img` | `Components\Img` | изображение |
+| `ui-error` | список ошибок формы | ошибки валидации |
 
 Стили: `www/media/shared/css/elements.css` (общие для всех скинов). Скин задаёт только переменные
 темы: `--accent`, `--accent-weak`, `--border`, `--panel`, `--text`, `--muted`, `--radius`.
@@ -30,7 +31,8 @@
 
 - `Table` → `Thead`/`Tbody`/`Tr`; `Tbody`/`Thead` → `Tr`; `Tr` → `Td`/`Th`;
 - `Td`/`Th` → любой узел/строка, **кроме** `Table`, `Tbody`, `Thead`, `Tr`, `Td`, `Th`;
-- `Select` → `Option`; `Button` → только текст; `Input` → ничего (void).
+- `Select` → `Option`; `Button` → только текст; `Input` → ничего (void);
+- `Form`: дети только через `add()`; нельзя вкладывать `Form` и `Table`.
 
 Ошибка: `InvalidArgumentException` с текстом «В `<td>` нельзя вставлять `<td>`».
 
