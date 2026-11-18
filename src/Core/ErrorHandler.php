@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Damoony\Core;
 
 use Damoony\Core\Observability\RequestId;
+use Damoony\UI\Builder;
 use ErrorException;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -79,14 +80,27 @@ final class ErrorHandler
         if (!headers_sent()) {
             http_response_code(500);
             header('X-Request-Id: ' . $requestId);
+
             if ($this->env->isDev()) {
-                echo '<h1>Fatal error</h1><pre>'
-                    . htmlspecialchars($error['message'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
-                    . "\n" . htmlspecialchars($error['file'] . ':' . $error['line'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
-                    . '</pre>';
+                echo $this->devFatal($error['message'], $error['file'] . ':' . $error['line'], $requestId);
             } else {
-                echo 'Internal Server Error<br>Request ID: ' . htmlspecialchars($requestId, ENT_QUOTES, 'UTF-8');
+                header('Content-Type: text/plain; charset=utf-8');
+                echo "Internal Server Error\nRequest ID: {$requestId}";
             }
+        }
+    }
+
+    private function devFatal(string $message, string $location, string $requestId): string
+    {
+        try {
+            $wrap = Builder::div('error error-500');
+            $wrap->append(Builder::h(1, 'error-head')->content('Fatal error'));
+            $wrap->append(Builder::el('pre')->content($message . "\n" . $location));
+            $wrap->append(Builder::p()->content('Request ID: ' . $requestId));
+
+            return $wrap->release();
+        } catch (Throwable) {
+            return 'Fatal error';
         }
     }
 
@@ -98,21 +112,33 @@ final class ErrorHandler
 
         http_response_code(500);
         header('X-Request-Id: ' . $requestId);
-        header('Content-Type: text/html; charset=utf-8');
 
         if ($this->env->isDev()) {
-            $class = htmlspecialchars($e::class, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-            $message = htmlspecialchars($e->getMessage(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-            $file = htmlspecialchars($e->getFile() . ':' . $e->getLine(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-            $trace = htmlspecialchars($e->getTraceAsString(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-            $rid = htmlspecialchars($requestId, ENT_QUOTES, 'UTF-8');
-
-            echo "<h1>{$class}</h1><p>{$message}</p><p><code>{$file}</code></p>"
-                . "<p>Request ID: {$rid}</p><pre>{$trace}</pre>";
+            header('Content-Type: text/html; charset=utf-8');
+            echo $this->devException($e, $requestId);
 
             return;
         }
 
-        echo 'Internal Server Error<br>Request ID: ' . htmlspecialchars($requestId, ENT_QUOTES, 'UTF-8');
+        header('Content-Type: text/plain; charset=utf-8');
+        echo "Internal Server Error\nRequest ID: {$requestId}";
+    }
+
+    private function devException(Throwable $e, string $requestId): string
+    {
+        try {
+            $wrap = Builder::div('error error-500');
+            $wrap->append(Builder::h(1, 'error-head')->content($e::class));
+            $wrap->append(Builder::p('error-message')->content($e->getMessage()));
+            $wrap->append(Builder::el('p')->append(
+                Builder::el('code')->content($e->getFile() . ':' . $e->getLine()),
+            ));
+            $wrap->append(Builder::p()->content('Request ID: ' . $requestId));
+            $wrap->append(Builder::el('pre')->content($e->getTraceAsString()));
+
+            return $wrap->release();
+        } catch (Throwable) {
+            return 'Internal Server Error';
+        }
     }
 }

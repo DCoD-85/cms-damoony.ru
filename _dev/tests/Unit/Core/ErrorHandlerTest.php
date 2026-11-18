@@ -65,6 +65,41 @@ final class ErrorHandlerTest extends TestCase
     #[\PHPUnit\Framework\Attributes\RunInSeparateProcess]
     #[\PHPUnit\Framework\Attributes\PreserveGlobalState(false)]
     #[\PHPUnit\Framework\Attributes\WithoutErrorHandler]
+    public function testDevExceptionRendersEscapedElements(): void
+    {
+        $h = $this->make(Env::Dev);
+
+        ob_start();
+        $h->handleException(new \RuntimeException('boom <script>'));
+        $out = (string) ob_get_clean();
+
+        self::assertStringContainsString('<div class="error error-500">', $out);
+        self::assertStringContainsString('RuntimeException', $out);
+        self::assertStringContainsString('boom &lt;script&gt;', $out);
+        self::assertStringNotContainsString('boom <script>', $out);
+        self::assertStringContainsString('Request ID:', $out);
+    }
+
+    #[\PHPUnit\Framework\Attributes\RunInSeparateProcess]
+    #[\PHPUnit\Framework\Attributes\PreserveGlobalState(false)]
+    #[\PHPUnit\Framework\Attributes\WithoutErrorHandler]
+    public function testProdExceptionIsPlainText(): void
+    {
+        $h = $this->make(Env::Prod);
+
+        ob_start();
+        $h->handleException(new \RuntimeException('boom'));
+        $out = (string) ob_get_clean();
+
+        self::assertStringContainsString('Internal Server Error', $out);
+        self::assertStringContainsString('Request ID:', $out);
+        self::assertStringNotContainsString('<div', $out);
+        self::assertStringNotContainsString('boom', $out);
+    }
+
+    #[\PHPUnit\Framework\Attributes\RunInSeparateProcess]
+    #[\PHPUnit\Framework\Attributes\PreserveGlobalState(false)]
+    #[\PHPUnit\Framework\Attributes\WithoutErrorHandler]
     public function testHandleShutdownIgnoresNonFatal(): void
     {
         $h = $this->make();
