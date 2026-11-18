@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 $children = [
     ['tag' => 'header', 'class' => 'admin_top', 'slot' => 'top'],
+    ['tag' => 'aside', 'class' => 'admin_left', 'slot' => 'left'],
     ['tag' => 'main', 'class' => 'admin_center', 'slot' => 'center'],
     ['tag' => 'footer', 'class' => 'admin_footer', 'slot' => 'footer'],
 ];
@@ -16,6 +17,8 @@ return [
         'css' => [
             '/media/shared/css/admin.css',
         ],
-        'js' => [],
+        'js' => [
+            '/media/shared/scripts/cliajax.js',
+        ],
     ],
 ];

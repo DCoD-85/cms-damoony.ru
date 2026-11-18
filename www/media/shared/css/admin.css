@@ -9,3 +9,13 @@
 .admin-nav a { display: inline-block; padding: 6px 10px; border: 1px solid var(--ui-control-border, #d0d0d0); border-radius: 6px; text-decoration: none; color: inherit; }
 .admin-nav a:hover { background: rgba(0,0,0,.04); }
 .admin-alias-form { display: inline-block; margin: 4px 6px 0 0; }
+.admin-shell { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 20px 28px; align-items: start; }
+.admin_top, .admin_footer { grid-column: 1 / -1; }
+.admin_left { min-width: 0; }
+.admin-nav-vertical { flex-direction: column; align-items: stretch; margin: 0; }
+.admin-nav-vertical a { display: block; }
+.admin-project { padding: 14px 0; border-bottom: 1px solid rgba(0,0,0,.08); }
+.admin-mirrors, .admin-aliases { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 6px; }
+.admin-mirrors li, .admin-aliases li { display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+.admin-toggle { margin: 0; }
+@media (max-width: 720px) { .admin-shell { grid-template-columns: 1fr; } }
