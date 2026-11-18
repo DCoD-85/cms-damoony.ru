@@ -39,6 +39,7 @@ final class algoritm_lang_projects extends AdminPage
         }
 
         $csrf = $this->csrfToken();
+        $currentHost = strtolower(preg_replace('/:\\d+$/', '', (string) ($this->context->request->server['HTTP_HOST'] ?? '')) ?? '');
         $wrap = Builder::div('admin-box');
         $wrap->append(Builder::h(1)->content('Проекты'));
 
@@ -56,7 +57,9 @@ final class algoritm_lang_projects extends AdminPage
                 $item = Builder::li()->content(
                     $host . ' — ' . ($available ? 'включено' : 'выключено'),
                 );
-                $item->append($this->toggleForm($csrf, $lang, 'toggle_mirror', (string) $key, (string) $host, $available));
+                if ($key !== 'admin' && $currentHost !== strtolower($host)) {
+                    $item->append($this->toggleForm($csrf, $lang, 'toggle_mirror', (string) $key, (string) $host, $available));
+                }
                 $mirrors->append($item);
             }
             $block->append($mirrors);
@@ -66,7 +69,9 @@ final class algoritm_lang_projects extends AdminPage
                 $item = Builder::li()->content(
                     $alias . ' — ' . ($project->isAliasAvailable($alias) ? 'включён' : 'выключен'),
                 );
-                $item->append($this->toggleForm($csrf, $lang, 'toggle_alias', (string) $key, $alias, $project->isAliasAvailable($alias)));
+                if ($key !== 'admin') {
+                    $item->append($this->toggleForm($csrf, $lang, 'toggle_alias', (string) $key, $alias, $project->isAliasAvailable($alias)));
+                }
                 $aliases->append($item);
             }
             $block->append($aliases);
@@ -102,7 +107,12 @@ final class algoritm_lang_projects extends AdminPage
         $action = (string) $this->context->request->post('op');
         $project = $site->project($projectKey);
 
-        if ($project === null) {
+        if ($project === null || $projectKey === 'admin') {
+            return;
+        }
+
+        $currentHost = strtolower(preg_replace('/:\d+$/', '', (string) ($this->context->request->server['HTTP_HOST'] ?? '')) ?? '');
+        if ($action === 'toggle_mirror' && strtolower($target) === $currentHost) {
             return;
         }
 
