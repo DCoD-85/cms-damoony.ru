@@ -41,6 +41,9 @@ else
 fi
 
 echo "[4/8] migrations"
+if [ ! -f var/cli.identity ]; then
+  "${PHP}" bin/cli.php cli:init --name=deploy
+fi
 "${PHP}" bin/cli.php db:migrate --force
 
 echo "[5/8] сборка showcase"
@@ -61,6 +64,9 @@ chown root:root var/cli.identity 2>/dev/null || true
 chmod 600 var/cli.identity 2>/dev/null || true
 
 echo "[7/8] nginx"
+cp -a /etc/nginx/sites-available/damoony.ru "${BACKUP_DIR}/nginx-damoony.ru.conf" 2>/dev/null || true
+install -m 644 _dev/deploy/nginx/prod-main.conf /etc/nginx/sites-available/damoony.ru
+ln -sfn /etc/nginx/sites-available/damoony.ru /etc/nginx/sites-enabled/damoony.ru
 for name in persona developer admin; do
   install -m 644 "_dev/deploy/nginx/prod-${name}.conf" "/etc/nginx/sites-available/${name}.damoony.ru"
   ln -sfn "/etc/nginx/sites-available/${name}.damoony.ru" "/etc/nginx/sites-enabled/${name}.damoony.ru"
