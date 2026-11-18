@@ -50,11 +50,36 @@ final class algoritm_lang extends Page
             if ($action === 'create') {
                 $target = \Damoony\Core\Settings\SiteConfig::normalizeHost((string) $this->context->request->post('domain'));
                 $assembly = (string) $this->context->request->post('assembly');
-                $langs = ['ru', 'en'];
+                $paths = $this->context->service('paths');
+                $aliases = [];
+                $langs = [];
 
-                if (\Damoony\Core\Settings\SiteConfig::isValidHost($target) && in_array($assembly, ['minimal', 'showcase'], true)) {
+                if ($paths instanceof \Damoony\Core\Files\Paths) {
+                    try {
+                        $manifest = \Damoony\Core\Assembly\AssemblyManifest::fromDirectory($paths, $assembly);
+                        $aliases = array_values(array_intersect(
+                            (array) $this->context->request->post('aliases', []),
+                            $manifest->aliases(),
+                        ));
+                        if ($aliases === []) {
+                            $aliases = [$manifest->aliases()[0]];
+                        }
+
+                        $langs = array_values(array_intersect(
+                            (array) $this->context->request->post('langs', []),
+                            $manifest->projectLangs(),
+                        ));
+                        if (!in_array($manifest->baseLang(), $langs, true)) {
+                            $langs[] = $manifest->baseLang();
+                        }
+                    } catch (\Throwable) {
+                        $aliases = [];
+                    }
+                }
+
+                if (\Damoony\Core\Settings\SiteConfig::isValidHost($target) && $aliases !== []) {
                     $token = PersonaTokens::generate();
-                    $repo->createInstallation($accountId, $target, $assembly, $langs, PersonaTokens::hash($token), 'pending');
+                    $repo->createInstallation($accountId, $target, $assembly, $langs, PersonaTokens::hash($token), 'pending', $aliases);
 
                     $paths = $this->context->service('paths');
                     if ($paths instanceof \Damoony\Core\Files\Paths) {
@@ -146,6 +171,13 @@ final class algoritm_lang extends Page
         $select->add(new Option('minimal', 'minimal'));
         $select->add(new Option('showcase', 'showcase'));
         $form->add($select);
+
+        foreach (['www', 'persona', 'developer', 'news', 'api', 'docs'] as $alias) {
+            $form->add(new Input('checkbox', 'aliases[]', $alias));
+        }
+        foreach (['ru', 'en'] as $langCode) {
+            $form->add(new Input('checkbox', 'langs[]', $langCode));
+        }
         $form->add(new Button($this->context->lang('developer.submit')));
         $wrap->append($form);
 

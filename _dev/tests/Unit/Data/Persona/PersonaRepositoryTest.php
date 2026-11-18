@@ -57,6 +57,7 @@ final class PersonaRepositoryTest extends TestCase
             domain TEXT NOT NULL,
             assembly TEXT NOT NULL DEFAULT "minimal",
             langs TEXT NOT NULL DEFAULT "ru,en",
+            aliases TEXT DEFAULT NULL,
             status TEXT NOT NULL DEFAULT "pending",
             token_hash TEXT NOT NULL UNIQUE,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,

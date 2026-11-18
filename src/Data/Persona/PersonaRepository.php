@@ -218,6 +218,7 @@ final class PersonaRepository
 
     /**
      * @param list<string> $langs
+     * @param list<string> $aliases пусто = все алиасы сценария
      */
     public function createInstallation(
         int $accountId,
@@ -226,15 +227,17 @@ final class PersonaRepository
         array $langs,
         string $tokenHash,
         string $status = 'pending',
+        array $aliases = [],
     ): int {
         $this->conn->pdo()->prepare(
-            'INSERT INTO installations (account_id, domain, assembly, langs, status, token_hash)
-             VALUES (:account, :domain, :assembly, :langs, :status, :token)',
+            'INSERT INTO installations (account_id, domain, assembly, langs, aliases, status, token_hash)
+             VALUES (:account, :domain, :assembly, :langs, :aliases, :status, :token)',
         )->execute([
             'account' => $accountId,
             'domain' => $domain,
             'assembly' => $assembly,
             'langs' => implode(',', $langs),
+            'aliases' => $aliases === [] ? null : implode(',', $aliases),
             'status' => $status,
             'token' => $tokenHash,
         ]);

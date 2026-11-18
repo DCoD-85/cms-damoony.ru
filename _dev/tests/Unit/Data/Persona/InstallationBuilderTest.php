@@ -27,7 +27,10 @@ final class InstallationBuilderTest extends TestCase
             'www',
             'migrations',
             'stubs/assemblies/tiny/app/.blocksglobal/top',
+            'stubs/assemblies/tiny/app/.i18nglobal',
+            'stubs/assemblies/tiny/app/news/algoritm',
             'stubs/assemblies/tiny/media/www/skin/light/css',
+            'stubs/assemblies/tiny/media/news',
             'stubs/assemblies/tiny/shared/css',
         ] as $dir) {
             mkdir($this->root . '/' . $dir, 0o775, true);
@@ -43,21 +46,26 @@ final class InstallationBuilderTest extends TestCase
             $this->root . '/stubs/assemblies/tiny/assembly.json',
             json_encode([
                 'name' => 'Tiny',
-                'aliases' => ['www'],
-                'langs' => ['project' => ['ru', 'en'], 'default' => 'ru', 'aliases' => ['www' => ['ru', 'en']]],
+                'base_lang' => 'ru',
+                'aliases' => ['www', 'news'],
+                'langs' => ['project' => ['ru', 'en'], 'default' => 'ru', 'aliases' => ['www' => ['ru', 'en'], 'news' => ['ru']]],
             ]),
         );
         file_put_contents(
             $this->root . '/stubs/assemblies/tiny/app/.blocksglobal/top/top.php',
             "<?php\nnamespace {{namespace}};\nfinal class blocksglobal_top {}\n",
         );
+        file_put_contents($this->root . '/stubs/assemblies/tiny/app/.i18nglobal/ru.json', '{"a":"А"}');
+        file_put_contents($this->root . '/stubs/assemblies/tiny/app/.i18nglobal/en.json', '{"a":"A"}');
+        file_put_contents($this->root . '/stubs/assemblies/tiny/app/news/algoritm/algoritm.php', '<?php // news');
         file_put_contents($this->root . '/stubs/assemblies/tiny/media/www/skin/light/css/main.css', '.x{}');
+        file_put_contents($this->root . '/stubs/assemblies/tiny/media/news/news.css', '.n{}');
         file_put_contents($this->root . '/stubs/assemblies/tiny/shared/css/elements.css', '.ui{}');
 
         $conn = new Connection(['driver' => 'sqlite', 'path' => ':memory:']);
         $pdo = $conn->pdo();
         $pdo->exec('CREATE TABLE persona_accounts (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT NOT NULL UNIQUE, password_hash TEXT, status TEXT NOT NULL DEFAULT "pending", email_verified_at TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)');
-        $pdo->exec('CREATE TABLE installations (id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, domain TEXT NOT NULL, assembly TEXT NOT NULL, langs TEXT NOT NULL, status TEXT NOT NULL DEFAULT "pending", token_hash TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, claimed_at TEXT, expires_at TEXT, install_count INTEGER NOT NULL DEFAULT 0)');
+        $pdo->exec('CREATE TABLE installations (id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, domain TEXT NOT NULL, assembly TEXT NOT NULL, langs TEXT NOT NULL, aliases TEXT, status TEXT NOT NULL DEFAULT "pending", token_hash TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, claimed_at TEXT, expires_at TEXT, install_count INTEGER NOT NULL DEFAULT 0)');
         $pdo->exec('CREATE TABLE builds (id INTEGER PRIMARY KEY AUTOINCREMENT, installation_id INTEGER NOT NULL, version TEXT NOT NULL, file TEXT NOT NULL, sha256 TEXT NOT NULL, size INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, expires_at TEXT NOT NULL, download_count INTEGER NOT NULL DEFAULT 0)');
 
         $this->repo = new PersonaRepository($conn);
@@ -110,6 +118,34 @@ final class InstallationBuilderTest extends TestCase
         $second = $builder->build($installation);
 
         self::assertSame($first['id'], $second['id']);
+    }
+
+    public function testSelectedAliasesAndLangsOnly(): void
+    {
+        $account = $this->repo->accountByEmail('build@example.test');
+        $installationId = $this->repo->createInstallation(
+            (int) $account['id'],
+            'tiny.test',
+            'tiny',
+            ['ru'],
+            hash('sha256', 'token-2'),
+            'active',
+            ['www'],
+        );
+
+        $builder = new InstallationBuilder(new Paths($this->root), $this->repo);
+        $build = $builder->build($this->repo->installationById($installationId));
+
+        $phar = new \PharData($builder->filePath((string) $build['file']));
+        self::assertTrue(isset($phar['app/tiny.test/.blocksglobal/top/top.php']));
+        self::assertFalse(isset($phar['app/tiny.test/news/algoritm/algoritm.php']));
+        self::assertFalse(isset($phar['www/media/tiny.test/news/news.css']));
+        self::assertFalse(isset($phar['app/tiny.test/.i18nglobal/en.json']));
+        self::assertTrue(isset($phar['app/tiny.test/.i18nglobal/ru.json']));
+
+        $config = json_decode($phar['config/site.config']->getContent(), true);
+        self::assertSame(['www'], array_keys($config['domains_app']['tiny.test']['aliases']));
+        self::assertSame(['ru'], $config['domains_app']['tiny.test']['langs']);
     }
 
     private function rrmdir(string $dir): void

@@ -25,7 +25,7 @@ final class BuildPruneTest extends TestCase
         $conn = new Connection(['driver' => 'sqlite', 'path' => ':memory:']);
         $pdo = $conn->pdo();
         $pdo->exec('CREATE TABLE persona_accounts (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT NOT NULL UNIQUE, password_hash TEXT, status TEXT NOT NULL DEFAULT "pending", email_verified_at TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)');
-        $pdo->exec('CREATE TABLE installations (id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, domain TEXT NOT NULL, assembly TEXT NOT NULL, langs TEXT NOT NULL, status TEXT NOT NULL DEFAULT "pending", token_hash TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, claimed_at TEXT, expires_at TEXT, install_count INTEGER NOT NULL DEFAULT 0)');
+        $pdo->exec('CREATE TABLE installations (id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, domain TEXT NOT NULL, assembly TEXT NOT NULL, langs TEXT NOT NULL, aliases TEXT, status TEXT NOT NULL DEFAULT "pending", token_hash TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, claimed_at TEXT, expires_at TEXT, install_count INTEGER NOT NULL DEFAULT 0)');
         $pdo->exec('CREATE TABLE builds (id INTEGER PRIMARY KEY AUTOINCREMENT, installation_id INTEGER NOT NULL, version TEXT NOT NULL, file TEXT NOT NULL, sha256 TEXT NOT NULL, size INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, expires_at TEXT NOT NULL, download_count INTEGER NOT NULL DEFAULT 0)');
 
         $this->repo = new PersonaRepository($conn);

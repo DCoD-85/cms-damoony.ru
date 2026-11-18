@@ -49,6 +49,7 @@ use Damoony\Cli\Commands\InstallApproveCommand;
 use Damoony\Cli\Commands\InstallClaimCommand;
 use Damoony\Cli\Commands\InstallCreateCommand;
 use Damoony\Cli\Commands\LangAddCommand;
+use Damoony\Cli\Commands\LangCheckCommand;
 use Damoony\Cli\Commands\LangListCommand;
 use Damoony\Cli\Commands\LangRemoveCommand;
 use Damoony\Cli\Commands\LangRepairCommand;
@@ -214,6 +215,7 @@ final class Registry
         $registry->add(new StructureCheckCommand($structureChecker, $site));
         $registry->add(new StructureRepairCommand($paths, $site));
         $registry->add(new SiteScanCommand($paths, $site, $writer));
+        $registry->add(new LangCheckCommand($paths));
 
         if ($db instanceof Connection) {
             $persona = new PersonaRepository($db);

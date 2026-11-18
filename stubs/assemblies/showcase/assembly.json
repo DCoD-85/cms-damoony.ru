@@ -1,17 +1,45 @@
 {
-    "name": "Showcase",
+    "aliases": [
+        "www",
+        "persona",
+        "developer",
+        "news",
+        "api",
+        "docs"
+    ],
+    "base_lang": "ru",
     "description": "Витрина Damoony: главная, persona, developer, новости, API, документация",
-    "aliases": ["www", "persona", "developer", "news", "api", "docs"],
     "langs": {
-        "project": ["ru", "en"],
+        "project": [
+            "ru",
+            "en"
+        ],
         "default": "ru",
         "aliases": {
-            "www": ["ru", "en"],
-            "persona": ["ru", "en"],
-            "developer": ["ru", "en"],
-            "news": ["ru", "en"],
-            "api": ["en"],
-            "docs": ["ru", "en"]
+            "www": [
+                "ru",
+                "en"
+            ],
+            "persona": [
+                "ru",
+                "en"
+            ],
+            "developer": [
+                "ru",
+                "en"
+            ],
+            "news": [
+                "ru",
+                "en"
+            ],
+            "api": [
+                "en"
+            ],
+            "docs": [
+                "ru",
+                "en"
+            ]
         }
-    }
+    },
+    "name": "Showcase"
 }

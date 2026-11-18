@@ -8,9 +8,11 @@ use Damoony\Cli\CommandInterface;
 use Damoony\Cli\Context;
 use Damoony\Cli\Result;
 use Damoony\Cli\Support\PersonaTokens;
+use Damoony\Core\Assembly\AssemblyManifest;
 use Damoony\Core\Files\Paths;
 use Damoony\Core\Settings\SiteConfig;
 use Damoony\Data\Persona\PersonaRepository;
+use Throwable;
 
 /**
  * install:create — заявка/создание установки с одноразовым токеном.
@@ -44,6 +46,10 @@ final class InstallCreateCommand implements CommandInterface
             'trim',
             explode(',', (string) ($args['langs'] ?? 'ru,en')),
         )));
+        $aliases = array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) ($args['aliases'] ?? '')),
+        )));
         $approve = isset($args['approve']) && (string) $args['approve'] !== '0';
 
         if (!SiteConfig::isValidHost($domain)) {
@@ -51,15 +57,33 @@ final class InstallCreateCommand implements CommandInterface
 
             return $r;
         }
-        if (!is_dir($this->paths->root() . '/stubs/assemblies/' . $assembly)) {
-            $r->error('Сборка не найдена: ' . $assembly);
+
+        try {
+            $manifest = AssemblyManifest::fromDirectory($this->paths, $assembly);
+        } catch (Throwable $e) {
+            $r->error($e->getMessage());
 
             return $r;
         }
-        if ($langs === []) {
-            $r->error('Укажите языки: --langs=ru,en');
+
+        $unknownLangs = array_diff($langs, $manifest->projectLangs());
+        if ($unknownLangs !== []) {
+            $r->error('Недоступные языки: ' . implode(', ', $unknownLangs));
 
             return $r;
+        }
+        if (!in_array($manifest->baseLang(), $langs, true)) {
+            $langs[] = $manifest->baseLang();
+        }
+
+        $unknownAliases = array_diff($aliases, $manifest->aliases());
+        if ($unknownAliases !== []) {
+            $r->error('Недоступные алиасы: ' . implode(', ', $unknownAliases));
+
+            return $r;
+        }
+        if ($aliases === []) {
+            $aliases = $manifest->aliases();
         }
 
         $account = $this->persona->accountByEmail($email);
@@ -79,12 +103,14 @@ final class InstallCreateCommand implements CommandInterface
             $langs,
             PersonaTokens::hash($token),
             $status,
+            $aliases,
         );
 
         $r->data = [
             'installation_id' => $installationId,
             'domain' => $domain,
             'assembly' => $assembly,
+            'aliases' => $aliases,
             'langs' => $langs,
             'status' => $status,
             'token' => $token,

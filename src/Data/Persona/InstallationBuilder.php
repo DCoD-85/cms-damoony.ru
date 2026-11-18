@@ -54,13 +54,30 @@ final class InstallationBuilder
         $langs = array_values(array_filter(explode(',', (string) $installation['langs'])));
 
         $manifest = AssemblyManifest::fromDirectory($this->paths, $assembly);
+
+        $aliases = array_values(array_filter(explode(',', (string) ($installation['aliases'] ?? ''))));
+        $aliases = array_values(array_intersect($aliases, $manifest->aliases()));
+        if ($aliases === []) {
+            $aliases = $manifest->aliases();
+        }
+
+        if (!in_array($manifest->baseLang(), $langs, true)) {
+            $langs[] = $manifest->baseLang();
+        }
+        $langs = array_values(array_intersect($langs, $manifest->projectLangs()));
+        if ($langs === []) {
+            $langs = [$manifest->baseLang()];
+        }
+        // Базовый язык всегда первый: он становится языком по умолчанию.
+        $langs = array_values(array_unique(array_merge([$manifest->baseLang()], $langs)));
+
         $dir = sys_get_temp_dir() . '/damoony_build_' . $installationId . '_' . bin2hex(random_bytes(4));
         Fs::mkdir($dir);
 
         try {
             $this->copyCore($this->paths->root(), $dir);
-            $this->copyAssembly($manifest, $assembly, $dir, $domain, $langs);
-            $this->writeSiteConfig($dir, $domain, $langs, $manifest);
+            $this->copyAssembly($manifest, $assembly, $dir, $domain, $langs, $aliases);
+            $this->writeSiteConfig($dir, $domain, $langs, $manifest, $aliases);
 
             $buildsDir = $this->paths->root() . '/var/builds';
             Fs::mkdir($buildsDir);
@@ -117,6 +134,7 @@ final class InstallationBuilder
 
     /**
      * @param list<string> $langs
+     * @param list<string> $aliases
      */
     private function copyAssembly(
         AssemblyManifest $manifest,
@@ -124,6 +142,7 @@ final class InstallationBuilder
         string $dst,
         string $domain,
         array $langs,
+        array $aliases,
     ): void {
         $asm = $this->paths->root() . '/stubs/assemblies/' . $assembly;
         $namespace = str_replace(['.', '-'], '_', $domain);
@@ -132,13 +151,31 @@ final class InstallationBuilder
             '{{namespace}}' => $namespace,
             '{{domain}}' => $domain,
             '{{real}}' => $domain,
-            '{{alias}}' => $manifest->aliases()[0] ?? 'www',
+            '{{alias}}' => $aliases[0] ?? 'www',
             '{{timestamp}}' => (string) time(),
         ];
 
-        $this->copyTree($asm . '/app', $dst . '/app/' . $domain, $vars);
+        $appSrc = $asm . '/app';
+        foreach (scandir($appSrc) ?: [] as $item) {
+            if ($item === '.' || $item === '..') {
+                continue;
+            }
+            $src = $appSrc . '/' . $item;
+            if (is_dir($src) && in_array($item, $manifest->aliases(), true) && !in_array($item, $aliases, true)) {
+                continue;
+            }
+            $this->copyTree($src, $dst . '/app/' . $domain . '/' . $item, $vars);
+        }
 
-        foreach ($manifest->aliases() as $alias) {
+        // i18n: только выбранные языки (базовый гарантирован выше).
+        $i18nDir = $dst . '/app/' . $domain . '/.i18nglobal';
+        foreach (glob($i18nDir . '/*.json') ?: [] as $file) {
+            if (!in_array(basename($file, '.json'), $langs, true)) {
+                @unlink($file);
+            }
+        }
+
+        foreach ($aliases as $alias) {
             $src = $asm . '/media/' . $alias;
             if (!is_dir($src)) {
                 continue;
@@ -150,14 +187,18 @@ final class InstallationBuilder
         $this->copyTree($asm . '/shared', $dst . '/www/media/shared', $vars);
     }
 
-    /** @param list<string> $langs */
-    private function writeSiteConfig(string $dst, string $domain, array $langs, AssemblyManifest $manifest): void
+    /**
+     * @param list<string> $langs
+     * @param list<string> $aliases
+     */
+    private function writeSiteConfig(string $dst, string $domain, array $langs, AssemblyManifest $manifest, array $aliases): void
     {
-        $aliases = [];
-        foreach ($manifest->aliases() as $alias) {
-            $aliases[$alias] = [
+        $aliasConfig = [];
+        foreach ($aliases as $alias) {
+            $aliasLangs = array_values(array_intersect($manifest->aliasLangs($alias), $langs));
+            $aliasConfig[$alias] = [
                 'available' => true,
-                'langs' => $manifest->aliasLangs($alias),
+                'langs' => $aliasLangs === [] ? $langs : $aliasLangs,
             ];
         }
 
@@ -168,10 +209,10 @@ final class InstallationBuilder
                     'namespace' => str_replace(['.', '-'], '_', $domain),
                     'scheme' => 'www',
                     'stub' => 'maintenance',
-                    'default_alias' => $manifest->aliases()[0] ?? 'www',
+                    'default_alias' => $aliases[0] ?? 'www',
                     'langs' => $langs === [] ? $manifest->projectLangs() : $langs,
                     'mirrors' => [$domain => ['available' => true]],
-                    'aliases' => $aliases,
+                    'aliases' => $aliasConfig,
                 ],
             ],
         ];

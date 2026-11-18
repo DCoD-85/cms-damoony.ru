@@ -1,11 +1,18 @@
 {
-    "name": "Minimal",
+    "base_lang": "ru",
     "description": "Минимальный сайт: блоки, языки, скины, авторизация, политика",
     "langs": {
-        "project": ["ru", "en"],
+        "project": [
+            "ru",
+            "en"
+        ],
         "default": "ru",
         "aliases": {
-            "www": ["ru", "en"]
+            "www": [
+                "ru",
+                "en"
+            ]
         }
-    }
+    },
+    "name": "Minimal"
 }

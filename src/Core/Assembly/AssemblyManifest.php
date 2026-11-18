@@ -30,6 +30,7 @@ final class AssemblyManifest
         private readonly string $name,
         private readonly ?array $projectLangs,
         private readonly ?string $defaultLang,
+        private readonly ?string $baseLang,
         private readonly array $aliasLangs,
         private readonly array $aliases,
     ) {
@@ -71,7 +72,7 @@ final class AssemblyManifest
 
         $langs = $data['langs'] ?? null;
         if ($langs === null) {
-            return new self($name, null, null, [], $aliases);
+            return new self($name, null, null, null, [], $aliases);
         }
         if (!is_array($langs)) {
             throw new RuntimeException('assembly.json: langs должен быть объектом');
@@ -132,7 +133,12 @@ final class AssemblyManifest
             $aliasLangs[$alias] = $langsForAlias;
         }
 
-        return new self($name, $projectLangs, $default, $aliasLangs, $aliases);
+        $baseLang = $data['base_lang'] ?? $default;
+        if (!is_string($baseLang) || !in_array($baseLang, $projectLangs, true)) {
+            throw new RuntimeException('assembly.json: base_lang должен входить в langs.project');
+        }
+
+        return new self($name, $projectLangs, $default, $baseLang, $aliasLangs, $aliases);
     }
 
     public function name(): string
@@ -177,6 +183,14 @@ final class AssemblyManifest
     public function defaultLang(): string
     {
         return $this->defaultLang ?? ($this->projectLangs[0] ?? self::FALLBACK_LANGS[0]);
+    }
+
+    /**
+     * Базовый язык сценария: источник текстов, остальные языки — производные.
+     */
+    public function baseLang(): string
+    {
+        return $this->baseLang ?? $this->defaultLang();
     }
 
     /**
