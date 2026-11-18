@@ -98,6 +98,14 @@ final class algoritm_lang extends Page
         $wrap->append(Builder::p()->content('Роль: ' . $role));
         $wrap->append(Builder::p()->content('Аккаунт: ' . (string) $session['account']['login']));
 
+        $nav = Builder::ul('admin-nav');
+        foreach (['' => 'Главная', 'projects/' => 'Проекты', 'accounts/' => 'Аккаунты', 'ops/' => 'Мониторинг', 'logout/' => 'Выйти'] as $path => $label) {
+            $nav->append(Builder::li()->append(
+                Builder::a('/' . $lang . '/' . $path)->content($label),
+            ));
+        }
+        $wrap->append($nav);
+
         if ($role === AdminAuthService::ROLE_SUPERADMIN) {
             $site = $this->context->service('site_config');
             if ($site instanceof SiteConfig) {

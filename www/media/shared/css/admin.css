@@ -4,3 +4,8 @@
 .admin-projects { list-style: none; padding: 0; margin: 16px 0; display: grid; gap: 10px; }
 .admin-projects li { padding: 12px 14px; border: 1px solid var(--ui-control-border, #d0d0d0); border-radius: 8px; }
 .admin-projects strong { display: block; margin-bottom: 4px; }
+
+.admin-nav { list-style: none; padding: 0; margin: 12px 0 20px; display: flex; gap: 8px; flex-wrap: wrap; }
+.admin-nav a { display: inline-block; padding: 6px 10px; border: 1px solid var(--ui-control-border, #d0d0d0); border-radius: 6px; text-decoration: none; color: inherit; }
+.admin-nav a:hover { background: rgba(0,0,0,.04); }
+.admin-alias-form { display: inline-block; margin: 4px 6px 0 0; }

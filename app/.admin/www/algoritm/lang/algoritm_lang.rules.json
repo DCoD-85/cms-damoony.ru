@@ -1,1 +1,1 @@
-{"available": {"": "^$", "logout": "^logout$"}, "auth": false, "search": false, "csrf": false}
+{"available": {"": "^$", "logout": "^logout$", "projects": "^projects$", "accounts": "^accounts$", "ops": "^ops$"}, "auth": false, "search": false, "csrf": false}
