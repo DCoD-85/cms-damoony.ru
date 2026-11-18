@@ -73,8 +73,7 @@ final class FrontController
             $config = $this->container->has(Config::class) ? $this->container->get(Config::class) : null;
             if ($config instanceof Config) {
                 $access = AdminAccess::fromConfig($config);
-                $clientIp = (string) ($request->server['REMOTE_ADDR'] ?? '');
-                if (!$access->allows($clientIp)) {
+                if (!$access->allows($request)) {
                     return ErrorPage::forbidden($domain->language);
                 }
             }

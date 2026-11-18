@@ -14,19 +14,19 @@ final class AdminAccessTest extends TestCase
     {
         $access = new AdminAccess([]);
 
-        self::assertTrue($access->allows('127.0.0.1'));
-        self::assertTrue($access->allows('::1'));
-        self::assertFalse($access->allows('203.0.113.10'));
-        self::assertFalse($access->allows('not-an-ip'));
+        self::assertTrue($access->allowsIp('127.0.0.1'));
+        self::assertTrue($access->allowsIp('::1'));
+        self::assertFalse($access->allowsIp('203.0.113.10'));
+        self::assertFalse($access->allowsIp('not-an-ip'));
     }
 
     public function testConfiguredIpsReplaceDefault(): void
     {
         $access = new AdminAccess(['203.0.113.10', '198.51.100.7']);
 
-        self::assertTrue($access->allows('203.0.113.10'));
-        self::assertTrue($access->allows('198.51.100.7'));
-        self::assertFalse($access->allows('127.0.0.1'));
+        self::assertTrue($access->allowsIp('203.0.113.10'));
+        self::assertTrue($access->allowsIp('198.51.100.7'));
+        self::assertFalse($access->allowsIp('127.0.0.1'));
     }
 
     public function testFromConfig(): void
@@ -35,8 +35,8 @@ final class AdminAccessTest extends TestCase
         $access = AdminAccess::fromConfig($config);
 
         self::assertSame(['203.0.113.10'], $access->allowedIps());
-        self::assertTrue($access->allows('203.0.113.10'));
-        self::assertFalse($access->allows('192.0.2.1'));
+        self::assertTrue($access->allowsIp('203.0.113.10'));
+        self::assertFalse($access->allowsIp('192.0.2.1'));
     }
 
     public function testInvalidValuesAreIgnored(): void

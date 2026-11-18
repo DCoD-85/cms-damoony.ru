@@ -14,6 +14,7 @@ use Damoony\Core\Error\ErrorPage;
 use Damoony\Core\ErrorHandler;
 use Damoony\Core\Files\Paths;
 use Damoony\Core\Logger;
+use Damoony\Core\Module\ModuleRegistry;
 use Damoony\Core\Routing\FileRouter;
 use Damoony\Core\Routing\RouterInterface;
 use Damoony\Core\Routing\RulesMatcher;
@@ -23,6 +24,7 @@ use Damoony\Core\Settings\SiteConfig;
 use Damoony\Data\Auth\AuthInterface;
 use Damoony\Data\Auth\DbAuth;
 use Damoony\Data\Db\Connection;
+use Damoony\Modules\Admin\AdminModule;
 
 final class AppFactory
 {
@@ -44,6 +46,7 @@ final class AppFactory
         $container->setInstance(Env::class, $env);
         $container->setInstance(Config::class, $config);
         $container->setInstance(SiteConfig::class, $siteConfig);
+        $container->setInstance(ModuleRegistry::class, new ModuleRegistry([new AdminModule($config)]));
 
         $adminConfigFile = $root . '/config/admin.config';
         $adminConfig = is_file($adminConfigFile) ? Config::fromFile($adminConfigFile) : Config::fromArray([]);

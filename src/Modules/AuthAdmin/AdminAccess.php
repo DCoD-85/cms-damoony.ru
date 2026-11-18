@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Damoony\Modules\AuthAdmin;
 
 use Damoony\Core\Config;
+use Damoony\Core\Http\Request;
+use Damoony\Core\Security\AccessPolicyInterface;
 
 /**
  * modauthadmin: политика доступа к серверной админке (/app/admin/*).
@@ -12,7 +14,7 @@ use Damoony\Core\Config;
  * Ядро только вызывает политику; IP-список и правила — здесь.
  * Пустой/отсутствующий список = доступ только с loopback (fail-closed).
  */
-final class AdminAccess
+final class AdminAccess implements AccessPolicyInterface
 {
     /** @var list<string> */
     private readonly array $allowedIps;
@@ -43,7 +45,12 @@ final class AdminAccess
         return new self(array_values(array_map(static fn ($ip): string => (string) $ip, $ips)));
     }
 
-    public function allows(string $ip): bool
+    public function allows(Request $request): bool
+    {
+        return $this->allowsIp((string) ($request->server['REMOTE_ADDR'] ?? ''));
+    }
+
+    public function allowsIp(string $ip): bool
     {
         $ip = trim($ip);
         if (filter_var($ip, FILTER_VALIDATE_IP) === false) {
