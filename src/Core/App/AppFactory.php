@@ -21,6 +21,8 @@ use Damoony\Core\Routing\RulesMatcher;
 use Damoony\Core\Security\Csrf;
 use Damoony\Core\Session\NativeSession;
 use Damoony\Core\Settings\SiteConfig;
+use Damoony\Data\Admin\AdminAuthRepository;
+use Damoony\Data\Admin\AdminAuthService;
 use Damoony\Data\Auth\AuthInterface;
 use Damoony\Data\Auth\DbAuth;
 use Damoony\Data\Db\Connection;
@@ -46,7 +48,6 @@ final class AppFactory
         $container->setInstance(Env::class, $env);
         $container->setInstance(Config::class, $config);
         $container->setInstance(SiteConfig::class, $siteConfig);
-        $container->setInstance(ModuleRegistry::class, new ModuleRegistry([new AdminModule($config)]));
 
         ErrorPage::bootstrap(
             fallback: '',
@@ -73,6 +74,10 @@ final class AppFactory
         }
         $db = new Connection($dbConfig);
         $container->setInstance(Connection::class, $db);
+
+        $adminAuth = new AdminAuthService(new AdminAuthRepository($db));
+        $container->setInstance(AdminAuthService::class, $adminAuth);
+        $container->setInstance(ModuleRegistry::class, new ModuleRegistry([new AdminModule($config, $adminAuth)]));
 
         // Сессия, авторизация, CSRF
         $sessionDomain = (string) $config->getByKey(['security', 'session_domain'], '');

@@ -7,6 +7,7 @@ namespace Damoony\Cli;
 use Damoony\Cli\Commands\AccountApproveCommand;
 use Damoony\Cli\Commands\AccountRequestCommand;
 use Damoony\Cli\Commands\AccountSetPasswordCommand;
+use Damoony\Cli\Commands\AdminCreateCommand;
 use Damoony\Cli\Commands\AlertNotifyCommand;
 use Damoony\Cli\Commands\AlliasListCommand;
 use Damoony\Cli\Commands\AlliasNewCommand;
@@ -101,6 +102,7 @@ use Damoony\Core\Settings\MaintenanceConfig;
 use Damoony\Core\Settings\ObservabilityConfig;
 use Damoony\Core\Settings\SiteConfig;
 use Damoony\Core\Settings\SiteConfigWriter;
+use Damoony\Data\Admin\AdminAuthRepository;
 use Damoony\Data\Db\Connection;
 use Damoony\Data\Persona\PersonaRepository;
 use Damoony\Diagnostics\StructureChecker;
@@ -218,6 +220,8 @@ final class Registry
         $registry->add(new LangDeriveCommand($paths));
 
         if ($db instanceof Connection) {
+            $adminRepo = new AdminAuthRepository($db);
+            $registry->add(new AdminCreateCommand($adminRepo));
             $persona = new PersonaRepository($db);
             $registry->add(new AccountRequestCommand($persona, $alertCommand));
             $registry->add(new AccountApproveCommand($persona));

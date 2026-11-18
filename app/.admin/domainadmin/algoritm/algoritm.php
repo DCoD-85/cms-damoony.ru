@@ -39,6 +39,7 @@ final class algoritm extends Page
             ));
         }
         $wrap->append($list);
+        $wrap->append(Builder::p()->append(Builder::a('/app/admin/auth/logout/')->content('Выйти')));
 
         return $wrap;
     }

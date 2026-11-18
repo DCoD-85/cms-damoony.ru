@@ -15,10 +15,12 @@ use Damoony\Core\Module\AccessPolicyProviderInterface;
 use Damoony\Core\Module\EntryPointInterface;
 use Damoony\Core\Module\ModuleRegistry;
 use Damoony\Core\Module\PageModuleInterface;
+use Damoony\Core\Module\RequestGuardInterface;
 use Damoony\Core\Observability\Metrics;
 use Damoony\Core\Routing\RouterInterface;
 use Damoony\Core\Security\Csrf;
 use Damoony\Core\Settings\SiteConfig;
+use Damoony\Data\Admin\AdminAuthService;
 use Damoony\Data\Auth\AuthInterface;
 use Damoony\Data\Db\Connection;
 use Damoony\Data\Persona\PersonaAuth;
@@ -76,6 +78,13 @@ final class FrontController
                 }
                 if (!$module->accessPolicy()->allows($request)) {
                     return ErrorPage::forbidden($domain->language);
+                }
+
+                if ($module instanceof RequestGuardInterface) {
+                    $guard = $module->guard($request, $moduleMatch->remainder);
+                    if ($guard !== null) {
+                        return $guard;
+                    }
                 }
 
                 $route = $module->resolvePage($moduleMatch->remainder);
@@ -246,6 +255,7 @@ final class FrontController
             'flash' => $flash,
             'db' => $db,
             'persona' => $persona,
+            'admin_auth' => $this->container->has(AdminAuthService::class) ? $this->container->get(AdminAuthService::class) : null,
             'persona_auth' => $personaAuth,
         ]);
 

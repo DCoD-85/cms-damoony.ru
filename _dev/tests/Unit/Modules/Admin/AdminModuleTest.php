@@ -46,7 +46,7 @@ final class AdminModuleTest extends TestCase
 
     public function testEntryPointForIpOnly(): void
     {
-        self::assertSame('/app/admin/superadmin/', $this->module->entryPathForHost('203.0.113.10'));
+        self::assertSame('/app/admin/auth/', $this->module->entryPathForHost('203.0.113.10'));
         self::assertNull($this->module->entryPathForHost('damoony.ru'));
     }
 }

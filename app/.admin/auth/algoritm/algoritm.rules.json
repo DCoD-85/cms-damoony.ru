@@ -1,0 +1,1 @@
+{"available": {"": "^$", "logout": "^logout$"}, "auth": false, "search": false, "csrf": false}

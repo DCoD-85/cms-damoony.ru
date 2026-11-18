@@ -37,6 +37,7 @@ final class algoritm extends Page
             $list->append($item);
         }
         $wrap->append($list);
+        $wrap->append(Builder::p()->append(Builder::a('/app/admin/auth/logout/')->content('Выйти')));
 
         return $wrap;
     }
