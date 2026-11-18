@@ -262,6 +262,12 @@ final class PersonaRepository
         return $row === false ? [] : $row;
     }
 
+    public function setInstallationToken(int $installationId, string $tokenHash): void
+    {
+        $this->conn->pdo()->prepare('UPDATE installations SET token_hash = :token, status = :status WHERE id = :id')
+            ->execute(['token' => $tokenHash, 'status' => 'pending', 'id' => $installationId]);
+    }
+
     public function markClaimed(int $installationId): void
     {
         $this->conn->pdo()->prepare(

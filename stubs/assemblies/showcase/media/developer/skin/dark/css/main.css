@@ -1,0 +1,33 @@
+/* main.css — dark skin */
+:root {
+    --bg: #1e2126;
+    --panel: #282c33;
+    --border: #3a404a;
+    --text: #e7eaf0;
+    --muted: #9aa4b2;
+    --accent: #7ca8ff;
+    --accent-weak: #263247;
+    --radius: 10px;
+}
+html, body { background: var(--bg); color: var(--text); }
+body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height: 1.5; }
+a { color: var(--accent); }
+.dt {
+    display: grid;
+    grid-template-areas: "top top top" "left center right" "bottom bottom bottom" "footer footer footer";
+    grid-template-columns: 220px minmax(0, 1fr) 220px;
+    gap: 16px;
+    padding: 20px;
+    min-height: 100vh;
+    box-sizing: border-box;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+.dt_top { grid-area: top; }
+.dt_left { grid-area: left; }
+.dt_center { grid-area: center; }
+.dt_right { grid-area: right; }
+.dt_bottom { grid-area: bottom; }
+.dt_footer { grid-area: footer; }
+.dt_policy, .dt_toast { display: contents; }
+#dt_benchmark { position: fixed; bottom: 10px; right: 10px; font-size: 12px; color: var(--muted); background: rgba(0,0,0,0.5); padding: 4px 8px; border-radius: 4px; z-index: 9999; }

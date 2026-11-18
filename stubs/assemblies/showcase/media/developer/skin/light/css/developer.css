@@ -1,0 +1,9 @@
+.developer-box { max-width: 760px; }
+.developer-status { color: var(--muted); }
+.developer-success { color: #1f7a1f; }
+.developer-installations { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 10px; }
+.developer-installations li { padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+.developer-reissue-form { margin: 0 0 0 auto; }
+.developer-menu { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.developer-menu a { display: block; padding: 7px 10px; border-radius: 6px; color: var(--text); text-decoration: none; }
+.developer-menu a:hover { background: var(--accent-weak); color: var(--accent); }
