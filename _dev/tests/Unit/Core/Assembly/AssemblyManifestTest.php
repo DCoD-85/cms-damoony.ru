@@ -25,6 +25,7 @@ final class AssemblyManifestTest extends TestCase
         $manifest = AssemblyManifest::fromJson(<<<'JSON'
             {
               "name": "Minimal",
+              "aliases": ["www", "docs"],
               "langs": {
                 "project": ["en", "ru"],
                 "default": "ru",

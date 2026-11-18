@@ -72,3 +72,27 @@
 - языки алиаса ⊆ языков проекта;
 - для каждого языка проекта обязателен `app/.i18nglobal/{lang}.json` (иначе `new` падает до записи);
 - оверрайды: `new --assembly=minimal --langs=ru,en --default-lang=ru`.
+
+## Многоалиасные сборки
+
+`assembly.json`:
+
+```json
+{
+    "name": "Showcase",
+    "aliases": ["www", "news", "api"],
+    "langs": {
+        "project": ["ru", "en"],
+        "default": "ru",
+        "aliases": { "www": ["ru", "en"], "news": ["ru", "en"], "api": ["en"] }
+    }
+}
+```
+
+- `aliases` нет → только `www` (обратная совместимость);
+- `new` регистрирует все алиасы и их языки;
+- страницы алиаса: `app/{alias}/algoritm/…`;
+- медиа алиаса: `media/{alias}/…` → `www/media/{real}/{alias}/…`;
+- своя схема алиаса: `app/{alias}/.schemeslocal/{alias}.php`.
+
+Сборка **`showcase`**: `www` (главная), `news` (портал: список + статьи, своя схема и скин), `api` (JSON: `/`, `/health`, `/news`).

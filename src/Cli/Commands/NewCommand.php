@@ -103,6 +103,7 @@ final class NewCommand implements CommandInterface
                 'folder' => $folder,
                 'assembly' => $assembly,
                 'alias' => $alias,
+                'aliases' => $manifest->aliases(),
                 'langs' => $projectLangs,
                 'default_lang' => $defaultLang,
                 'alias_langs' => $aliasLangs,
@@ -143,12 +144,22 @@ final class NewCommand implements CommandInterface
             return $r;
         }
 
+        $aliases = $manifest->aliases();
+        if (!in_array($alias, $aliases, true)) {
+            array_unshift($aliases, $alias);
+        }
+
         try {
             $this->writer->ensureProject($domain, $folder, $namespace);
             $this->writer->ensureMirror($domain, $domain);
-            $this->writer->ensureAlias($domain, $alias, $aliasLangs);
+            foreach ($aliases as $aliasName) {
+                $langsForAlias = $aliasName === $alias
+                    ? $aliasLangs
+                    : $this->aliasLangsFor($manifest, $aliasName, $defaultLang);
+                $this->writer->ensureAlias($domain, $aliasName, $langsForAlias);
+                $this->writer->setAliasLangs($domain, $aliasName, $langsForAlias);
+            }
             $this->writer->setProjectLangs($domain, $projectLangs);
-            $this->writer->setAliasLangs($domain, $alias, $aliasLangs);
         } catch (RuntimeException $e) {
             $r->error('Конфиг не обновлён: ' . $e->getMessage());
 
@@ -161,6 +172,7 @@ final class NewCommand implements CommandInterface
             'namespace' => $namespace,
             'assembly' => $assembly,
             'alias' => $alias,
+            'aliases' => $aliases,
             'langs' => $projectLangs,
             'default_lang' => $defaultLang,
             'alias_langs' => $aliasLangs,
@@ -207,6 +219,16 @@ final class NewCommand implements CommandInterface
         }
 
         return [$projectLangs, $defaultLang, $aliasLangs];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function aliasLangsFor(AssemblyManifest $manifest, string $alias, string $defaultLang): array
+    {
+        $langs = $manifest->aliasLangs($alias);
+
+        return in_array($defaultLang, $langs, true) ? $this->defaultFirst($langs, $defaultLang) : $langs;
     }
 
     /**

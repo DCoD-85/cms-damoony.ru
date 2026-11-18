@@ -1,0 +1,15 @@
+{
+    "available": {
+        "": "^$",
+        "about": "^about$",
+        "tests": "^tests$",
+        "login": "^login$",
+        "logout": "^logout$",
+        "profile": "^profile$",
+        "skin": "^skin$",
+        "policy": "^policy$",
+        "registration": "^registration$"
+    },
+    "auth": false,
+    "search": false
+}

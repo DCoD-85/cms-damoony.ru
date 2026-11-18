@@ -11,24 +11,27 @@ use RuntimeException;
 /**
  * Манифест сборки (stubs/assemblies/{name}/assembly.json).
  *
- * Языки задаются блоком `langs`; его отсутствие — обратная совместимость:
- * new подставит ru/en, как раньше.
+ * Языки — блок `langs` (нет → обратная совместимость ru/en).
+ * Алиасы — блок `aliases` (нет → только www).
  */
 final class AssemblyManifest
 {
     private const LANG_RE = '/^[a-z]{2}$/';
     private const ALIAS_RE = '/^[a-z][a-z0-9_]*$/';
     public const FALLBACK_LANGS = ['ru', 'en'];
+    public const FALLBACK_ALIASES = ['www'];
 
     /**
      * @param list<string>|null $projectLangs
      * @param array<string, list<string>> $aliasLangs
+     * @param list<string> $aliases
      */
     private function __construct(
         private readonly string $name,
         private readonly ?array $projectLangs,
         private readonly ?string $defaultLang,
         private readonly array $aliasLangs,
+        private readonly array $aliases,
     ) {
     }
 
@@ -64,9 +67,11 @@ final class AssemblyManifest
             throw new RuntimeException('assembly.json: name должен быть непустой строкой');
         }
 
+        $aliases = self::parseAliases($data['aliases'] ?? null, $assembly);
+
         $langs = $data['langs'] ?? null;
         if ($langs === null) {
-            return new self($name, null, null, []);
+            return new self($name, null, null, [], $aliases);
         }
         if (!is_array($langs)) {
             throw new RuntimeException('assembly.json: langs должен быть объектом');
@@ -93,15 +98,18 @@ final class AssemblyManifest
             throw new RuntimeException('assembly.json: langs.default должен входить в langs.project');
         }
 
-        $aliases = $langs['aliases'] ?? [];
-        if (!is_array($aliases)) {
+        $langAliases = $langs['aliases'] ?? [];
+        if (!is_array($langAliases)) {
             throw new RuntimeException('assembly.json: langs.aliases должен быть объектом');
         }
 
         $aliasLangs = [];
-        foreach ($aliases as $alias => $list) {
+        foreach ($langAliases as $alias => $list) {
             if (!is_string($alias) || preg_match(self::ALIAS_RE, $alias) !== 1) {
                 throw new RuntimeException('assembly.json: некорректный алиас в langs.aliases — ' . (string) $alias);
+            }
+            if (!in_array($alias, $aliases, true)) {
+                throw new RuntimeException('assembly.json: язык алиаса ' . $alias . ' задан, но алиаса нет в aliases');
             }
             if (!is_array($list) || $list === []) {
                 throw new RuntimeException('assembly.json: langs.aliases.' . $alias . ' — непустой массив языков');
@@ -124,7 +132,7 @@ final class AssemblyManifest
             $aliasLangs[$alias] = $langsForAlias;
         }
 
-        return new self($name, $projectLangs, $default, $aliasLangs);
+        return new self($name, $projectLangs, $default, $aliasLangs, $aliases);
     }
 
     public function name(): string
@@ -135,6 +143,14 @@ final class AssemblyManifest
     public function hasLangs(): bool
     {
         return $this->projectLangs !== null;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function aliases(): array
+    {
+        return $this->aliases;
     }
 
     /**
@@ -176,12 +192,36 @@ final class AssemblyManifest
     }
 
     /**
-     * Языки, для которых в сборке должен быть .i18nglobal/{lang}.json.
-     *
      * @return list<string>
      */
     public function requiredI18nLangs(): array
     {
         return $this->projectLangs();
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function parseAliases(mixed $aliases, string $assembly): array
+    {
+        if ($aliases === null) {
+            return self::FALLBACK_ALIASES;
+        }
+        if (!is_array($aliases) || $aliases === []) {
+            throw new RuntimeException('assembly.json: aliases — непустой массив алиасов');
+        }
+
+        $out = [];
+        foreach ($aliases as $alias) {
+            if (!is_string($alias) || preg_match(self::ALIAS_RE, $alias) !== 1) {
+                throw new RuntimeException('assembly.json: некорректный алиас в aliases — ' . (string) $alias);
+            }
+            if (in_array($alias, $out, true)) {
+                throw new RuntimeException('assembly.json: алиас повторяется — ' . $alias);
+            }
+            $out[] = $alias;
+        }
+
+        return $out;
     }
 }

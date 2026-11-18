@@ -79,6 +79,35 @@ final class NewCommandTest extends TestCase
         self::assertFileExists($oldApp . '/stale.php');
     }
 
+    public function testRegistersAllAssemblyAliasesAndCopiesMedia(): void
+    {
+        $this->writeManifest([
+            'name' => 'Demo',
+            'aliases' => ['www', 'news'],
+            'langs' => [
+                'project' => ['ru', 'en'],
+                'default' => 'ru',
+                'aliases' => ['www' => ['ru', 'en'], 'news' => ['ru']],
+            ],
+        ]);
+
+        mkdir($this->root . '/stubs/assemblies/demo/app/news/algoritm', 0o775, true);
+        file_put_contents($this->root . '/stubs/assemblies/demo/app/news/algoritm/algoritm.php', "<?php\n");
+        mkdir($this->root . '/stubs/assemblies/demo/media/news/skin/light/css', 0o775, true);
+        file_put_contents($this->root . '/stubs/assemblies/demo/media/news/skin/light/css/main.css', '/* news */');
+
+        $result = $this->command()->run(['domain' => 'demo.test', 'assembly' => 'demo'], $this->context());
+
+        self::assertTrue($result->ok, implode('; ', $result->errors));
+        self::assertSame(['www', 'news'], $result->data['aliases']);
+
+        $project = SiteConfig::fromFile($this->root . '/config/site.config')->project('demo.test');
+        self::assertNotNull($project);
+        self::assertTrue($project->hasAlias('news'));
+        self::assertSame(['ru'], $project->aliasLangs('news'));
+        self::assertFileExists($this->root . '/www/media/demo.test/news/skin/light/css/main.css');
+    }
+
     public function testUsesAssemblyLangs(): void
     {
         $result = $this->command()->run(['domain' => 'demo.test', 'assembly' => 'demo'], $this->context());

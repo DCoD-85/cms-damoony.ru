@@ -1,0 +1,14 @@
+<?php
+declare(strict_types=1);
+namespace {{namespace}}\www;
+use Damoony\UI\Page\Page;
+use Damoony\UI\Builder;
+use Damoony\UI\Node;
+
+final class algoritm_lang extends Page
+{
+    protected function content(): Node|null
+    {
+        return Builder::div('dt_home')->content($this->context->lang('home.welcome'));
+    }
+}

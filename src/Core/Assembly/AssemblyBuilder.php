@@ -19,30 +19,38 @@ final class AssemblyBuilder
      */
     public function build(string $assembly, string $domain, array $vars): void
     {
+        $manifest = AssemblyManifest::fromDirectory($this->paths, $assembly);
         $srcBase = $this->paths->root() . '/stubs/assemblies/' . $assembly;
-        if (!is_dir($srcBase)) {
-            throw new RuntimeException("Сборка '{$assembly}' не найдена в stubs/assemblies/");
-        }
-
-        $configFile = $srcBase . '/assembly.json';
-        if (!is_file($configFile)) {
-            throw new RuntimeException("Файл assembly.json не найден в сборке '{$assembly}'");
-        }
-
-        $config = json_decode((string) file_get_contents($configFile), true);
-        if (!is_array($config)) {
-            throw new RuntimeException("Некорректный assembly.json в сборке '{$assembly}'");
-        }
 
         $vars['domain'] = $domain;
         $vars['real'] ??= $domain;
         $vars['alias'] ??= 'www';
 
-        // 1. Копируем app/
+        $aliases = $manifest->aliases();
+        if (!in_array($vars['alias'], $aliases, true)) {
+            $aliases[] = $vars['alias'];
+        }
+
+        // 1. Копируем app/ (общие каталоги + каталоги алиасов)
         $this->copyTree($srcBase . '/app', $this->paths->domain($vars['real']), $vars);
 
-        // 2. Копируем media/
-        $this->copyTree($srcBase . '/media', $this->paths->media($vars['real'], $vars['alias']), $vars);
+        // 2. Копируем media/<alias>/ в media/<real>/<alias>/; legacy media/ -> основной алиас
+        $perAlias = false;
+        foreach ($aliases as $alias) {
+            $srcAliasMedia = $srcBase . '/media/' . $alias;
+            if (!is_dir($srcAliasMedia)) {
+                continue;
+            }
+
+            $perAlias = true;
+            $aliasVars = $vars;
+            $aliasVars['alias'] = $alias;
+            $this->copyTree($srcAliasMedia, $this->paths->media($vars['real'], $alias), $aliasVars);
+        }
+
+        if (!$perAlias) {
+            $this->copyTree($srcBase . '/media', $this->paths->media($vars['real'], $vars['alias']), $vars);
+        }
 
         // 3. Копируем shared/
         $this->copyTree($srcBase . '/shared', $this->paths->mediaRoot() . '/shared', $vars);
