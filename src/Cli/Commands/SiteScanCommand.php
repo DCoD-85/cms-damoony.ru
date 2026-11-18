@@ -143,12 +143,12 @@ final class SiteScanCommand implements CommandInterface
             }
 
             $existing = $this->site->project($entry);
-            $namespace = $existing?->namespace ?? $this->namespaceFor($entry);
+            $namespace = $existing !== null ? $existing->namespace : $this->namespaceFor($entry);
             $mirrors = $existing?->hostNames() ?? [$entry];
 
             $projects[] = [
-                'key' => $existing?->key ?? $entry,
-                'folder' => $existing?->folder ?? $entry,
+                'key' => $existing !== null ? $existing->key : $entry,
+                'folder' => $existing !== null ? $existing->folder : $entry,
                 'namespace' => $namespace,
                 'aliases' => $aliases,
                 'langs' => $existing !== null && $existing->langs !== [] ? $existing->langs : $projectLangs,
@@ -280,7 +280,7 @@ final class SiteScanCommand implements CommandInterface
 
             foreach ($project['aliases'] as $alias => $langs) {
                 $aliasSettings = $existing?->alias($alias);
-                $aliasLangs = $aliasSettings?->langs ?? [];
+                $aliasLangs = $aliasSettings !== null ? $aliasSettings->langs : [];
                 if ($aliasLangs === []) {
                     $aliasLangs = $langs;
                 }
