@@ -1,0 +1,1 @@
+{"available": {"": "^$", "login": "^login$", "logout": "^logout$", "profile": "^profile$", "request": "^request$", "admin": "^admin$"}, "auth": false, "search": false}

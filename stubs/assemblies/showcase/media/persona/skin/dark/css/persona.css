@@ -1,0 +1,14 @@
+/* persona.css */
+.persona .dt_center h1 { font-size: 1.7rem; margin: 0 0 12px; }
+.persona-box { max-width: 560px; }
+.persona-box .ui-form { margin-top: 12px; }
+.persona-intro { color: var(--muted); }
+.persona-success { color: #1f7a1f; }
+.persona-error { color: #9b1c1c; }
+.persona-members, .persona-requests { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 8px; }
+.persona-members li, .persona-requests li { padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; }
+.persona-requests li { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+.persona-approve-form { margin: 0; }
+.persona-menu { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.persona-menu a { display: block; padding: 7px 10px; border-radius: 6px; color: var(--text); text-decoration: none; }
+.persona-menu a:hover { background: var(--accent-weak); color: var(--accent); }

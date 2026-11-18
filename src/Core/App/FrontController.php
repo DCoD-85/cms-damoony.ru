@@ -16,6 +16,9 @@ use Damoony\Core\Observability\Metrics;
 use Damoony\Core\Routing\RouterInterface;
 use Damoony\Core\Security\Csrf;
 use Damoony\Data\Auth\AuthInterface;
+use Damoony\Data\Db\Connection;
+use Damoony\Data\Persona\PersonaAuth;
+use Damoony\Data\Persona\PersonaRepository;
 use Damoony\UI\Meta;
 use Damoony\UI\Region\RegionContext;
 use Damoony\UI\Url\AdminUrlBuilder;
@@ -182,8 +185,18 @@ final class FrontController
         $flash = $session instanceof \Damoony\Core\Session\SessionInterface
             ? new \Damoony\Core\Flash($session) : null;
 
+        $persona = null;
+        $personaAuth = null;
+
         $db = $this->container->has(\Damoony\Data\Db\Connection::class)
             ? $this->container->get(\Damoony\Data\Db\Connection::class) : null;
+
+        if ($db instanceof Connection) {
+            $persona = new PersonaRepository($db);
+            if ($session instanceof \Damoony\Core\Session\SessionInterface) {
+                $personaAuth = new PersonaAuth($session, $persona);
+            }
+        }
 
         $context = new RegionContext($request, $domain, $meta, [
             'paths' => $paths,
@@ -198,6 +211,8 @@ final class FrontController
             'routing' => $requestContext,
             'flash' => $flash,
             'db' => $db,
+            'persona' => $persona,
+            'persona_auth' => $personaAuth,
         ]);
 
         return $this->pages->handle($match, $context, $adminRole);
