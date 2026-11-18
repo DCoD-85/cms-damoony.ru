@@ -47,6 +47,31 @@ final class algoritm_lang extends Page
         if ($this->isPost() && $memberStatus === 'active') {
             $action = (string) $this->context->request->post('action');
 
+            if ($action === 'download') {
+                $installationId = (int) $this->context->request->post('installation_id');
+                $installation = $repo->installationById($installationId);
+                $paths = $this->context->service('paths');
+
+                if ($installation !== []
+                    && (int) $installation['account_id'] === $accountId
+                    && (string) $installation['status'] === 'active'
+                    && $paths instanceof \Damoony\Core\Files\Paths) {
+                    $builder = new \Damoony\Data\Persona\InstallationBuilder($paths, $repo);
+                    $build = $builder->build($installation);
+                    $file = $builder->filePath((string) $build['file']);
+
+                    if (is_file($file)) {
+                        header('Content-Type: application/zip');
+                        header('Content-Disposition: attachment; filename="' . basename($file) . '"');
+                        header('Content-Length: ' . (string) filesize($file));
+                        readfile($file);
+                        exit;
+                    }
+                }
+
+                return Response::notFound();
+            }
+
             if ($action === 'create') {
                 $target = \Damoony\Core\Settings\SiteConfig::normalizeHost((string) $this->context->request->post('domain'));
                 $assembly = (string) $this->context->request->post('assembly');
@@ -139,8 +164,33 @@ final class algoritm_lang extends Page
                 $item->append(Builder::span()->content(
                     (string) $installation['domain']
                     . ' — ' . (string) $installation['assembly']
-                    . ' — ' . (string) $installation['status'],
+                    . ' — ' . (string) $installation['status']
+                    . ' — ' . implode(',', array_filter(explode(',', (string) ($installation['aliases'] ?? ''))))
+                    . ' — ' . (string) $installation['langs'],
                 ));
+
+                $paths = $this->context->service('paths');
+                $build = $repo->activeBuild((int) $installation['id']);
+                $archive = $this->context->lang('developer.archive_on_demand');
+                if ($build !== [] && $paths instanceof \Damoony\Core\Files\Paths) {
+                    $file = $paths->root() . '/var/builds/' . basename((string) $build['file']);
+                    $expires = (string) ($build['expires_at'] ?? '');
+                    if (is_file($file) && $expires !== '' && strtotime($expires) > time()) {
+                        $archive = $this->context->lang('developer.archive_until', ['date' => $expires]);
+                    }
+                }
+                $item->append(Builder::span('developer-archive')->content($archive));
+
+                $download = new Form('developer-download-form');
+                $download->method('POST');
+                $csrf = $this->context->service('csrf');
+                if ($csrf instanceof Csrf) {
+                    $download->csrf($csrf);
+                }
+                $download->add(new Input('hidden', 'action', 'download'));
+                $download->add(new Input('hidden', 'installation_id', (string) $installation['id']));
+                $download->add(new Button($this->context->lang('developer.download_archive')));
+                $item->append($download);
 
                 $form = new Form('developer-reissue-form');
                 $form->method('POST');
