@@ -85,18 +85,11 @@ final class algoritm_lang_projects extends AdminPage
         $form->add(new Input('hidden', 'project', $project));
         $form->add(new Input('hidden', 'target', $target));
 
-        $toggle = new Input('checkbox', 'toggle', '1');
-        if ($active) {
-            $toggle->attrs()->add('checked', 'checked');
-        }
-        $toggle->attrs()->classAdd('admin-switch-input');
-        $toggle->attrs()->add('onchange', 'this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()');
-
-        $label = Builder::el('label');
-        $label->attrs()->classAdd('admin-switch');
-        $label->append($toggle);
-        $label->append(Builder::span('admin-switch-slider'));
-        $form->add($label);
+        $switch = Builder::button('submit', 'admin-switch' . ($active ? ' is-on' : ''));
+        $switch->attrs()->add('title', $active ? 'Включено' : 'Выключено');
+        $switch->attrs()->add('aria-pressed', $active ? 'true' : 'false');
+        $switch->append(Builder::span('admin-switch-slider'));
+        $form->add($switch);
 
         return $form;
     }

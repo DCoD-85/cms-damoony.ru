@@ -35,3 +35,6 @@
 .admin-switch-input:checked + .admin-switch-slider { background: #2e7d32; }
 .admin-switch-input:checked + .admin-switch-slider::before { transform: translateX(20px); }
 .admin-switch-input:focus-visible + .admin-switch-slider { outline: 2px solid #2e7d32; outline-offset: 2px; }
+button.admin-switch { border: 0; padding: 0; background: transparent; }
+.admin-switch.is-on .admin-switch-slider { background: #2e7d32; }
+.admin-switch.is-on .admin-switch-slider::before { transform: translateX(20px); }
