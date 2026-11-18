@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Damoony\UI\Components;
 
 use Damoony\UI\Element;
+use Damoony\UI\Node;
 
 class Input extends Element
 {
@@ -19,5 +20,9 @@ class Input extends Element
             $this->attrs()->add('value', $value);
         }
         $this->attrs()->classAdd('ui-input');
+    }
+    protected function accepts(Node|string $child): bool
+    {
+        return false;
     }
 }

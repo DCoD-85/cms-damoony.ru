@@ -38,6 +38,7 @@ class Element implements Node
 
     public function append(Node|string $child): self
     {
+        $this->assertAccepts($child);
         if ($child instanceof Element) {
             $child->parent = $this;
         }
@@ -47,11 +48,52 @@ class Element implements Node
 
     public function prepend(Node|string $child): self
     {
+        $this->assertAccepts($child);
         if ($child instanceof Element) {
             $child->parent = $this;
         }
         array_unshift($this->children, $child);
         return $this;
+    }
+
+    /**
+     * Правило вставки: что можно вложить в этот элемент.
+     *
+     * Переопределяется компонентами (table/tr/td и т.п.); по умолчанию — всё.
+     */
+    protected function accepts(Node|string $child): bool
+    {
+        return true;
+    }
+
+    private function assertAccepts(Node|string $child): void
+    {
+        if ($this->accepts($child)) {
+            return;
+        }
+
+        $class = $this->attrs()->classes() === [] ? '' : ' class="' . implode(' ', $this->attrs()->classes()) . '"';
+
+        throw new \InvalidArgumentException(sprintf(
+            'В <%s%s> нельзя вставлять %s',
+            $this->tag,
+            $class,
+            $this->describe($child),
+        ));
+    }
+
+    private function describe(Node|string $child): string
+    {
+        if (is_string($child)) {
+            return 'текст';
+        }
+        if ($child instanceof self) {
+            $class = $child->attrs()->classes() === [] ? '' : ' class="' . implode(' ', $child->attrs()->classes()) . '"';
+
+            return '<' . $child->tag() . $class . '>';
+        }
+
+        return $child::class;
     }
 
     public function parent(): ?Element
@@ -67,6 +109,7 @@ class Element implements Node
 
     public function content(string $text): self
     {
+        $this->assertAccepts($text);
         $this->children[] = $text;
         return $this;
     }

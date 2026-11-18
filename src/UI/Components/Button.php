@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Damoony\UI\Components;
 
 use Damoony\UI\Element;
+use Damoony\UI\Node;
 
 class Button extends Element
 {
@@ -16,5 +17,9 @@ class Button extends Element
         if ($text !== '') {
             $this->content($text);
         }
+    }
+    protected function accepts(Node|string $child): bool
+    {
+        return is_string($child);
     }
 }

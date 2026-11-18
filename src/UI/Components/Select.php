@@ -23,4 +23,8 @@ class Select extends Element
         $this->append($option);
         return $this;
     }
+    protected function accepts(Node|string $child): bool
+    {
+        return $child instanceof Option;
+    }
 }

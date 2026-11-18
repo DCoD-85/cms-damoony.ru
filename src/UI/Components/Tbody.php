@@ -19,4 +19,8 @@ class Tbody extends Element
         $this->append($child);
         return $this;
     }
+    protected function accepts(Node|string $child): bool
+    {
+        return $child instanceof Tr;
+    }
 }

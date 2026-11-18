@@ -43,6 +43,12 @@ final class Attrs
         return $this;
     }
 
+    /** @return list<string> */
+    public function classes(): array
+    {
+        return $this->classes;
+    }
+
     public function classAdd(string ...$names): self
     {
         foreach ($names as $chunk) {
@@ -59,12 +65,6 @@ final class Attrs
     {
         $this->classes = array_values(array_filter($this->classes, fn ($c) => $c !== $name));
         return $this;
-    }
-
-    /** @return list<string> */
-    public function classes(): array
-    {
-        return $this->classes;
     }
 
     public function styleAdd(string $pair): self

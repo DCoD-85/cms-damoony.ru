@@ -22,4 +22,8 @@ class Table extends Element
         $this->append($child);
         return $this;
     }
+    protected function accepts(Node|string $child): bool
+    {
+        return $child instanceof Tbody || $child instanceof Thead || $child instanceof Tr;
+    }
 }

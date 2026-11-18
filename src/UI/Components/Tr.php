@@ -19,4 +19,8 @@ class Tr extends Element
         $this->append($child);
         return $this;
     }
+    protected function accepts(Node|string $child): bool
+    {
+        return $child instanceof Td || $child instanceof Th;
+    }
 }
