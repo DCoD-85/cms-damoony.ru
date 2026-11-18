@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-$start = microtime(true); // Запуск таймера
-
 use Damoony\Core\App\AppFactory;
 use Damoony\Core\App\FrontController;
 use Damoony\Core\App\PageHandlerInterface;
@@ -14,7 +12,6 @@ use Damoony\Core\Http\Middleware\SecurityHeadersMiddleware;
 use Damoony\Core\Http\Middleware\SkinCookieMiddleware;
 use Damoony\Core\Http\MiddlewareStack;
 use Damoony\Core\Http\Request;
-use Damoony\Core\Http\Response;
 use Damoony\Core\Observability\Metrics;
 use Damoony\Core\Observability\RequestId;
 use Damoony\Core\Session\SessionInterface;
@@ -91,26 +88,6 @@ $response = $kernel->handle(Request::fromGlobals());
 if ($response->status === 429) {
     $retryAfter = (int) ($response->headers['retry-after'] ?? 60);
     $response = \Damoony\Core\Error\ErrorPage::tooManyRequests('ru', $retryAfter);
-}
-
-// Остановка таймера и внедрение красивой плашки
-$time = round((microtime(true) - $start) * 1000, 2);
-$contentType = (string) ($response->headers['content-type'] ?? '');
-
-if (str_contains($contentType, 'text/html') && ($app->env()->isDev() || isset($_GET['debug']))) {
-    $badge = sprintf(
-        '<div id="dt_benchmark" class="dt_benchmark">⚡ %s ms</div>',
-        $time,
-    );
-
-    // Вставляем перед </body>, или просто в конец, если </body> нет
-    $body = str_replace('</body>', $badge . '</body>', $response->body);
-
-    $response = new Response(
-        $body,
-        $response->status,
-        $response->headers,
-    );
 }
 
 $response->send();
