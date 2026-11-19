@@ -200,7 +200,7 @@ final class ContentService
      *
      * @return array{url: string, file: string, width: int, height: int}
      */
-    public function uploadMedia(ProjectSettings $project, string $alias, array $file, string $category = 'upload', string $alt = ''): array
+    public function uploadMedia(ProjectSettings $project, string $alias, array $file, string $category = 'upload', string $alt = '', string $target = 'content'): array
     {
         if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
             throw new RuntimeException('Ошибка загрузки файла');
@@ -235,7 +235,20 @@ final class ContentService
 
         $hash = substr(hash('sha256', $bytes), 0, 16);
         $ext = $map[$mime];
-        $dir = $this->paths->content($project->folder, $alias) . '/' . $category;
+        $skin = '';
+        if (str_starts_with($target, 'skin:')) {
+            $skin = substr($target, 5);
+            if (preg_match('/^[a-z][a-z0-9_-]*$/', $skin) !== 1
+                || !is_dir($this->paths->root() . '/www/media/' . $project->folder . '/' . $alias . '/skin/' . $skin)
+            ) {
+                throw new RuntimeException('Скин не найден');
+            }
+            $dir = $this->paths->root() . '/www/media/' . $project->folder . '/' . $alias . '/skin/' . $skin . '/img';
+            $urlBase = '/media/' . $project->folder . '/' . $alias . '/skin/' . $skin . '/img';
+        } else {
+            $dir = $this->paths->content($project->folder, $alias) . '/' . $category;
+            $urlBase = '/content/' . $project->folder . '/' . $alias . '/' . $category;
+        }
         if (!is_dir($dir)) {
             mkdir($dir, 0o775, true);
         }
@@ -254,15 +267,46 @@ final class ContentService
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
 
         return [
-            'url' => '/content/' . $project->folder . '/' . $alias . '/' . $category . '/' . $hash . '.' . $ext,
+            'url' => $urlBase . '/' . $hash . '.' . $ext,
             'file' => $hash . '.' . $ext,
             'width' => (int) $info[0],
             'height' => (int) $info[1],
         ];
     }
 
+    public function deleteMedia(ProjectSettings $project, string $alias, string $target, string $category, string $name): void
+    {
+        if (preg_match('/^[a-f0-9]{16}\.(png|jpg|jpeg|gif|webp)$/', $name) !== 1) {
+            throw new RuntimeException('Некорректное имя файла');
+        }
+
+        if (str_starts_with($target, 'skin:')) {
+            $skin = substr($target, 5);
+            if (preg_match('/^[a-z][a-z0-9_-]*$/', $skin) !== 1) {
+                throw new RuntimeException('Некорректный скин');
+            }
+            $dir = $this->paths->root() . '/www/media/' . $project->folder . '/' . $alias . '/skin/' . $skin . '/img';
+        } else {
+            if (preg_match('/^[a-z0-9_-]{1,32}$/', $category) !== 1) {
+                throw new RuntimeException('Некорректная категория');
+            }
+            $dir = $this->paths->content($project->folder, $alias) . '/' . $category;
+        }
+
+        $file = rtrim($dir, '/') . '/' . $name;
+        $real = realpath($file);
+        $prefix = realpath($dir);
+        if ($real === false || $prefix === false || !str_starts_with($real, $prefix . DIRECTORY_SEPARATOR)) {
+            throw new RuntimeException('Файл не найден');
+        }
+        if (!unlink($real)) {
+            throw new RuntimeException('Не удалось удалить файл');
+        }
+        @unlink($dir . '/' . pathinfo($name, PATHINFO_FILENAME) . '.meta.json');
+    }
+
     /**
-     * @return list<array{url: string, absolute: string, category: string, file: string, size: int, alt: string}>
+     * @return list<array{url: string, absolute: string, category: string, file: string, name: string, target: string, size: int, alt: string}>
      */
     public function media(ProjectSettings $project, string $alias): array
     {
@@ -305,9 +349,36 @@ final class ContentService
                 'absolute' => $host === '' ? $url : 'http://' . $host . $url,
                 'category' => $category,
                 'file' => $relative,
+                'name' => basename($relative),
+                'target' => 'content',
                 'size' => (int) $file->getSize(),
                 'alt' => $alt,
             ];
+        }
+
+        $skinRoot = $this->paths->root() . '/www/media/' . $project->folder . '/' . $alias . '/skin';
+        foreach (glob($skinRoot . '/*', GLOB_ONLYDIR) ?: [] as $skinDir) {
+            $skin = basename($skinDir);
+            if (preg_match('/^[a-z][a-z0-9_-]*$/', $skin) !== 1) {
+                continue;
+            }
+            foreach (glob($skinDir . '/img/*.{png,jpg,jpeg,gif,webp}', GLOB_BRACE) ?: [] as $file) {
+                $name = basename($file);
+                if (preg_match('/^[a-f0-9]{16}\.(png|jpg|jpeg|gif|webp)$/', $name) !== 1) {
+                    continue;
+                }
+                $url = '/media/' . $project->folder . '/' . $alias . '/skin/' . $skin . '/img/' . $name;
+                $items[] = [
+                    'url' => $url,
+                    'absolute' => $host === '' ? $url : 'http://' . $host . $url,
+                    'category' => 'img',
+                    'file' => $skin . '/' . $name,
+                    'name' => $name,
+                    'target' => 'skin:' . $skin,
+                    'size' => (int) filesize($file),
+                    'alt' => '',
+                ];
+            }
         }
 
         usort($items, static fn (array $a, array $b): int => strcmp($a['file'], $b['file']));

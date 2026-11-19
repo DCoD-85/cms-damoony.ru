@@ -15,6 +15,8 @@ use Damoony\UI\Builder;
 use Damoony\UI\Components\Button;
 use Damoony\UI\Components\Form;
 use Damoony\UI\Components\Input;
+use Damoony\UI\Components\Option;
+use Damoony\UI\Components\Select;
 use Damoony\UI\Node;
 use RuntimeException;
 
@@ -56,6 +58,29 @@ final class algoritm_lang_content extends AdminPage
             $postPath = (string) $this->context->request->post('path');
             $mode = (string) $this->context->request->post('mode');
 
+            if ((string) $this->context->request->post('op') === 'delete') {
+                if ($postProject !== null
+                    && AdminPolicy::allows($session, AdminPolicy::CONTENT_EDIT, $postProject->key)
+                    && $postProject->hasAlias($postAlias)
+                ) {
+                    try {
+                        $service->deleteMedia(
+                            $postProject,
+                            $postAlias,
+                            (string) $this->context->request->post('target'),
+                            (string) $this->context->request->post('category'),
+                            (string) $this->context->request->post('name'),
+                        );
+                        $this->auditAction($session, 'content.media.deleted', $postProject->key . ':' . $postAlias);
+                        $message = 'Файл удалён';
+                    } catch (RuntimeException $e) {
+                        $error = $e->getMessage();
+                    }
+                } else {
+                    $error = 'Недостаточно прав';
+                }
+            }
+
             if ((string) $this->context->request->post('op') === 'upload') {
                 if ($postProject !== null
                     && AdminPolicy::allows($session, AdminPolicy::CONTENT_EDIT, $postProject->key)
@@ -67,7 +92,7 @@ final class algoritm_lang_content extends AdminPage
                             throw new RuntimeException('Файл не выбран');
                         }
                         /** @var array{tmp_name?: string, error?: int, size?: int, name?: string} $files */
-                        $service->uploadMedia($postProject, $postAlias, $files, 'upload', (string) $this->context->request->post('alt'));
+                        $service->uploadMedia($postProject, $postAlias, $files, 'upload', (string) $this->context->request->post('alt'), (string) $this->context->request->post('target'));
                         $this->auditAction($session, 'content.media.uploaded', $postProject->key . ':' . $postAlias);
                         $message = 'Файл загружен';
                         $project = $postProject;
@@ -82,7 +107,7 @@ final class algoritm_lang_content extends AdminPage
                 }
             }
 
-            if ((string) $this->context->request->post('op') !== 'upload'
+            if (!in_array((string) $this->context->request->post('op'), ['upload', 'delete'], true)
                 && $postProject !== null
                 && AdminPolicy::allows($session, AdminPolicy::CONTENT_EDIT, $postProject->key)
                 && $postProject->hasAlias($postAlias)
@@ -111,7 +136,7 @@ final class algoritm_lang_content extends AdminPage
                 } catch (RuntimeException $e) {
                     $error = $e->getMessage();
                 }
-            } elseif ((string) $this->context->request->post('op') !== 'upload') {
+            } elseif (!in_array((string) $this->context->request->post('op'), ['upload', 'delete'], true)) {
                 $error = 'Недостаточно прав или неверная страница';
             }
         }
@@ -241,6 +266,25 @@ final class algoritm_lang_content extends AdminPage
                         $use->attrs()->add('data-media-url', $item['url']);
                         $use->content('Вставить URL');
                         $li->append($use);
+
+                        $del = new Form('content-delete');
+                        $del->method('POST');
+                        $del->action('/' . $lang . '/content/?project=' . urlencode($project->key) . '&alias=' . urlencode($alias) . '&path=' . urlencode($path));
+                        $del->attrs()->add('data-no-ajax', '1');
+                        $del->add(new Input('hidden', '_csrf', $csrf));
+                        $del->add(new Input('hidden', 'op', 'delete'));
+                        $del->add(new Input('hidden', 'project', $project->key));
+                        $del->add(new Input('hidden', 'alias', $alias));
+                        $del->add(new Input('hidden', 'path', $path));
+                        $del->add(new Input('hidden', 'target', $item['target']));
+                        $del->add(new Input('hidden', 'category', $item['category']));
+                        $del->add(new Input('hidden', 'name', $item['name']));
+                        $deleteButton = Builder::button('submit', 'ui-btn');
+                        $deleteButton->attrs()->add('onclick', "return confirm('Удалить файл?')");
+                        $deleteButton->content('Удалить');
+                        $del->add($deleteButton);
+                        $li->append($del);
+
                         $mediaList->append($li);
                     }
                     $mediaBox->append($mediaList);
@@ -255,6 +299,17 @@ final class algoritm_lang_content extends AdminPage
                 $upload->add(new Input('hidden', 'project', $project->key));
                 $upload->add(new Input('hidden', 'alias', $alias));
                 $upload->add(new Input('hidden', 'path', $path));
+
+                $targetSelect = new Select('target');
+                $targetSelect->add(new Option('content', 'Контент'));
+                $skinRoot = $paths->root() . '/www/media/' . $project->folder . '/' . $alias . '/skin';
+                foreach (glob($skinRoot . '/*', GLOB_ONLYDIR) ?: [] as $skinDir) {
+                    $skinName = basename($skinDir);
+                    if (preg_match('/^[a-z][a-z0-9_-]*$/', $skinName) === 1) {
+                        $targetSelect->add(new Option('skin:' . $skinName, 'Скин: ' . $skinName));
+                    }
+                }
+                $upload->add($targetSelect);
                 $upload->add(Builder::elA('input', ['type' => 'file', 'name' => 'media']));
                 $upload->add(new Input('text', 'alt'));
                 $upload->add(new Button('Загрузить'));
