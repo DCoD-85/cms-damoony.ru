@@ -28,7 +28,7 @@ return [
             '/media/shared/vendor/codemirror/mode/php/php.min.js',
             '/media/shared/vendor/codemirror/addon/edit/matchbrackets.min.js',
             '/media/shared/vendor/codemirror/addon/hint/show-hint.min.js',
-            '/media/shared/scripts/content-editor.js',
+            '/media/shared/scripts/content-editor.js?v=2',
         ],
     ],
 ];

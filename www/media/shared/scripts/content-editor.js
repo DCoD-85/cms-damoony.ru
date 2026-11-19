@@ -24,6 +24,10 @@
         if (!textarea || !window.CodeMirror) {
             return;
         }
+        if (textarea.getAttribute('data-cm-ready') === '1' || textarea.nextElementSibling && textarea.nextElementSibling.classList.contains('CodeMirror')) {
+            return;
+        }
+        textarea.setAttribute('data-cm-ready', '1');
 
         var hints = parseHints(textarea);        var isPhp = textarea.getAttribute('data-mode') === 'php';
         var mode = isPhp
@@ -168,6 +172,14 @@
     function boot() {
         initToasts();
         init();
+
+        if (document.body) {
+            var observer = new MutationObserver(function () {
+                init();
+                initToasts();
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+        }
     }
 
     if (document.readyState === 'loading') {
