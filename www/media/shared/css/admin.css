@@ -46,3 +46,16 @@ button.admin-switch { border: 0; padding: 0; background: transparent; }
 .admin-audit { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: .92rem; }
 .admin-audit th, .admin-audit td { text-align: left; padding: 8px 10px; border-bottom: 1px solid rgba(0,0,0,.1); vertical-align: top; }
 .admin-audit th { font-weight: 600; background: rgba(0,0,0,.03); }
+.content-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 14px; }
+.content-tab { padding: 6px 10px; border: 1px solid rgba(0,0,0,.14); border-radius: 6px; text-decoration: none; color: inherit; font-size: .9rem; }
+.content-tab.is-active { background: rgba(0,0,0,.08); font-weight: 600; }
+.content-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 20px; align-items: start; }
+.content-tree { display: flex; flex-direction: column; gap: 4px; border-right: 1px solid rgba(0,0,0,.08); padding-right: 12px; }
+.content-page { padding: 6px 8px; border-radius: 6px; text-decoration: none; color: inherit; font-size: .92rem; }
+.content-page.is-active { background: rgba(0,0,0,.08); font-weight: 600; }
+.content-main { min-width: 0; }
+.content-preview-link { display: inline-block; margin: 6px 0 12px; }
+.content-editor-text { width: 100%; min-height: 420px; font-family: ui-monospace, Consolas, monospace; }
+.content-form .ui-form-wrapper { margin-top: 10px; }
+.CodeMirror { border: 1px solid rgba(0,0,0,.16); border-radius: 8px; font-size: .9rem; }
+@media (max-width: 720px) { .content-layout { grid-template-columns: 1fr; } .content-tree { border-right: 0; padding-right: 0; } }

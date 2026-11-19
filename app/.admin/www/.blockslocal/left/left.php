@@ -34,12 +34,14 @@ final class blockslocal_www_left implements RegionInterface
             if ($session !== null) {
                 if ($session['role'] === AdminAuthService::ROLE_SUPERADMIN) {
                     $links += [
+                        'content/' => 'Контент',
                         'projects/' => 'Проекты',
                         'accounts/' => 'Аккаунты',
                         'ops/' => 'Мониторинг',
                         'audit/' => 'Аудит',
                     ];
                 } elseif ($session['role'] === AdminAuthService::ROLE_DOMAINADMIN) {
+                    $links['content/'] = 'Контент';
                     $links['domain/'] = 'Мой домен';
                 }
             }
