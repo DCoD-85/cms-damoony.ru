@@ -46,9 +46,9 @@ final class blockslocal_www_left implements RegionInterface
                     $links['blocks/'] = 'Блоки';
                     $links['domain/'] = 'Мой домен';
                 }
+                $links['logout/'] = 'Выйти';
             }
         }
-        $links['logout/'] = 'Выйти';
 
         $nav = Builder::ul('admin-nav admin-nav-vertical');
         foreach ($links as $path => $label) {
