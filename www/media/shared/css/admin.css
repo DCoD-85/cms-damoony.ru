@@ -73,3 +73,7 @@ button.admin-switch { border: 0; padding: 0; background: transparent; }
 .admin-toast.is-hidden { opacity: 0; transform: translateY(-6px); }
 .admin-blocks { list-style: none; padding: 0; display: grid; gap: 8px; }
 .admin-blocks li { display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 10px 12px; border: 1px solid rgba(0,0,0,.12); border-radius: 8px; }
+.domain-files { list-style: none; padding: 0; margin: 6px 0 14px; display: grid; gap: 4px; }
+.domain-files li { padding: 5px 8px; border: 1px solid rgba(0,0,0,.1); border-radius: 6px; font-size: .9rem; }
+.domain-empty { color: #777; }
+.domain-section h3 { margin-top: 18px; }
