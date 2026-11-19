@@ -145,6 +145,53 @@ final class ContentService
         new ContentRefs($this->paths)->sync($project->folder, $alias, $path, $old, $code);
     }
 
+    /**
+     * @return array{types: list<string>, fields: list<string>, methods: list<array{provider: string, name: string, params: list<string>}>}
+     */
+    public function hints(ProjectSettings $project, string $alias): array
+    {
+        $providers = ['user', 'news', 'files', 'audit', 'form_submission'];
+        $dirs = [
+            $this->paths->appRoot() . '/' . $project->folder . '/.dbprovider',
+            $this->paths->appRoot() . '/' . $project->folder . '/' . $alias . '/.dbprovider',
+        ];
+        foreach ($dirs as $dir) {
+            foreach (glob($dir . '/*Provider.php') ?: [] as $file) {
+                $providers[] = lcfirst(basename($file, 'Provider.php'));
+            }
+        }
+
+        $methods = [];
+        foreach (array_unique($providers) as $provider) {
+            $class = \Damoony\Data\Db\DataProvider\ProviderResolver::resolveClass($provider, $project->folder, $alias, $this->paths);
+            if ($class === null || !class_exists($class)) {
+                continue;
+            }
+            $ref = new \ReflectionClass($class);
+            foreach ($ref->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
+                $declarer = $method->getDeclaringClass()->getName();
+                if (!in_array($declarer, [$ref->getName(), \Damoony\Data\Db\DataProvider\BasicCrudProvider::class], true)) {
+                    continue;
+                }
+                if (in_array($method->getName(), ['table', 'physicalTable', 'domain', 'alias'], true)) {
+                    continue;
+                }
+                $params = [];
+                foreach ($method->getParameters() as $parameter) {
+                    $type = $parameter->getType();
+                    $params[] = $parameter->getName() . ($type instanceof \ReflectionNamedType ? ':' . $type->getName() : '');
+                }
+                $methods[] = ['provider' => $provider, 'name' => $method->getName(), 'params' => $params];
+            }
+        }
+
+        return [
+            'types' => ['h1', 'h2', 'h3', 'text', 'p', 'img', 'link', 'button', 'ul', 'nav', 'section', 'div', 'table'],
+            'fields' => ['type', 'content', 'class', 'id', 'style', 'url', 'alt', 'items', 'button_type', 'children', 'headers', 'rows'],
+            'methods' => $methods,
+        ];
+    }
+
     public function previewUrl(ProjectSettings $project, string $alias, string $path, string $lang): string
     {
         $hosts = $project->hostNames();

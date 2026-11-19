@@ -177,6 +177,7 @@ final class algoritm_lang_content extends AdminPage
                 $textarea = Builder::el('textarea');
                 $textarea->attrs()->add('id', 'content-editor');
                 $textarea->attrs()->add('data-mode', $sourceMode ? 'php' : 'json');
+                $textarea->attrs()->add('data-hints', (string) json_encode($service->hints($project, $alias), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
                 $textarea->attrs()->add('name', $sourceMode ? 'code' : 'blocks');
                 $textarea->attrs()->classAdd('content-editor-text');
                 $value = $sourceMode
