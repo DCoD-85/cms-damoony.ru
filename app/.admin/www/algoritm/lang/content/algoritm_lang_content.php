@@ -69,8 +69,11 @@ final class algoritm_lang_content extends AdminPage
                         /** @var array{tmp_name?: string, error?: int, size?: int, name?: string} $files */
                         $service->uploadMedia($postProject, $postAlias, $files, 'upload', (string) $this->context->request->post('alt'));
                         $this->auditAction($session, 'content.media.uploaded', $postProject->key . ':' . $postAlias);
-
-                        return Response::redirect('/' . $lang . '/content/?project=' . urlencode($postProject->key) . '&alias=' . urlencode($postAlias) . '&path=' . urlencode($postPath));
+                        $message = 'Файл загружен';
+                        $project = $postProject;
+                        $alias = $postAlias;
+                        $path = $postPath;
+                        $pages = $service->pages($project, $alias, $lang);
                     } catch (RuntimeException $e) {
                         $error = $e->getMessage();
                     }
@@ -108,7 +111,7 @@ final class algoritm_lang_content extends AdminPage
                 } catch (RuntimeException $e) {
                     $error = $e->getMessage();
                 }
-            } else {
+            } elseif ((string) $this->context->request->post('op') !== 'upload') {
                 $error = 'Недостаточно прав или неверная страница';
             }
         }
@@ -144,10 +147,10 @@ final class algoritm_lang_content extends AdminPage
         $wrap->append($help);
 
         if ($message !== null) {
-            $wrap->append(Builder::p('admin-success')->content($message));
+            $wrap->append(Builder::p('admin-toast is-success')->content($message));
         }
         if ($error !== null) {
-            $wrap->append(Builder::p('admin-error')->content($error));
+            $wrap->append(Builder::p('admin-toast is-error')->content($error));
         }
 
         if ($session['role'] === 'superadmin') {

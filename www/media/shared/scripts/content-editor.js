@@ -10,6 +10,15 @@
         }
     }
 
+    function initToasts() {
+        document.querySelectorAll('.admin-toast').forEach(function (toast) {
+            setTimeout(function () {
+                toast.classList.add('is-hidden');
+                setTimeout(function () { toast.remove(); }, 300);
+            }, 5000);
+        });
+    }
+
     function init() {
         var textarea = document.getElementById('content-editor');
         if (!textarea || !window.CodeMirror) {
@@ -156,9 +165,14 @@
         }
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
+    function boot() {
+        initToasts();
         init();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', boot);
+    } else {
+        boot();
     }
 })();

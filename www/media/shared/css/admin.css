@@ -67,3 +67,7 @@ button.admin-switch { border: 0; padding: 0; background: transparent; }
 .content-media { margin-top: 12px; padding: 10px 12px; border: 1px solid rgba(0,0,0,.12); border-radius: 8px; }
 .content-media-list { list-style: none; padding: 0; display: grid; gap: 6px; }
 .content-media-list li { display: flex; gap: 10px; justify-content: space-between; align-items: center; }
+.admin-toast { position: fixed; top: 18px; right: 18px; z-index: 1000; margin: 0; padding: 12px 16px; border-radius: 8px; color: #fff; box-shadow: 0 6px 20px rgba(0,0,0,.18); transition: opacity .3s, transform .3s; }
+.admin-toast.is-success { background: #2e7d32; }
+.admin-toast.is-error { background: #b3261e; }
+.admin-toast.is-hidden { opacity: 0; transform: translateY(-6px); }
