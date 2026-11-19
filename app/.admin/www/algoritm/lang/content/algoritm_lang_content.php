@@ -56,7 +56,31 @@ final class algoritm_lang_content extends AdminPage
             $postPath = (string) $this->context->request->post('path');
             $mode = (string) $this->context->request->post('mode');
 
-            if ($postProject !== null
+            if ((string) $this->context->request->post('op') === 'upload') {
+                if ($postProject !== null
+                    && AdminPolicy::allows($session, AdminPolicy::CONTENT_EDIT, $postProject->key)
+                    && $postProject->hasAlias($postAlias)
+                ) {
+                    try {
+                        $files = $_FILES['media'] ?? null;
+                        if (!is_array($files)) {
+                            throw new RuntimeException('Файл не выбран');
+                        }
+                        /** @var array{tmp_name?: string, error?: int, size?: int, name?: string} $files */
+                        $service->uploadMedia($postProject, $postAlias, $files, 'upload', (string) $this->context->request->post('alt'));
+                        $this->auditAction($session, 'content.media.uploaded', $postProject->key . ':' . $postAlias);
+
+                        return Response::redirect('/' . $lang . '/content/?project=' . urlencode($postProject->key) . '&alias=' . urlencode($postAlias) . '&path=' . urlencode($postPath));
+                    } catch (RuntimeException $e) {
+                        $error = $e->getMessage();
+                    }
+                } else {
+                    $error = 'Недостаточно прав';
+                }
+            }
+
+            if ((string) $this->context->request->post('op') !== 'upload'
+                && $postProject !== null
                 && AdminPolicy::allows($session, AdminPolicy::CONTENT_EDIT, $postProject->key)
                 && $postProject->hasAlias($postAlias)
                 && $postPath !== ''
@@ -218,6 +242,20 @@ final class algoritm_lang_content extends AdminPage
                     }
                     $mediaBox->append($mediaList);
                 }
+                $upload = new Form('content-upload');
+                $upload->method('POST');
+                $upload->action('/' . $lang . '/content/?project=' . urlencode($project->key) . '&alias=' . urlencode($alias) . '&path=' . urlencode($path));
+                $upload->attrs()->add('enctype', 'multipart/form-data');
+                $upload->attrs()->add('data-no-ajax', '1');
+                $upload->add(new Input('hidden', '_csrf', $csrf));
+                $upload->add(new Input('hidden', 'op', 'upload'));
+                $upload->add(new Input('hidden', 'project', $project->key));
+                $upload->add(new Input('hidden', 'alias', $alias));
+                $upload->add(new Input('hidden', 'path', $path));
+                $upload->add(Builder::elA('input', ['type' => 'file', 'name' => 'media']));
+                $upload->add(new Input('text', 'alt'));
+                $upload->add(new Button('Загрузить'));
+                $mediaBox->append($upload);
                 $main->append($mediaBox);
             } else {
                 $main->append(Builder::p('admin-warning')->content('Страница доступна только для просмотра.'));

@@ -196,6 +196,72 @@ final class ContentService
     }
 
     /**
+     * @param array{tmp_name?: string, error?: int, size?: int, name?: string} $file
+     *
+     * @return array{url: string, file: string, width: int, height: int}
+     */
+    public function uploadMedia(ProjectSettings $project, string $alias, array $file, string $category = 'upload', string $alt = ''): array
+    {
+        if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+            throw new RuntimeException('Ошибка загрузки файла');
+        }
+        $tmp = (string) ($file['tmp_name'] ?? '');
+        if ($tmp === '' || !is_uploaded_file($tmp)) {
+            throw new RuntimeException('Файл не загружен');
+        }
+        if (preg_match('/^[a-z0-9_-]{1,32}$/', $category) !== 1) {
+            throw new RuntimeException('Некорректная категория');
+        }
+        if ((int) ($file['size'] ?? 0) > 25 * 1024 * 1024) {
+            throw new RuntimeException('Файл больше 25 MB');
+        }
+
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $mime = strtolower((string) $finfo->file($tmp));
+        $map = [
+            'image/png' => 'png',
+            'image/jpeg' => 'jpg',
+            'image/gif' => 'gif',
+            'image/webp' => 'webp',
+        ];
+        if (!isset($map[$mime])) {
+            throw new RuntimeException('Разрешены PNG, JPEG, GIF, WebP');
+        }
+        $bytes = (string) file_get_contents($tmp);
+        $info = @getimagesizefromstring($bytes);
+        if ($info === false || $info[0] < 200 || $info[1] < 200) {
+            throw new RuntimeException('Изображение минимум 200×200');
+        }
+
+        $hash = substr(hash('sha256', $bytes), 0, 16);
+        $ext = $map[$mime];
+        $dir = $this->paths->content($project->folder, $alias) . '/' . $category;
+        if (!is_dir($dir)) {
+            mkdir($dir, 0o775, true);
+        }
+        $filePath = $dir . '/' . $hash . '.' . $ext;
+        Fs::writeAtomic($filePath, $bytes);
+        Fs::writeAtomic($dir . '/' . $hash . '.meta.json', json_encode([
+            'source_url' => '',
+            'alt' => $alt,
+            'size' => strlen($bytes),
+            'mime' => $mime,
+            'width' => (int) $info[0],
+            'height' => (int) $info[1],
+            'hash' => $hash,
+            'downloaded_at' => gmdate('Y-m-d\TH:i:s\Z'),
+            'page_refs' => [],
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
+
+        return [
+            'url' => '/content/' . $project->folder . '/' . $alias . '/' . $category . '/' . $hash . '.' . $ext,
+            'file' => $hash . '.' . $ext,
+            'width' => (int) $info[0],
+            'height' => (int) $info[1],
+        ];
+    }
+
+    /**
      * @return list<array{url: string, absolute: string, category: string, file: string, size: int, alt: string}>
      */
     public function media(ProjectSettings $project, string $alias): array
