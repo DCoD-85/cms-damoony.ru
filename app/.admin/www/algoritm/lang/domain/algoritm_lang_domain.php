@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace admin_server\www;
 
+use Damoony\Admin\Content\ContentService;
 use Damoony\Admin\Page\AdminPage;
 use Damoony\Admin\Policy\AdminPolicy;
 use Damoony\Core\Files\Paths;
@@ -44,6 +45,30 @@ final class algoritm_lang_domain extends AdminPage
             return Response::redirect('/' . $lang . '/domain/?tab=aliases');
         }
 
+        if ($tab === 'blocks' && $this->isPost() && $this->csrfValid()) {
+            $postProject = $site->project((string) $this->context->request->post('project'));
+            $postAlias = (string) $this->context->request->post('alias');
+            if ($postProject !== null
+                && AdminPolicy::allows($session, AdminPolicy::DOMAIN_MANAGE, $postProject->key)
+                && $postProject->hasAlias($postAlias)
+            ) {
+                try {
+                    (new ContentService($paths))->toggleBlock(
+                        $postProject,
+                        $postAlias,
+                        (string) $this->context->request->post('scope'),
+                        (string) $this->context->request->post('name'),
+                        (bool) $this->context->request->post('enabled'),
+                    );
+                    $this->auditAction($session, 'domain.block.toggled', $postProject->key . ':' . $postAlias);
+                } catch (\RuntimeException) {
+                    // страница перерисуется с актуальным состоянием
+                }
+            }
+
+            return Response::redirect('/' . $lang . '/domain/?tab=blocks');
+        }
+
         $wrap = Builder::div('admin-box domain-admin');
         $wrap->append(Builder::h(1)->content('Мой домен'));
         $wrap->append(Builder::p()->content($project->key . ' · folder: ' . $project->folder . ' · scheme: ' . $project->scheme));
@@ -60,7 +85,7 @@ final class algoritm_lang_domain extends AdminPage
         if ($tab === 'schemes') {
             $wrap->append($this->schemes($project, $paths));
         } elseif ($tab === 'blocks') {
-            $wrap->append($this->blocks($project, $paths));
+            $wrap->append($this->blocks($project, $paths, $lang));
         } elseif ($tab === 'db') {
             $wrap->append($this->db($project, $paths));
         } else {
@@ -84,18 +109,58 @@ final class algoritm_lang_domain extends AdminPage
         return $box;
     }
 
-    private function blocks(ProjectSettings $project, Paths $paths): Node
+    private function blocks(ProjectSettings $project, Paths $paths, string $lang): Node
     {
+        $service = new ContentService($paths);
         $box = Builder::div('domain-section');
         $box->append(Builder::h(2)->content('Блоки домена'));
-        $box->append($this->fileList($paths->appRoot() . '/' . $project->folder . '/.blocksglobal', '.php'));
+
+        $firstAlias = $project->defaultAlias !== '' ? $project->defaultAlias : ($project->aliasNames()[0] ?? 'www');
+        $global = array_values(array_filter($service->blocks($project, $firstAlias), static fn (array $b): bool => $b['scope'] === 'global'));
+        $box->append($this->blockList($global, $project, $firstAlias, $lang, $this->csrfToken()));
 
         foreach ($project->aliasNames() as $alias) {
+            $local = array_values(array_filter($service->blocks($project, $alias), static fn (array $b): bool => $b['scope'] === 'local'));
             $box->append(Builder::h(3)->content('Алиас ' . $alias));
-            $box->append($this->fileList($paths->appRoot() . '/' . $project->folder . '/' . $alias . '/.blockslocal', '.php'));
+            $box->append($this->blockList($local, $project, $alias, $lang, $this->csrfToken()));
         }
 
         return $box;
+    }
+
+    /**
+     * @param list<array{scope: string, name: string, enabled: bool, file: string}> $blocks
+     */
+    private function blockList(array $blocks, ProjectSettings $project, string $alias, string $lang, string $csrf): Node
+    {
+        if ($blocks === []) {
+            return Builder::p('domain-empty')->content('Нет блоков');
+        }
+
+        $list = Builder::ul('admin-blocks');
+        foreach ($blocks as $block) {
+            $item = Builder::li();
+            $item->append(Builder::el('strong')->content($block['scope'] . ':' . $block['name']));
+            $item->append(Builder::span()->content($block['enabled'] ? ' — включён' : ' — выключен'));
+
+            $form = new Form('domain-block-toggle');
+            $form->method('POST');
+            $form->action('/' . $lang . '/domain/?tab=blocks');
+            $form->add(new Input('hidden', '_csrf', $csrf));
+            $form->add(new Input('hidden', 'project', $project->key));
+            $form->add(new Input('hidden', 'alias', $alias));
+            $form->add(new Input('hidden', 'scope', $block['scope']));
+            $form->add(new Input('hidden', 'name', $block['name']));
+            $form->add(new Input('hidden', 'enabled', $block['enabled'] ? '0' : '1'));
+            $switch = Builder::button('submit', 'admin-switch' . ($block['enabled'] ? ' is-on' : ''));
+            $switch->attrs()->add('aria-pressed', $block['enabled'] ? 'true' : 'false');
+            $switch->append(Builder::span('admin-switch-slider'));
+            $form->add($switch);
+            $item->append($form);
+            $list->append($item);
+        }
+
+        return $list;
     }
 
     private function db(ProjectSettings $project, Paths $paths): Node
