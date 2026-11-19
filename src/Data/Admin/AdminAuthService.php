@@ -129,6 +129,16 @@ final class AdminAuthService
         $this->repo->audit($accountId, 'password.changed', '', '');
     }
 
+    public function changePasswordByLogin(string $login, string $password): void
+    {
+        $account = $this->repo->accountByLogin(trim($login));
+        if ($account === []) {
+            throw new RuntimeException('Админ не найден: ' . $login);
+        }
+
+        $this->changePassword((int) $account['id'], $password);
+    }
+
     public function recordAudit(int $accountId, string $action, string $target, string $ip = ''): void
     {
         $this->repo->audit($accountId, $action, $target, $ip);

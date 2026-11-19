@@ -8,6 +8,7 @@ use Damoony\Cli\Commands\AccountApproveCommand;
 use Damoony\Cli\Commands\AccountRequestCommand;
 use Damoony\Cli\Commands\AccountSetPasswordCommand;
 use Damoony\Cli\Commands\AdminCreateCommand;
+use Damoony\Cli\Commands\AdminPasswordCommand;
 use Damoony\Cli\Commands\AlertNotifyCommand;
 use Damoony\Cli\Commands\AlliasListCommand;
 use Damoony\Cli\Commands\AlliasNewCommand;
@@ -224,6 +225,7 @@ final class Registry
             $adminRepo = new AdminAuthRepository($db);
             $adminAuthService = new AdminAuthService($adminRepo);
             $registry->add(new AdminCreateCommand($adminAuthService));
+            $registry->add(new AdminPasswordCommand($adminAuthService));
             $persona = new PersonaRepository($db);
             $registry->add(new AccountRequestCommand($persona, $alertCommand));
             $registry->add(new AccountApproveCommand($persona));

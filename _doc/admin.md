@@ -42,6 +42,7 @@ http://<IP>/{lang}/logout    → выход
 ```bash
 php bin/cli.php admin:create --login=root --password='strong-pass-1' --role=superadmin
 php bin/cli.php admin:create --login=docs --password='strong-pass-2' --role=domainadmin --scope=example.ru
+php bin/cli.php admin:password --login=root --password='new-strong-pass'
 ```
 
 - пароль ≥ 10 символов; логин 3–64 (`a-z0-9_.-`);
