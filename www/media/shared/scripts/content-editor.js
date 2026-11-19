@@ -140,6 +140,14 @@
             methodButton.addEventListener('click', insertMethod);
         }
 
+        document.querySelectorAll('[data-media-url]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var url = button.getAttribute('data-media-url') || '';
+                editor.replaceSelection(isPhp ? "'" + url + "'" : JSON.stringify(url));
+                editor.focus();
+            });
+        });
+
         var form = textarea.form;
         if (form) {
             form.addEventListener('submit', function () {

@@ -198,6 +198,27 @@ final class algoritm_lang_content extends AdminPage
                 $form->add($textarea);
                 $form->add(new Button('Сохранить'));
                 $main->append($form);
+
+                $media = $service->media($project, $alias);
+                $mediaBox = Builder::elA('details', ['class' => 'content-media']);
+                $mediaBox->append(Builder::el('summary')->content('Медиа (' . count($media) . ')'));
+                if ($media === []) {
+                    $mediaBox->append(Builder::p()->content('Файлов пока нет.'));
+                } else {
+                    $mediaList = Builder::ul('content-media-list');
+                    foreach ($media as $item) {
+                        $li = Builder::li();
+                        $li->append(Builder::span()->content($item['file'] . ' · ' . round($item['size'] / 1024) . ' KB'));
+                        $use = Builder::button('button', 'ui-btn');
+                        $use->attrs()->add('type', 'button');
+                        $use->attrs()->add('data-media-url', $item['url']);
+                        $use->content('Вставить URL');
+                        $li->append($use);
+                        $mediaList->append($li);
+                    }
+                    $mediaBox->append($mediaList);
+                }
+                $main->append($mediaBox);
             } else {
                 $main->append(Builder::p('admin-warning')->content('Страница доступна только для просмотра.'));
             }

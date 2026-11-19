@@ -64,3 +64,6 @@ button.admin-switch { border: 0; padding: 0; background: transparent; }
 .content-help pre { overflow: auto; padding: 10px; background: rgba(0,0,0,.04); border-radius: 6px; }
 .content-toolbar { display: flex; gap: 8px; align-items: center; margin: 8px 0; flex-wrap: wrap; }
 .content-toolbar select { padding: 6px 8px; border: 1px solid rgba(0,0,0,.18); border-radius: 6px; background: #fff; }
+.content-media { margin-top: 12px; padding: 10px 12px; border: 1px solid rgba(0,0,0,.12); border-radius: 8px; }
+.content-media-list { list-style: none; padding: 0; display: grid; gap: 6px; }
+.content-media-list li { display: flex; gap: 10px; justify-content: space-between; align-items: center; }

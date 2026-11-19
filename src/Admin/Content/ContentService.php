@@ -195,6 +195,60 @@ final class ContentService
         ];
     }
 
+    /**
+     * @return list<array{url: string, absolute: string, category: string, file: string, size: int, alt: string}>
+     */
+    public function media(ProjectSettings $project, string $alias): array
+    {
+        $base = rtrim($this->paths->content($project->folder, $alias), '/');
+        if (!is_dir($base)) {
+            return [];
+        }
+
+        $hosts = $project->hostNames();
+        $host = $hosts[0] ?? '';
+        if ($alias !== 'www' && $host !== '') {
+            $host = $alias . '.' . $host;
+        }
+
+        $items = [];
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($base, \FilesystemIterator::SKIP_DOTS),
+        );
+        foreach ($iterator as $file) {
+            if (!$file instanceof \SplFileInfo || !$file->isFile()) {
+                continue;
+            }
+            $ext = strtolower($file->getExtension());
+            if (!in_array($ext, ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'], true)) {
+                continue;
+            }
+            $relative = str_replace('\\', '/', substr($file->getPathname(), strlen($base) + 1));
+            $category = dirname($relative);
+            if ($category === '.') {
+                $category = '';
+            }
+            $hash = pathinfo($relative, PATHINFO_FILENAME);
+            $metaFile = dirname($file->getPathname()) . '/' . $hash . '.meta.json';
+            $meta = is_file($metaFile) ? json_decode((string) file_get_contents($metaFile), true) : [];
+            $alt = is_array($meta) ? (string) ($meta['alt'] ?? '') : '';
+            $pathPart = $category === '' ? $relative : $category . '/' . $relative;
+            $url = '/content/' . $project->folder . '/' . $alias . '/' . $pathPart;
+            $items[] = [
+                'url' => $url,
+                'absolute' => $host === '' ? $url : 'http://' . $host . $url,
+                'category' => $category,
+                'file' => $relative,
+                'size' => (int) $file->getSize(),
+                'alt' => $alt,
+            ];
+        }
+
+        usort($items, static fn (array $a, array $b): int => strcmp($a['file'], $b['file']));
+
+        return $items;
+    }
+
     public function previewUrl(ProjectSettings $project, string $alias, string $path, string $lang): string
     {
         $hosts = $project->hostNames();
