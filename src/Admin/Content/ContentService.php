@@ -43,6 +43,9 @@ final class ContentService
             $relative = str_replace('\\', '/', substr($file->getPathname(), strlen($base) + 1));
             $dir = dirname($relative);
             $dir = $dir === '.' ? '' : $dir;
+            if ($dir === '') {
+                continue;
+            }
             $editor = $base . '/' . ($dir === '' ? '' : $dir . '/') . pathinfo($relative, PATHINFO_FILENAME) . '.editor.json';
             $editable = false;
             if ($dir !== '' && is_file($editor)) {

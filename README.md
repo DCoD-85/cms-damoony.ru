@@ -35,6 +35,7 @@ php bin/cli.php health:check
 | [`_doc/arch.md`](_doc/arch.md) | архитектура: домены, routing, pages, UI |
 | [`_doc/ui.md`](_doc/ui.md) | страницы, схемы, блоки, AJAX |
 | [`_doc/admin.md`](_doc/admin.md) | админка, роли, доступ |
+| [`_doc/content.md`](_doc/content.md) | контент-админка, JSON-блоки |
 | [`_doc/deploy.md`](_doc/deploy.md) | staging/prod, nginx, php-fpm |
 | [`_doc/cli.md`](_doc/cli.md) | команды CLI |
 | [`_doc/local.md`](_doc/local.md) | локальная среда |

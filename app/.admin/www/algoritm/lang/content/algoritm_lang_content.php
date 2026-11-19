@@ -109,6 +109,16 @@ final class algoritm_lang_content extends AdminPage
         $wrap = Builder::div('admin-box content-admin');
         $wrap->append(Builder::h(1)->content('Контент'));
 
+        $help = Builder::elA('details', ['class' => 'content-help']);
+        $help->append(Builder::el('summary')->content('Как использовать'));
+        $help->append(Builder::el('pre')->content(
+            '[{"type":"h1","content":"Заголовок"},'
+            . '{"type":"text","content":"Текст страницы"},'
+            . '{"type":"button","content":"Купить","url":"/ru/contact/","class":"btn"}]',
+        ));
+        $help->append(Builder::p()->content('Корень / — редирект. Контент главной редактируйте по пути lang.'));
+        $wrap->append($help);
+
         if ($message !== null) {
             $wrap->append(Builder::p('admin-success')->content($message));
         }
