@@ -16,8 +16,7 @@
             return;
         }
 
-        var hints = parseHints(textarea);
-        var isPhp = textarea.getAttribute('data-mode') === 'php';
+        var hints = parseHints(textarea);        var isPhp = textarea.getAttribute('data-mode') === 'php';
         var mode = isPhp
             ? 'application/x-httpd-php'
             : { name: 'javascript', json: true };
@@ -92,6 +91,53 @@
                 'Ctrl-Space': showSuggestions,
                 'Cmd-Space': showSuggestions
             });
+        }
+
+        var templates = {
+            h1: { type: 'h1', content: 'Заголовок' },
+            h2: { type: 'h2', content: 'Заголовок' },
+            h3: { type: 'h3', content: 'Заголовок' },
+            text: { type: 'text', content: 'Текст' },
+            p: { type: 'text', content: 'Текст' },
+            img: { type: 'img', content: '/media/example.jpg', alt: 'Image' },
+            link: { type: 'link', url: '/ru/about/', content: 'Ссылка' },
+            button: { type: 'button', content: 'Кнопка', url: '/ru/about/', class: 'btn' },
+            ul: { type: 'ul', items: ['Пункт 1', 'Пункт 2'] },
+            nav: { type: 'nav', items: [{ url: '/ru/', title: 'Главная' }] },
+            section: { type: 'section', children: [] },
+            div: { type: 'div', children: [] },
+            table: { type: 'table', headers: ['Колонка'], rows: [['Значение']] }
+        };
+
+        function insertBlock() {
+            var select = document.getElementById('content-insert-block');
+            if (!select) {
+                return;
+            }
+            var template = templates[select.value];
+            if (!template) {
+                return;
+            }
+            editor.replaceSelection(JSON.stringify(template, null, 2));
+            editor.focus();
+        }
+
+        function insertMethod() {
+            var select = document.getElementById('content-insert-method');
+            if (!select) {
+                return;
+            }
+            editor.replaceSelection(select.value + '(');
+            editor.focus();
+        }
+
+        var blockButton = document.querySelector('[data-insert-block]');
+        if (blockButton) {
+            blockButton.addEventListener('click', insertBlock);
+        }
+        var methodButton = document.querySelector('[data-insert-method]');
+        if (methodButton) {
+            methodButton.addEventListener('click', insertMethod);
         }
 
         var form = textarea.form;

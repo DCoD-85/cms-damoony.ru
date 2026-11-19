@@ -174,6 +174,7 @@ final class algoritm_lang_content extends AdminPage
                 ));
             }
 
+            $main->append($this->editorToolbar($service->hints($project, $alias), $sourceMode));
             if ($editable || $sourceMode) {
                 $form = new Form('content-form');
                 $form->method('POST');
@@ -212,6 +213,51 @@ final class algoritm_lang_content extends AdminPage
     /**
      * @param list<array{path: string, title: string, url: string, editable: bool}> $pages
      */
+    /**
+     * @param array{types: list<string>, fields: list<string>, methods: list<array{provider: string, name: string, params: list<string>}>} $hints
+     */
+    private function editorToolbar(array $hints, bool $php): Node
+    {
+        $bar = Builder::div('content-toolbar');
+
+        if (!$php) {
+            $select = Builder::elA('select', ['id' => 'content-insert-block']);
+            foreach ($hints['types'] as $type) {
+                $option = Builder::el('option');
+                $option->attrs()->add('value', $type);
+                $option->content($type);
+                $select->append($option);
+            }
+            $bar->append($select);
+            $insert = Builder::button('button', 'ui-btn');
+            $insert->attrs()->add('data-insert-block', '1');
+            $insert->attrs()->add('type', 'button');
+            $insert->content('Вставить блок');
+            $bar->append($insert);
+        } else {
+            $select = Builder::elA('select', ['id' => 'content-insert-method']);
+            $seen = [];
+            foreach ($hints['methods'] as $method) {
+                if (isset($seen[$method['name']])) {
+                    continue;
+                }
+                $seen[$method['name']] = true;
+                $option = Builder::el('option');
+                $option->attrs()->add('value', $method['name']);
+                $option->content($method['provider'] . '::' . $method['name']);
+                $select->append($option);
+            }
+            $bar->append($select);
+            $insert = Builder::button('button', 'ui-btn');
+            $insert->attrs()->add('data-insert-method', '1');
+            $insert->attrs()->add('type', 'button');
+            $insert->content('Вставить метод');
+            $bar->append($insert);
+        }
+
+        return $bar;
+    }
+
     private function selectPath(array $pages, string $path, bool $superadmin): string
     {
         if ($path !== '' && $this->findPage($pages, $path) !== null) {
@@ -250,7 +296,7 @@ final class algoritm_lang_content extends AdminPage
         return null;
     }
 
-    /** @param array{role: string, scope: string, account: array<string, mixed>} $session */
+
     private function resolveProject(SiteConfig $site, array $session): ?ProjectSettings
     {
         $requested = (string) ($this->context->request->query('project') ?? '');
