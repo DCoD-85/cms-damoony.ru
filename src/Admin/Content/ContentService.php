@@ -46,16 +46,16 @@ final class ContentService
             if ($dir === '') {
                 continue;
             }
-            $editor = $base . '/' . ($dir === '' ? '' : $dir . '/') . pathinfo($relative, PATHINFO_FILENAME) . '.editor.json';
+            $editor = $base . '/' . $dir . '/' . pathinfo($relative, PATHINFO_FILENAME) . '.editor.json';
             $editable = false;
-            if ($dir !== '' && is_file($editor)) {
+            if (is_file($editor)) {
                 $decoded = json_decode((string) file_get_contents($editor), true);
                 $editable = is_array($decoded) && $decoded !== [];
             }
             $pages[] = [
                 'path' => $dir,
-                'title' => $dir === '' ? '/' : '/' . $dir . '/',
-                'url' => '/' . $lang . '/' . ($dir === '' ? '' : $dir . '/'),
+                'title' => '/' . $dir . '/',
+                'url' => '/' . $lang . '/' . $dir . '/',
                 'editable' => $editable,
             ];
         }
