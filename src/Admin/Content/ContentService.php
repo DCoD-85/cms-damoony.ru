@@ -443,6 +443,86 @@ final class ContentService
         Fs::writeAtomic($rules, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . "\n");
     }
 
+    /**
+     * @return array{blocks: list<array<string, mixed>>, source: string, editable: bool}
+     */
+    public function readBlock(ProjectSettings $project, string $alias, string $scope, string $name): array
+    {
+        $paths = $this->blockPaths($project, $alias, $scope, $name);
+        $blocks = [];
+        if (is_file($paths['editor'])) {
+            $decoded = json_decode((string) file_get_contents($paths['editor']), true);
+            if (is_array($decoded) && array_is_list($decoded) && $decoded !== []) {
+                /** @var list<array<string, mixed>> $blocks */
+                $blocks = $decoded;
+            }
+        }
+
+        return [
+            'blocks' => $blocks,
+            'source' => (string) file_get_contents($paths['php']),
+            'editable' => $blocks !== [],
+        ];
+    }
+
+    /**
+     * @param list<array<string, mixed>> $blocks
+     */
+    public function saveBlock(ProjectSettings $project, string $alias, string $scope, string $name, array $blocks): void
+    {
+        $paths = $this->blockPaths($project, $alias, $scope, $name);
+        $className = $scope === 'global' ? 'blocksglobal_' . $name : 'blockslocal_' . $alias . '_' . $name;
+        /** @var list<array{type: string, content?: string, items?: mixed, url?: string, class?: string, id?: string, style?: string, alt?: string}> $compiled */
+        $compiled = $blocks;
+        $php = new \Damoony\UI\Region\BlockCompiler()->compile($project->namespace, $className, $name, $compiled);
+        Fs::writeAtomic($paths['php'], $php);
+        Fs::writeAtomic(
+            $paths['editor'],
+            json_encode($blocks, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . "\n",
+        );
+    }
+
+    public function saveBlockSource(ProjectSettings $project, string $alias, string $scope, string $name, string $code): void
+    {
+        $paths = $this->blockPaths($project, $alias, $scope, $name);
+        if (!str_starts_with(ltrim($code), '<?php')) {
+            throw new RuntimeException('PHP-файл должен начинаться с <?php');
+        }
+        try {
+            $tokens = token_get_all($code, TOKEN_PARSE);
+            if ($tokens === []) {
+                throw new \ParseError('пустой файл');
+            }
+        } catch (\ParseError $e) {
+            throw new RuntimeException('Ошибка синтаксиса PHP: ' . $e->getMessage());
+        }
+
+        $backupDir = $this->paths->root() . '/var/backups/content';
+        if (!is_dir($backupDir)) {
+            mkdir($backupDir, 0o775, true);
+        }
+        copy($paths['php'], $backupDir . '/' . basename($paths['php']) . '-' . date('Ymd-His') . '.bak');
+        Fs::writeAtomic($paths['php'], $code);
+    }
+
+    /**
+     * @return array{dir: string, php: string, editor: string}
+     */
+    private function blockPaths(ProjectSettings $project, string $alias, string $scope, string $name): array
+    {
+        if (preg_match('/^[a-z][a-z0-9_]*$/', $name) !== 1 || !in_array($scope, ['global', 'local'], true)) {
+            throw new RuntimeException('Некорректный блок');
+        }
+        $dir = $scope === 'global'
+            ? $this->paths->appRoot() . '/' . $project->folder . '/.blocksglobal/' . $name
+            : $this->paths->appRoot() . '/' . $project->folder . '/' . $alias . '/.blockslocal/' . $name;
+        if (!is_dir($dir)) {
+            throw new RuntimeException('Блок не найден');
+        }
+
+        return ['dir' => $dir, 'php' => $dir . '/' . $name . '.php', 'editor' => $dir . '/' . $name . '.editor.json'];
+    }
+
     public function previewUrl(ProjectSettings $project, string $alias, string $path, string $lang): string
     {
         $hosts = $project->hostNames();

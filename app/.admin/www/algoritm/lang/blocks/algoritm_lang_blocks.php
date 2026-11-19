@@ -49,15 +49,35 @@ final class algoritm_lang_blocks extends AdminPage
                 && $postProject->hasAlias($postAlias)
             ) {
                 try {
-                    $service->toggleBlock(
-                        $postProject,
-                        $postAlias,
-                        (string) $this->context->request->post('scope'),
-                        (string) $this->context->request->post('name'),
-                        (bool) $this->context->request->post('enabled'),
-                    );
-                    $this->auditAction($session, 'content.block.toggled', $postProject->key . ':' . $postAlias);
-                    $message = 'Блок обновлён';
+                    if ((string) $this->context->request->post('op') === 'save_block') {
+                        $scope = (string) $this->context->request->post('scope');
+                        $name = (string) $this->context->request->post('name');
+                        if ((string) $this->context->request->post('mode') === 'source') {
+                            if ($session['role'] !== 'superadmin') {
+                                throw new RuntimeException('PHP-редактор доступен только superadmin');
+                            }
+                            $service->saveBlockSource($postProject, $postAlias, $scope, $name, (string) $this->context->request->post('code'));
+                            $this->auditAction($session, 'content.block.source', $postProject->key . ':' . $postAlias . ':' . $scope . ':' . $name);
+                        } else {
+                            $decoded = json_decode((string) $this->context->request->post('blocks'), true);
+                            if (!is_array($decoded) || !array_is_list($decoded)) {
+                                throw new RuntimeException('Ожидается JSON-массив блоков');
+                            }
+                            $service->saveBlock($postProject, $postAlias, $scope, $name, $decoded);
+                            $this->auditAction($session, 'content.block.saved', $postProject->key . ':' . $postAlias . ':' . $scope . ':' . $name);
+                        }
+                        $message = 'Блок сохранён';
+                    } else {
+                        $service->toggleBlock(
+                            $postProject,
+                            $postAlias,
+                            (string) $this->context->request->post('scope'),
+                            (string) $this->context->request->post('name'),
+                            (bool) $this->context->request->post('enabled'),
+                        );
+                        $this->auditAction($session, 'content.block.toggled', $postProject->key . ':' . $postAlias);
+                        $message = 'Блок обновлён';
+                    }
                     $project = $postProject;
                     $alias = $postAlias;
                 } catch (RuntimeException $e) {
@@ -101,13 +121,27 @@ final class algoritm_lang_blocks extends AdminPage
         }
         $wrap->append($aliases);
 
+        $selected = (string) ($this->context->request->query('block') ?? '');
+        $selectedBlock = null;
+        foreach ($blocks as $block) {
+            if ($block['file'] === $selected) {
+                $selectedBlock = $block;
+                break;
+            }
+        }
+        if ($selectedBlock === null && $blocks !== []) {
+            $selectedBlock = $blocks[0];
+        }
+
         if ($blocks === []) {
             $wrap->append(Builder::p()->content('Блоков нет.'));
         } else {
             $list = Builder::ul('admin-blocks');
             foreach ($blocks as $block) {
                 $item = Builder::li();
-                $item->append(Builder::el('strong')->content($block['scope'] . ':' . $block['name']));
+                $blockLink = Builder::a('/' . $lang . '/blocks/?project=' . urlencode($project->key) . '&alias=' . urlencode($alias) . '&block=' . urlencode($block['file']), 'content-page' . ($selectedBlock !== null && $selectedBlock['file'] === $block['file'] ? ' is-active' : ''));
+                $blockLink->content($block['scope'] . ':' . $block['name']);
+                $item->append($blockLink);
                 $item->append(Builder::span()->content($block['enabled'] ? ' — включён' : ' — выключен'));
 
                 $form = new Form('admin-block-toggle');
@@ -128,6 +162,48 @@ final class algoritm_lang_blocks extends AdminPage
                 $list->append($item);
             }
             $wrap->append($list);
+        }
+
+        if ($selectedBlock !== null) {
+            $scope = $selectedBlock['scope'];
+            $name = $selectedBlock['name'];
+            try {
+                $data = $service->readBlock($project, $alias, $scope, $name);
+                $editable = $data['blocks'] !== [];
+                $sourceMode = !$editable && $session['role'] === 'superadmin';
+
+                $wrap->append(Builder::h(2)->content('Блок ' . $scope . ':' . $name));
+                if ($editable || $sourceMode) {
+                    $form = new Form('block-editor');
+                    $form->method('POST');
+                    $form->action('/' . $lang . '/blocks/?project=' . urlencode($project->key) . '&alias=' . urlencode($alias) . '&block=' . urlencode($selectedBlock['file']));
+                    $form->add(new Input('hidden', '_csrf', $csrf));
+                    $form->add(new Input('hidden', 'op', 'save_block'));
+                    $form->add(new Input('hidden', 'project', $project->key));
+                    $form->add(new Input('hidden', 'alias', $alias));
+                    $form->add(new Input('hidden', 'scope', $scope));
+                    $form->add(new Input('hidden', 'name', $name));
+                    $form->add(new Input('hidden', 'mode', $sourceMode ? 'source' : 'json'));
+
+                    $textarea = Builder::el('textarea');
+                    $textarea->attrs()->add('id', 'content-editor');
+                    $textarea->attrs()->add('data-mode', $sourceMode ? 'php' : 'json');
+                    $textarea->attrs()->add('data-hints', (string) json_encode($service->hints($project, $alias), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+                    $textarea->attrs()->add('name', $sourceMode ? 'code' : 'blocks');
+                    $textarea->attrs()->classAdd('content-editor-text');
+                    $value = $sourceMode
+                        ? (string) $data['source']
+                        : (string) (json_encode($data['blocks'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?: '[]');
+                    $textarea->content($value);
+                    $form->add($textarea);
+                    $form->add(new \Damoony\UI\Components\Button('Сохранить'));
+                    $wrap->append($form);
+                } else {
+                    $wrap->append(Builder::p('admin-warning')->content('Блок доступен только для просмотра.'));
+                }
+            } catch (RuntimeException $e) {
+                $wrap->append(Builder::p('admin-toast is-error')->content($e->getMessage()));
+            }
         }
 
         return $wrap;
