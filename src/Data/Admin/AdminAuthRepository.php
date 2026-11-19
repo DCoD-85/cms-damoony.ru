@@ -187,22 +187,33 @@ final class AdminAuthRepository
     }
 
     /** @return list<array<string, mixed>> */
-    public function auditLog(int $limit = 200): array
+    public function auditLog(int $limit = 50, int $offset = 0): array
     {
         $stmt = $this->conn->pdo()->prepare(
             'SELECT a.*, ac.login
              FROM admin_audit a
              LEFT JOIN admin_accounts ac ON ac.id = a.account_id
              ORDER BY a.id DESC
-             LIMIT :limit',
+             LIMIT :limit OFFSET :offset',
         );
         $stmt->bindValue('limit', max(1, min(500, $limit)), \PDO::PARAM_INT);
+        $stmt->bindValue('offset', max(0, $offset), \PDO::PARAM_INT);
         $stmt->execute();
 
         /** @var list<array<string, mixed>> $rows */
         $rows = array_values($stmt->fetchAll() ?: []);
 
         return $rows;
+    }
+
+    public function auditCount(): int
+    {
+        $stmt = $this->conn->pdo()->query('SELECT COUNT(*) FROM admin_audit');
+        if ($stmt === false) {
+            return 0;
+        }
+
+        return (int) $stmt->fetchColumn();
     }
 
     public function audit(?int $accountId, string $action, string $target, string $ip): void

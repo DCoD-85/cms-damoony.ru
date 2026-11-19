@@ -77,3 +77,7 @@ button.admin-switch { border: 0; padding: 0; background: transparent; }
 .domain-files li { padding: 5px 8px; border: 1px solid rgba(0,0,0,.1); border-radius: 6px; font-size: .9rem; }
 .domain-empty { color: #777; }
 .domain-section h3 { margin-top: 18px; }
+.audit-pagination { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 14px; }
+.audit-page { padding: 5px 9px; border: 1px solid rgba(0,0,0,.15); border-radius: 6px; text-decoration: none; color: inherit; }
+.audit-page.is-current { border-color: transparent; color: #666; }
+.audit-summary { color: #666; }

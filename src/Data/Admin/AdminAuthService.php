@@ -157,9 +157,14 @@ final class AdminAuthService
     }
 
     /** @return list<array<string, mixed>> */
-    public function auditLog(int $limit = 200): array
+    public function auditLog(int $limit = 50, int $offset = 0): array
     {
-        return $this->repo->auditLog($limit);
+        return $this->repo->auditLog($limit, $offset);
+    }
+
+    public function auditCount(): int
+    {
+        return $this->repo->auditCount();
     }
 
     public function createAdmin(string $login, string $password, string $role, string $scope = ''): int
