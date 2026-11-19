@@ -342,8 +342,7 @@ final class ContentService
             $metaFile = dirname($file->getPathname()) . '/' . $hash . '.meta.json';
             $meta = is_file($metaFile) ? json_decode((string) file_get_contents($metaFile), true) : [];
             $alt = is_array($meta) ? (string) ($meta['alt'] ?? '') : '';
-            $pathPart = $category === '' ? $relative : $category . '/' . $relative;
-            $url = '/content/' . $project->folder . '/' . $alias . '/' . $pathPart;
+            $url = '/content/' . $project->folder . '/' . $alias . '/' . $relative;
             $items[] = [
                 'url' => $url,
                 'absolute' => $host === '' ? $url : 'http://' . $host . $url,
