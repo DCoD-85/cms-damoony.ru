@@ -44,8 +44,9 @@ php bin/cli.php domain:bind --domain=staging.damoony.ru --real=damoony.ru
 
 echo "=== permissions ==="
 chown -R www-data:www-data app www/media var content www 2>/dev/null || true
-chown root:root config/engine.config config/site.config
-chmod 640 config/engine.config config/site.config
+chown root:www-data config/engine.config config/site.config
+chmod 640 config/engine.config
+chmod 660 config/site.config
 
 echo "=== health ==="
 php bin/cli.php health:check || true

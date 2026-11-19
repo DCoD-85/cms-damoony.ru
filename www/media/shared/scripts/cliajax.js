@@ -211,7 +211,7 @@
         e.preventDefault(); 
         var formData = new FormData(form);
         
-        fetch(form.getAttribute('action') || window.location.href, {
+        fetch(form.action || window.location.href, {
             method: 'POST',
             body: formData,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }

@@ -22,7 +22,7 @@ file_put_contents("config/engine.config", json_encode($config, JSON_PRETTY_PRINT
 echo "config written\n";
 ' "$DBPASS"
 
-chown root:root config/engine.config
+chown root:www-data config/engine.config
 chmod 640 config/engine.config
 
 echo "=== health ==="

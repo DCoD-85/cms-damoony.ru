@@ -48,6 +48,18 @@ abstract class AdminPage extends Page
         return AdminPolicy::allows($session, $capability, $domain, $alias) ? $session : null;
     }
 
+    /**
+     * @param array{account: array<string, mixed>, role: string, scope: string, session_id: int} $session
+     */
+    protected function auditAction(array $session, string $action, string $target): void
+    {
+        $auth = $this->context->service('admin_auth');
+        if ($auth instanceof AdminAuthService) {
+            $ip = (string) ($this->context->request->server['REMOTE_ADDR'] ?? '');
+            $auth->recordAudit((int) ($session['account']['id'] ?? 0), $action, $target, $ip);
+        }
+    }
+
     protected function csrfToken(): string
     {
         $token = (string) ($this->context->request->cookies[self::CSRF_COOKIE] ?? '');

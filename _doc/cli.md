@@ -50,6 +50,8 @@ php bin/cli.php domain:list
 | `lang:add` / `lang:list` / `lang:remove` | языки проекта/алиаса |
 | `lang:sync` / `lang:check` / `lang:repair` | синхронизация и проверка переводов |
 
+> В командах и флагах исторически используется `allias` (две `l`), не `alias`.
+
 ## Страницы
 
 | Команда | Назначение |

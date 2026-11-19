@@ -59,7 +59,8 @@ file_put_contents($f, json_encode($j, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES
 mkdir -p content
 chown -R www-data:www-data app content var www 2>/dev/null || true
 chown root:www-data config/engine.config config/site.config 2>/dev/null || true
-chmod 640 config/engine.config config/site.config 2>/dev/null || true
+chmod 640 config/engine.config
+chmod 660 config/site.config 2>/dev/null || true
 chown root:root var/cli.identity 2>/dev/null || true
 chmod 600 var/cli.identity 2>/dev/null || true
 

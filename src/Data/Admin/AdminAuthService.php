@@ -129,6 +129,11 @@ final class AdminAuthService
         $this->repo->audit($accountId, 'password.changed', '', '');
     }
 
+    public function recordAudit(int $accountId, string $action, string $target, string $ip = ''): void
+    {
+        $this->repo->audit($accountId, $action, $target, $ip);
+    }
+
     /** @return list<array<string, mixed>> */
     public function accounts(): array
     {

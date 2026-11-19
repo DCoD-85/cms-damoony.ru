@@ -85,7 +85,9 @@ final class algoritm_lang_domain extends AdminPage
             return;
         }
 
+        $next = !$project->isAliasAvailable($alias);
         (new SiteConfigWriter($paths->root() . '/config/site.config'))
-            ->setAliasAvailable($project->key, $alias, !$project->isAliasAvailable($alias));
+            ->setAliasAvailable($project->key, $alias, $next);
+        $this->auditAction($session, 'domain.alias', $project->key . ':' . $alias . '=' . ($next ? 'on' : 'off'));
     }
 }

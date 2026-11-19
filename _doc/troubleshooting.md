@@ -70,10 +70,13 @@ php -v
 
 ```bash
 chown -R www-data:www-data app www/media var content
-chown root:root config/engine.config config/site.config
-chmod 640 config/engine.config config/site.config
+chown root:www-data config/engine.config config/site.config
+chmod 640 config/engine.config
+chmod 660 config/site.config
 chmod 600 var/cli.identity
 ```
+
+Если админка не может переключить алиас — проверить запись в `site.config` группой `www-data`.
 
 ## БД
 

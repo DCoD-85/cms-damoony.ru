@@ -47,7 +47,7 @@ php bin/cli.php admin:create --login=docs --password='strong-pass-2' --role=doma
 - пароль ≥ 10 символов; логин 3–64 (`a-z0-9_.-`);
 - `domainadmin` требует `--scope`;
 - сброс пароля отзывает все сессии;
-- все действия пишутся в `admin_audit`.
+- в `admin_audit` пишутся: вход/выход, ошибки входа, создание админа, смена пароля, переключение алиасов и зеркал.
 
 ## Устройство
 
@@ -74,7 +74,8 @@ app/.admin/www/.blockslocal                 → локальные блоки
 - Host должен быть IP или в `admin_hosts`;
 - CSRF-cookie, rate-limit 10/10 мин;
 - cookie `ADMIN_SESSID`, 8 часов;
-- `Cache-Control: no-store`, `X-Frame-Options: DENY`.
+- `Cache-Control: no-store`, `X-Frame-Options: DENY`;
+- на сервере: `site.config` — `root:www-data 660`, иначе админка не сможет переключать алиасы.
 
 ## Ограничения текущей версии
 

@@ -42,7 +42,8 @@ echo "=== permissions ==="
 mkdir -p content
 chown -R www-data:www-data app www/media var content www
 chown root:www-data config/engine.config config/site.config
-chmod 640 config/engine.config config/site.config
+chmod 640 config/engine.config
+chmod 660 config/site.config
 chown root:root var/cli.identity
 chmod 600 var/cli.identity
 

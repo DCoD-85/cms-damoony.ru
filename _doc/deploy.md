@@ -15,12 +15,14 @@ git fetch origin
 git reset --hard origin/refactor/site-config-v2
 composer install --no-dev --no-interaction
 php bin/cli.php db:migrate --force
+# ⚠️ --force пересобирает проект; только для staging/чистой установки
 php bin/cli.php new --domain=damoony.ru --assembly=minimal --force
 php bin/cli.php structure:check
 php bin/cli.php health:check
 chown -R www-data:www-data app www/media var content
-chown root:root config/engine.config config/site.config
-chmod 640 config/engine.config config/site.config
+chown root:www-data config/engine.config config/site.config
+chmod 640 config/engine.config
+chmod 660 config/site.config
 ```
 
 Проверка:
@@ -38,9 +40,10 @@ php bin/cli.php domain:list
 # бэкап
 cd /var/www/damoony.ru
 tar czf /root/backups/config-$(date +%F-%H%M).tgz config
-mysqldump --single-transaction www_damoony | gzip > /root/backups/db-$(date +%F-%H%M).sql.gz
+mysqldump --defaults-extra-file=/root/.my.cnf --single-transaction www_damoony | gzip > /root/backups/db-$(date +%F-%H%M).sql.gz
 
 # код
+git status --short   # не должно быть локальных правок, которые нужно сохранить
 git fetch origin
 git reset --hard origin/refactor/site-config-v2
 composer install --no-dev --no-interaction
@@ -49,6 +52,13 @@ composer install --no-dev --no-interaction
 php bin/cli.php db:migrate --force
 php bin/cli.php structure:check
 php bin/cli.php health:check
+
+# права
+chown -R www-data:www-data app www/media var content
+chown root:www-data config/engine.config config/site.config
+chmod 640 config/engine.config
+chmod 660 config/site.config
+chmod 600 var/cli.identity
 ```
 
 Админка на проде:

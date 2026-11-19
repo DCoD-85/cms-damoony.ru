@@ -33,7 +33,7 @@ final class algoritm_lang_projects extends AdminPage
         }
 
         if ($this->isPost() && $this->csrfValid()) {
-            $this->applyAction($site, $paths);
+            $this->applyAction($session, $site, $paths);
 
             return Response::redirect('/' . $lang . '/projects/');
         }
@@ -103,7 +103,7 @@ final class algoritm_lang_projects extends AdminPage
         return $form;
     }
 
-    private function applyAction(SiteConfig $site, Paths $paths): void
+    private function applyAction(array $session, SiteConfig $site, Paths $paths): void
     {
         $projectKey = (string) $this->context->request->post('project');
         $target = (string) $this->context->request->post('target');
@@ -121,9 +121,13 @@ final class algoritm_lang_projects extends AdminPage
 
         $writer = new SiteConfigWriter($paths->root() . '/config/site.config');
         if ($action === 'toggle_alias' && $project->hasAlias($target)) {
-            $writer->setAliasAvailable($projectKey, $target, !$project->isAliasAvailable($target));
+            $next = !$project->isAliasAvailable($target);
+            $writer->setAliasAvailable($projectKey, $target, $next);
+            $this->auditAction($session, 'project.alias', $projectKey . ':' . $target . '=' . ($next ? 'on' : 'off'));
         } elseif ($action === 'toggle_mirror' && array_key_exists($target, $project->mirrors())) {
-            $writer->setMirrorAvailable($projectKey, $target, !$project->isHostAvailable($target));
+            $next = !$project->isHostAvailable($target);
+            $writer->setMirrorAvailable($projectKey, $target, $next);
+            $this->auditAction($session, 'project.mirror', $projectKey . ':' . $target . '=' . ($next ? 'on' : 'off'));
         }
     }
 }

@@ -132,6 +132,49 @@ Builder::button('submit', 'btn')->content('Сохранить');
 - `cliajax.js` перехватывает ссылки и POST-формы;
 - для отключения: `data-no-ajax` на форме/ссылке.
 
+## Филлер (локальный блок)
+
+Филлер — копия глобального блока на уровне алиаса:
+
+```bash
+php bin/cli.php filler:new --domain=example.ru --allias=www --block=left
+```
+
+Создаёт:
+
+```
+app/example.ru/www/.blockslocal/left/left.php
+app/example.ru/www/.blockslocal/left/left.rules.json
+app/example.ru/www/.blockslocal/left/left.editor.json
+```
+
+Локальный блок перекрывает глобальный; включается/выключается в `left.rules.json` / `filler:toggle`.
+
+## Провайдеры БД
+
+Схема таблиц проекта хранится в:
+
+```
+app/example.ru/.dbglobal/schema.json
+```
+
+Пример:
+
+```json
+{
+    "tables": {
+        "items": {
+            "columns": {
+                "id": { "type": "int", "primary": true, "auto_increment": true },
+                "title": { "type": "varchar", "length": 255 }
+            }
+        }
+    }
+}
+```
+
+SQL генерируется CLI; методы провайдера — через `dataprovider:add-method`.
+
 ## Скины
 
 CSS/JS лежат в `www/media/{folder}/{alias}/skin/{name}/`:
@@ -142,4 +185,4 @@ skin/default/css/main.css
 skin/default/js/main.js
 ```
 
-Схема подключает skin через `<link>`; смена скина — `PageHandler`/skin cookie.
+Схема или страница подключает CSS/JS скина; сами файлы статические.

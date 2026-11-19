@@ -62,6 +62,8 @@ php bin/cli.php db:migrate
 php bin/cli.php new --domain=example.ru --assembly=minimal --force
 ```
 
+⚠️ `--force` удаляет старые файлы проекта и пересобирает алиасы. На существующем сайте без бэкапа не использовать.
+
 Создаёт проект в `domains_app`, папку `app/example.ru/`, алиас `www`, языки из сборки.
 
 ## 7. Админка
@@ -103,10 +105,13 @@ php bin/cli.php admin:create --login=docs --password='strong-pass-2' --role=doma
 
 ```bash
 chown -R www-data:www-data app www/media var content
-chown root:root config/engine.config config/site.config
-chmod 640 config/engine.config config/site.config
+chown root:www-data config/engine.config config/site.config
+chmod 640 config/engine.config
+chmod 660 config/site.config
 chmod 600 var/cli.identity
 ```
+
+`site.config` должен быть доступен на запись группе `www-data`: админка меняет алиасы/зеркала. `engine.config` — только чтение.
 
 ## 9. Nginx
 
