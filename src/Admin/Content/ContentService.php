@@ -385,6 +385,64 @@ final class ContentService
         return $items;
     }
 
+    /**
+     * @return list<array{scope: string, name: string, enabled: bool, file: string}>
+     */
+    public function blocks(ProjectSettings $project, string $alias): array
+    {
+        $items = [];
+        $sources = [
+            'global' => $project->folder . '/.blocksglobal',
+            'local' => $project->folder . '/' . $alias . '/.blockslocal',
+        ];
+
+        foreach ($sources as $scope => $relative) {
+            $base = $this->paths->appRoot() . '/' . $relative;
+            foreach (glob($base . '/*', GLOB_ONLYDIR) ?: [] as $dir) {
+                $name = basename($dir);
+                if (preg_match('/^[a-z][a-z0-9_]*$/', $name) !== 1) {
+                    continue;
+                }
+                $php = $dir . '/' . $name . '.php';
+                if (!is_file($php)) {
+                    continue;
+                }
+                $rules = $dir . '/' . $name . '.rules.json';
+                $data = is_file($rules) ? json_decode((string) file_get_contents($rules), true) : [];
+                $items[] = [
+                    'scope' => $scope,
+                    'name' => $name,
+                    'enabled' => !is_array($data) || !array_key_exists('enabled', $data) || (bool) $data['enabled'],
+                    'file' => $scope . ':' . $name,
+                ];
+            }
+        }
+
+        usort($items, static fn (array $a, array $b): int => [$a['scope'], $a['name']] <=> [$b['scope'], $b['name']]);
+
+        return $items;
+    }
+
+    public function toggleBlock(ProjectSettings $project, string $alias, string $scope, string $name, bool $enabled): void
+    {
+        if (preg_match('/^[a-z][a-z0-9_]*$/', $name) !== 1 || !in_array($scope, ['global', 'local'], true)) {
+            throw new RuntimeException('Некорректный блок');
+        }
+        $dir = $scope === 'global'
+            ? $this->paths->appRoot() . '/' . $project->folder . '/.blocksglobal/' . $name
+            : $this->paths->appRoot() . '/' . $project->folder . '/' . $alias . '/.blockslocal/' . $name;
+        if (!is_dir($dir)) {
+            throw new RuntimeException('Блок не найден');
+        }
+        $rules = $dir . '/' . $name . '.rules.json';
+        $data = is_file($rules) ? json_decode((string) file_get_contents($rules), true) : [];
+        if (!is_array($data)) {
+            $data = [];
+        }
+        $data['enabled'] = $enabled;
+        Fs::writeAtomic($rules, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . "\n");
+    }
+
     public function previewUrl(ProjectSettings $project, string $alias, string $path, string $lang): string
     {
         $hosts = $project->hostNames();

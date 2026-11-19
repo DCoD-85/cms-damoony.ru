@@ -94,8 +94,8 @@ final class algoritm_lang extends Page
         $wrap->append(Builder::p()->content('Аккаунт: ' . (string) $session['account']['login']));
 
         $cardLinks = $role === AdminAuthService::ROLE_SUPERADMIN
-            ? ['content/' => 'Контент', 'projects/' => 'Проекты', 'accounts/' => 'Аккаунты', 'ops/' => 'Мониторинг', 'audit/' => 'Аудит']
-            : ($role === AdminAuthService::ROLE_DOMAINADMIN ? ['content/' => 'Контент', 'domain/' => 'Мой домен'] : []);
+            ? ['content/' => 'Контент', 'blocks/' => 'Блоки', 'projects/' => 'Проекты', 'accounts/' => 'Аккаунты', 'ops/' => 'Мониторинг', 'audit/' => 'Аудит']
+            : ($role === AdminAuthService::ROLE_DOMAINADMIN ? ['content/' => 'Контент', 'blocks/' => 'Блоки', 'domain/' => 'Мой домен'] : []);
         if ($cardLinks !== []) {
             $cards = Builder::div('admin-cards');
             foreach ($cardLinks as $path => $label) {
