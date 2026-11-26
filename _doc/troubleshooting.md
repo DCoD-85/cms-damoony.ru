@@ -36,7 +36,6 @@ php bin/cli.php domain:list
 
 ## Админка 404/не пускает
 
-- Host должен быть IP или в `security.admin_hosts`;
 - IP — в `security.admin_ips`; пустой список = только `127.0.0.1`;
 - нет сессии — откроется форма входа;
 - `domainadmin` не имеет доступа к `/projects`, `/accounts`, `/ops`, `/audit` — это норма;

@@ -18,11 +18,13 @@ http://<IP>/{lang}/logout    → выход
 | URL | Кто | Что |
 |---|---|---|
 | `/ru/` | все роли | дашборд |
+| `/ru/content/` | superadmin, domainadmin | страницы, JSON/PHP, медиа |
+| `/ru/blocks/` | superadmin, domainadmin | глобальные/локальные блоки, JSON/PHP |
 | `/ru/projects/` | superadmin | проекты, зеркала, алиасы |
 | `/ru/accounts/` | superadmin | админы, роли, сброс пароля |
 | `/ru/ops/` | superadmin | БД, диск, структура, бэкап, cron |
-| `/ru/audit/` | superadmin | журнал действий |
-| `/ru/domain/` | domainadmin | свой домен и алиасы |
+| `/ru/audit/` | superadmin | журнал действий, `?page=N` |
+| `/ru/domain/` | domainadmin | домен: схемы, блоки, БД, алиасы |
 
 ## Роли и права
 
@@ -48,7 +50,8 @@ php bin/cli.php admin:password --login=root --password='new-strong-pass'
 - пароль ≥ 10 символов; логин 3–64 (`a-z0-9_.-`);
 - `domainadmin` требует `--scope`;
 - сброс пароля отзывает все сессии;
-- в `admin_audit` пишутся: вход/выход, ошибки входа, создание админа, смена пароля, переключение алиасов и зеркал.
+- в `admin_audit` пишутся: вход/выход и ошибки входа, создание админа, смена пароля, переключение проектов/алиасов/зеркал, действия с контентом, медиа и блоками;
+- аудит: `/ru/audit/?page=N`, по 50 записей.
 
 ## Устройство
 
@@ -66,16 +69,15 @@ app/.admin/www/.blockslocal                 → локальные блоки
 
 ```json
 "security": {
-    "admin_ips": ["127.0.0.1", "203.0.113.10"],
-    "admin_hosts": []
+    "admin_ips": ["127.0.0.1", "203.0.113.10"]
 }
 ```
 
 - пустой `admin_ips` → только loopback (fail-closed);
-- Host должен быть IP или в `admin_hosts`;
 - CSRF-cookie, rate-limit 10/10 мин;
 - cookie `ADMIN_SESSID`, 8 часов;
-- `Cache-Control: no-store`, `X-Frame-Options: DENY`;
+- `Cache-Control: no-store`;
+- `Content-Security-Policy: ... frame-ancestors 'none'`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`;
 - на сервере: `site.config` — `root:www-data 660`, иначе админка не сможет переключать алиасы.
 
 ## Ограничения текущей версии

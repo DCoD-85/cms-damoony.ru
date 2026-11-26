@@ -41,7 +41,6 @@ GRANT ALL PRIVILEGES ON damoony.* TO 'damoony'@'127.0.0.1';
     "security": {
         "allow_php_blocks": false,
         "admin_ips": ["127.0.0.1"],
-        "admin_hosts": [],
         "session_domain": ".example.ru"
     }
 }

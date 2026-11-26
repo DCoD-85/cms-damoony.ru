@@ -58,10 +58,12 @@ app/example.ru/
   .schemesglobal/        схемы проекта
   .blocksglobal/         глобальные блоки
   .i18nglobal/           переводы
-  .dbglobal/             провайдеры БД
+  .dbglobal/schema.json  схема таблиц проекта
+  .dbprovider/           провайдеры домена
   www/
     .schemeslocal/       локальные схемы алиаса
     .blockslocal/        локальные блоки
+    .dbprovider/         провайдеры алиаса
     algoritm/
       algoritm.php
       algoritm.rules.json

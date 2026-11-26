@@ -20,6 +20,7 @@ composer install
 php bin/cli.php cli:init --name=owner
 php bin/cli.php db:migrate
 php bin/cli.php new --domain=example.ru --assembly=minimal --force
+# админка: проект admin добавляется в config/site.config — раздел 7 в _doc/install.md
 php bin/cli.php admin:create --login=root --password='strong-pass-1' --role=superadmin
 php bin/cli.php health:check
 ```
