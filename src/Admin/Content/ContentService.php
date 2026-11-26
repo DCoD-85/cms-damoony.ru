@@ -537,6 +537,13 @@ final class ContentService
     private function page(ProjectSettings $project, string $alias, string $path): PagePath
     {
         $path = trim($path, '/');
+        if ($path !== '') {
+            foreach (explode('/', $path) as $segment) {
+                if (preg_match('/^[a-z][a-z0-9_]*$/', $segment) !== 1) {
+                    throw new RuntimeException('Некорректный путь страницы');
+                }
+            }
+        }
         $parts = $path === '' ? [] : explode('/', $path);
         $name = $parts === [] ? '' : (string) array_pop($parts);
         $parent = implode('/', $parts);
