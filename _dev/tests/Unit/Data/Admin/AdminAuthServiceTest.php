@@ -6,6 +6,7 @@ namespace Damoony\Tests\Unit\Data\Admin;
 
 use Damoony\Data\Admin\AdminAuthRepository;
 use Damoony\Data\Admin\AdminAuthService;
+use Damoony\Data\Admin\Totp;
 use Damoony\Data\Db\Connection;
 use PHPUnit\Framework\TestCase;
 
@@ -19,9 +20,10 @@ final class AdminAuthServiceTest extends TestCase
     {
         $this->conn = new Connection(['driver' => 'sqlite', 'path' => ':memory:']);
         $pdo = $this->conn->pdo();
-        $pdo->exec('CREATE TABLE admin_accounts (id INTEGER PRIMARY KEY AUTOINCREMENT, login TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, status TEXT NOT NULL DEFAULT "active", totp_secret TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, last_login_at TEXT)');
+        $pdo->exec('CREATE TABLE admin_accounts (id INTEGER PRIMARY KEY AUTOINCREMENT, login TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, status TEXT NOT NULL DEFAULT "active", totp_secret TEXT, totp_enabled INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, last_login_at TEXT)');
         $pdo->exec('CREATE TABLE admin_members (id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, role TEXT NOT NULL, scope TEXT NOT NULL DEFAULT "", status TEXT NOT NULL DEFAULT "active", created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, UNIQUE (account_id, role, scope))');
         $pdo->exec('CREATE TABLE admin_sessions (id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, token_hash TEXT NOT NULL UNIQUE, role TEXT NOT NULL, scope TEXT NOT NULL DEFAULT "", ip TEXT NOT NULL DEFAULT "", user_agent TEXT NOT NULL DEFAULT "", created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, expires_at TEXT NOT NULL, revoked_at TEXT, last_seen_at TEXT)');
+        $pdo->exec('CREATE TABLE admin_2fa_challenges (id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, token_hash TEXT NOT NULL UNIQUE, attempts INTEGER NOT NULL DEFAULT 0, expires_at TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)');
         $pdo->exec('CREATE TABLE admin_audit (id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER, action TEXT NOT NULL, target TEXT NOT NULL DEFAULT "", ip TEXT NOT NULL DEFAULT "", created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)');
 
         $this->repo = new AdminAuthRepository($this->conn);
@@ -87,6 +89,40 @@ final class AdminAuthServiceTest extends TestCase
 
         $this->service->changePassword($accountId, 'new-strong-pass-2');
         self::assertNull($this->service->authenticate($login['token']));
+    }
+
+    public function testTotpLoginFlow(): void
+    {
+        $accountId = $this->account('root', 'strong-pass-1');
+        $this->repo->createMember($accountId, AdminAuthService::ROLE_SUPERADMIN);
+
+        $start = $this->service->startTotp($accountId);
+        self::assertTrue($this->service->confirmTotp($accountId, Totp::code($start['secret'])));
+
+        $challenge = $this->service->login('root', 'strong-pass-1', '127.0.0.1', 'UA');
+        self::assertNotNull($challenge);
+        self::assertArrayHasKey('challenge', $challenge);
+
+        $session = $this->service->completeTotp((string) $challenge['challenge'], Totp::code($start['secret']), '127.0.0.1', 'UA');
+        self::assertNotNull($session);
+        self::assertNotNull($this->service->authenticate((string) $session['token']));
+    }
+
+    public function testTotpRejectsWrongCodeAndDisablesByLogin(): void
+    {
+        $accountId = $this->account('root', 'strong-pass-1');
+        $this->repo->createMember($accountId, AdminAuthService::ROLE_SUPERADMIN);
+
+        $start = $this->service->startTotp($accountId);
+        self::assertTrue($this->service->confirmTotp($accountId, Totp::code($start['secret'])));
+        $challenge = $this->service->login('root', 'strong-pass-1', '127.0.0.1', 'UA');
+        self::assertNotNull($challenge);
+        self::assertNull($this->service->completeTotp((string) $challenge['challenge'], '000000', '127.0.0.1', 'UA'));
+
+        $this->service->disableTotpByLogin('root');
+        $plain = $this->service->login('root', 'strong-pass-1', '127.0.0.1', 'UA');
+        self::assertNotNull($plain);
+        self::assertArrayHasKey('token', $plain);
     }
 
     private function account(string $login, string $password): int
