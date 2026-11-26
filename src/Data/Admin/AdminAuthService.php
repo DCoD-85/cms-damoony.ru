@@ -22,7 +22,7 @@ final class AdminAuthService
     }
 
     /**
-     * @return array{token: string, account: array<string, mixed>, role: string, scope: string}|null
+     * @return array{token: string, account: array<string, mixed>, role: string, scope: string}|array{challenge: string}|null
      */
     public function login(string $login, string $password, string $ip, string $userAgent): ?array
     {
@@ -47,6 +47,127 @@ final class AdminAuthService
             return null;
         }
 
+        $secret = (string) ($account['totp_secret'] ?? '');
+        if ((int) ($account['totp_enabled'] ?? 0) === 1 && $secret !== '') {
+            $challenge = bin2hex(random_bytes(32));
+            $this->repo->createChallenge(
+                (int) $account['id'],
+                hash('sha256', $challenge),
+                gmdate('Y-m-d H:i:s', time() + 300),
+            );
+
+            return ['challenge' => $challenge];
+        }
+
+        return $this->issueSession($account, $member, $ip, $userAgent);
+    }
+
+    /**
+     * @return array{token: string, account: array<string, mixed>, role: string, scope: string}|null
+     */
+    public function completeTotp(string $challenge, string $code, string $ip, string $userAgent): ?array
+    {
+        if ($challenge === '' || $code === '') {
+            return null;
+        }
+        $row = $this->repo->challengeByToken(hash('sha256', $challenge));
+        if ($row === []) {
+            return null;
+        }
+        if (strtotime((string) $row['expires_at']) < time() || (int) $row['attempts'] >= 5) {
+            $this->repo->deleteChallenge((int) $row['id']);
+
+            return null;
+        }
+
+        $account = $this->repo->accountById((int) $row['account_id']);
+        if ($account === [] || ($account['status'] ?? '') !== 'active') {
+            return null;
+        }
+        $secret = (string) ($account['totp_secret'] ?? '');
+        if ($secret === '' || !Totp::verify($secret, $code)) {
+            $this->repo->incrementChallenge((int) $row['id']);
+            $this->repo->audit((int) $account['id'], 'login.2fa_failed', '', $ip);
+
+            return null;
+        }
+        $member = $this->pickRole((int) $account['id']);
+        if ($member === null) {
+            return null;
+        }
+
+        $this->repo->deleteChallenge((int) $row['id']);
+        $this->repo->audit((int) $account['id'], 'login.2fa_ok', '', $ip);
+
+        return $this->issueSession($account, $member, $ip, $userAgent);
+    }
+
+    /**
+     * @return array{enabled: bool, secret: string, uri: string}
+     */
+    public function totpState(int $accountId): array
+    {
+        $account = $this->repo->accountById($accountId);
+        $secret = (string) ($account['totp_secret'] ?? '');
+
+        return [
+            'enabled' => (int) ($account['totp_enabled'] ?? 0) === 1 && $secret !== '',
+            'secret' => $secret,
+            'uri' => $secret === '' ? '' : Totp::uri($secret, (string) ($account['login'] ?? '')),
+        ];
+    }
+
+    /**
+     * @return array{secret: string, uri: string}
+     */
+    public function startTotp(int $accountId): array
+    {
+        $account = $this->repo->accountById($accountId);
+        if ($account === []) {
+            throw new RuntimeException('Админ не найден');
+        }
+        $secret = Totp::generateSecret();
+        $this->repo->setTotp($accountId, $secret, false);
+
+        return ['secret' => $secret, 'uri' => Totp::uri($secret, (string) $account['login'])];
+    }
+
+    public function confirmTotp(int $accountId, string $code): bool
+    {
+        $account = $this->repo->accountById($accountId);
+        $secret = (string) ($account['totp_secret'] ?? '');
+        if ($secret === '' || !Totp::verify($secret, $code)) {
+            return false;
+        }
+        $this->repo->setTotp($accountId, $secret, true);
+        $this->repo->audit($accountId, '2fa.enabled', '', '');
+
+        return true;
+    }
+
+    public function disableTotp(int $accountId): void
+    {
+        $this->repo->setTotp($accountId, null, false);
+        $this->repo->audit($accountId, '2fa.disabled', '', '');
+    }
+
+    public function disableTotpByLogin(string $login): void
+    {
+        $account = $this->repo->accountByLogin(trim($login));
+        if ($account === []) {
+            throw new RuntimeException('Админ не найден: ' . $login);
+        }
+        $this->disableTotp((int) $account['id']);
+    }
+
+    /**
+     * @param array<string, mixed> $account
+     * @param array<string, mixed> $member
+     *
+     * @return array{token: string, account: array<string, mixed>, role: string, scope: string}
+     */
+    private function issueSession(array $account, array $member, string $ip, string $userAgent): array
+    {
         $role = (string) $member['role'];
         $scope = (string) $member['scope'];
         $token = bin2hex(random_bytes(32));

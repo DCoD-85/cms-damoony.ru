@@ -20,6 +20,7 @@ use Damoony\UI\Page\Page;
 final class algoritm_lang extends Page
 {
     private const CSRF_COOKIE = 'ADMIN_CSRF';
+    private const TOTP_COOKIE = 'ADMIN_2FA';
 
     protected function content(): Node|Response|null
     {
@@ -41,6 +42,8 @@ final class algoritm_lang extends Page
 
         $error = null;
         $session = $auth->authenticate((string) ($this->context->request->cookies[AdminModule::COOKIE] ?? ''));
+        $challenge = (string) ($this->context->request->cookies[self::TOTP_COOKIE] ?? '');
+        $twoFactor = $challenge !== '';
 
         if ($this->isPost()) {
             $posted = (string) $this->context->request->post('_csrf', '');
@@ -50,6 +53,22 @@ final class algoritm_lang extends Page
                 $error = 'Слишком много попыток, попробуйте позже';
             } elseif (!hash_equals($csrf, $posted)) {
                 $error = 'Сессия устарела, обновите страницу';
+            } elseif ((string) $this->context->request->post('op') === '2fa') {
+                $result = $auth->completeTotp(
+                    $challenge,
+                    (string) $this->context->request->post('code'),
+                    $ip,
+                    (string) ($this->context->request->header('user-agent') ?? ''),
+                );
+                if ($result === null) {
+                    $this->rateLimitHit($ip);
+                    $error = 'Неверный или просроченный код';
+                } else {
+                    $this->cookie(AdminModule::COOKIE, $result['token'], AdminAuthService::SESSION_TTL);
+                    $this->cookie(self::TOTP_COOKIE, '', -3600);
+
+                    return Response::redirect('/' . $lang . '/');
+                }
             } else {
                 $result = $auth->login(
                     (string) $this->context->request->post('login'),
@@ -61,8 +80,13 @@ final class algoritm_lang extends Page
                 if ($result === null) {
                     $this->rateLimitHit($ip);
                     $error = 'Неверный логин или пароль';
+                } elseif (isset($result['challenge'])) {
+                    $challenge = $result['challenge'];
+                    $twoFactor = true;
+                    $this->cookie(self::TOTP_COOKIE, $challenge, 300);
                 } else {
                     $this->cookie(AdminModule::COOKIE, $result['token'], AdminAuthService::SESSION_TTL);
+                    $this->cookie(self::TOTP_COOKIE, '', -3600);
 
                     return Response::redirect('/' . $lang . '/');
                 }
@@ -71,6 +95,25 @@ final class algoritm_lang extends Page
 
         $wrap = Builder::div('admin-box');
         if ($session === null) {
+            if ($twoFactor) {
+                $wrap->append(Builder::h(1)->content('Подтверждение входа'));
+                $wrap->append(Builder::p()->content('Введите 6-значный код из приложения-аутентификатора.'));
+                if ($error !== null) {
+                    $wrap->append(Builder::p('admin-error')->content($error));
+                }
+
+                $form = new Form();
+                $form->method('POST');
+                $form->action('/' . $lang . '/');
+                $form->add(new Input('hidden', '_csrf', $csrf));
+                $form->add(new Input('hidden', 'op', '2fa'));
+                $form->add(new Input('text', 'code'));
+                $form->add(new Button('Подтвердить'));
+                $wrap->append($form);
+
+                return $wrap;
+            }
+
             $wrap->append(Builder::h(1)->content('Вход в админку'));
             if ($error !== null) {
                 $wrap->append(Builder::p('admin-error')->content($error));
@@ -94,8 +137,8 @@ final class algoritm_lang extends Page
         $wrap->append(Builder::p()->content('Аккаунт: ' . (string) $session['account']['login']));
 
         $cardLinks = $role === AdminAuthService::ROLE_SUPERADMIN
-            ? ['content/' => 'Контент', 'blocks/' => 'Блоки', 'projects/' => 'Проекты', 'accounts/' => 'Аккаунты', 'ops/' => 'Мониторинг', 'audit/' => 'Аудит']
-            : ($role === AdminAuthService::ROLE_DOMAINADMIN ? ['content/' => 'Контент', 'blocks/' => 'Блоки', 'domain/' => 'Мой домен'] : []);
+            ? ['content/' => 'Контент', 'blocks/' => 'Блоки', 'projects/' => 'Проекты', 'accounts/' => 'Аккаунты', 'ops/' => 'Мониторинг', 'audit/' => 'Аудит', '2fa/' => '2FA']
+            : ($role === AdminAuthService::ROLE_DOMAINADMIN ? ['content/' => 'Контент', 'blocks/' => 'Блоки', 'domain/' => 'Мой домен', '2fa/' => '2FA'] : []);
         if ($cardLinks !== []) {
             $cards = Builder::div('admin-cards');
             foreach ($cardLinks as $path => $label) {

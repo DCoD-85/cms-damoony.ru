@@ -46,6 +46,7 @@ final class blockslocal_www_left implements RegionInterface
                     $links['blocks/'] = 'Блоки';
                     $links['domain/'] = 'Мой домен';
                 }
+                $links['2fa/'] = '2FA';
                 $links['logout/'] = 'Выйти';
             }
         }

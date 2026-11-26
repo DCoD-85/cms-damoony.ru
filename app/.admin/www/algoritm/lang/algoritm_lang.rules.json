@@ -1,1 +1,1 @@
-{"available": {"": "^$", "logout": "^logout$", "projects": "^projects$", "accounts": "^accounts$", "ops": "^ops$", "audit": "^audit$", "domain": "^domain$", "content": "^content$", "blocks": "^blocks$"}, "auth": false, "search": false, "csrf": false}
+{"available": {"": "^$", "logout": "^logout$", "projects": "^projects$", "accounts": "^accounts$", "ops": "^ops$", "audit": "^audit$", "domain": "^domain$", "content": "^content$", "blocks": "^blocks$", "2fa": "^2fa$"}, "auth": false, "search": false, "csrf": false}

@@ -57,6 +57,41 @@ final class AdminAuthRepository
             ->execute(['hash' => $passwordHash, 'id' => $accountId]);
     }
 
+    public function setTotp(int $accountId, ?string $secret, bool $enabled): void
+    {
+        $this->conn->pdo()->prepare(
+            'UPDATE admin_accounts SET totp_secret = :secret, totp_enabled = :enabled WHERE id = :id',
+        )->execute(['secret' => $secret, 'enabled' => $enabled ? 1 : 0, 'id' => $accountId]);
+    }
+
+    public function createChallenge(int $accountId, string $tokenHash, string $expiresAt): void
+    {
+        $this->conn->pdo()->prepare(
+            'INSERT INTO admin_2fa_challenges (account_id, token_hash, expires_at) VALUES (:account, :token, :expires)',
+        )->execute(['account' => $accountId, 'token' => $tokenHash, 'expires' => $expiresAt]);
+    }
+
+    /** @return array<string, mixed>|array{} */
+    public function challengeByToken(string $tokenHash): array
+    {
+        $stmt = $this->conn->pdo()->prepare('SELECT * FROM admin_2fa_challenges WHERE token_hash = :token LIMIT 1');
+        $stmt->execute(['token' => $tokenHash]);
+        $row = $stmt->fetch();
+
+        return $row === false ? [] : $row;
+    }
+
+    public function deleteChallenge(int $id): void
+    {
+        $this->conn->pdo()->prepare('DELETE FROM admin_2fa_challenges WHERE id = :id')->execute(['id' => $id]);
+    }
+
+    public function incrementChallenge(int $id): void
+    {
+        $this->conn->pdo()->prepare('UPDATE admin_2fa_challenges SET attempts = attempts + 1 WHERE id = :id')
+            ->execute(['id' => $id]);
+    }
+
     /** @return list<array<string, mixed>> */
     public function accounts(): array
     {

@@ -95,6 +95,7 @@ php bin/cli.php domain:list
 php bin/cli.php admin:create --login=root --password='strong-pass-1' --role=superadmin
 php bin/cli.php admin:create --login=docs --password='strong-pass-2' --role=domainadmin --scope=example.ru
 php bin/cli.php admin:password --login=root --password='new-strong-pass'
+php bin/cli.php admin:2fa:disable --login=root
 ```
 
 ## Установки
